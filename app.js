@@ -244,6 +244,42 @@ async function trocarFrase() {
   msg.className = "ok"; msg.textContent = "Frase-senha trocada. A antiga deixou de funcionar.";
 }
 $("mfa-pass").onclick = trocarFrase;
+
+// Senha de LOGIN (a da conta). Não confundir com a frase-senha do backup da chave.
+const MIN_SENHA = 12; // o servidor aceita até 6; quem impõe 12 é o app, igual ao cadastro
+async function trocarSenha() {
+  const msg = $("mfa-msg"); msg.className = ""; msg.textContent = "";
+  const atual = await ask("Trocar a senha", "Digite a senha ATUAL da sua conta."); if (atual === null) return;
+  // confere a senha atual num cliente descartável, sem mexer na sessão que está aberta
+  const { data: u } = await sb.auth.getUser(); const email = u?.user?.email;
+  const tmp = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
+  const chk = await tmp.auth.signInWithPassword({ email: email || "", password: atual });
+  await tmp.auth.signOut({ scope: "local" }).catch(() => {});
+  if (chk.error) { msg.textContent = limitado(chk.error) || /rate limit|too many/i.test(chk.error.message) ? "Muitas tentativas seguidas. Espere alguns minutos e tente de novo." : "A senha atual está errada. Nada foi alterado."; return; }
+  let hint = `Digite a NOVA senha (${MIN_SENHA}+ caracteres).`, nova;
+  for (;;) {
+    nova = await ask("Nova senha", hint); if (nova === null) return;
+    if (nova.length < MIN_SENHA) hint = `Use pelo menos ${MIN_SENHA} caracteres.`;
+    else if (nova === atual) hint = "A nova senha precisa ser diferente da atual.";
+    else if (new Set(nova).size < 6) hint = "Evite repetir os mesmos caracteres.";
+    else break;
+  }
+  const conf = await ask("Confirme a nova senha", "Digite de novo, igualzinha.");
+  if (conf === null) return;
+  if (conf !== nova) { msg.textContent = "As duas senhas não são iguais. Nada foi alterado."; return; }
+  const { error } = await sb.auth.updateUser({ password: nova });
+  if (error) {
+    msg.textContent = error.code === "insufficient_aal" || /aal2|reauth/i.test(error.message) ? "Para trocar a senha, saia e entre de novo digitando o código do app autenticador."
+      : error.code === "same_password" ? "A nova senha precisa ser diferente da atual."
+      : error.code === "weak_password" ? "Essa senha foi recusada por ser fraca. Escolha outra."
+      : limitado(error) || /rate limit|too many/i.test(error.message) ? "Muitas tentativas seguidas. Espere alguns minutos e tente de novo."
+      : "Não foi possível trocar agora. A senha antiga continua valendo.";
+    return;
+  }
+  await sb.auth.signOut({ scope: "others" }).catch(() => {}); // derruba os outros aparelhos: quem tinha a senha antiga sai
+  msg.className = "ok"; msg.textContent = "Senha trocada. A antiga deixou de funcionar e os outros aparelhos foram desconectados.";
+}
+$("mfa-senha").onclick = trocarSenha;
 $("sec-btn").onclick = abrirSeguranca; $("mfa-nudge").onclick = abrirSeguranca;
 $("mfa").addEventListener("close", async () => { await limpar2faPendente(); });
 $("mfa-code").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("mfa-go").click(); } });

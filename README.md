@@ -18,7 +18,7 @@ ECDH P-256 (WebCrypto) -> AES-GCM 256. Chave privada no IndexedDB. O banco só v
 - **Áudio:** grave pelo microfone (botão do microfone; até 5 min, com prévia antes de enviar) ou anexe MP3, M4A ou WAV (até 20 MB). MP3 perde ID3v2/ID3v1/APE (artista, título, capa, comentário); WAV guarda só `fmt`/`data` (some LIST/INFO, bext, iXML); M4A passa pela mesma limpeza do MP4 (GPS, data, título); a gravação do navegador (MP4/AAC ou WebM/Opus) tem aplicativo, título e data zerados e blocos Tags/Attachments/Chapters apagados. Tudo sem recodificar, no mesmo tamanho. O amigo baixa e decifra só ao tocar em "Ouvir áudio". Outros formatos (OGG, FLAC, AAC solto) são recusados com aviso.
 
 ## Pendente
-- Trocar a frase-senha; revogar aparelhos.
+- Trocar a frase-senha; trocar a senha de login (pede a atual, 12+ caracteres, derruba os outros aparelhos; com 2FA exige o código); revogar aparelhos.
 - Verificação de chave (código de segurança) contra servidor malicioso.
 - Considerar protocolo Signal/biblioteca auditada antes de uso sério.
 
@@ -64,6 +64,8 @@ No GitHub Actions (`.github/workflows/ci.yml`) isso roda a cada push, usando o p
 - arquivos: 200 por hora e 400 MB no total por pessoa.
 
 **Monitoramento:** `supabase/monitoramento.sql` tem consultas prontas (contas novas, quem manda muito, quem bate nos limites, armazenamento, último acesso). Os logs de acesso (países/redes, erros 4xx/5xx, falhas de login) ficam em *Logs* no painel do Supabase e podem ser consultados por aqui com o conector.
+
+**Trocar a senha de login:** "Segurança da conta → Trocar senha de login". Confere a senha atual num cliente descartável, exige 12+ caracteres (o servidor aceita 6, então a regra é do app), pede confirmação e, ao concluir, encerra as sessões dos outros aparelhos. Com 2FA ativo o servidor só aceita a troca em sessão que já passou pelo código (aal2). A senha de login não protege as mensagens: trocá-la não afeta a chave nem a frase-senha.
 
 **Login:** o Supabase Auth só limita depois de centenas de tentativas por minuto de um mesmo IP (medido: o primeiro bloqueio veio após ~340 tentativas em ~8 s), e senhas erradas não bloqueiam a conta. Por isso: senha nova com 12+ caracteres, e no painel (Authentication) reduzir os limites de tentativas e exigir senha mínima de 12. A mensagem protegida não depende da senha de login: sem a chave do aparelho (ou a frase-senha) o atacante não lê nada.
 
