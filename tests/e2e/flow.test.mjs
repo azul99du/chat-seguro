@@ -79,7 +79,7 @@ t("código de segurança é igual nos dois aparelhos", async () => {
   assert.match(ca, /^(\d{5} ?){12}$/); assert.equal(ca, cb);
 });
 t("reação chega (como mensagem cifrada), não vira balão, e pode ser removida", async () => {
-  await B.click(".msg:not(.mine) .react-btn >> nth=0"); await B.click(".picker button:nth-child(2)");
+  await B.click(".msg:not(.mine) .react-btn >> nth=0"); await B.click(".picker .emojis button:nth-child(2)");
   await A.waitForSelector(".msg.mine .chip:has-text('❤️')", { timeout: 25000 });
   assert.equal((await textos(A)).length, 6);
   await B.click(".msg .chip.mine");

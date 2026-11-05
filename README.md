@@ -73,3 +73,9 @@ Opcional por conta: botão do escudo no cabeçalho da lista → "Ativar" → esc
 - **Vale no banco, não só no site:** as tabelas, o storage e o realtime têm políticas *restritivas* (`public.mfa_ok()`): uma sessão só com senha não lê perfil, mensagens nem backup da chave, não envia, não busca amigos nem lista arquivos. Desativar também exige o 2º passo.
 - **Perdeu o celular?** Cadastre o mesmo QR/chave em dois aparelhos assim que ativar. Se perder todos, o administrador remove o fator (SQL em `supabase/monitoramento.sql`, item 9) depois de confirmar que é a pessoa.
 - **Chutar o código:** o Supabase limita as verificações por IP (medido: bloqueio após ~30 tentativas em segundos). Em *Authentication → Rate Limits*, deixe **"token verifications"** em 5 por 5 minutos: é esse limite que protege o código de 6 dígitos.
+
+## Responder a mensagens
+No menu de cada mensagem (botão **+**) há **Responder**: texto, foto, vídeo ou áudio. Aparece a barra "Respondendo a…" acima do campo (cancela no **×** ou com **Esc**), e a resposta chega com a citação no topo do balão; tocar nela rola até a original e a destaca.
+- A citação (id da original, autor e um resumo de até 80 caracteres) viaja **dentro da mensagem cifrada**: o servidor não vê qual mensagem foi respondida, e nenhuma mudança no banco foi necessária. Fica no histórico local, então volta ao recarregar.
+- **Anti-forja:** o que chega de outra pessoa é validado (`reply.js`, com testes) e, quando a mensagem original está na tela, o texto e o autor mostrados vêm **dela**, não do resumo recebido. Assim, um amigo mal-intencionado não consegue fazer parecer que você escreveu algo que não escreveu. Se a original não está carregada (mensagens muito antigas), mostra o resumo recebido em itálico e avisa ao tocar.
+- Reações e mensagens de controle não são citáveis; responder a uma resposta cita só a mensagem anterior (sem aninhar).

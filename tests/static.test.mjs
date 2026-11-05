@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const raiz = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const ler = (f) => readFileSync(join(raiz, f), "utf8");
-const APP = ["app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js"];
+const APP = ["app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js"];
 const rastreados = execFileSync("git", ["ls-files"], { cwd: raiz, encoding: "utf8" }).split("\n").filter(Boolean);
 
 describe("código", () => {

@@ -2,6 +2,7 @@ import { createClient } from "./vendor/supabase.js";
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js";
 import { commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js";
+import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js";
 import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js";
 import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js";
 
@@ -10,6 +11,7 @@ const $ = (id) => document.getElementById(id);
 const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 let me, myKeys, active, ikJwk;
+let replyTo = null; // mensagem que estou respondendo: { id, from, kind, text, dur }
 const contacts = new Map(); // id -> perfil
 const unread = new Set();
 let online = new Set(); // ids de quem está online agora
@@ -408,10 +410,19 @@ function addMessage(m, content, { err = false, animate = false } = {}) {
   const wrap = el("div", "msg" + (mine ? " mine" : "")), line = el("div", "line");
   const b = el("div", "bubble" + (mine ? " mine" : "") + (err ? " err" : "") + (media ? " has-media" : ""));
   const label = media ? (content.kind === "video" ? "Vídeo enviado. " : content.kind === "audio" ? "Áudio enviado. " : "Foto enviada. ") : "";
-  const sr = el("span", "sr", label + text), vis = el("span", "vis", text), meta = el("div", "meta");
+  const re = limpaCitacao(content.re), citado = re ? exibir(re, msgs.get(re.id), { me: me.id, peer: active?.id }) : null;
+  const quemCitado = citado?.autor === "mine" ? "Você" : citado?.autor === "theirs" ? "@" + active.username : "Mensagem";
+  const sr = el("span", "sr", (citado ? `Em resposta a ${quemCitado}: ${citado.rotulo}. ` : "") + label + text), vis = el("span", "vis", text), meta = el("div", "meta");
   vis.setAttribute("aria-hidden", "true");
   const tm = el("time", null, hhmm(at)); tm.dateTime = at.toISOString();
   const rcpt = el("span", "rcpt"); meta.append(tm, rcpt);
+  if (citado) {
+    const q = el("button", "quote" + (citado.original ? "" : " sem-original")); q.type = "button";
+    q.append(el("span", "q-who", quemCitado), el("span", "q-text", citado.rotulo));
+    q.setAttribute("aria-label", `Mensagem citada de ${quemCitado}: ${citado.rotulo}. Ir para a mensagem`);
+    q.onclick = () => irPara(re.id);
+    b.append(q);
+  }
   if (media) b.append(mediaBlock(content));
   b.append(sr, vis, meta); line.append(b);
   const rx = el("div", "rx");
@@ -421,23 +432,50 @@ function addMessage(m, content, { err = false, animate = false } = {}) {
     rb.onclick = () => togglePicker(wrap, m.id); line.append(rb);
   }
   $("messages").append(wrap);
-  const e = { m, mine, rcpt, rx }; msgs.set(m.id, e); setReceipt(e);
+  const e = { m, mine, rcpt, rx, wrap, content: err ? null : content }; msgs.set(m.id, e); setReceipt(e);
   if (animate && !err && text) { b.classList.add("deciphering"); reveal(vis, text, () => b.classList.remove("deciphering")); }
   $("messages").scrollTop = 1e9;
   return e;
 }
 
 // ---------- Reações (emoji cifrado com a chave da conversa) ----------
+// ---------- Responder (citação) ----------
+const citavel = (id) => !!msgs.get(id)?.content && !!citacao(id, msgs.get(id).m.sender_id, msgs.get(id).content);
+const nomeAutor = (a) => (a === "mine" ? "você" : a === "theirs" ? "@" + active.username : "mensagem");
+function mostrarResposta() {
+  $("replybar").hidden = !replyTo;
+  if (!replyTo) return;
+  const v = exibir(replyTo, msgs.get(replyTo.id), { me: me.id, peer: active?.id });
+  $("reply-who").textContent = "Respondendo a " + nomeAutor(v.autor); $("reply-text").textContent = v.rotulo;
+}
+function responder(id) {
+  const e = msgs.get(id); if (!e || !active) return;
+  const c = citacao(id, e.m.sender_id, e.content); if (!c) return;
+  replyTo = c; mostrarResposta(); $("text").focus();
+}
+function cancelarResposta() { replyTo = null; mostrarResposta(); }
+$("reply-x").onclick = () => { cancelarResposta(); $("text").focus(); };
+$("text").addEventListener("keydown", (e) => { if (e.key === "Escape" && replyTo) { e.preventDefault(); cancelarResposta(); } });
+function irPara(id) { // vai até a mensagem original e a destaca por um instante
+  const e = msgs.get(id);
+  if (!e) return note("A mensagem original não está mais nesta tela (é de muito tempo atrás).");
+  e.wrap.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  e.wrap.classList.add("flash"); setTimeout(() => e.wrap.classList.remove("flash"), 1500);
+}
+
 function togglePicker(wrap, id) {
   const had = wrap.querySelector(".picker");
   document.querySelectorAll(".picker").forEach((p) => p.remove());
   if (had) return;
-  const p = el("div", "picker"); p.setAttribute("role", "group"); p.setAttribute("aria-label", "Escolha uma reação");
+  const p = el("div", "picker"), linha = el("div", "emojis");
+  p.setAttribute("role", "group"); p.setAttribute("aria-label", "Reagir ou responder");
   for (const em of EMOJIS) {
     const b = el("button", null, em); b.type = "button"; b.setAttribute("aria-label", "Reagir com " + em);
-    b.onclick = () => { p.remove(); react(id, em); }; p.append(b);
+    b.onclick = () => { p.remove(); react(id, em); }; linha.append(b);
   }
-  wrap.append(p); p.firstChild.focus();
+  p.append(linha);
+  if (citavel(id)) { const r = el("button", "responder", "Responder"); r.type = "button"; r.onclick = () => { p.remove(); responder(id); }; p.append(r); }
+  wrap.append(p); p.querySelector("button").focus();
 }
 document.addEventListener("click", (ev) => { if (!ev.target.closest(".picker,.react-btn")) document.querySelectorAll(".picker").forEach((p) => p.remove()); });
 
@@ -515,7 +553,7 @@ async function pinStatus(peer) {
 }
 function parseContent(s) {
   const o = JSON.parse(s);
-  if (o && ["text", "media", "reaction", "hello"].includes(o.type)) return o;
+  if (o && ["text", "media", "reaction", "hello"].includes(o.type)) { if (o.re !== undefined) o.re = limpaCitacao(o.re); return o; }
   throw new Error("conteudo invalido");
 }
 async function decryptV2(m, peer) {
@@ -617,13 +655,14 @@ async function open(peer) {
   $("conv-title").textContent = "@" + peer.username;
   $("badge").hidden = false; $("conv-empty").hidden = true; $("send-form").hidden = false;
   $("bg-btn").hidden = false; $("safety-btn").hidden = false; clearPending(); setBg(bgCache.get(peer.id) ?? null); applyBackground(peer);
-  $("messages").replaceChildren(); msgs.clear(); reactions.clear();
+  $("messages").replaceChildren(); msgs.clear(); reactions.clear(); cancelarResposta();
   const { data } = await sb.from("messages").select("*")
     .or(`and(sender_id.eq.${me.id},recipient_id.eq.${peer.id}),and(sender_id.eq.${peer.id},recipient_id.eq.${me.id})`)
-    .order("id").limit(200);
+    .order("id", { ascending: false }).limit(200); // as 200 mais NOVAS (e depois ficam em ordem de envio)
   if (active !== peer) return;
-  await loadLegacyReactions(data || [], peer);
-  for (const m of data || []) await show(m, peer, false);
+  const linhas = (data || []).reverse();
+  await loadLegacyReactions(linhas, peer);
+  for (const m of linhas) await show(m, peer, false);
   [...msgs.keys()].forEach(renderRx);
   if (!msgs.size) {
     const p = el("p", "empty", "Nenhuma mensagem ainda. Diga oi: só vocês dois vão ler."); p.id = "msgs-empty";
@@ -781,11 +820,12 @@ $("send-form").onsubmit = async (e) => {
       const path = `${me.id}/${peer.id}/${crypto.randomUUID()}`;
       const sealed = await uploadSealed(p.bytes, path);
       content = { v: 1, type: "media", kind: p.kind, path, key: sealed.key, iv: sealed.iv, mime: p.mime, w: p.w, h: p.h, dur: p.dur, size: p.bytes.length, caption: text };
+      if (replyTo) content.re = replyTo;
       row = await sendContent(peer, content);
       mediaCache.set(path, p.url); clearPending(true); // reaproveita a prévia local, sem baixar de novo
-    } else { content = { type: "text", text }; row = await sendContent(peer, content); }
+    } else { content = { type: "text", text }; if (replyTo) content.re = replyTo; row = await sendContent(peer, content); }
     if (active === peer) { $("msgs-empty")?.remove(); addMessage(row, content); }
-    $("text").value = "";
+    $("text").value = ""; cancelarResposta();
   } catch (e) {
     if (pending) showPending($("pending-name").textContent, "Falhou. Toque em Enviar para tentar de novo.");
     note(sendError(e, peer));
