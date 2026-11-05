@@ -2,7 +2,7 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { detectar, limparAnimada, MAX_ANIM_BYTES } from "../sticker.js";
-import { regiao, criarRecorte, alfaSuave, finalizar } from "../cutout.js";
+import { regiao, criarRecorte, alfaSuave, finalizar, preencherBuracos } from "../cutout.js";
 import { limpaCitacao, rotulo, resumo } from "../reply.js";
 
 const B = (...p) => Buffer.concat(p.map((x) => (typeof x === "string" ? Buffer.from(x, "latin1") : Buffer.from(x))));
@@ -106,6 +106,26 @@ describe("recorte por cliques", () => {
   });
   test("pixel já transparente na origem não é pego", () => {
     const img = cena(); for (let x = 0; x < 20; x++) img.data[x * 4 + 3] = 0; assert.equal(regiao(img, 5, 0, 100).length, 0);
+  });
+});
+
+describe("recorte: fundo automático, pincel e buracos", () => {
+  test("tirar o fundo automaticamente deixa só o boneco (com a pele dentro) e se desfaz", () => {
+    const rc = criarRecorte(cena()); assert.ok(rc.fundo(30) > 0);
+    assert.equal(rc.mantidos(), 8 * 6, "sobra o quadrado do boneco (cores diferentes do fundo)"); assert.equal(rc.keep[0], 0); assert.equal(rc.keep[5 * 20 + 7], 1);
+    assert.ok(rc.desfazer()); assert.equal(rc.mantidos(), 0);
+  });
+  test("pincel: uma pincelada inteira é um passo só; − apaga; desfazer devolve", () => {
+    const rc = criarRecorte(cena()); rc.pincel(3, 3, 2, 1); rc.pincel(4, 3, 2, 1); assert.equal(rc.passos(), 0, "ainda em andamento");
+    const n = rc.mantidos(); assert.ok(n > 10); rc.fimTraco(); assert.equal(rc.passos(), 1);
+    rc.pincel(3, 3, 1, 0); rc.fimTraco(); assert.ok(rc.mantidos() < n); rc.desfazer(); assert.equal(rc.mantidos(), n); rc.desfazer(); assert.equal(rc.mantidos(), 0);
+    assert.equal(rc.fimTraco(), 0, "pincelada vazia não cria passo");
+  });
+  test("buracos cercados entram; o que encosta na borda da imagem não", () => {
+    const img = cena(), rc = criarRecorte(img); rc.manter(7, 5, 30); // boneco com a "pele" 2x2 de fora
+    assert.equal(rc.mantidos(), 44); const c = preencherBuracos(rc.keep, img); assert.equal(c.reduce((a, v) => a + v, 0), 48); assert.equal(c[0], 0);
+    const o = finalizar(img, rc.keep, { margem: 0 }), sem = finalizar(img, rc.keep, { margem: 0, buracos: false });
+    const centro = (f) => f.data[((Math.floor(f.height / 2) - 1) * f.width + Math.floor(f.width / 2) - 1) * 4 + 3]; assert.ok(centro(o) > centro(sem) || centro(o) === 255);
   });
 });
 

@@ -31,17 +31,46 @@ export function regiao(img, x, y, tol) {
 }
 
 export function criarRecorte(img) {
-  const { width: W, height: H } = img, keep = new Uint8Array(W * H), hist = [];
-  const aplica = (idx, v) => { const mudou = []; for (const p of idx) if (keep[p] !== v) { keep[p] = v; mudou.push(p); } return Int32Array.from(mudou); };
+  const { width: W, height: H, data: d } = img, keep = new Uint8Array(W * H), hist = [];
+  let traco = null; // pincelada em andamento: índice -> valor anterior
+  // toda alteração guarda o valor ANTERIOR dos pixels mexidos; desfazer é só devolver esses valores
+  const muda = (idx, v, reg) => { for (const p of idx) if (keep[p] !== v) { if (!reg.has(p)) reg.set(p, keep[p]); keep[p] = v; } };
+  const empurra = (reg) => { if (!reg.size) return 0; hist.push(reg); return reg.size; };
   return {
     width: W, height: H, keep,
-    manter(x, y, tol) { const m = aplica(regiao(img, x, y, tol), 1); if (m.length) hist.push({ v: 1, m }); return m.length; },
-    apagar(x, y, tol) { const idx = regiao(img, x, y, tol).filter((p) => keep[p]); const m = aplica(idx, 0); if (m.length) hist.push({ v: 0, m }); return m.length; },
-    desfazer() { const h = hist.pop(); if (!h) return false; for (const p of h.m) keep[p] = h.v ? 0 : 1; return true; },
-    recomecar() { keep.fill(0); hist.length = 0; },
+    manter(x, y, tol) { const r = new Map(); muda(regiao(img, x, y, tol), 1, r); return empurra(r); },
+    apagar(x, y, tol) { const r = new Map(); muda(regiao(img, x, y, tol).filter((p) => keep[p]), 0, r); return empurra(r); },
+    // recorte automático do fundo: tudo que encosta nas bordas e tem cor parecida com elas sai; o que sobra é o assunto
+    fundo(tol) {
+      const r = new Map(), cand = new Uint8Array(W * H), passo = Math.max(4, Math.round(Math.max(W, H) / 60));
+      for (let i = 0; i < W * H; i++) if (d[i * 4 + 3] >= 128) cand[i] = 1;
+      muda(cand.reduce((a, v, i) => (v ? (a.push(i), a) : a), []), 1, r);
+      const semente = (x, y) => muda(regiao(img, x, y, tol), 0, r);
+      for (let x = 0; x < W; x += passo) { semente(x, 0); semente(x, H - 1); }
+      for (let y = 0; y < H; y += passo) { semente(0, y); semente(W - 1, y); }
+      return empurra(r);
+    },
+    // pincel: v=1 mantém, v=0 apaga, dentro de um círculo de raio r (em pixels da imagem). Uma pincelada inteira = um passo.
+    pincel(x, y, raio, v) {
+      traco ||= new Map(); const r2 = raio * raio, x0 = Math.max(0, Math.floor(x - raio)), x1 = Math.min(W - 1, Math.ceil(x + raio)), y0 = Math.max(0, Math.floor(y - raio)), y1 = Math.min(H - 1, Math.ceil(y + raio));
+      for (let j = y0; j <= y1; j++) for (let i = x0; i <= x1; i++) { const p = j * W + i; if ((i - x) ** 2 + (j - y) ** 2 <= r2 && keep[p] !== v && (v === 0 || d[p * 4 + 3] >= 128)) { if (!traco.has(p)) traco.set(p, keep[p]); keep[p] = v; } }
+    },
+    fimTraco() { const r = traco; traco = null; return r ? empurra(r) : 0; },
+    desfazer() { const h = hist.pop(); if (!h) return false; for (const [p, v] of h) keep[p] = v; return true; },
+    recomecar() { keep.fill(0); hist.length = 0; traco = null; },
     passos: () => hist.length,
     mantidos: () => { let n = 0; for (let i = 0; i < keep.length; i++) n += keep[i]; return n; },
   };
+}
+
+// Buracos: pedaços não mantidos que ficam totalmente cercados pelo que foi mantido (olhos, estampa, sombra) entram junto.
+export function preencherBuracos(keep, img) {
+  const { width: W, height: H, data: d } = img, fora = new Uint8Array(W * H), fila = new Int32Array(W * H); let ini = 0, fim = 0;
+  const entra = (p) => { if (!keep[p] && !fora[p]) { fora[p] = 1; fila[fim++] = p; } };
+  for (let x = 0; x < W; x++) { entra(x); entra((H - 1) * W + x); } for (let y = 0; y < H; y++) { entra(y * W); entra(y * W + W - 1); }
+  while (ini < fim) { const p = fila[ini++], x = p % W, y = (p / W) | 0; if (x > 0) entra(p - 1); if (x < W - 1) entra(p + 1); if (y > 0) entra(p - W); if (y < H - 1) entra(p + W); }
+  const out = Uint8Array.from(keep); for (let i = 0; i < out.length; i++) if (!keep[i] && !fora[i] && d[i * 4 + 3] >= 128) out[i] = 1;
+  return out;
 }
 
 // Bordas sem serrilhado: suaviza a máscara e recua ~1 pixel, para não sobrar fiapo da cor do fundo.
@@ -55,8 +84,8 @@ export function alfaSuave(keep, W, H) {
 }
 
 // Aplica a máscara e corta na menor caixa que contém o que foi mantido. Devolve null se nada foi mantido.
-export function finalizar(img, keep, { margem = 2 } = {}) {
-  const { data: d, width: W, height: H } = img, alfa = alfaSuave(keep, W, H);
+export function finalizar(img, keep, { margem = 2, buracos = true } = {}) {
+  const { data: d, width: W, height: H } = img, alfa = alfaSuave(buracos ? preencherBuracos(keep, img) : keep, W, H);
   let x0 = W, y0 = H, x1 = -1, y1 = -1;
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (alfa[y * W + x] > 8) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
   if (x1 < 0) return null;

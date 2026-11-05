@@ -144,8 +144,8 @@
 
   <dialog id="stk">
     <div class="stk-head"><h2>Figurinhas</h2><small id="stk-count" class="muted"></small><button type="button" id="stk-close" class="ghost icon" aria-label="Fechar">×</button></div>
-    <button type="button" id="stk-new" class="primary stk-new">+ Criar figurinha</button>
-    <input type="file" id="stk-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+    <button type="button" id="stk-new" class="primary stk-new">+ Criar ou importar figurinhas</button>
+    <input type="file" id="stk-file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
     <section id="stk-recent-sec" hidden>
       <div class="stk-sec"><h3>Recentes</h3><button type="button" id="stk-more" class="link" hidden>Ver mais</button></div>
       <div id="stk-recent" class="stk-grid"></div>
@@ -153,21 +153,26 @@
     <section>
       <div class="stk-sec"><h3>Suas figurinhas</h3><button type="button" id="stk-manage" class="link" hidden>Gerenciar</button></div>
       <div id="stk-mine" class="stk-grid"></div>
-      <p id="stk-empty" class="muted">Você ainda não tem figurinhas. Toque em "Criar figurinha", escolha uma imagem (PNG com fundo transparente, GIF ou WebP animado também valem) e, se quiser, recorte tocando no que deve ficar.</p>
+      <p id="stk-empty" class="muted">Você ainda não tem figurinhas. Toque em "Criar ou importar", escolha um ou vários arquivos: figurinhas prontas (PNG ou WebP com fundo transparente, GIF ou WebP animado) entram direto; fotos inteiras abrem o editor de recorte.</p>
       <p class="muted stk-nota">As figurinhas ficam guardadas só neste aparelho, cifradas. Quem receber uma pode salvá-la nas dele.</p>
     </section>
   </dialog>
 
   <dialog id="stkedit">
     <h2>Criar figurinha</h2>
-    <p id="stkedit-hint" class="muted">Toque nas partes que quer <strong>manter</strong>; o resto é recortado. Foi demais? Toque em Desfazer. Imagens animadas (GIF/WebP) são guardadas inteiras, sem recorte.</p>
+    <p id="stkedit-hint" class="muted">Comece por "Tirar o fundo automaticamente" ou toque nas partes que quer <strong>manter</strong>. Ajuste com Apagar e com o Pincel (+ mantém, − apaga). Errou? Desfazer. Imagens animadas (GIF/WebP) são guardadas inteiras, sem recorte.</p>
     <div class="stk-canvas-wrap"><canvas id="stk-canvas" aria-label="Imagem para recortar: toque nas partes que quer manter"></canvas></div>
     <div class="stk-tools">
       <div class="seg" role="group" aria-label="O que o toque faz">
         <button type="button" id="stk-mode-add" aria-pressed="true">Manter</button>
         <button type="button" id="stk-mode-del" aria-pressed="false">Apagar</button>
+        <button type="button" id="stk-mode-brush" aria-pressed="false">Pincel +</button>
+        <button type="button" id="stk-mode-erase" aria-pressed="false">Pincel −</button>
       </div>
+      <button type="button" id="stk-auto" class="ghost">Tirar o fundo automaticamente</button>
       <label class="stk-tol">Alcance do toque <input type="range" id="stk-tol" min="5" max="80" value="28"></label>
+      <label class="stk-brush" id="stk-brush-box" hidden>Pincel <input type="range" id="stk-brush" min="6" max="80" value="24"></label>
+      <label class="stk-prev"><input type="checkbox" id="stk-holes" checked> Preencher buracos</label>
       <label class="stk-prev"><input type="checkbox" id="stk-preview"> Ver resultado</label>
     </div>
     <p id="stk-status" role="status"></p>

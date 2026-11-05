@@ -21,9 +21,9 @@ function vigiar(nome, page) {
   page.on("request", (r) => { const m = r.url().match(/\/storage\/v1\/object\/media\/(.+)$/); if (m && r.method() === "POST") enviados.push({ page, path: decodeURIComponent(m[1]) }); });
 }
 // PNG 120x80: fundo azul, quadrado vermelho no meio, com um texto escondido (tEXt) que NÃO pode sair na figurinha
-function pngTeste() {
+function pngTeste(transparente = false) {
   const W = 120, H = 80, raw = Buffer.alloc((W * 4 + 1) * H);
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const o = y * (W * 4 + 1) + 1 + x * 4, v = x >= 40 && x < 80 && y >= 20 && y < 60 ? [220, 30, 30] : [30, 60, 200]; raw.set([...v, 255], o); }
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const o = y * (W * 4 + 1) + 1 + x * 4, dentro = x >= 40 && x < 80 && y >= 20 && y < 60, v = dentro ? [220, 30, 30] : [30, 60, 200]; raw.set([...v, transparente && !dentro ? 0 : 255], o); }
   const crc = (buf) => { let c, t = []; for (let n = 0; n < 256; n++) { c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } let r = 0xffffffff; for (const b of buf) r = t[(r ^ b) & 255] ^ (r >>> 8); return (r ^ 0xffffffff) >>> 0; };
   const ch = (tp, d) => { const l = Buffer.alloc(4); l.writeUInt32BE(d.length); const body = Buffer.concat([Buffer.from(tp), d]), c = Buffer.alloc(4); c.writeUInt32BE(crc(body)); return Buffer.concat([l, body, c]); };
   const ih = Buffer.alloc(13); ih.writeUInt32BE(W, 0); ih.writeUInt32BE(H, 4); ih.set([8, 6, 0, 0, 0], 8);
@@ -48,7 +48,7 @@ const imagem = (p, sel) => p.evaluate((sel) => { const i = document.querySelecto
 before(async () => {
   if (skip) return;
   const s = await cadastroFunciona(); if (!s.ok) { skip = s.motivo; return; }
-  srv = await servir(prepararSite()); dir = tmp(); writeFileSync(join(dir, "boneco.png"), pngTeste());
+  srv = await servir(prepararSite()); dir = tmp(); writeFileSync(join(dir, "boneco.png"), pngTeste()); writeFileSync(join(dir, "pronta.png"), pngTeste(true));
   browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
   const [ca, cb] = [await browser.newContext({ viewport: { width: 1100, height: 800 } }), await browser.newContext({ viewport: { width: 1100, height: 800 } })];
   A = await ca.newPage(); B = await cb.newPage(); vigiar("A", A); vigiar("B", B);
@@ -83,7 +83,7 @@ t("tocar mantém só a região (o resto fica esmaecido); desfazer volta; recome�
 t("salvar: a figurinha vai para 'Suas figurinhas' como PNG transparente, cortada e sem o texto escondido", async () => {
   await A.click("#stk-save"); await A.waitForSelector("#stk[open]"); await A.waitForFunction(() => document.querySelectorAll("#stk-mine .stk-item").length === 1);
   assert.match(await A.locator("#stk-count").innerText(), /^1\//);
-  const r = await imagem(A, "#stk-mine img"); assert.ok(r.w < 120 && r.w >= 40 && r.h >= 40, `cortada: ${r.w}x${r.h}`); assert.equal(r.canto[3], 0, "canto transparente");
+  const r = await imagem(A, "#stk-mine img"); assert.equal(Math.max(r.w, r.h), 512, `ampliada até 512: ${r.w}x${r.h}`); assert.ok(Math.abs(r.w - r.h) <= 24, "cortada na caixa do quadrado"); assert.equal(r.canto[3], 0, "canto transparente");
   const [b] = await biblioteca(A); assert.ok(!b.texto.includes("SEGREDO")); assert.ok(b.texto.startsWith("\x89PNG")); assert.equal(b.mime, "image/png");
 });
 t("enviar: A vê a figurinha sem balão; B recebe, com o canto transparente e botão de salvar", async () => {
@@ -129,6 +129,20 @@ t("apagar: pede confirmação, remove só da lista e não mexe nas mensagens já
   await A.locator("#stk-mine .stk-item").first().click(); await A.waitForSelector("#choice[open]"); await A.click("#choice button[value=sim]");
   await A.waitForFunction(() => document.querySelectorAll("#stk-mine .stk-item").length === 1); await A.click("#stk-close");
   assert.ok((await A.locator(".msg.mine .bubble.sticker").count()) >= 3);
+});
+t("importar vários: pronta (transparente) entra direto; foto abre o editor; 'tirar fundo' e pincel; recorte pequeno é ampliado", async () => {
+  await A.click("#sticker"); await A.waitForSelector("#stk[open]"); const antes = await A.locator("#stk-mine .stk-item").count();
+  await A.setInputFiles("#stk-file", [join(dir, "pronta.png"), join(dir, "boneco.png")]); await A.waitForSelector("#stkedit[open]");
+  await A.click("#stk-auto"); assert.equal((await pixel("#stk-canvas", 0.5, 0.5))[3], 255, "boneco mantido"); assert.ok((await pixel("#stk-canvas", 0.05, 0.05))[3] < 100, "fundo tirado");
+  await A.click("#stk-undo"); assert.equal(await A.locator("#stk-save").isDisabled(), true, "desfazer o automático zera");
+  await A.click("#stk-auto"); await A.click("#stk-mode-erase"); const b = await A.locator("#stk-canvas").boundingBox();
+  await A.mouse.move(b.x + b.width * 0.5, b.y + b.height * 0.5); await A.mouse.down(); await A.mouse.move(b.x + b.width * 0.6, b.y + b.height * 0.5, { steps: 4 }); await A.mouse.up();
+  assert.ok((await pixel("#stk-canvas", 0.55, 0.5))[3] < 100, "o pincel − apagou um pedaço"); await A.click("#stk-undo"); assert.equal((await pixel("#stk-canvas", 0.55, 0.5))[3], 255, "uma pincelada = um desfazer");
+  await A.mouse.move(b.x + b.width * 0.5, b.y + b.height * 0.45); await A.mouse.down(); await A.mouse.move(b.x + b.width * 0.55, b.y + b.height * 0.45, { steps: 3 }); await A.mouse.up(); // um corte a mais, para não repetir a figurinha de antes
+  await A.click("#stk-save"); await A.waitForSelector("#stk[open]"); await A.waitForFunction((n) => document.querySelectorAll("#stk-mine .stk-item").length === n, antes + 2);
+  const lib = await biblioteca(A); const grande = lib.find((x) => x.w === 512 || x.h === 512); assert.ok(grande, "o recorte pequeno foi ampliado até 512");
+  assert.ok(lib.some((x) => x.w === 120 && x.h === 80), "a figurinha pronta manteve o tamanho (sem recortar nem ampliar)");
+  await A.click("#stk-close");
 });
 t("limite: arquivo que não é imagem é recusado com aviso", async () => {
   await A.click("#sticker"); await A.waitForSelector("#stk[open]"); writeFileSync(join(dir, "x.txt"), "oi"); await A.setInputFiles("#stk-file", join(dir, "x.txt"));
