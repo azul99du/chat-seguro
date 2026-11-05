@@ -11,6 +11,10 @@ const $ = (id) => document.getElementById(id);
 const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 let me, myKeys, active, ikJwk;
+// Frase-senha do backup da chave: é o que um invasor com a senha de login tentaria adivinhar FORA do site, sem limite de tentativas.
+const MIN_FRASE = 16;
+const fraseFraca = (p) => p.length < MIN_FRASE ? `Use pelo menos ${MIN_FRASE} caracteres.`
+  : new Set(p).size < 8 ? "Evite repetir os mesmos caracteres: misture palavras diferentes." : "";
 let replyTo = null; // mensagem que estou respondendo: { id, from, kind, text, dur }
 const contacts = new Map(); // id -> perfil
 const unread = new Set();
@@ -127,12 +131,12 @@ async function start() {
     if (!username) { await sb.auth.signOut(); return note("Não achamos seu perfil. Crie a conta de novo na aba Criar conta."); }
     const publicKey = await createKeys(uid);
     myKeys = await getLocalKeys(uid);
-    let pass, hint = "Ela recupera suas mensagens se você trocar de aparelho. Use algo diferente da senha de login (dica: 4 palavras aleatórias) e guarde bem: não dá para redefinir.";
+    let pass, hint = "Ela recupera suas mensagens se você trocar de aparelho. Use algo diferente da senha de login (dica: cinco palavras sorteadas, como rio-lua-pedra-nuvem-cafe) e guarde bem: não dá para redefinir.";
     for (;;) {
       pass = await ask("Crie sua frase-senha", hint);
       if (pass === null) { await sb.auth.signOut(); return location.reload(); }
-      if (pass.length >= 12) break;
-      hint = "Use pelo menos 12 caracteres.";
+      const fraca = fraseFraca(pass); if (!fraca) break;
+      hint = fraca;
     }
     const { error } = await sb.from("profiles").insert({ id: uid, username, public_key: publicKey });
     if (error) {
@@ -226,6 +230,20 @@ async function limpar2faPendente() {
   await sb.auth.mfa.unenroll({ factorId: id }).catch(() => {});
 }
 async function abrirSeguranca() { await limpar2faPendente(); await desenharSeguranca(); $("mfa").showModal(); }
+async function trocarFrase() {
+  const msg = $("mfa-msg"); msg.className = ""; msg.textContent = "";
+  let hint = `Digite a NOVA frase-senha (${MIN_FRASE}+ caracteres; dica: cinco palavras sorteadas, como rio-lua-pedra-nuvem-cafe). Ela substitui a antiga.`, nova;
+  for (;;) {
+    nova = await ask("Trocar a frase-senha", hint); if (nova === null) return;
+    const fraca = fraseFraca(nova); if (!fraca) break; hint = fraca;
+  }
+  const conf = await ask("Confirme a nova frase-senha", "Digite de novo, igualzinha. Se errar, você pode perder o acesso às mensagens num aparelho novo.");
+  if (conf === null) return;
+  if (conf !== nova) { msg.textContent = "As duas frases não são iguais. Nada foi alterado."; return; }
+  if (await saveBackup(me.id, nova)) { msg.textContent = "Não foi possível salvar agora. A frase antiga continua valendo."; return; }
+  msg.className = "ok"; msg.textContent = "Frase-senha trocada. A antiga deixou de funcionar.";
+}
+$("mfa-pass").onclick = trocarFrase;
 $("sec-btn").onclick = abrirSeguranca; $("mfa-nudge").onclick = abrirSeguranca;
 $("mfa").addEventListener("close", async () => { await limpar2faPendente(); });
 $("mfa-code").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("mfa-go").click(); } });
@@ -264,7 +282,7 @@ async function offerBackup(uid) {
   for (;;) {
     const pass = await ask("Proteja suas mensagens", hint);
     if (pass === null) return;
-    if (pass.length < 12) { hint = "Use pelo menos 12 caracteres."; continue; }
+    const fraca = fraseFraca(pass); if (fraca) { hint = fraca; continue; }
     if (!(await saveBackup(uid, pass))) return;
     hint = "Não foi possível salvar. Tente de novo.";
   }

@@ -25,7 +25,7 @@ async function cadastrar(page, usuario, email) {
   await page.fill("#username", usuario); await page.fill("#email", email); await page.fill("#password", SENHA); await page.click("#auth-submit");
   await page.waitForSelector("#ask[open]", { timeout: 30000 });
   await page.fill("#ask-input", "curta"); await page.click("#ask button[value=ok]");
-  await page.waitForSelector("#ask[open] #ask-text:has-text('pelo menos 12')");               // frase curta é recusada
+  await page.waitForSelector("#ask[open] #ask-text:has-text('pelo menos 16')");               // frase curta é recusada
   await page.fill("#ask-input", FRASE); await page.click("#ask button[value=ok]");
   await page.waitForSelector("#chat:not([hidden])", { timeout: 30000 });
 }

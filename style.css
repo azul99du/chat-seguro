@@ -185,3 +185,9 @@ dialog#viewer::backdrop{background:rgba(10,12,40,.85)}
 .bubble.mine .quote{background:rgba(255,255,255,.14);color:#fff}.bubble.mine .quote .q-who{color:#FFB3C4}
 .bubble.has-media .quote{width:calc(100% - 6px);margin:3px 3px 6px}
 .msg.flash .bubble{outline:3px solid var(--seal);outline-offset:2px}
+
+/* ===== tela de bloqueio (navegador embutido / moldura) ===== */
+.bloqueio{min-height:100dvh;display:grid;align-content:center;justify-items:center;gap:16px;padding:28px;text-align:center;background-color:var(--ink);background-image:var(--hatch);color:#fff}
+.bloqueio h1{margin:0;font:800 1.7rem/1.15 var(--display)}.bloqueio p{margin:0;max-width:34ch;color:#C9CDF5}
+.bloqueio .botao{display:inline-grid;place-items:center;min-height:48px;padding:0 22px;border:0;border-radius:10px;background:var(--seal);color:#fff;font:600 1rem var(--body);text-decoration:none;cursor:pointer}
+.bloqueio .botao.sec{background:transparent;border:1.5px solid rgba(255,255,255,.4)}

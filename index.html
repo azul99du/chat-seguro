@@ -143,7 +143,7 @@
 
   <dialog id="mfa">
     <form method="dialog">
-      <h2>Verificação em dois passos</h2>
+      <h2>Segurança da conta</h2>
       <p id="mfa-status"></p>
       <div id="mfa-enroll" hidden>
         <ol class="steps">
@@ -160,6 +160,8 @@
       <div class="dialog-actions col">
         <button type="button" id="mfa-go" class="primary">Ativar</button>
         <button type="button" id="mfa-off" class="ghost" hidden>Desativar</button>
+        <button type="button" id="mfa-pass" class="ghost" aria-describedby="mfa-pass-dica">Trocar frase-senha</button>
+        <small id="mfa-pass-dica" class="muted">A frase-senha protege o backup da sua chave. Use 16+ caracteres (cinco palavras sorteadas).</small>
         <button value="cancel" class="ghost" formnovalidate>Fechar</button>
       </div>
     </form>
@@ -178,6 +180,6 @@
 
   <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
 
-  <script type="module" src="app.js"></script>
+  <script src="guarda.js"></script>
 </body>
 </html>

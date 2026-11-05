@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const raiz = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const ler = (f) => readFileSync(join(raiz, f), "utf8");
-const APP = ["app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js"];
+const APP = ["guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js"];
 const rastreados = execFileSync("git", ["ls-files"], { cwd: raiz, encoding: "utf8" }).split("\n").filter(Boolean);
 
 describe("código", () => {
@@ -22,6 +22,12 @@ describe("código", () => {
       const src = ler(f).replace(/\/\/.*$/gm, "");
       assert.doesNotMatch(src, /innerHTML|outerHTML|insertAdjacentHTML|document\.write|\beval\s*\(|new Function\s*\(/, `${f}`);
     }
+  });
+  test("o app só é carregado pelo guarda.js (que bloqueia navegadores embutidos e molduras)", () => {
+    const html = ler("index.html"), scripts = [...html.matchAll(/<script[^>]*>/g)].map((m) => m[0]);
+    assert.deepEqual(scripts, ['<script src="guarda.js">'], "index.html não pode carregar app.js diretamente");
+    assert.match(ler("guarda.js"), /import\("\.\/app\.js"\)/);
+    assert.match(ler("guarda.js"), /Instagram/); assert.match(ler("guarda.js"), /window\.top !== window\.self/);
   });
   test("nenhuma biblioteca de terceiros carregada de CDN (tudo local)", () => {
     for (const f of [...APP, "index.html"]) assert.doesNotMatch(ler(f), /(src|from)\s*=?\s*["']https?:\/\//, `${f} carrega script externo`);

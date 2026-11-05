@@ -396,3 +396,9 @@ begin
   if random() < 0.02 then delete from public.limite_uso where janela < now() - interval '1 day'; end if;
 end $$;
 revoke all on function public.consome(text, int, int) from public, anon, authenticated;
+
+-- ===== Realtime: ninguém publica em 'msgs' (migração realtime_publicar_so_presenca) =====
+-- O app só ESCUTA 'msgs' (postgres_changes) e usa 'online' para presença; a política antiga deixava qualquer conta logada publicar nos dois.
+drop policy "canais do chat: logados anunciam" on realtime.messages;
+create policy "canais do chat: logados anunciam" on realtime.messages
+  for insert to authenticated with check (realtime.topic() = 'online');

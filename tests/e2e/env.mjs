@@ -24,7 +24,7 @@ export const apiKey = SUPABASE_KEY;
 
 // Cópia do site com a URL/chave (config.js e CSP do index.html) trocadas pelas do projeto de teste.
 export function prepararSite() {
-  const dir = tmp(), arquivos = ["index.html", "style.css", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "config.js", "favicon.svg", "favicon.ico", "apple-touch-icon.png"];
+  const dir = tmp(), arquivos = ["index.html", "style.css", "guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "config.js", "favicon.svg", "favicon.ico", "apple-touch-icon.png"];
   for (const f of arquivos) cpSync(join(raiz, f), join(dir, f));
   cpSync(join(raiz, "vendor"), join(dir, "vendor"), { recursive: true });
   const host = (u) => new URL(u).host;

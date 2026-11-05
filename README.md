@@ -79,3 +79,12 @@ No menu de cada mensagem (botão **+**) há **Responder**: texto, foto, vídeo o
 - A citação (id da original, autor e um resumo de até 80 caracteres) viaja **dentro da mensagem cifrada**: o servidor não vê qual mensagem foi respondida, e nenhuma mudança no banco foi necessária. Fica no histórico local, então volta ao recarregar.
 - **Anti-forja:** o que chega de outra pessoa é validado (`reply.js`, com testes) e, quando a mensagem original está na tela, o texto e o autor mostrados vêm **dela**, não do resumo recebido. Assim, um amigo mal-intencionado não consegue fazer parecer que você escreveu algo que não escreveu. Se a original não está carregada (mensagens muito antigas), mostra o resumo recebido em itálico e avisa ao tocar.
 - Reações e mensagens de controle não são citáveis; responder a uma resposta cita só a mensagem anterior (sem aninhar).
+
+## Guarda de entrada (`guarda.js`)
+O `index.html` não carrega o app direto: carrega o `guarda.js`, que decide primeiro e só então faz `import("./app.js")`.
+- **Navegadores embutidos** (Instagram, Facebook, Messenger, TikTok, Snapchat, WebView genérica do Android...) são **bloqueados**: o aplicativo que hospeda a tela consegue executar código dentro da página e ler o que aparece nela (mensagens já decifradas) e o que ela guarda. A tela de bloqueio ensina a abrir no navegador de verdade (no Android há botão que tenta abrir direto no Chrome). Quando bloqueia, o app **nem é carregado**: nenhuma chave é aberta e nenhum banco local é criado.
+- **Dentro de moldura (iframe) de outro site:** também bloqueado (clique disfarçado). O GitHub Pages não deixa mandar o cabeçalho `frame-ancestors`, então esta é a defesa possível; com Cloudflare Pages dá para usar cabeçalhos de verdade.
+- Limite honesto: o Safari View Controller do iPhone não se identifica, então não dá para detectá-lo.
+
+## Frase-senha do backup
+Mínimo de **16 caracteres** (e pelo menos 8 diferentes) para frases novas; "Segurança da conta → Trocar frase-senha" permite fortalecer uma frase antiga (pede confirmação digitada duas vezes). É o ponto que decide o dano se alguém descobrir a senha de login de uma conta sem 2FA: o backup cifrado pode ser atacado fora do site, sem limite de tentativas. Cinco palavras sorteadas ("rio-lua-pedra-nuvem-cafe") aguentam; "eduardo2026!" não.
