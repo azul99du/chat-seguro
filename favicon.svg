@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Lacre">
+  <defs>
+    <radialGradient id="cera" cx="36%" cy="30%" r="75%">
+      <stop offset="0" stop-color="#FF8DA8"/>
+      <stop offset=".45" stop-color="#E8335F"/>
+      <stop offset="1" stop-color="#B81E45"/>
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#15174A"/>
+  <circle cx="32" cy="32" r="21" fill="url(#cera)"/>
+  <circle cx="32" cy="32" r="21" fill="none" stroke="#B81E45" stroke-width="2" opacity=".55"/>
+  <rect x="28.5" y="20" width="7" height="24" rx="3.5" fill="#15174A" opacity=".85"/>
+</svg>

@@ -35,6 +35,20 @@ describe("código", () => {
   });
 });
 
+describe("ícones do site", () => {
+  test("favicon (svg e ico) e ícone do iOS existem e estão ligados no index.html", () => {
+    const html = ler("index.html");
+    for (const [rel, arq] of [["icon", "favicon.svg"], ["icon", "favicon.ico"], ["apple-touch-icon", "apple-touch-icon.png"]]) {
+      assert.match(html, new RegExp(`<link rel="${rel}" href="${arq.replace(".", "\\.")}"`), arq);
+      assert.ok(existsSync(join(raiz, arq)), `${arq} não existe`);
+    }
+    assert.match(readFileSync(join(raiz, "favicon.svg"), "utf8"), /<svg[^>]+viewBox/);
+    assert.doesNotMatch(readFileSync(join(raiz, "favicon.svg"), "utf8"), /<script|onload|href=["']http/i, "SVG sem script nem recursos externos");
+    assert.deepEqual([...readFileSync(join(raiz, "favicon.ico")).subarray(0, 4)], [0, 0, 1, 0], "cabeçalho ICO");
+    assert.deepEqual([...readFileSync(join(raiz, "apple-touch-icon.png")).subarray(0, 4)], [0x89, 0x50, 0x4e, 0x47], "PNG");
+  });
+});
+
 describe("política de segurança do navegador (CSP)", () => {
   const html = ler("index.html"), csp = html.match(/Content-Security-Policy"\s+content="([^"]+)"/)?.[1] ?? "";
   const dir = (n) => csp.split(";").map((s) => s.trim()).find((s) => s.startsWith(n + " ")) ?? "";
