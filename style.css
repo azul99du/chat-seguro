@@ -46,10 +46,29 @@ label{display:grid;gap:6px;font-size:.85rem;font-weight:600;color:var(--mut)}
 
 /* ===== mensagens ===== */
 .bubble{color:var(--ink);max-width:min(78%,520px);padding:9px 13px 7px;border-radius:16px 16px 16px 4px;background:var(--card);border:1.5px solid var(--line);overflow-wrap:anywhere}
-.bubble.mine{align-self:flex-end;background:var(--ink);border-color:var(--ink);color:#fff;border-radius:16px 16px 4px 16px}
+.bubble.mine{background:var(--ink);border-color:var(--ink);color:#fff;border-radius:16px 16px 4px 16px}
 .bubble.err{background:transparent;border-style:dashed;color:var(--mut);font-style:italic}
 .bubble.deciphering .vis{color:var(--seal)}
-.bubble time{display:block;margin-top:3px;font:400 .7rem var(--mono);opacity:.6;text-align:right}
+.msg{display:flex;flex-direction:column;align-items:flex-start;max-width:min(80%,520px)}
+.msg.mine{align-self:flex-end;align-items:flex-end}
+.msg .bubble{max-width:100%}
+.line{display:flex;align-items:center;gap:2px;max-width:100%}.msg.mine .line{flex-direction:row-reverse}
+.meta{display:flex;justify-content:flex-end;gap:8px;margin-top:3px;font:400 .7rem var(--mono);opacity:.7}
+.rcpt.read{color:#7EE0A4;opacity:1}
+.react-btn{flex:none;width:44px;height:44px;min-height:44px;padding:0;background:none;color:var(--mut);font-size:1.3rem;opacity:0;border-radius:50%}
+.msg:hover .react-btn,.react-btn:focus-visible{opacity:1}
+@media(hover:none){.react-btn{opacity:.55}}
+.rx{display:flex;gap:4px;margin:-8px 10px 0;position:relative;z-index:1}.rx:empty{display:none}
+.chip{position:relative;min-height:28px;padding:0 8px;border-radius:999px;background:var(--card);border:1.5px solid var(--line);font-size:.95rem}
+.chip::after{content:"";position:absolute;inset:-9px -4px}
+.chip.mine{border-color:var(--seal);background:#FFF0F4}
+.picker{display:flex;gap:0;margin-top:6px;padding:2px 4px;background:var(--card);border:1.5px solid var(--line);border-radius:999px;box-shadow:0 6px 20px rgba(21,23,74,.18)}
+.picker button{min-width:44px;padding:0;background:none;font-size:1.35rem;border-radius:50%}.picker button:hover{background:var(--paper)}
+.title-box{flex:1;min-width:0}
+.status{display:flex;align-items:center;gap:6px;font:400 .75rem var(--mono);color:#7EE0A4}
+.dot{width:8px;height:8px;border-radius:50%;background:#3DDC84;display:inline-block}
+.avatar{position:relative}.avatar.on::after{content:"";position:absolute;right:-1px;bottom:-1px;width:12px;height:12px;border-radius:50%;background:#2FBF71;border:2px solid var(--card)}
+.who{display:grid;line-height:1.2}.who small{font:400 .72rem var(--mono);color:#137A3F}
 .cipher{font:400 .75rem var(--mono);color:#9FA5E8;letter-spacing:.04em;overflow:hidden;white-space:nowrap}
 
 /* ===== conversas ===== */
@@ -66,7 +85,7 @@ label{display:grid;gap:6px;font-size:.85rem;font-weight:600;color:var(--mut)}
 .unread{margin-left:auto;width:10px;height:10px;border-radius:50%;background:var(--seal)}
 .empty{margin:0;padding:24px 20px;color:var(--mut);max-width:34ch}
 #conv{display:flex;flex-direction:column;min-height:0;position:relative}
-#conv-title{font:700 1.25rem var(--display);flex:1}
+#conv-title{font:700 1.25rem var(--display)}
 .badge{display:flex;align-items:center;gap:6px;font:400 .75rem var(--mono);color:#C9CDF5;white-space:nowrap}.badge .seal{width:11px;height:11px;margin:0}
 #messages{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:8px}
 #conv-empty{position:absolute;inset:64px 0 0;display:grid;place-content:center;justify-items:center;text-align:center;
