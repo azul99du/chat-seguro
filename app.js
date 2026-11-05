@@ -16,9 +16,11 @@ let online = new Set(); // ids de quem está online agora
 const msgs = new Map(), reactions = new Map(); // mensagens/reações da conversa aberta
 
 // ---------- Diálogos ----------
-function ask(title, text) {
+function ask(title, text, { codigo = false } = {}) {
   const d = $("ask"), i = $("ask-input");
   $("ask-title").textContent = title; $("ask-text").textContent = text;
+  i.type = codigo ? "text" : "password"; i.inputMode = codigo ? "numeric" : "text"; i.autocomplete = codigo ? "one-time-code" : "off";
+  codigo ? (i.maxLength = 6) : i.removeAttribute("maxlength");
   i.value = ""; d.returnValue = ""; d.showModal(); i.focus();
   return new Promise((res) => { d.onclose = () => res(d.returnValue === "ok" ? i.value : null); });
 }
@@ -113,6 +115,7 @@ $("logout").onclick = async () => {
 async function start() {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) return;
+  if (await precisaDoisPassos() && !(await pedirCodigoLogin())) { await sb.auth.signOut(); return location.reload(); } // sem o código, nada abre
   const uid = session.user.id;
   let { data: prof } = await sb.from("profiles").select("id,username,public_key").eq("id", uid).maybeSingle();
   myKeys = await getLocalKeys(uid);
@@ -158,6 +161,7 @@ async function start() {
   $("auth").hidden = true; $("chat").hidden = false;
   ensureSpk();
   await loadContacts();
+  atualizarAviso2fa();
   sb.channel("msgs", { config: { private: true } })
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `recipient_id=eq.${uid}` }, (p) => onIncoming(p.new))
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `sender_id=eq.${uid}` }, (p) => {
@@ -175,6 +179,78 @@ async function start() {
   document.addEventListener("visibilitychange", markRead);
   addEventListener("focus", markRead);
 }
+
+// ---------- Verificação em dois passos (código de app autenticador, TOTP) ----------
+const erro2fa = (e) => /rate limit|too many/i.test(e?.message || "") ? "Muitas tentativas. Espere um pouco e tente de novo."
+  : /invalid totp|invalid/i.test(e?.message || "") ? "Código incorreto ou vencido. Confira a hora do celular e digite o próximo código."
+  : "Não foi possível verificar agora. Tente de novo.";
+// Se o IP mudar entre pedir e conferir o desafio, o Supabase recusa: tentamos de novo uma vez.
+async function verificarCodigo(factorId, code) {
+  for (let i = 0; i < 2; i++) {
+    const ch = await sb.auth.mfa.challenge({ factorId }); if (ch.error) return ch.error;
+    const v = await sb.auth.mfa.verify({ factorId, challengeId: ch.data.id, code });
+    if (!v.error || !/ip addresses mismatch/i.test(v.error.message)) return v.error;
+  }
+  return new Error("mismatch");
+}
+async function precisaDoisPassos() {
+  const { data } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+  return data?.nextLevel === "aal2" && data.currentLevel !== "aal2";
+}
+async function pedirCodigoLogin() {
+  const f = (await sb.auth.mfa.listFactors()).data?.totp?.[0]; if (!f) return false;
+  let dica = "Abra o app autenticador e digite o código de 6 dígitos do Lacre.";
+  for (;;) {
+    const code = await ask("Verificação em dois passos", dica, { codigo: true });
+    if (code === null) return false;
+    const err = await verificarCodigo(f.id, code.trim()); if (!err) return true;
+    dica = erro2fa(err);
+  }
+}
+let pendente2fa = null; // fator cadastrado mas ainda não confirmado
+async function ativo2fa() { return (await sb.auth.mfa.listFactors()).data?.totp?.[0] ?? null; }
+async function atualizarAviso2fa() { $("mfa-nudge").hidden = !!(await ativo2fa()); }
+async function desenharSeguranca() {
+  const ativo = await ativo2fa(), msg = $("mfa-msg"); msg.textContent = ""; msg.className = "";
+  $("mfa-enroll").hidden = !pendente2fa; $("mfa-off").hidden = !ativo || !!pendente2fa;
+  $("mfa-go").hidden = !!ativo && !pendente2fa;
+  $("mfa-go").textContent = pendente2fa ? "Confirmar código" : "Ativar";
+  $("mfa-status").textContent = pendente2fa ? "Falta só confirmar: digite o código que o app mostra."
+    : ativo ? "Ativada. Além da senha, o Lacre pede um código do seu app autenticador a cada novo login. Sem o código, ninguém abre a conta, mesmo sabendo a senha."
+    : "Desativada. Com ela, uma senha descoberta não basta para entrar na sua conta.";
+}
+async function limpar2faPendente() {
+  if (!pendente2fa) return; const id = pendente2fa; pendente2fa = null;
+  await sb.auth.mfa.unenroll({ factorId: id }).catch(() => {});
+}
+async function abrirSeguranca() { await limpar2faPendente(); await desenharSeguranca(); $("mfa").showModal(); }
+$("sec-btn").onclick = abrirSeguranca; $("mfa-nudge").onclick = abrirSeguranca;
+$("mfa").addEventListener("close", async () => { await limpar2faPendente(); });
+$("mfa-code").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("mfa-go").click(); } });
+$("mfa-go").onclick = async () => {
+  const msg = $("mfa-msg"); msg.className = ""; msg.textContent = "";
+  if (!pendente2fa) {
+    const { data: lista } = await sb.auth.mfa.listFactors(); // restos de tentativas anteriores
+    for (const f of lista?.all ?? []) if (f.status === "unverified") await sb.auth.mfa.unenroll({ factorId: f.id }).catch(() => {});
+    const en = await sb.auth.mfa.enroll({ factorType: "totp", friendlyName: "Lacre " + new Date().toISOString().slice(0, 16) });
+    if (en.error) { msg.textContent = "Não foi possível iniciar agora. Tente de novo."; return; }
+    pendente2fa = en.data.id; $("mfa-qr").src = en.data.totp.qr_code; $("mfa-secret").textContent = en.data.totp.secret;
+    await desenharSeguranca(); $("mfa-code").value = ""; $("mfa-code").focus(); return;
+  }
+  const err = await verificarCodigo(pendente2fa, $("mfa-code").value.trim());
+  if (err) { msg.textContent = erro2fa(err); $("mfa-code").select(); return; }
+  pendente2fa = null; await desenharSeguranca(); atualizarAviso2fa();
+  $("mfa-msg").className = "ok"; $("mfa-msg").textContent = "Pronto! A verificação em dois passos está ativada.";
+};
+$("mfa-off").onclick = async () => {
+  const r = await choose("Desativar a verificação em dois passos?", "Sua conta voltará a abrir só com e-mail e senha.", [
+    { label: "Desativar", value: "sim", cls: "primary" }, { label: "Manter ativada", value: "", cls: "ghost" }]);
+  if (r !== "sim") return;
+  const f = await ativo2fa(); if (!f) return;
+  const { error } = await sb.auth.mfa.unenroll({ factorId: f.id });
+  if (error) { $("mfa-msg").textContent = "Não foi possível desativar agora. Tente de novo."; return; }
+  await desenharSeguranca(); atualizarAviso2fa();
+};
 
 async function saveBackup(uid, pass) {
   const backup = await makeBackup(uid, pass);

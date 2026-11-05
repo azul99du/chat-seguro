@@ -65,3 +65,10 @@ No GitHub Actions (`.github/workflows/ci.yml`) isso roda a cada push, usando o p
 **Monitoramento:** `supabase/monitoramento.sql` tem consultas prontas (contas novas, quem manda muito, quem bate nos limites, armazenamento, último acesso). Os logs de acesso (países/redes, erros 4xx/5xx, falhas de login) ficam em *Logs* no painel do Supabase e podem ser consultados por aqui com o conector.
 
 **Login:** o Supabase Auth só limita depois de centenas de tentativas por minuto de um mesmo IP (medido: o primeiro bloqueio veio após ~340 tentativas em ~8 s), e senhas erradas não bloqueiam a conta. Por isso: senha nova com 12+ caracteres, e no painel (Authentication) reduzir os limites de tentativas e exigir senha mínima de 12. A mensagem protegida não depende da senha de login: sem a chave do aparelho (ou a frase-senha) o atacante não lê nada.
+
+## Verificação em dois passos (TOTP)
+Opcional por conta: botão do escudo no cabeçalho da lista → "Ativar" → escanear o QR num app autenticador (Google Authenticator, Authy, Microsoft Authenticator…) → digitar o código de 6 dígitos.
+- Depois de ativada, o login pede o código **antes** de qualquer coisa (inclusive antes da frase-senha num aparelho novo). Recarregar a página não pede de novo; entrar numa sessão nova, sim.
+- **Vale no banco, não só no site:** as tabelas, o storage e o realtime têm políticas *restritivas* (`public.mfa_ok()`): uma sessão só com senha não lê perfil, mensagens nem backup da chave, não envia, não busca amigos nem lista arquivos. Desativar também exige o 2º passo.
+- **Perdeu o celular?** Cadastre o mesmo QR/chave em dois aparelhos assim que ativar. Se perder todos, o administrador remove o fator (SQL em `supabase/monitoramento.sql`, item 9) depois de confirmar que é a pessoa.
+- **Chutar o código:** o Supabase limita as verificações por IP (medido: bloqueio após ~30 tentativas em segundos). Em *Authentication → Rate Limits*, deixe **"token verifications"** em 5 por 5 minutos: é esse limite que protege o código de 6 dígitos.

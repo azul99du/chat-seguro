@@ -50,13 +50,18 @@
     <aside id="inbox">
       <header class="bar">
         <div class="wordmark small">lacre<i class="seal" aria-hidden="true"></i></div>
-        <div class="me-box"><span id="me"></span><button id="logout" class="ghost">Sair</button></div>
+        <div class="me-box"><span id="me"></span>
+          <button id="sec-btn" class="ghost icon" aria-label="Segurança da conta (verificação em dois passos)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>
+          </button>
+          <button id="logout" class="ghost">Sair</button></div>
       </header>
       <form id="add-form">
         <label class="sr" for="add-user">Chamar um amigo</label>
         <input id="add-user" placeholder="@usuário do amigo" autocapitalize="none" spellcheck="false" pattern="@?[a-zA-Z0-9_]{3,20}" required>
         <button class="primary" aria-label="Abrir conversa">Chamar</button>
       </form>
+      <button id="mfa-nudge" class="nudge" hidden>Proteja sua conta: ative a verificação em dois passos</button>
       <ul id="contacts"></ul>
       <p id="inbox-empty" class="empty">Ninguém por aqui ainda. Digite o @usuário de um amigo acima para começar.</p>
     </aside>
@@ -124,6 +129,30 @@
   </dialog>
 
   <dialog id="viewer"><img id="viewer-img" alt="Foto ampliada"></dialog>
+
+  <dialog id="mfa">
+    <form method="dialog">
+      <h2>Verificação em dois passos</h2>
+      <p id="mfa-status"></p>
+      <div id="mfa-enroll" hidden>
+        <ol class="steps">
+          <li>Abra um app autenticador (Google Authenticator, Authy, Microsoft Authenticator…).</li>
+          <li>Escaneie o QR code, ou digite a chave abaixo.</li>
+          <li>Digite aqui o código de 6 dígitos que o app mostrar.</li>
+        </ol>
+        <img id="mfa-qr" alt="QR code para o app autenticador" width="180" height="180">
+        <p class="muted">Chave manual: <code id="mfa-secret"></code></p>
+        <label class="sr" for="mfa-code">Código de 6 dígitos</label>
+        <input id="mfa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000">
+      </div>
+      <p id="mfa-msg" role="status"></p>
+      <div class="dialog-actions col">
+        <button type="button" id="mfa-go" class="primary">Ativar</button>
+        <button type="button" id="mfa-off" class="ghost" hidden>Desativar</button>
+        <button value="cancel" class="ghost" formnovalidate>Fechar</button>
+      </div>
+    </form>
+  </dialog>
 
   <dialog id="choice"><form method="dialog"><h2 id="choice-title"></h2><p id="choice-text"></p><div class="dialog-actions col" id="choice-actions"></div></form></dialog>
 

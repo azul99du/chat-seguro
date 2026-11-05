@@ -31,3 +31,11 @@ where o.bucket_id = 'media' group by p.username order by mb desc;
 
 -- 7) Último acesso de cada conta
 select p.username, u.last_sign_in_at from public.profiles p join auth.users u on u.id = p.id order by u.last_sign_in_at desc;
+
+-- 8) Quem ativou a verificação em dois passos
+select p.username, count(f.id) filter (where f.status = 'verified') as fatores_ativos, max(f.created_at) as ativada_em
+from public.profiles p left join auth.mfa_factors f on f.user_id = p.id group by p.username order by p.username;
+
+-- 9) RECUPERAÇÃO: alguém perdeu o celular do autenticador e não consegue entrar?
+-- (rode SÓ depois de confirmar com a pessoa que é ela mesma; a conta volta a abrir só com e-mail e senha)
+-- delete from auth.mfa_factors where user_id = (select id from public.profiles where username = 'NOME_DO_USUARIO');

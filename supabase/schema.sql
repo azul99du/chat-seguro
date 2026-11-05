@@ -355,3 +355,44 @@ begin
 end $$;
 create trigger limita_lote_prekeys after insert on public.prekeys
   referencing new table as novas for each statement execute function public.limita_lote_prekeys();
+
+-- ===== VERIFICAÇÃO EM DOIS PASSOS (migração dois_passos_no_banco) =====
+-- Verdadeiro se a pessoa NÃO ativou a verificação, ou se a sessão já passou por ela (aal2)
+create or replace function public.mfa_ok() returns boolean
+language sql stable security definer set search_path = public, auth as $$
+  select coalesce((select auth.jwt() ->> 'aal'), 'aal1') = 'aal2'
+      or not exists (select 1 from auth.mfa_factors f
+                     where f.user_id = (select auth.uid()) and f.status = 'verified')
+$$;
+revoke all on function public.mfa_ok() from public, anon, authenticated;
+grant execute on function public.mfa_ok() to authenticated;
+
+-- Políticas RESTRITIVAS (somam-se às existentes): sem o 2º passo, quem ativou a verificação não acessa nada
+create policy "exige dois passos" on public.profiles          as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+create policy "exige dois passos" on public.messages          as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+create policy "exige dois passos" on public.reactions         as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+create policy "exige dois passos" on public.key_backups       as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+create policy "exige dois passos" on public.chat_backgrounds  as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+create policy "exige dois passos" on public.prekeys           as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+create policy "exige dois passos" on storage.objects          as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+create policy "exige dois passos" on realtime.messages        as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+
+-- As funções de busca também exigem (passam por consome)
+create or replace function public.consome(p_funcao text, p_max_min int, p_max_hora int) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := auth.uid(); m int; h int;
+begin
+  if u is null then raise exception 'nao autenticado' using errcode = '42501'; end if;
+  if not public.mfa_ok() then raise exception 'verificacao em dois passos pendente' using errcode = '42501'; end if;
+  insert into public.limite_uso (user_id, funcao, janela, n)
+    values (u, p_funcao, date_trunc('minute', now()), 1)
+    on conflict (user_id, funcao, janela) do update set n = public.limite_uso.n + 1
+    returning n into m;
+  select coalesce(sum(n), 0) into h from public.limite_uso
+    where user_id = u and funcao = p_funcao and janela > now() - interval '1 hour';
+  if m > p_max_min or h > p_max_hora then
+    raise exception 'limite de uso atingido: espere um pouco' using errcode = 'PT429', hint = 'rate_limit';
+  end if;
+  if random() < 0.02 then delete from public.limite_uso where janela < now() - interval '1 day'; end if;
+end $$;
+revoke all on function public.consome(text, int, int) from public, anon, authenticated;

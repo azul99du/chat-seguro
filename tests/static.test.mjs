@@ -74,6 +74,13 @@ describe("banco (supabase/schema.sql)", () => {
     assert.match(sql, /perform public\.consome\('find_user'/); assert.match(sql, /perform public\.consome\('get_prekey'/);
     assert.match(sql, /with check[\s\S]*public\.pode_enviar_arquivo\(\)/);
   });
+  test("toda tabela do app exige o 2º passo (política restritiva) para quem ativou a verificação", () => {
+    const tabelas = [...sql.matchAll(/create table public\.(\w+)/g)].map((m) => m[1]).filter((n) => n !== "limite_uso");
+    for (const tb of [...tabelas, "storage.objects", "realtime.messages"].map((n) => n.replace(/^(?!storage|realtime)/, "public."))) {
+      assert.match(sql, new RegExp(`create policy "exige dois passos" on ${tb.replace(".", "\\.")}\\s+as restrictive`), tb);
+    }
+    assert.match(sql, /if not public\.mfa_ok\(\) then raise exception/, "as buscas (consome) também exigem");
+  });
   test("só mensagens com sigilo futuro (v=2) podem ser inseridas", () => {
     const ultima = [...sql.matchAll(/create policy "envia como si mesmo"[\s\S]*?;/g)].pop()[0];
     assert.match(ultima, /v = 2/);
