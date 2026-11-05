@@ -28,7 +28,8 @@ before(async () => {
   mid = (await a.c.from("messages").insert({ ...base(b.id), v: 2, header: hdr() }).select().single()).data.id;
   mid2 = (await x.c.from("messages").insert({ ...base(b.id), v: 2, header: hdr() }).select().single()).data.id;
 });
-const t = (nome, fn) => test(nome, { skip: () => skip }, fn);
+// "skip" só é conhecido depois do before(): por isso a decisão é tomada dentro de cada teste
+const t = (nome, fn) => test(nome, async (ctx) => (skip ? ctx.skip(skip) : fn(ctx)));
 
 t("o invasor não lista os perfis de quem nunca contatou", async () => {
   const r = await x.c.from("profiles").select("id"); // x contatou só b

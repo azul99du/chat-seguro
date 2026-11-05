@@ -10,7 +10,12 @@ import { hasFfmpeg, tmp, makeVideo, makeJpegWithExif } from "../helpers/fixtures
 let skip = configurado ? false : motivoSemConfig;
 let browser, srv, A, B, ctxA, ctxB, N, dirFix, foto, video, nomeB, emailA, nomeA;
 const enviados = [], erros = [];
-const t = (nome, fn, opts = {}) => test(nome, { skip: () => skip || (opts.ffmpeg && !hasFfmpeg() && "ffmpeg não instalado"), timeout: 120000 }, fn);
+// "skip" só é conhecido depois do before(): por isso a decisão é tomada dentro de cada teste
+const t = (nome, fn, opts = {}) => test(nome, { timeout: 120000 }, async (ctx) => {
+  const motivo = skip || (opts.ffmpeg && !hasFfmpeg() && "ffmpeg não instalado");
+  if (motivo) return ctx.skip(motivo);
+  return fn(ctx);
+});
 const textos = (p) => p.locator(".msg .vis").allInnerTexts().then((l) => l.filter((x) => x.trim()));
 const enviar = async (p, txt) => { await p.fill("#text", txt); await p.click("#send-form .primary"); };
 const vista = (p, txt, timeout = 25000) => p.waitForSelector(`.msg:not(.mine) .vis:has-text("${txt}")`, { timeout });
@@ -25,7 +30,7 @@ async function cadastrar(page, usuario, email) {
   await page.waitForSelector("#chat:not([hidden])", { timeout: 30000 });
 }
 function vigiar(nome, page) {
-  page.on("pageerror", (e) => erros.push(`${nome} pageerror: ${e.message}`));
+  page.on("pageerror", (e) => erros.push(`${nome} pageerror: ${e.message} @ ${(e.stack || "").split("\n").slice(1, 4).join(" | ")}`));
   page.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) erros.push(`${nome} console: ${m.text().slice(0, 200)}`); });
   page.on("request", (r) => { const m = r.url().match(/\/storage\/v1\/object\/media\/(.+)$/); if (m && r.method() === "POST") enviados.push({ page, path: decodeURIComponent(m[1]) }); });
 }
@@ -94,14 +99,15 @@ t("foto: metadados (EXIF/GPS/modelo) são removidos, a rotação é aplicada e o
 }, { ffmpeg: true });
 t("vídeo: o amigo só baixa ao tocar; toca; e o arquivo no servidor é cifrado", async () => {
   const guardados = [];
-  A.on("response", async (r) => { if (/\/storage\/v1\/object\/authenticated\/media\//.test(r.url())) guardados.push(await r.body().catch(() => null)); });
+  A.on("response", async (r) => { if (r.request().method() === "GET" && /\/storage\/v1\/object\/(authenticated\/)?media\//.test(r.url())) guardados.push(await r.body().catch(() => null)); });
   await B.setInputFiles("#file", video); await B.waitForSelector("#pending-info.ok", { timeout: 25000 }); await B.click("#send-form .primary");
   await A.waitForSelector(".msg:not(.mine) .media button.ph", { timeout: 30000 });
   await A.click(".msg:not(.mine) .media button.ph");
   await A.waitForFunction(() => { const v = document.querySelector(".msg:not(.mine) video"); return v && v.readyState >= 1; }, null, { timeout: 30000 });
   const [w, d] = await A.evaluate(() => { const v = document.querySelector(".msg:not(.mine) video"); return [v.videoWidth, Math.round(v.duration)]; });
   assert.deepEqual([w, d], [320, 2]);
-  const bin = guardados.filter(Boolean); assert.ok(bin.length > 0);
+  for (let i = 0; i < 50 && !guardados.filter(Boolean).length; i++) await A.waitForTimeout(100); // o corpo da resposta chega de forma assíncrona
+  const bin = guardados.filter(Boolean); assert.ok(bin.length > 0, "nenhum arquivo do storage foi capturado");
   for (const b of bin) assert.ok(!(b[0] === 0xff && b[1] === 0xd8) && !b.includes(Buffer.from("ftyp")), "o servidor guarda só bytes cifrados");
 }, { ffmpeg: true });
 t("fundo da conversa: aplica, persiste ao recarregar e é pessoal (B não vê)", async () => {
@@ -144,7 +150,7 @@ t("aparelho novo: mensagens antigas com sigilo futuro ficam indisponíveis; a se
   await N.fill("#ask-input", FRASE); await N.click("#ask button[value=ok]"); await N.waitForSelector("#chat:not([hidden])", { timeout: 30000 });
   await N.waitForTimeout(1500); await N.fill("#add-user", nomeB); await N.click("#add-form button");
   await N.waitForSelector(`#conv-title:has-text("@${nomeB}")`); await N.waitForSelector(".bubble.err", { timeout: 30000 });
-  assert.ok((await N.locator(".bubble.err").count()) >= 5);
+  await N.waitForFunction(() => document.querySelectorAll(".bubble.err").length >= 5, null, { timeout: 30000 }); // a lista carrega em sequência
   await B.waitForTimeout(3000); await enviar(B, "depois de refazer a sessão");
   await vista(N, "depois de refazer a sessão", 40000);
   await enviar(N, "respondendo do aparelho novo"); await vista(B, "respondendo do aparelho novo");
@@ -152,11 +158,13 @@ t("aparelho novo: mensagens antigas com sigilo futuro ficam indisponíveis; a se
 t("anônimo não entra no canal privado de presença", async () => {
   const r = await A.evaluate(async ({ url, key }) => {
     const { createClient } = await import("/vendor/supabase.js"); const c = createClient(url, key, { auth: { persistSession: false } });
-    return new Promise((res) => { const ch = c.channel("online", { config: { private: true } }); const to = setTimeout(() => res("timeout"), 8000); ch.subscribe((s) => { if (["SUBSCRIBED", "CHANNEL_ERROR", "TIMED_OUT", "CLOSED"].includes(s)) { clearTimeout(to); res(s); c.removeChannel(ch); } }); });
+    return new Promise((res) => { let fim = false; const ch = c.channel("online", { config: { private: true } }); const to = setTimeout(() => { if (!fim) { fim = true; res("timeout"); } }, 8000);
+      ch.subscribe((s) => { if (fim || !["SUBSCRIBED", "CHANNEL_ERROR", "TIMED_OUT", "CLOSED"].includes(s)) return; fim = true; clearTimeout(to); res(s); setTimeout(() => c.removeChannel(ch), 0); }); }); // fim evita recursão: removeChannel dispara CLOSED
   }, { url: SUPABASE_URL, key: SUPABASE_KEY });
   assert.notEqual(r, "SUBSCRIBED");
 });
 t("layout: a página nunca cresce; só a lista de mensagens rola", async () => {
+  if (await A.locator("#send-form").isHidden()) { await A.click("#contacts button"); await A.waitForSelector("#send-form:not([hidden])"); }
   for (let i = 0; i < 20; i++) await enviar(A, "enchimento " + i);
   await A.waitForTimeout(800);
   const l = await A.evaluate(() => ({ w: innerHeight, d: document.scrollingElement.scrollHeight, c: Math.round(document.getElementById("chat").getBoundingClientRect().height), rola: document.getElementById("messages").scrollHeight > document.getElementById("messages").clientHeight }));
