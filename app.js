@@ -1,5 +1,7 @@
 import { createClient } from "./vendor/supabase.js";
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js";
+import { commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js";
 import { cleanImage, cleanVideo, sealBytes, openBytes } from "./media.js";
 import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js";
 
@@ -7,7 +9,7 @@ const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-let me, myKeys, active;
+let me, myKeys, active, ikJwk;
 const contacts = new Map(); // id -> perfil
 const unread = new Set();
 let online = new Set(); // ids de quem está online agora
@@ -96,12 +98,12 @@ $("auth-form").onsubmit = async (e) => {
   } finally { $("auth-submit").disabled = false; }
 };
 $("logout").onclick = async () => {
-  const r = await choose("Sair", "Se este aparelho é compartilhado, apague também as chaves dele. Você as restaura depois com a sua frase-senha.", [
+  const r = await choose("Sair", "Se este aparelho é compartilhado, apague também as chaves dele. Você restaura a chave com a frase-senha, mas o histórico novo (com sigilo futuro) fica só neste aparelho e será apagado de vez.", [
     { label: "Só sair", value: "keep", cls: "primary" },
     { label: "Sair e apagar chaves deste aparelho", value: "wipe", cls: "ghost" },
     { label: "Cancelar", value: "", cls: "ghost" }]);
   if (!r) return;
-  if (r === "wipe" && me) await deleteLocalKeys(me.id);
+  if (r === "wipe" && me) { await deleteLocalKeys(me.id); await wipeLocal(me.id); }
   await sb.auth.signOut(); location.reload();
 };
 
@@ -146,18 +148,19 @@ async function start() {
     myKeys = await getLocalKeys(uid);
   }
 
+  ikJwk = await crypto.subtle.exportKey("jwk", myKeys.privateKey); // usada só em memória, para o acordo de chaves
   me = prof;
   const { data: hasBk } = await sb.from("key_backups").select("user_id").maybeSingle();
   if (!hasBk) await offerBackup(uid);
   $("me").textContent = "@" + me.username;
   $("auth").hidden = true; $("chat").hidden = false;
+  ensureSpk();
   await loadContacts();
   sb.channel("msgs", { config: { private: true } })
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `recipient_id=eq.${uid}` }, (p) => onIncoming(p.new))
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `sender_id=eq.${uid}` }, (p) => {
       const e = msgs.get(p.new.id); if (e) { e.m.read_at = p.new.read_at; setReceipt(e); }
     })
-    .on("postgres_changes", { event: "*", schema: "public", table: "reactions" }, onReaction)
     .subscribe();
 
   // quem está online: presença em tempo real (some sozinha ao fechar o site)
@@ -236,7 +239,6 @@ function setReceipt(e) {
 }
 
 // Mensagens novas viajam como texto simples; só viram JSON quando precisam (mídia, ou texto que começa com "{")
-const packText = (t) => (t.startsWith("{") ? JSON.stringify({ v: 1, type: "text", text: t }) : t);
 function unpack(s) {
   if (s.startsWith('{"v":1')) {
     try { const o = JSON.parse(s); if (o.type === "text") return { type: "text", text: String(o.text) }; if (o.type === "media") return o; } catch {}
@@ -338,34 +340,29 @@ function renderRx(id) {
   }
 }
 async function react(id, emoji) {
-  const map = reactions.get(id) || new Map(); reactions.set(id, map);
+  const peer = active, map = reactions.get(id) || new Map(); reactions.set(id, map);
   const prev = map.get(me.id), remove = emoji === prev;
   remove ? map.delete(me.id) : map.set(me.id, emoji); renderRx(id); // atualiza na hora
-  const enc = await encrypt(myKeys.privateKey, active.public_key, remove ? "" : emoji); // "" = sem reação
-  const { error } = await sb.from("reactions").upsert({ message_id: id, user_id: me.id, ...enc }, { onConflict: "message_id,user_id" });
-  if (error) { prev ? map.set(me.id, prev) : map.delete(me.id); renderRx(id); note("Não foi possível reagir. Tente de novo."); }
+  try { await sendContent(peer, { type: "reaction", to: id, emoji: remove ? "" : emoji }); }
+  catch (e) { prev ? map.set(me.id, prev) : map.delete(me.id); renderRx(id); note(sendError(e, peer)); }
 }
-async function onReaction(p) {
-  const row = p.eventType === "DELETE" ? p.old : p.new;
-  if (!active || !msgs.has(row.message_id)) return;
-  const map = reactions.get(row.message_id) || new Map(); reactions.set(row.message_id, map);
-  if (p.eventType === "DELETE") map.delete(row.user_id);
-  else {
-    try { const em = await decrypt(myKeys.privateKey, active.public_key, row); em ? map.set(row.user_id, em) : map.delete(row.user_id); } catch { return; }
-  }
-  renderRx(row.message_id);
+function applyReaction(c, m) { // reação nova = mensagem cifrada (com sigilo futuro) com conteúdo "reaction"
+  const id = Number(c.to); if (!Number.isFinite(id)) return;
+  const map = reactions.get(id) || new Map(); reactions.set(id, map);
+  const em = typeof c.emoji === "string" ? c.emoji.slice(0, 16) : "";
+  em ? map.set(m.sender_id, em) : map.delete(m.sender_id); renderRx(id);
 }
-async function loadReactions(ids, peer) {
+async function loadLegacyReactions(rows, peer) { // reações antigas (tabela, chave fixa) de mensagens antigas
+  const ids = rows.filter((m) => m.v !== 2).map((m) => m.id);
   if (!ids.length) return;
   const { data } = await sb.from("reactions").select("*").in("message_id", ids);
   for (const r of data || []) {
     try {
-      const map = reactions.get(r.message_id) || new Map(); reactions.set(r.message_id, map);
       const em = await decrypt(myKeys.privateKey, peer.public_key, r);
+      const map = reactions.get(r.message_id) || new Map(); reactions.set(r.message_id, map);
       if (em) map.set(r.user_id, em);
     } catch {}
   }
-  ids.forEach(renderRx);
 }
 
 // ---------- Visto ----------
@@ -378,9 +375,108 @@ async function markRead() {
   await sb.from("messages").update({ read_at: at }).in("id", ids).is("read_at", null);
 }
 
+// ---------- Sigilo futuro (mensagens v2: Double Ratchet) ----------
+const lockName = (peer) => `lacre:${me.id}:${peer.id}`;
+const SPK_ROTATE = 7 * 864e5, SPK_KEEP = 14 * 864e5;
+const gone = (t) => ({ type: "unreadable", text: t });
+
+// Chave de médio prazo: publicamos a parte pública; a privada fica só aqui e é apagada depois de 14 dias.
+async function ensureSpk() {
+  try {
+    const now = Date.now(), list = await getSpks(me.id);
+    const newest = list.reduce((a, k) => (k.created > (a?.created ?? 0) ? k : a), null);
+    if (!newest || now - newest.created > SPK_ROTATE) {
+      const k = await genDH(), id = randomHex(16);
+      await addSpk(me.id, { id, priv: k.priv, created: now });
+      const { error } = await sb.from("prekeys").insert({ id, public_key: { kty: "EC", crv: "P-256", x: k.pub.x, y: k.pub.y } });
+      if (error) await removeSpk(me.id, id);
+    }
+    await pruneSpks(me.id, now - SPK_KEEP);
+    await sb.from("prekeys").delete().eq("user_id", me.id).lt("created_at", new Date(now - SPK_KEEP).toISOString());
+  } catch {}
+}
+async function pinStatus(peer) {
+  const k = `pin:${me.id}:${peer.id}`, fp = await fingerprint(peer.public_key);
+  let saved = null; try { saved = localStorage.getItem(k); } catch {}
+  if (!saved) { try { localStorage.setItem(k, fp); } catch {} return "ok"; }
+  return saved === fp ? "ok" : "changed";
+}
+function parseContent(s) {
+  const o = JSON.parse(s);
+  if (o && ["text", "media", "reaction", "hello"].includes(o.type)) return o;
+  throw new Error("conteudo invalido");
+}
+async function decryptV2(m, peer) {
+  const h = m.header; if (!validHeader(h)) throw new Error("cabecalho invalido");
+  let st = await getSession(me.id, peer.id, h.sid);
+  if (!st) {
+    const spk = h.init && (await getSpks(me.id)).find((k) => k.id === h.init.spk);
+    if (!spk) throw Object.assign(new Error("sem sessao"), { code: "NO_SESSION" });
+    st = await accept(ikJwk, peer.public_key, spk, h);
+  }
+  const { state, plaintext } = await ratchetDecrypt(st, m.sender_id, m.recipient_id, h, m.ciphertext);
+  const content = parseContent(toText(plaintext));
+  // sessão nova + mensagem lida na mesma transação: a chave já foi gasta, então não pode haver perda
+  await commit(me.id, peer.id, { session: state, active: h.sid, entryId: m.id, entry: { content, at: m.created_at } });
+  return content;
+}
+async function readV2(m, peer) {
+  const cached = await getHistory(me.id, peer.id, m.id);
+  if (cached) return cached.content;
+  if (m.sender_id === me.id) return gone("Enviada por você de outro aparelho: o histórico novo fica só no aparelho que enviou.");
+  if ((await pinStatus(peer)) === "changed") return gone("A chave desta pessoa mudou. Abra o código de segurança e confira com ela antes de continuar.");
+  return withLock(lockName(peer), async () => {
+    const again = await getHistory(me.id, peer.id, m.id); if (again) return again.content;
+    try { return await decryptV2(m, peer); }
+    catch (e) {
+      if (e.code === "NO_SESSION") { sayHello(peer); return gone("Esta mensagem é de uma sessão que este aparelho não tem (por exemplo, você entrou neste aparelho depois). Pedi para refazer: as próximas chegam normais."); }
+      return gone("Mensagem protegida que este aparelho não conseguiu decifrar.");
+    }
+  });
+}
+async function readRow(m, peer) {
+  try { return m.v === 2 ? await readV2(m, peer) : unpack(await decrypt(myKeys.privateKey, peer.public_key, m)); }
+  catch { return gone("Não foi possível decifrar esta mensagem."); }
+}
+function sayHello(peer) { // refaz a sessão sozinho quando este aparelho não consegue ler o que o amigo mandou
+  const k = `hello:${me.id}:${peer.id}`; let t = 0; try { t = +localStorage.getItem(k) || 0; } catch {}
+  if (Date.now() - t < 10 * 60e3) return;
+  try { localStorage.setItem(k, String(Date.now())); } catch {}
+  sendContent(peer, { type: "hello" }).catch(() => {});
+}
+async function newSession(peer) {
+  const { data, error } = await sb.rpc("get_prekey", { p_user: peer.id });
+  const pk = data?.[0];
+  if (error || !pk?.public_key?.x || !pk?.public_key?.y) throw Object.assign(new Error("sem prekey"), { code: "NO_PREKEY" });
+  return initiate(ikJwk, peer.public_key, { id: pk.id, x: pk.public_key.x, y: pk.public_key.y });
+}
+async function sendSession(peer) {
+  const act = await getActive(me.id, peer.id);
+  if (act) { const st = await getSession(me.id, peer.id, act); if (st && canSend(st)) return st; }
+  for (const st of await listSessions(me.id, peer.id)) if (canSend(st)) return st;
+  return newSession(peer);
+}
+async function sendContent(peer, content) {
+  if ((await pinStatus(peer)) === "changed") throw Object.assign(new Error("chave mudou"), { code: "PIN" });
+  return withLock(lockName(peer), async () => {
+    const r = await ratchetEncrypt(await sendSession(peer), me.id, peer.id, toBytes(JSON.stringify(content)));
+    await commit(me.id, peer.id, { session: r.state, active: r.state.sid }); // grava ANTES de enviar: uma chave nunca é usada duas vezes
+    const { data, error } = await sb.from("messages").insert({ recipient_id: peer.id, ciphertext: r.ciphertext, iv: r.iv, v: 2, header: r.header }).select().single();
+    if (error) throw error;
+    await commit(me.id, peer.id, { entryId: data.id, entry: { content, at: data.created_at, mine: true } });
+    return data;
+  });
+}
+const sendError = (e, peer) => e?.code === "NO_PREKEY" ? `@${peer.username} ainda não abriu a versão nova do Lacre, então não dá para enviar com sigilo futuro. Peça para essa pessoa recarregar o site.`
+  : e?.code === "PIN" ? `A chave de @${peer.username} mudou. Abra o código de segurança, confira com ela e reabra a conversa.`
+  : "Não foi possível enviar. Verifique a conexão e tente de novo.";
+
 async function show(m, peer, animate) {
-  try { addMessage(m, unpack(await decrypt(myKeys.privateKey, peer.public_key, m)), { animate }); }
-  catch { addMessage(m, "Não foi possível decifrar esta mensagem.", { err: true }); }
+  const c = await readRow(m, peer);
+  if (c.type === "reaction") return applyReaction(c, m);
+  if (c.type === "hello") return;
+  if (c.type === "unreadable") return addMessage(m, c.text, { err: true });
+  addMessage(m, c, { animate });
 }
 async function checkPin(peer) {
   const k = `pin:${me.id}:${peer.id}`, fp = await fingerprint(peer.public_key);
@@ -410,16 +506,17 @@ async function open(peer) {
   $("messages").replaceChildren(); msgs.clear(); reactions.clear();
   const { data } = await sb.from("messages").select("*")
     .or(`and(sender_id.eq.${me.id},recipient_id.eq.${peer.id}),and(sender_id.eq.${peer.id},recipient_id.eq.${me.id})`)
-    .order("created_at").limit(200);
+    .order("id").limit(200);
   if (active !== peer) return;
+  await loadLegacyReactions(data || [], peer);
   for (const m of data || []) await show(m, peer, false);
-  if (!data?.length) {
+  [...msgs.keys()].forEach(renderRx);
+  if (!msgs.size) {
     const p = el("p", "empty", "Nenhuma mensagem ainda. Diga oi: só vocês dois vão ler."); p.id = "msgs-empty";
     $("messages").append(p);
   }
   $("text").focus({ preventScroll: true });
   markRead();
-  loadReactions((data || []).map((m) => m.id), peer);
 }
 $("back").onclick = () => { $("chat").classList.remove("in-conv"); active = null; renderContacts(); updateStatus(); };
 
@@ -428,15 +525,15 @@ async function onIncoming(m) {
     const { data } = await sb.from("profiles").select("id,username,public_key").eq("id", m.sender_id).single();
     contacts.set(data.id, data);
   }
+  const peer = contacts.get(m.sender_id);
+  if (m.v === 2) { // decifra já (para andar a cadeia de chaves), mesmo com a conversa fechada
+    const c = await readRow(m, peer);
+    if (c.type === "reaction") { if (active?.id === peer.id) applyReaction(c, m); return; }
+    if (c.type === "hello") return;
+  }
   if (active?.id === m.sender_id) { $("msgs-empty")?.remove(); await show(m, active, true); markRead(); }
   else unread.add(m.sender_id);
   renderContacts();
-}
-async function sendPlain(plain, peer) {
-  const enc = await encrypt(myKeys.privateKey, peer.public_key, plain);
-  const { data, error } = await sb.from("messages").insert({ recipient_id: peer.id, ...enc }).select().single();
-  if (error) throw error;
-  return data;
 }
 
 // ---------- Anexos: limpa os metadados ANTES de qualquer coisa sair do aparelho ----------
@@ -498,14 +595,14 @@ $("send-form").onsubmit = async (e) => {
       const path = `${me.id}/${peer.id}/${crypto.randomUUID()}`;
       const sealed = await uploadSealed(p.bytes, path);
       content = { v: 1, type: "media", kind: p.kind, path, key: sealed.key, iv: sealed.iv, mime: p.mime, w: p.w, h: p.h, size: p.bytes.length, caption: text };
-      row = await sendPlain(JSON.stringify(content), peer);
+      row = await sendContent(peer, content);
       mediaCache.set(path, p.url); clearPending(true); // reaproveita a prévia local, sem baixar de novo
-    } else { row = await sendPlain(packText(text), peer); content = { type: "text", text }; }
+    } else { content = { type: "text", text }; row = await sendContent(peer, content); }
     if (active === peer) { $("msgs-empty")?.remove(); addMessage(row, content); }
     $("text").value = "";
-  } catch {
+  } catch (e) {
     if (pending) showPending($("pending-name").textContent, "Falhou. Toque em Enviar para tentar de novo.");
-    note("Não foi possível enviar. Verifique a conexão e tente de novo.");
+    note(sendError(e, peer));
   } finally { btn.disabled = false; $("text").focus(); }
 };
 

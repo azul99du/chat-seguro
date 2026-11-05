@@ -191,3 +191,43 @@ create policy "canais do chat: logados leem" on realtime.messages
   for select to authenticated using (realtime.topic() in ('online', 'msgs'));
 create policy "canais do chat: logados anunciam" on realtime.messages
   for insert to authenticated with check (realtime.topic() in ('online', 'msgs'));
+
+-- ===== SIGILO FUTURO (migrações sigilo_futuro_parte1 e parte2) =====
+-- v=1: mensagem antiga (chave fixa entre os dois). v=2: Double Ratchet (cada mensagem usa uma chave nova que é apagada).
+alter table public.messages add column v smallint not null default 1;
+alter table public.messages add column header jsonb;   -- sessão, chave DH da vez e contadores (nada do conteúdo)
+alter table public.messages add constraint messages_protocolo check (
+  (v = 1 and header is null) or (v = 2 and header is not null and length(header::text) < 2000));
+revoke insert on public.messages from authenticated;
+grant insert (recipient_id, ciphertext, iv, v, header) on public.messages to authenticated;
+
+-- Chaves de médio prazo (só a parte PÚBLICA); a privada fica no aparelho e é apagada após 14 dias
+create table public.prekeys (
+  user_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  id text not null check (id ~ '^[0-9a-f]{32}$'),
+  public_key jsonb not null check (length(public_key::text) < 500),
+  created_at timestamptz not null default now(),
+  primary key (user_id, id)
+);
+alter table public.prekeys enable row level security;
+revoke all on public.prekeys from anon, authenticated;
+grant select, insert, delete on public.prekeys to authenticated;
+create policy "le as proprias prekeys" on public.prekeys for select to authenticated using (user_id = (select auth.uid()));
+create policy "publica a propria prekey" on public.prekeys for insert to authenticated with check (user_id = (select auth.uid()));
+create policy "apaga as proprias prekeys" on public.prekeys for delete to authenticated using (user_id = (select auth.uid()));
+create or replace function public.get_prekey(p_user uuid)
+returns table (id text, public_key jsonb)
+language sql stable security definer set search_path = public as $$
+  select k.id, k.public_key from public.prekeys k
+  where k.user_id = p_user and (select auth.uid()) is not null
+  order by k.created_at desc limit 1
+$$;
+revoke all on function public.get_prekey(uuid) from public, anon, authenticated;
+grant execute on function public.get_prekey(uuid) to authenticated;
+
+-- A partir daqui, só entra mensagem NOVA com sigilo futuro (sem "downgrade" para a chave fixa)
+drop policy "envia como si mesmo" on public.messages;
+create policy "envia como si mesmo" on public.messages
+  for insert to authenticated with check (sender_id = (select auth.uid()) and v = 2);
+-- Reações agora são mensagens v2; a tabela antiga fica só para leitura do histórico
+revoke insert, update on public.reactions from authenticated;
