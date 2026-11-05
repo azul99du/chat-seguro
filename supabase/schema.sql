@@ -231,3 +231,127 @@ create policy "envia como si mesmo" on public.messages
   for insert to authenticated with check (sender_id = (select auth.uid()) and v = 2);
 -- Reações agora são mensagens v2; a tabela antiga fica só para leitura do histórico
 revoke insert, update on public.reactions from authenticated;
+
+-- ===== LIMITES DE USO / ANTI-ABUSO (migrações limites_de_uso e limites_de_uso_lote) =====
+-- 1) Mensagens: no máximo 60 por minuto e 1000 por hora por pessoa (inclui reações e controle)
+create or replace function public.limita_mensagens() returns trigger
+language plpgsql set search_path = public as $$
+declare por_minuto int; por_hora int;
+begin
+  select count(*) filter (where created_at > now() - interval '1 minute'), count(*)
+    into por_minuto, por_hora
+  from public.messages where sender_id = new.sender_id and created_at > now() - interval '1 hour';
+  if por_minuto >= 60 or por_hora >= 1000 then
+    raise exception 'limite de mensagens atingido: espere um pouco' using errcode = 'PT429', hint = 'rate_limit';
+  end if;
+  return new;
+end $$;
+create trigger limita_mensagens before insert on public.messages
+  for each row execute function public.limita_mensagens();
+
+-- 2) Contador de uso de funções (janelas de 1 minuto); ninguém acessa direto
+create table public.limite_uso (
+  user_id uuid not null,
+  funcao text not null,
+  janela timestamptz not null,
+  n int not null default 0,
+  primary key (user_id, funcao, janela)
+);
+alter table public.limite_uso enable row level security;
+revoke all on public.limite_uso from anon, authenticated;
+
+create or replace function public.consome(p_funcao text, p_max_min int, p_max_hora int) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := auth.uid(); m int; h int;
+begin
+  if u is null then raise exception 'nao autenticado' using errcode = '42501'; end if;
+  insert into public.limite_uso (user_id, funcao, janela, n)
+    values (u, p_funcao, date_trunc('minute', now()), 1)
+    on conflict (user_id, funcao, janela) do update set n = public.limite_uso.n + 1
+    returning n into m;
+  select coalesce(sum(n), 0) into h from public.limite_uso
+    where user_id = u and funcao = p_funcao and janela > now() - interval '1 hour';
+  if m > p_max_min or h > p_max_hora then
+    raise exception 'limite de uso atingido: espere um pouco' using errcode = 'PT429', hint = 'rate_limit';
+  end if;
+  if random() < 0.02 then delete from public.limite_uso where janela < now() - interval '1 day'; end if;
+end $$;
+revoke all on function public.consome(text, int, int) from public, anon, authenticated;
+
+-- Buscas com limite: 15/min e 100/h (find_user); 30/min e 300/h (get_prekey)
+create or replace function public.find_user(p_username text)
+returns table (id uuid, username text, public_key jsonb)
+language plpgsql security definer set search_path = public as $$
+begin
+  perform public.consome('find_user', 15, 100);
+  return query select p.id, p.username, p.public_key from public.profiles p
+    where p.username = lower(p_username) limit 1;
+end $$;
+revoke all on function public.find_user(text) from public, anon, authenticated;
+grant execute on function public.find_user(text) to authenticated;
+
+create or replace function public.get_prekey(p_user uuid)
+returns table (id text, public_key jsonb)
+language plpgsql security definer set search_path = public as $$
+begin
+  perform public.consome('get_prekey', 30, 300);
+  return query select k.id, k.public_key from public.prekeys k
+    where k.user_id = p_user order by k.created_at desc limit 1;
+end $$;
+revoke all on function public.get_prekey(uuid) from public, anon, authenticated;
+grant execute on function public.get_prekey(uuid) to authenticated;
+
+-- 3) Chaves de médio prazo: no máximo 30 por pessoa
+create or replace function public.limita_prekeys() returns trigger
+language plpgsql set search_path = public as $$
+begin
+  if (select count(*) from public.prekeys where user_id = new.user_id) >= 30 then
+    raise exception 'chaves demais' using errcode = 'PT429', hint = 'rate_limit';
+  end if;
+  return new;
+end $$;
+create trigger limita_prekeys before insert on public.prekeys
+  for each row execute function public.limita_prekeys();
+
+-- 4) Arquivos: no máximo 200 por hora e 400 MB no total por pessoa
+-- (função SECURITY DEFINER: a consulta não entra em recursão com as policies da própria tabela do storage)
+create or replace function public.pode_enviar_arquivo() returns boolean
+language sql stable security definer set search_path = public, storage as $$
+  select (select count(*) from storage.objects o
+           where o.bucket_id = 'media' and o.owner_id = (select auth.uid())::text
+             and o.created_at > now() - interval '1 hour') < 200
+     and (select coalesce(sum((o.metadata->>'size')::bigint), 0) from storage.objects o
+           where o.bucket_id = 'media' and o.owner_id = (select auth.uid())::text) < 400 * 1024 * 1024
+$$;
+revoke all on function public.pode_enviar_arquivo() from public, anon, authenticated;
+grant execute on function public.pode_enviar_arquivo() to authenticated;
+drop policy "envia midia na propria pasta" on storage.objects;
+create policy "envia midia na propria pasta" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'media'
+    and name ~ '^[0-9a-f-]{36}/[0-9a-f-]{36}/[A-Za-z0-9._-]{1,80}$'
+    and (storage.foldername(name))[1] = (select auth.uid())::text
+    and public.pode_enviar_arquivo());
+
+-- 5) Pedidos em lote: um gatilho por linha não enxerga as outras linhas do mesmo INSERT, então limitamos o lote
+create or replace function public.limita_lote_mensagens() returns trigger
+language plpgsql set search_path = public as $$
+begin
+  if (select count(*) from novas) > 20 then
+    raise exception 'lote grande demais' using errcode = 'PT429', hint = 'rate_limit';
+  end if;
+  return null;
+end $$;
+create trigger limita_lote_mensagens after insert on public.messages
+  referencing new table as novas for each statement execute function public.limita_lote_mensagens();
+
+create or replace function public.limita_lote_prekeys() returns trigger
+language plpgsql set search_path = public as $$
+begin
+  if (select count(*) from novas) > 5 then
+    raise exception 'lote grande demais' using errcode = 'PT429', hint = 'rate_limit';
+  end if;
+  return null;
+end $$;
+create trigger limita_lote_prekeys after insert on public.prekeys
+  referencing new table as novas for each statement execute function public.limita_lote_prekeys();

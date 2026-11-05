@@ -62,10 +62,17 @@ describe("banco (supabase/schema.sql)", () => {
     for (const p of sql.matchAll(/create policy[\s\S]*?;/g)) assert.doesNotMatch(p[0], /\bto\s+(anon|public)\b/i, p[0].slice(0, 80));
   });
   test("funções SECURITY DEFINER fixam search_path e negam execução a anon", () => {
-    for (const f of sql.matchAll(/create or replace function public\.(\w+)[\s\S]*?\$\$;?/g)) {
+    const funcoes = [...sql.matchAll(/create or replace function public\.(\w+)\(([^)]*)\)[\s\S]*?\$\$;/g)].filter((f) => /security definer/i.test(f[0]));
+    assert.ok(funcoes.length >= 5, "esperava find_user, get_prekey, consome, pode_enviar_arquivo...");
+    for (const f of funcoes) {
       assert.match(f[0], /set search_path = public/, `${f[1]} sem search_path`);
       assert.match(sql, new RegExp(`revoke all on function public\\.${f[1]}\\([^)]*\\) from public, anon, authenticated`), `${f[1]} deve negar execução a anon`);
     }
+  });
+  test("há limites de uso: mensagens, lote, buscas, prekeys e arquivos", () => {
+    for (const nome of ["limita_mensagens", "limita_lote_mensagens", "limita_prekeys", "limita_lote_prekeys", "consome", "pode_enviar_arquivo"]) assert.match(sql, new RegExp(`function public\\.${nome}\\(`), nome);
+    assert.match(sql, /perform public\.consome\('find_user'/); assert.match(sql, /perform public\.consome\('get_prekey'/);
+    assert.match(sql, /with check[\s\S]*public\.pode_enviar_arquivo\(\)/);
   });
   test("só mensagens com sigilo futuro (v=2) podem ser inseridas", () => {
     const ultima = [...sql.matchAll(/create policy "envia como si mesmo"[\s\S]*?;/g)].pop()[0];

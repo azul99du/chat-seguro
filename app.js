@@ -68,6 +68,8 @@ function setMode(m) {
   $("username").required = m === "signup";
   $("auth-submit").textContent = m === "signup" ? "Criar conta" : "Entrar";
   $("password").autocomplete = m === "signup" ? "new-password" : "current-password";
+  $("password").minLength = m === "signup" ? 12 : 1; // senha nova: 12+ caracteres; quem já tem senha mais curta ainda consegue entrar
+  $("password").placeholder = m === "signup" ? "mínimo 12 caracteres" : "sua senha";
   $("auth-msg").textContent = "";
 }
 $("tab-login").onclick = () => setMode("login");
@@ -77,7 +79,7 @@ const friendly = (m) => ({
   "Invalid login credentials": "E-mail ou senha incorretos.",
   "User already registered": "Esse e-mail já tem conta. Use a aba Entrar.",
   "Email not confirmed": "Confirme seu e-mail pelo link que enviamos e tente entrar de novo.",
-}[m] || m);
+}[m] || (/rate limit|too many/i.test(m) ? "Muitas tentativas seguidas. Espere alguns minutos e tente de novo." : m));
 
 $("auth-form").onsubmit = async (e) => {
   e.preventDefault();
@@ -218,7 +220,8 @@ function renderContacts() {
 $("add-form").onsubmit = async (e) => {
   e.preventDefault();
   const name = $("add-user").value.trim().replace(/^@/, "").toLowerCase();
-  const { data: found } = await sb.rpc("find_user", { p_username: name });
+  const { data: found, error: errBusca } = await sb.rpc("find_user", { p_username: name });
+  if (errBusca) return note(limitado(errBusca) ? "Muitas buscas seguidas. Espere um minuto e tente de novo." : "Não foi possível buscar agora. Tente de novo.");
   const data = found?.[0];
   if (!data) return note(`Não encontramos @${name}. Confira se o nome está certinho com seu amigo.`);
   if (data.id === me.id) return note("Esse é você! Chame um amigo.");
@@ -467,7 +470,9 @@ async function sendContent(peer, content) {
     return data;
   });
 }
-const sendError = (e, peer) => e?.code === "NO_PREKEY" ? `@${peer.username} ainda não abriu a versão nova do Lacre, então não dá para enviar com sigilo futuro. Peça para essa pessoa recarregar o site.`
+const limitado = (e) => e?.code === "PT429" || e?.status === 429 || /limite de/i.test(e?.message || "");
+const sendError = (e, peer) => limitado(e) ? "Você fez muitas coisas em pouco tempo. Espere cerca de um minuto e tente de novo."
+  : e?.code === "NO_PREKEY" ? `@${peer.username} ainda não abriu a versão nova do Lacre, então não dá para enviar com sigilo futuro. Peça para essa pessoa recarregar o site.`
   : e?.code === "PIN" ? `A chave de @${peer.username} mudou. Abra o código de segurança, confira com ela e reabra a conversa.`
   : "Não foi possível enviar. Verifique a conexão e tente de novo.";
 

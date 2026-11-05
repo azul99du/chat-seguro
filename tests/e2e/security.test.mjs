@@ -108,3 +108,42 @@ t("storage: só a pasta própria; nome fora do padrão e HTML são recusados; ou
   assert.ok(!(await b.c.storage.from("media").download(f1)).error, "o arquivo continua lá depois da tentativa de apagar");
   await a.c.storage.from("media").remove([f1]); // limpeza
 });
+
+// ----- Limites de uso (anti-abuso). Cada teste usa uma conta própria para não afetar as outras. -----
+const limitado = (r) => r.error?.code === "PT429" || /limite|lote grande|chaves demais/i.test(r.error?.message || "");
+const msg = (to) => ({ ...base(to), v: 2, header: hdr() });
+
+t("limite de mensagens: 60 por minuto por pessoa; a 61ª é recusada com 'espere um pouco'", async () => {
+  const f = await usuario("f");
+  for (let i = 0; i < 60; i++) { const r = await f.c.from("messages").insert(msg(b.id)); assert.ok(!r.error, `mensagem ${i + 1}: ${r.error?.message}`); }
+  const r = await f.c.from("messages").insert(msg(b.id));
+  assert.ok(limitado(r), "a 61ª deveria ser limitada: " + JSON.stringify(r.error));
+});
+t("pedido em lote: mais de 20 mensagens num só pedido é recusado (não dá para furar o limite)", async () => {
+  const g = await usuario("g");
+  assert.ok(limitado(await g.c.from("messages").insert(Array.from({ length: 21 }, () => msg(b.id)))), "lote de 21");
+  assert.ok(!(await g.c.from("messages").insert(Array.from({ length: 3 }, () => msg(b.id)))).error, "(controle) lote pequeno passa");
+});
+t("busca de usuário: 15 por minuto; a 16ª é recusada (enumeração fica lenta)", async () => {
+  const h = await usuario("h");
+  let ok = 0, bloqueada = null;
+  for (let i = 0; i < 16; i++) { const r = await h.c.rpc("find_user", { p_username: "naoexiste" + i }); if (r.error) { bloqueada = r; break; } ok++; }
+  assert.equal(ok, 15); assert.ok(limitado(bloqueada), JSON.stringify(bloqueada?.error));
+});
+t("busca de prekey: 30 por minuto; a 31ª é recusada", async () => {
+  const i = await usuario("i");
+  let ok = 0, bloqueada = null;
+  for (let n = 0; n < 31; n++) { const r = await i.c.rpc("get_prekey", { p_user: a.id }); if (r.error) { bloqueada = r; break; } ok++; }
+  assert.equal(ok, 30); assert.ok(limitado(bloqueada), JSON.stringify(bloqueada?.error));
+});
+t("prekeys: no máximo 30 por pessoa e 5 por pedido", async () => {
+  const j = await usuario("j"), spk = { kty: "EC", crv: "P-256", x: "px", y: "py" };
+  assert.ok(limitado(await j.c.from("prekeys").insert(Array.from({ length: 6 }, () => ({ id: hex(), public_key: spk })))), "lote de 6");
+  for (let n = 0; n < 30; n++) assert.ok(!(await j.c.from("prekeys").insert({ id: hex(), public_key: spk })).error, `prekey ${n + 1}`);
+  assert.ok(limitado(await j.c.from("prekeys").insert({ id: hex(), public_key: spk })), "a 31ª");
+});
+t("o contador de uso e a função de cota não são acessíveis pelo cliente", async () => {
+  assert.ok((await x.c.from("limite_uso").select("*")).error, "tabela limite_uso");
+  assert.ok((await x.c.rpc("consome", { p_funcao: "find_user", p_max_min: 999, p_max_hora: 999 })).error, "consome()");
+  assert.ok((await anon.rpc("pode_enviar_arquivo")).error, "anônimo");
+});

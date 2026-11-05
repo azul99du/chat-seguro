@@ -54,3 +54,14 @@ Os testes criam contas e mensagens de verdade, então **nunca** rodam contra o b
 2. No painel desse projeto, em **Authentication → Providers → Email**, desligue **Confirm email**. Sem isso o cadastro de teste não devolve sessão e os testes se pulam com um aviso.
 3. `SUPABASE_URL=... SUPABASE_KEY=<chave publishable> npm run test:e2e` (use `CHROMIUM_PATH` para apontar um Chromium já instalado).
 No GitHub Actions (`.github/workflows/ci.yml`) isso roda a cada push, usando o projeto de teste `chat-seguro-teste`. Os usuários de teste ficam no banco de teste e não afetam o real.
+
+## Limites de uso e monitoramento
+**Limites no banco** (todos devolvem HTTP 429 "espere um pouco"; o site mostra uma mensagem clara):
+- mensagens: 60 por minuto e 1000 por hora por pessoa; no máximo 20 por pedido em lote (reações e controle contam);
+- busca de amigo (`find_user`): 15 por minuto e 100 por hora; busca de chave (`get_prekey`): 30 por minuto e 300 por hora;
+- chaves de médio prazo: no máximo 30 por pessoa e 5 por pedido;
+- arquivos: 200 por hora e 400 MB no total por pessoa.
+
+**Monitoramento:** `supabase/monitoramento.sql` tem consultas prontas (contas novas, quem manda muito, quem bate nos limites, armazenamento, último acesso). Os logs de acesso (países/redes, erros 4xx/5xx, falhas de login) ficam em *Logs* no painel do Supabase e podem ser consultados por aqui com o conector.
+
+**Login:** o Supabase Auth só limita depois de centenas de tentativas por minuto de um mesmo IP (medido: o primeiro bloqueio veio após ~340 tentativas em ~8 s), e senhas erradas não bloqueiam a conta. Por isso: senha nova com 12+ caracteres, e no painel (Authentication) reduzir os limites de tentativas e exigir senha mínima de 12. A mensagem protegida não depende da senha de login: sem a chave do aparelho (ou a frase-senha) o atacante não lê nada.
