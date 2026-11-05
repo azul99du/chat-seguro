@@ -2,44 +2,95 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Chat Seguro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#15174A">
+  <title>Lacre — conversa só entre vocês</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono&family=Instrument+Sans:wght@400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <section id="auth" class="card">
-    <h1>🔒 Chat Seguro</h1>
-    <p class="muted">Só quem envia e quem recebe lê as mensagens.</p>
-    <form id="auth-form">
-      <input id="username" placeholder="nome de usuário (só no cadastro)" autocomplete="username" pattern="[a-z0-9_]{3,20}">
-      <input id="email" type="email" placeholder="e-mail" required autocomplete="email">
-      <input id="password" type="password" placeholder="senha (mín. 8)" required minlength="8" autocomplete="current-password">
-      <div class="row">
-        <button type="submit" data-mode="login">Entrar</button>
-        <button type="submit" data-mode="signup" class="secondary">Cadastrar</button>
-      </div>
-      <p id="auth-msg" class="muted"></p>
-    </form>
-  </section>
 
-  <main id="chat" hidden>
-    <aside>
-      <header><strong id="me"></strong><button id="logout" class="secondary">Sair</button></header>
-      <form id="add-form" class="row">
-        <input id="add-user" placeholder="adicionar @usuário" pattern="[a-z0-9_]{3,20}" required>
-        <button>+</button>
+  <div id="auth">
+    <section class="hero" aria-label="Apresentação">
+      <div class="wordmark">lacre<i class="seal" aria-hidden="true"></i></div>
+      <div class="demo" aria-hidden="true">
+        <div class="bubble theirs"><span id="demo-text">chegou aí?</span></div>
+        <div class="cipher" id="demo-cipher"></div>
+      </div>
+      <p class="hero-copy">Mensagens que só você e seu amigo conseguem ler. Nem o servidor abre.</p>
+    </section>
+
+    <main class="panel">
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" id="tab-login" aria-selected="true">Entrar</button>
+        <button type="button" role="tab" id="tab-signup" aria-selected="false">Criar conta</button>
+      </div>
+      <form id="auth-form">
+        <label id="username-row" hidden>Nome de usuário
+          <input id="username" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="ex.: azul_99" pattern="[a-zA-Z0-9_]{3,20}" title="3 a 20 letras, números ou _">
+        </label>
+        <label>E-mail
+          <input id="email" type="email" required autocomplete="email" placeholder="voce@email.com">
+        </label>
+        <label>Senha
+          <input id="password" type="password" required minlength="8" autocomplete="current-password" placeholder="mínimo 8 caracteres">
+        </label>
+        <button type="submit" id="auth-submit" class="primary">Entrar</button>
+        <p id="auth-msg" role="status"></p>
+      </form>
+    </main>
+  </div>
+
+  <div id="chat" hidden>
+    <aside id="inbox">
+      <header class="bar">
+        <div class="wordmark small">lacre<i class="seal" aria-hidden="true"></i></div>
+        <div class="me-box"><span id="me"></span><button id="logout" class="ghost">Sair</button></div>
+      </header>
+      <form id="add-form">
+        <label class="sr" for="add-user">Chamar um amigo</label>
+        <input id="add-user" placeholder="@usuário do amigo" autocapitalize="none" spellcheck="false" pattern="@?[a-zA-Z0-9_]{3,20}" required>
+        <button class="primary" aria-label="Abrir conversa">Chamar</button>
       </form>
       <ul id="contacts"></ul>
+      <p id="inbox-empty" class="empty">Ninguém por aqui ainda. Digite o @usuário de um amigo acima para começar.</p>
     </aside>
+
     <section id="conv">
-      <header id="conv-title" class="muted">Escolha um contato</header>
-      <div id="messages"></div>
-      <form id="send-form" class="row" hidden>
-        <input id="text" placeholder="mensagem" autocomplete="off" required>
-        <button>Enviar</button>
+      <header class="bar">
+        <button id="back" class="ghost icon" aria-label="Voltar para as conversas">←</button>
+        <div id="conv-title">Escolha um amigo</div>
+        <div class="badge" id="badge" hidden><i class="seal" aria-hidden="true"></i>lacrada</div>
+      </header>
+      <div id="messages" aria-live="polite"></div>
+      <div id="conv-empty" class="empty big">
+        <div class="wordmark mid">lacre<i class="seal" aria-hidden="true"></i></div>
+        <p>Escolha um amigo na lista para abrir a conversa.</p>
+      </div>
+      <form id="send-form" hidden>
+        <label class="sr" for="text">Mensagem</label>
+        <input id="text" placeholder="Escreva uma mensagem" autocomplete="off" required>
+        <button class="primary">Enviar</button>
       </form>
     </section>
-  </main>
+  </div>
+
+  <dialog id="ask">
+    <form method="dialog">
+      <h2 id="ask-title"></h2>
+      <p id="ask-text"></p>
+      <input id="ask-input" type="password" autocomplete="off">
+      <div class="dialog-actions">
+        <button value="ok" class="primary">Continuar</button>
+        <button value="cancel" class="ghost" formnovalidate>Cancelar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
+
   <script type="module" src="app.js"></script>
 </body>
 </html>
