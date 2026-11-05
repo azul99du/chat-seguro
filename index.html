@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat Seguro</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <section id="auth" class="card">
+    <h1>🔒 Chat Seguro</h1>
+    <p class="muted">Só quem envia e quem recebe lê as mensagens.</p>
+    <form id="auth-form">
+      <input id="username" placeholder="nome de usuário (só no cadastro)" autocomplete="username" pattern="[a-z0-9_]{3,20}">
+      <input id="email" type="email" placeholder="e-mail" required autocomplete="email">
+      <input id="password" type="password" placeholder="senha (mín. 8)" required minlength="8" autocomplete="current-password">
+      <div class="row">
+        <button type="submit" data-mode="login">Entrar</button>
+        <button type="submit" data-mode="signup" class="secondary">Cadastrar</button>
+      </div>
+      <p id="auth-msg" class="muted"></p>
+    </form>
+  </section>
+
+  <main id="chat" hidden>
+    <aside>
+      <header><strong id="me"></strong><button id="logout" class="secondary">Sair</button></header>
+      <form id="add-form" class="row">
+        <input id="add-user" placeholder="adicionar @usuário" pattern="[a-z0-9_]{3,20}" required>
+        <button>+</button>
+      </form>
+      <ul id="contacts"></ul>
+    </aside>
+    <section id="conv">
+      <header id="conv-title" class="muted">Escolha um contato</header>
+      <div id="messages"></div>
+      <form id="send-form" class="row" hidden>
+        <input id="text" placeholder="mensagem" autocomplete="off" required>
+        <button>Enviar</button>
+      </form>
+    </section>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
