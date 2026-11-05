@@ -111,3 +111,83 @@ create policy "troca o proprio fundo" on public.chat_backgrounds
   for update to authenticated using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
 create policy "remove o proprio fundo" on public.chat_backgrounds
   for delete to authenticated using (user_id = (select auth.uid()));
+
+-- ===== SEGURANÇA (migrações seguranca_parte1, seguranca_parte2, ajustes e realtime_canais_privados) =====
+-- Backup da chave privada: tabela própria, só o dono lê (antes ficava em profiles, legível por todos os logados)
+create table public.key_backups (
+  user_id uuid primary key default auth.uid() references public.profiles(id) on delete cascade,
+  backup jsonb not null check (length(backup::text) < 4000),
+  updated_at timestamptz not null default now()
+);
+alter table public.key_backups enable row level security;
+create policy "le o proprio backup" on public.key_backups for select to authenticated using (user_id = (select auth.uid()));
+create policy "cria o proprio backup" on public.key_backups for insert to authenticated with check (user_id = (select auth.uid()));
+create policy "troca o proprio backup" on public.key_backups for update to authenticated using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
+-- (dados antigos foram copiados de profiles.key_backup, que foi removida)
+alter table public.profiles drop column key_backup;
+
+-- Privilégios mínimos
+revoke all on all tables in schema public from anon;
+revoke all on all sequences in schema public from anon;
+revoke truncate, references, trigger on all tables in schema public from authenticated;
+revoke delete on public.messages, public.profiles from authenticated;
+revoke update on public.profiles from authenticated;          -- username e chave pública imutáveis
+revoke all on public.key_backups from authenticated;
+grant select, insert, update on public.key_backups to authenticated;
+alter default privileges in schema public revoke all on tables from anon;
+alter default privileges in schema public revoke all on sequences from anon;
+alter default privileges in schema public revoke all on functions from anon;
+
+-- Mensagens: o cliente só define destinatário + texto cifrado
+revoke insert on public.messages from authenticated;
+grant insert (recipient_id, ciphertext, iv) on public.messages to authenticated;
+alter table public.messages add constraint messages_tamanho
+  check (char_length(ciphertext) between 1 and 30000 and char_length(iv) between 8 and 32);
+
+-- Reações: update também exige participar da conversa; sem DELETE (remover = marcador vazio cifrado)
+revoke insert, update on public.reactions from authenticated;
+grant insert (message_id, user_id, ciphertext, iv), update (message_id, user_id, ciphertext, iv) on public.reactions to authenticated;
+drop policy "troca a propria reacao" on public.reactions;
+create policy "troca a propria reacao" on public.reactions
+  for update to authenticated
+  using (user_id = (select auth.uid()))
+  with check (user_id = (select auth.uid()) and exists (
+    select 1 from public.messages m where m.id = message_id and (select auth.uid()) in (m.sender_id, m.recipient_id)));
+drop policy "remove a propria reacao" on public.reactions;
+revoke delete on public.reactions from authenticated;
+alter table public.reactions add constraint reactions_tamanho
+  check (char_length(ciphertext) between 1 and 200 and char_length(iv) between 8 and 32);
+alter table public.chat_backgrounds add constraint bg_tamanho check (char_length(ciphertext) <= 4000 and char_length(iv) <= 32);
+alter table public.profiles add constraint profiles_chave_tamanho check (length(public_key::text) < 2000);
+
+-- Perfis: só o próprio e o de quem já trocou mensagem; busca de amigo só por nome EXATO
+create or replace function public.find_user(p_username text)
+returns table (id uuid, username text, public_key jsonb)
+language sql stable security definer set search_path = public as $$
+  select p.id, p.username, p.public_key from public.profiles p
+  where p.username = lower(p_username) and (select auth.uid()) is not null
+  limit 1
+$$;
+revoke all on function public.find_user(text) from public, anon, authenticated;
+grant execute on function public.find_user(text) to authenticated;
+drop policy "perfis visiveis a logados" on public.profiles;
+create policy "ve o proprio perfil e o de quem conversa com voce" on public.profiles
+  for select to authenticated using (
+    id = (select auth.uid())
+    or exists (select 1 from public.messages m
+               where (m.sender_id = (select auth.uid()) and m.recipient_id = profiles.id)
+                  or (m.recipient_id = (select auth.uid()) and m.sender_id = profiles.id)));
+
+-- Storage: nome do arquivo no formato {uuid}/{uuid}/{arquivo}
+drop policy "envia midia na propria pasta" on storage.objects;
+create policy "envia midia na propria pasta" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'media'
+    and name ~ '^[0-9a-f-]{36}/[0-9a-f-]{36}/[A-Za-z0-9._-]{1,80}$'
+    and (storage.foldername(name))[1] = (select auth.uid())::text);
+
+-- Realtime: canais privados (só usuários logados). No painel, desligue "Allow public access" em Realtime Settings.
+create policy "canais do chat: logados leem" on realtime.messages
+  for select to authenticated using (realtime.topic() in ('online', 'msgs'));
+create policy "canais do chat: logados anunciam" on realtime.messages
+  for insert to authenticated with check (realtime.topic() in ('online', 'msgs'));

@@ -1,10 +1,11 @@
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm";
+import { createClient } from "./vendor/supabase.js";
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { cleanImage, cleanVideo, sealBytes, openBytes } from "./media.js";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup } from "./crypto.js";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
+const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 let me, myKeys, active;
 const contacts = new Map(); // id -> perfil
@@ -18,6 +19,12 @@ function ask(title, text) {
   $("ask-title").textContent = title; $("ask-text").textContent = text;
   i.value = ""; d.returnValue = ""; d.showModal(); i.focus();
   return new Promise((res) => { d.onclose = () => res(d.returnValue === "ok" ? i.value : null); });
+}
+function choose(title, text, options) {
+  const d = $("choice"); $("choice-title").textContent = title; $("choice-text").textContent = text;
+  $("choice-actions").replaceChildren(...options.map((o) => { const b = el("button", o.cls, o.label); b.value = o.value; return b; }));
+  d.returnValue = ""; d.showModal();
+  return new Promise((res) => { d.onclose = () => res(d.returnValue || null); });
 }
 function note(text) {
   $("note-text").textContent = text; $("note").showModal();
@@ -88,14 +95,22 @@ $("auth-form").onsubmit = async (e) => {
     await start();
   } finally { $("auth-submit").disabled = false; }
 };
-$("logout").onclick = async () => { await sb.auth.signOut(); location.reload(); };
+$("logout").onclick = async () => {
+  const r = await choose("Sair", "Se este aparelho é compartilhado, apague também as chaves dele. Você as restaura depois com a sua frase-senha.", [
+    { label: "Só sair", value: "keep", cls: "primary" },
+    { label: "Sair e apagar chaves deste aparelho", value: "wipe", cls: "ghost" },
+    { label: "Cancelar", value: "", cls: "ghost" }]);
+  if (!r) return;
+  if (r === "wipe" && me) await deleteLocalKeys(me.id);
+  await sb.auth.signOut(); location.reload();
+};
 
 // ---------- Início: perfil + chaves ----------
 async function start() {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) return;
   const uid = session.user.id;
-  let { data: prof } = await sb.from("profiles").select("*").eq("id", uid).maybeSingle();
+  let { data: prof } = await sb.from("profiles").select("id,username,public_key").eq("id", uid).maybeSingle();
   myKeys = await getLocalKeys(uid);
 
   if (!prof) { // primeiro acesso: gera chaves neste aparelho e publica só a chave pública
@@ -103,38 +118,41 @@ async function start() {
     if (!username) { await sb.auth.signOut(); return note("Não achamos seu perfil. Crie a conta de novo na aba Criar conta."); }
     const publicKey = await createKeys(uid);
     myKeys = await getLocalKeys(uid);
-    let pass, hint = "Ela recupera suas mensagens se você trocar de aparelho. Use algo diferente da senha de login e guarde bem: não dá para redefinir.";
+    let pass, hint = "Ela recupera suas mensagens se você trocar de aparelho. Use algo diferente da senha de login (dica: 4 palavras aleatórias) e guarde bem: não dá para redefinir.";
     for (;;) {
       pass = await ask("Crie sua frase-senha", hint);
       if (pass === null) { await sb.auth.signOut(); return location.reload(); }
-      if (pass.length >= 8) break;
-      hint = "Use pelo menos 8 caracteres.";
+      if (pass.length >= 12) break;
+      hint = "Use pelo menos 12 caracteres.";
     }
-    const key_backup = await makeBackup(uid, pass);
-    const { error } = await sb.from("profiles").insert({ id: uid, username, public_key: publicKey, key_backup });
+    const { error } = await sb.from("profiles").insert({ id: uid, username, public_key: publicKey });
     if (error) {
       await sb.auth.signOut();
       return note(error.code === "23505" ? "Esse nome de usuário já existe. Crie a conta de novo com outro nome." : "Não foi possível criar seu perfil: " + error.message);
     }
     localStorage.removeItem("pending-username");
-    prof = { id: uid, username, public_key: publicKey, key_backup };
+    prof = { id: uid, username, public_key: publicKey };
+    if (await saveBackup(uid, pass)) note("Não consegui salvar o backup da sua chave agora. Vou pedir de novo na próxima vez que você entrar.");
   } else if (!myKeys) {
-    if (!prof.key_backup) { await sb.auth.signOut(); return note("Este aparelho não tem sua chave e não existe backup, então as mensagens antigas não podem ser lidas."); }
+    const { data: bk } = await sb.from("key_backups").select("backup").maybeSingle();
+    if (!bk) { await sb.auth.signOut(); return note("Este aparelho não tem sua chave e não existe backup, então as mensagens antigas não podem ser lidas."); }
     let hint = "Para ler suas mensagens neste aparelho, digite a frase-senha que você criou no cadastro.";
     for (;;) {
       const pass = await ask("Aparelho novo", hint);
       if (pass === null) { await sb.auth.signOut(); return location.reload(); }
-      try { await restoreBackup(uid, pass, prof.key_backup, prof.public_key); break; }
+      try { await restoreBackup(uid, pass, bk.backup, prof.public_key); break; }
       catch { hint = "Frase-senha incorreta. Tente de novo."; }
     }
     myKeys = await getLocalKeys(uid);
   }
 
   me = prof;
+  const { data: hasBk } = await sb.from("key_backups").select("user_id").maybeSingle();
+  if (!hasBk) await offerBackup(uid);
   $("me").textContent = "@" + me.username;
   $("auth").hidden = true; $("chat").hidden = false;
   await loadContacts();
-  sb.channel("msgs")
+  sb.channel("msgs", { config: { private: true } })
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `recipient_id=eq.${uid}` }, (p) => onIncoming(p.new))
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `sender_id=eq.${uid}` }, (p) => {
       const e = msgs.get(p.new.id); if (e) { e.m.read_at = p.new.read_at; setReceipt(e); }
@@ -143,7 +161,7 @@ async function start() {
     .subscribe();
 
   // quem está online: presença em tempo real (some sozinha ao fechar o site)
-  const pres = sb.channel("online", { config: { presence: { key: uid } } });
+  const pres = sb.channel("online", { config: { private: true, presence: { key: uid } } });
   pres.on("presence", { event: "sync" }, () => {
     online = new Set(Object.keys(pres.presenceState()));
     renderContacts(); updateStatus();
@@ -153,12 +171,28 @@ async function start() {
   addEventListener("focus", markRead);
 }
 
+async function saveBackup(uid, pass) {
+  const backup = await makeBackup(uid, pass);
+  const { error } = await sb.from("key_backups").upsert({ user_id: uid, backup, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+  return error;
+}
+async function offerBackup(uid) {
+  let hint = "Você ainda não tem backup da sua chave. Crie uma frase-senha para recuperar as mensagens se trocar de aparelho.";
+  for (;;) {
+    const pass = await ask("Proteja suas mensagens", hint);
+    if (pass === null) return;
+    if (pass.length < 12) { hint = "Use pelo menos 12 caracteres."; continue; }
+    if (!(await saveBackup(uid, pass))) return;
+    hint = "Não foi possível salvar. Tente de novo.";
+  }
+}
+
 // ---------- Contatos ----------
 async function loadContacts() {
   const { data } = await sb.from("messages").select("sender_id,recipient_id").order("created_at", { ascending: false }).limit(200);
   const ids = [...new Set((data || []).flatMap((m) => [m.sender_id, m.recipient_id]))].filter((i) => i !== me.id);
   if (ids.length) {
-    const { data: ps } = await sb.from("profiles").select("*").in("id", ids);
+    const { data: ps } = await sb.from("profiles").select("id,username,public_key").in("id", ids);
     ps.forEach((p) => contacts.set(p.id, p));
   }
   renderContacts();
@@ -181,7 +215,8 @@ function renderContacts() {
 $("add-form").onsubmit = async (e) => {
   e.preventDefault();
   const name = $("add-user").value.trim().replace(/^@/, "").toLowerCase();
-  const { data } = await sb.from("profiles").select("*").eq("username", name).maybeSingle();
+  const { data: found } = await sb.rpc("find_user", { p_username: name });
+  const data = found?.[0];
   if (!data) return note(`Não encontramos @${name}. Confira se o nome está certinho com seu amigo.`);
   if (data.id === me.id) return note("Esse é você! Chame um amigo.");
   contacts.set(data.id, data); $("add-user").value = ""; open(data);
@@ -190,7 +225,6 @@ $("add-form").onsubmit = async (e) => {
 // ---------- Conversa ----------
 const EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
 const hhmm = (d) => d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
 
 function updateStatus() { $("conv-status").hidden = !(active && online.has(active.id)); }
 
@@ -213,17 +247,23 @@ const sizeLabel = (n) => (n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math
 
 // baixa o arquivo cifrado, decifra e devolve uma URL local (nunca sai do navegador decifrado)
 const mediaCache = new Map();
+const OK_MIME = { image: ["image/jpeg", "image/png", "image/webp"], video: ["video/mp4", "video/quicktime"] };
+const OK_PATH = /^[0-9a-f-]{36}\/[0-9a-f-]{36}\/[A-Za-z0-9._-]{1,80}$/;
+// o tipo vem da mensagem (quem enviou controla): só aceitamos tipos de imagem/vídeo, nunca text/html
+const safeMime = (c) => { const l = OK_MIME[c.kind === "video" ? "video" : "image"]; return l.includes(c.mime) ? c.mime : l[0]; };
 async function loadMedia(c) {
+  if (typeof c.path !== "string" || !OK_PATH.test(c.path) || typeof c.key !== "string" || typeof c.iv !== "string") throw new Error("midia invalida");
   if (mediaCache.has(c.path)) return mediaCache.get(c.path);
   const { data, error } = await sb.storage.from("media").download(c.path);
   if (error) throw error;
   const bytes = await openBytes(new Uint8Array(await data.arrayBuffer()), c.key, c.iv);
-  const url = URL.createObjectURL(new Blob([bytes], { type: c.mime }));
+  const url = URL.createObjectURL(new Blob([bytes], { type: safeMime(c) }));
   mediaCache.set(c.path, url); return url;
 }
 function mediaBlock(c) {
   const box = el("div", "media");
-  box.style.setProperty("--ar", c.kind === "video" ? "16/9" : c.w && c.h ? `${c.w}/${c.h}` : "4/3");
+  const w = Number(c.w), h = Number(c.h), okDims = w > 0 && h > 0 && w < 20000 && h < 20000;
+  box.style.setProperty("--ar", c.kind === "video" ? "16/9" : okDims ? `${Math.round(w)}/${Math.round(h)}` : "4/3");
   const fail = () => box.replaceChildren(el("div", "ph", "Não foi possível abrir este arquivo."));
   if (c.kind === "image") {
     const ph = el("div", "ph", "Carregando foto…"); box.append(ph);
@@ -233,7 +273,7 @@ function mediaBlock(c) {
       img.onclick = () => { $("viewer-img").src = url; $("viewer").showModal(); };
     }).catch(fail);
   } else {
-    const btn = el("button", "ph", `Tocar para carregar o vídeo · ${sizeLabel(c.size || 0)}`); btn.type = "button";
+    const btn = el("button", "ph", `Tocar para carregar o vídeo · ${sizeLabel(Number(c.size) || 0)}`); btn.type = "button";
     btn.onclick = async () => {
       btn.disabled = true; btn.textContent = "Carregando vídeo…";
       try {
@@ -249,7 +289,7 @@ function mediaBlock(c) {
 function addMessage(m, content, { err = false, animate = false } = {}) {
   if (typeof content === "string") content = { type: "text", text: content };
   const media = content.type === "media" && !err;
-  const text = content.type === "media" ? content.caption || "" : content.text;
+  const text = String(content.type === "media" ? content.caption ?? "" : content.text ?? "");
   const mine = m.sender_id === me.id, at = new Date(m.created_at);
   const wrap = el("div", "msg" + (mine ? " mine" : "")), line = el("div", "line");
   const b = el("div", "bubble" + (mine ? " mine" : "") + (err ? " err" : "") + (media ? " has-media" : ""));
@@ -301,12 +341,8 @@ async function react(id, emoji) {
   const map = reactions.get(id) || new Map(); reactions.set(id, map);
   const prev = map.get(me.id), remove = emoji === prev;
   remove ? map.delete(me.id) : map.set(me.id, emoji); renderRx(id); // atualiza na hora
-  let error;
-  if (remove) ({ error } = await sb.from("reactions").delete().eq("message_id", id).eq("user_id", me.id));
-  else {
-    const enc = await encrypt(myKeys.privateKey, active.public_key, emoji);
-    ({ error } = await sb.from("reactions").upsert({ message_id: id, user_id: me.id, ...enc }, { onConflict: "message_id,user_id" }));
-  }
+  const enc = await encrypt(myKeys.privateKey, active.public_key, remove ? "" : emoji); // "" = sem reação
+  const { error } = await sb.from("reactions").upsert({ message_id: id, user_id: me.id, ...enc }, { onConflict: "message_id,user_id" });
   if (error) { prev ? map.set(me.id, prev) : map.delete(me.id); renderRx(id); note("Não foi possível reagir. Tente de novo."); }
 }
 async function onReaction(p) {
@@ -314,7 +350,9 @@ async function onReaction(p) {
   if (!active || !msgs.has(row.message_id)) return;
   const map = reactions.get(row.message_id) || new Map(); reactions.set(row.message_id, map);
   if (p.eventType === "DELETE") map.delete(row.user_id);
-  else { try { map.set(row.user_id, await decrypt(myKeys.privateKey, active.public_key, row)); } catch { return; } }
+  else {
+    try { const em = await decrypt(myKeys.privateKey, active.public_key, row); em ? map.set(row.user_id, em) : map.delete(row.user_id); } catch { return; }
+  }
   renderRx(row.message_id);
 }
 async function loadReactions(ids, peer) {
@@ -323,7 +361,8 @@ async function loadReactions(ids, peer) {
   for (const r of data || []) {
     try {
       const map = reactions.get(r.message_id) || new Map(); reactions.set(r.message_id, map);
-      map.set(r.user_id, await decrypt(myKeys.privateKey, peer.public_key, r));
+      const em = await decrypt(myKeys.privateKey, peer.public_key, r);
+      if (em) map.set(r.user_id, em);
     } catch {}
   }
   ids.forEach(renderRx);
@@ -343,12 +382,31 @@ async function show(m, peer, animate) {
   try { addMessage(m, unpack(await decrypt(myKeys.privateKey, peer.public_key, m)), { animate }); }
   catch { addMessage(m, "Não foi possível decifrar esta mensagem.", { err: true }); }
 }
+async function checkPin(peer) {
+  const k = `pin:${me.id}:${peer.id}`, fp = await fingerprint(peer.public_key);
+  let saved = null; try { saved = localStorage.getItem(k); } catch {}
+  if (!saved) { try { localStorage.setItem(k, fp); } catch {} return true; }
+  if (saved === fp) return true;
+  const r = await choose(`A chave de @${peer.username} mudou`,
+    "Isso pode ser só uma conta refeita, mas também pode ser alguém tentando se passar por essa pessoa. Confirme com ela por outro meio (veja o código de segurança) antes de continuar.",
+    [{ label: "Não abrir esta conversa", value: "no", cls: "primary" }, { label: "Confio na nova chave", value: "yes", cls: "ghost" }]);
+  if (r !== "yes") return false;
+  try { localStorage.setItem(k, fp); } catch {}
+  return true;
+}
+$("safety-btn").onclick = async () => {
+  if (!active) return;
+  $("safety-who").textContent = "@" + active.username;
+  $("safety-code").replaceChildren(...(await safetyCode(me.public_key, active.public_key)).map((g) => el("span", null, g)));
+  $("safety").showModal();
+};
 async function open(peer) {
+  if (!(await checkPin(peer))) return;
   active = peer; unread.delete(peer.id); renderContacts(); updateStatus();
   $("chat").classList.add("in-conv");
   $("conv-title").textContent = "@" + peer.username;
   $("badge").hidden = false; $("conv-empty").hidden = true; $("send-form").hidden = false;
-  $("bg-btn").hidden = false; clearPending(); setBg(bgCache.get(peer.id) ?? null); applyBackground(peer);
+  $("bg-btn").hidden = false; $("safety-btn").hidden = false; clearPending(); setBg(bgCache.get(peer.id) ?? null); applyBackground(peer);
   $("messages").replaceChildren(); msgs.clear(); reactions.clear();
   const { data } = await sb.from("messages").select("*")
     .or(`and(sender_id.eq.${me.id},recipient_id.eq.${peer.id}),and(sender_id.eq.${peer.id},recipient_id.eq.${me.id})`)
@@ -367,7 +425,7 @@ $("back").onclick = () => { $("chat").classList.remove("in-conv"); active = null
 
 async function onIncoming(m) {
   if (!contacts.has(m.sender_id)) {
-    const { data } = await sb.from("profiles").select("*").eq("id", m.sender_id).single();
+    const { data } = await sb.from("profiles").select("id,username,public_key").eq("id", m.sender_id).single();
     contacts.set(data.id, data);
   }
   if (active?.id === m.sender_id) { $("msgs-empty")?.remove(); await show(m, active, true); markRead(); }

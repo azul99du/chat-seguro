@@ -131,3 +131,6 @@ dialog#viewer{padding:0;width:auto;max-width:96vw;background:transparent;box-sha
 #viewer-img{display:block;max-width:96vw;max-height:92dvh;border-radius:12px;cursor:zoom-out}
 dialog#viewer::backdrop{background:rgba(10,12,40,.85)}
 .bar .icon{color:#fff;border-color:rgba(255,255,255,.35)}.bar .icon:hover{background:rgba(255,255,255,.12)}
+
+.safety-code{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 12px;margin:14px 0;padding:14px;border-radius:12px;background:var(--paper);font:400 1.05rem var(--mono);text-align:center;letter-spacing:.06em}
+@media(min-width:480px){.safety-code{grid-template-columns:repeat(4,1fr)}}

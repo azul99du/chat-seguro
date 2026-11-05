@@ -74,7 +74,24 @@ export async function makeBackup(uid, pass) {
 export async function restoreBackup(uid, pass, backup, publicJwk) {
   const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(backup.iv) },
     await passKey(pass, unb64(backup.salt), ["decrypt"]), unb64(backup.data));
-  const privateKey = await crypto.subtle.importKey("jwk", JSON.parse(new TextDecoder().decode(pt)), ECDH, true, ["deriveKey"]);
+  const jwk = JSON.parse(new TextDecoder().decode(pt));
+  // a chave restaurada precisa ser a MESMA que está publicada no perfil (evita backup trocado)
+  if (jwk.x !== publicJwk.x || jwk.y !== publicJwk.y) throw new Error("backup nao corresponde ao perfil");
+  const privateKey = await crypto.subtle.importKey("jwk", jwk, ECDH, true, ["deriveKey"]);
   const publicKey = await crypto.subtle.importKey("jwk", publicJwk, ECDH, true, []);
   await idb("readwrite", (st) => st.put({ privateKey, publicKey }, uid));
 }
+
+// ---------- Verificação de chaves (anti "homem no meio") ----------
+const hex = (buf) => [...new Uint8Array(buf)].map((x) => x.toString(16).padStart(2, "0")).join("");
+export async function fingerprint(jwk) {
+  const c = JSON.stringify({ crv: jwk.crv, kty: jwk.kty, x: jwk.x, y: jwk.y });
+  return hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(c)));
+}
+// 12 grupos de 5 dígitos, iguais para os dois lados da conversa
+export async function safetyCode(a, b) {
+  const [fa, fb] = (await Promise.all([fingerprint(a), fingerprint(b)])).sort();
+  const h = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(fa + fb)));
+  return Array.from({ length: 12 }, (_, i) => String(((h[2 * i] << 8) | h[2 * i + 1]) % 100000).padStart(5, "0"));
+}
+export const deleteLocalKeys = (uid) => idb("readwrite", (s) => s.delete(uid));
