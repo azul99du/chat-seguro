@@ -2,7 +2,7 @@ import { createClient } from "./vendor/supabase.js";
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js";
 import { commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js";
-import { cleanImage, cleanVideo, sealBytes, openBytes } from "./media.js";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js";
 import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -328,10 +328,10 @@ const sizeLabel = (n) => (n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math
 
 // baixa o arquivo cifrado, decifra e devolve uma URL local (nunca sai do navegador decifrado)
 const mediaCache = new Map();
-const OK_MIME = { image: ["image/jpeg", "image/png", "image/webp"], video: ["video/mp4", "video/quicktime"] };
+const OK_MIME = { image: ["image/jpeg", "image/png", "image/webp"], video: ["video/mp4", "video/quicktime"], audio: ["audio/mp4", "audio/mpeg", "audio/wav", "audio/webm"] };
 const OK_PATH = /^[0-9a-f-]{36}\/[0-9a-f-]{36}\/[A-Za-z0-9._-]{1,80}$/;
 // o tipo vem da mensagem (quem enviou controla): só aceitamos tipos de imagem/vídeo, nunca text/html
-const safeMime = (c) => { const l = OK_MIME[c.kind === "video" ? "video" : "image"]; return l.includes(c.mime) ? c.mime : l[0]; };
+const safeMime = (c) => { const l = OK_MIME[c.kind === "video" ? "video" : c.kind === "audio" ? "audio" : "image"]; return l.includes(c.mime) ? c.mime : l[0]; };
 async function loadMedia(c) {
   if (typeof c.path !== "string" || !OK_PATH.test(c.path) || typeof c.key !== "string" || typeof c.iv !== "string") throw new Error("midia invalida");
   if (mediaCache.has(c.path)) return mediaCache.get(c.path);
@@ -341,6 +341,26 @@ async function loadMedia(c) {
   const url = URL.createObjectURL(new Blob([bytes], { type: safeMime(c) }));
   mediaCache.set(c.path, url); return url;
 }
+// ---------- Tocador de áudio (próprio: a duração vem da mensagem, porque gravações do navegador não trazem duração) ----------
+let tocando = null;
+const mmss = (n) => { n = Math.max(0, Math.round(Number(n) || 0)); return `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`; };
+function playerAudio(url, dur, { auto = false } = {}) {
+  const box = el("div", "player"), btn = el("button", "play"), barra = el("div", "barra"), prog = el("i"), tempo = el("span", "tempo", `0:00 / ${mmss(dur)}`);
+  btn.type = "button"; btn.setAttribute("aria-label", "Tocar áudio"); barra.append(prog); box.append(btn, barra, tempo);
+  const a = new Audio(url); a.preload = "metadata";
+  const total = () => (Number.isFinite(a.duration) && a.duration > 0 ? a.duration : dur) || 0;
+  const pinta = () => { const t = total(); prog.style.width = t ? Math.min(100, (a.currentTime / t) * 100) + "%" : "0%"; tempo.textContent = `${mmss(a.currentTime)} / ${mmss(t)}`; };
+  a.ontimeupdate = pinta;
+  a.onplay = () => { btn.classList.add("on"); btn.setAttribute("aria-label", "Pausar áudio"); };
+  a.onpause = () => { btn.classList.remove("on"); btn.setAttribute("aria-label", "Tocar áudio"); };
+  a.onended = () => { a.currentTime = 0; pinta(); if (tocando === a) tocando = null; };
+  a.onerror = () => { tempo.textContent = "Este aparelho não toca este formato"; };
+  const toca = () => { if (tocando && tocando !== a) tocando.pause(); tocando = a; return a.play().catch(() => { tempo.textContent = "Toque de novo para ouvir"; }); };
+  btn.onclick = () => (a.paused ? toca() : a.pause());
+  if (auto) toca();
+  return box;
+}
+
 function mediaBlock(c) {
   const box = el("div", "media");
   const w = Number(c.w), h = Number(c.h), okDims = w > 0 && h > 0 && w < 20000 && h < 20000;
@@ -353,6 +373,19 @@ function mediaBlock(c) {
       img.onload = () => ph.replaceWith(img); img.onerror = fail; img.src = url;
       img.onclick = () => { $("viewer-img").src = url; $("viewer").showModal(); };
     }).catch(fail);
+  } else if (c.kind === "audio") {
+    box.classList.add("audio");
+    const dur = Math.min(3600, Math.max(0, Number(c.dur) || 0));
+    if (!new Audio().canPlayType(safeMime(c))) box.append(el("div", "ph audio-ph", "Este aparelho não toca este formato de áudio."));
+    else if (mediaCache.has(c.path)) box.append(playerAudio(mediaCache.get(c.path), dur));
+    else {
+      const btn = el("button", "ph audio-ph", `Ouvir áudio · ${mmss(dur)} · ${sizeLabel(Number(c.size) || 0)}`); btn.type = "button";
+      btn.onclick = async () => {
+        btn.disabled = true; btn.textContent = "Carregando áudio…";
+        try { box.replaceChildren(playerAudio(await loadMedia(c), dur, { auto: true })); } catch { fail(); }
+      };
+      box.append(btn);
+    }
   } else {
     const btn = el("button", "ph", `Tocar para carregar o vídeo · ${sizeLabel(Number(c.size) || 0)}`); btn.type = "button";
     btn.onclick = async () => {
@@ -374,7 +407,7 @@ function addMessage(m, content, { err = false, animate = false } = {}) {
   const mine = m.sender_id === me.id, at = new Date(m.created_at);
   const wrap = el("div", "msg" + (mine ? " mine" : "")), line = el("div", "line");
   const b = el("div", "bubble" + (mine ? " mine" : "") + (err ? " err" : "") + (media ? " has-media" : ""));
-  const label = media ? (content.kind === "video" ? "Vídeo enviado. " : "Foto enviada. ") : "";
+  const label = media ? (content.kind === "video" ? "Vídeo enviado. " : content.kind === "audio" ? "Áudio enviado. " : "Foto enviada. ") : "";
   const sr = el("span", "sr", label + text), vis = el("span", "vis", text), meta = el("div", "meta");
   vis.setAttribute("aria-hidden", "true");
   const tm = el("time", null, hhmm(at)); tm.dateTime = at.toISOString();
@@ -618,16 +651,23 @@ async function onIncoming(m) {
 }
 
 // ---------- Anexos: limpa os metadados ANTES de qualquer coisa sair do aparelho ----------
-const MAX_VIDEO = 45 * 1048576;
+const MAX_VIDEO = 45 * 1048576, MAX_AUDIO = 20 * 1048576, MAX_GRAVACAO = 300; // 300 s = 5 min
 let pending = null; // anexo pronto (ou {busy:true} enquanto limpa)
-const niceErr = (e, fallback) => (/^(Não|Vídeo|Formato)/.test(e?.message || "") ? e.message : fallback);
+let gravador = null; // gravação de áudio em andamento
+const niceErr = (e, fallback) => (/^(Não|Vídeo|Áudio|Formato)/.test(e?.message || "") ? e.message : fallback);
 function showPending(name, info, ok = false) {
   $("pending").hidden = false; $("pending-name").textContent = name;
   const i = $("pending-info"); i.textContent = info; i.className = ok ? "ok" : "";
 }
 function clearPending(keepUrl) {
+  if (gravador) { // cancelar: o botão do microfone volta ao normal na hora, sem esperar o navegador avisar que parou
+    gravador.cancelado = true; try { gravador.rec.stop(); } catch {}
+    $("mic").classList.remove("rec"); $("mic").setAttribute("aria-label", "Gravar áudio");
+  }
   if (pending?.url && !keepUrl) URL.revokeObjectURL(pending.url);
-  pending = null; $("pending").hidden = true; $("pending-thumb").replaceChildren();
+  if (tocando) { tocando.pause(); tocando = null; }
+  pending = null; $("pending").hidden = true; $("pending-thumb").replaceChildren(); $("pending-thumb").classList.remove("gravando");
+  $("pending-extra").replaceChildren(); $("pending-stop").hidden = true;
 }
 $("pending-x").onclick = () => clearPending();
 $("attach").onclick = () => $("file").click();
@@ -640,6 +680,9 @@ async function prepare(f) {
     let r;
     if (f.type.startsWith("image/")) {
       const c = await cleanImage(f); r = { kind: "image", bytes: c.bytes, mime: c.mime, w: c.w, h: c.h };
+    } else if (/^audio\//.test(f.type) || /\.(mp3|m4a|wav)$/i.test(f.name)) {
+      if (f.size > MAX_AUDIO) throw new Error("Áudio grande demais. O limite é de 20 MB.");
+      const c = cleanAudio(await f.arrayBuffer()); r = { kind: "audio", bytes: c.bytes, mime: c.mime };
     } else if (/\.(mp4|m4v|mov)$/i.test(f.name) || /^video\/(mp4|quicktime)$/.test(f.type)) {
       if (f.size > MAX_VIDEO) throw new Error("Vídeo grande demais. O limite é de 45 MB.");
       const mov = f.type === "video/quicktime" || /\.mov$/i.test(f.name);
@@ -647,14 +690,75 @@ async function prepare(f) {
     } else throw new Error("Formato não suportado. Envie foto (JPG, PNG, WebP) ou vídeo MP4/MOV.");
     if (pending !== token) return; // removido enquanto limpava
     r.url = URL.createObjectURL(new Blob([r.bytes], { type: r.mime })); pending = r;
-    const t = r.kind === "image" ? el("img") : el("video"); t.src = r.url; if (r.kind === "video") { t.muted = true; t.preload = "metadata"; }
-    $("pending-thumb").replaceChildren(t);
-    showPending(f.name, `${sizeLabel(r.bytes.length)} · metadados removidos` + (f.type === "image/gif" ? " · GIF vira imagem parada" : ""), true);
+    if (r.kind === "audio") {
+      r.dur = await duracaoAudio(r.url);
+      $("pending-thumb").replaceChildren(iconeMic()); $("pending-extra").replaceChildren(playerAudio(r.url, r.dur));
+    } else {
+      const t = r.kind === "image" ? el("img") : el("video"); t.src = r.url; if (r.kind === "video") { t.muted = true; t.preload = "metadata"; }
+      $("pending-thumb").replaceChildren(t);
+    }
+    showPending(f.name, `${r.kind === "audio" && r.dur ? mmss(r.dur) + " · " : ""}${sizeLabel(r.bytes.length)} · metadados removidos` + (f.type === "image/gif" ? " · GIF vira imagem parada" : ""), true);
   } catch (e) {
     if (pending === token) clearPending();
     note(niceErr(e, "Não foi possível preparar este arquivo."));
   }
 }
+
+// ---------- Gravar áudio (microfone) ----------
+function iconeMic() {
+  const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg");
+  for (const [k, v] of Object.entries({ viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round" })) svg.setAttribute(k, v);
+  for (const d of ["M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z", "M19 11a7 7 0 0 1-14 0M12 18v3"]) { const p = document.createElementNS(ns, "path"); p.setAttribute("d", d); svg.append(p); }
+  return svg;
+}
+function duracaoAudio(url) { // lê a duração do arquivo; 0 se o formato não informar
+  return new Promise((res) => { const a = new Audio(); const fim = (n) => { clearTimeout(t); res(Number.isFinite(n) && n > 0 && n < 36000 ? Math.round(n) : 0); };
+    const t = setTimeout(() => fim(0), 4000); a.preload = "metadata"; a.onloadedmetadata = () => fim(a.duration); a.onerror = () => fim(0); a.src = url; });
+}
+// AAC em MP4 toca em todo lugar (inclusive iPhone); WebM/Opus é a alternativa para Chrome e Firefox
+const tipoGravacao = () => ["audio/mp4;codecs=mp4a.40.2", "audio/webm;codecs=opus", "audio/mp4", "audio/webm"].find((t) => window.MediaRecorder?.isTypeSupported?.(t)) ?? "";
+let pedindoMic = false; // evita duas gravações se tocarem duas vezes enquanto o navegador pergunta pela permissão
+async function iniciarGravacao() {
+  if (pedindoMic) return;
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) return note("Este navegador não grava áudio. Use o Chrome ou o Safari atualizado, ou anexe um arquivo de áudio.");
+  clearPending(); pedindoMic = true;
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+  catch { return note("Não consegui usar o microfone. Permita o acesso ao microfone nas configurações do navegador e tente de novo."); }
+  finally { pedindoMic = false; }
+  const tipo = tipoGravacao(), rec = new MediaRecorder(stream, tipo ? { mimeType: tipo, audioBitsPerSecond: 48000 } : { audioBitsPerSecond: 48000 });
+  const g = (gravador = { rec, stream, chunks: [], t0: Date.now(), cancelado: false, timer: 0 });
+  pending = { busy: true, gravando: true };
+  rec.ondataavailable = (e) => { if (e.data?.size) g.chunks.push(e.data); };
+  rec.onstop = () => finalizarGravacao(g);
+  rec.start(1000);
+  $("mic").classList.add("rec"); $("mic").setAttribute("aria-label", "Parar gravação");
+  $("pending-thumb").classList.add("gravando"); $("pending-thumb").replaceChildren(iconeMic()); $("pending-stop").hidden = false;
+  showPending("Gravando…", "0:00");
+  g.timer = setInterval(() => {
+    const s = (Date.now() - g.t0) / 1000; $("pending-info").textContent = `${mmss(s)} (máx. ${mmss(MAX_GRAVACAO)})`;
+    if (s >= MAX_GRAVACAO) pararGravacao();
+  }, 250);
+}
+function pararGravacao() { if (gravador?.rec.state === "recording") gravador.rec.stop(); }
+async function finalizarGravacao(g) {
+  clearInterval(g.timer); g.stream.getTracks().forEach((t) => t.stop());
+  $("mic").classList.remove("rec"); $("mic").setAttribute("aria-label", "Gravar áudio"); $("pending-stop").hidden = true; $("pending-thumb").classList.remove("gravando");
+  if (gravador === g) gravador = null;
+  if (g.cancelado) return;
+  const dur = Math.round((Date.now() - g.t0) / 1000), token = pending;
+  if (!g.chunks.length || dur < 1) { clearPending(); return note("A gravação ficou curta demais. Grave por pelo menos 1 segundo."); }
+  showPending("Áudio gravado", "Removendo metadados…");
+  try {
+    const r = cleanAudio(await new Blob(g.chunks).arrayBuffer(), { gravado: true });
+    if (pending !== token) return; // descartado enquanto limpava
+    r.url = URL.createObjectURL(new Blob([r.bytes], { type: r.mime })); r.kind = "audio"; r.dur = dur; pending = r;
+    $("pending-thumb").replaceChildren(iconeMic()); $("pending-extra").replaceChildren(playerAudio(r.url, dur));
+    showPending("Áudio gravado", `${mmss(dur)} · ${sizeLabel(r.bytes.length)} · metadados removidos`, true);
+  } catch (e) { if (pending === token) clearPending(); note(niceErr(e, "Não foi possível preparar a gravação.")); }
+}
+$("mic").onclick = () => (gravador ? pararGravacao() : iniciarGravacao());
+$("pending-stop").onclick = pararGravacao;
 
 async function uploadSealed(bytes, path) {
   const sealed = await sealBytes(bytes);
@@ -667,6 +771,7 @@ $("send-form").onsubmit = async (e) => {
   e.preventDefault();
   const text = $("text").value.trim(), peer = active;
   if (!peer || (!text && !pending)) return;
+  if (pending?.gravando) return note("Pare a gravação antes de enviar.");
   if (pending?.busy) return note("Aguarde um instante: ainda estou limpando os metadados do arquivo.");
   const btn = e.submitter ?? e.target.querySelector(".primary"); btn.disabled = true;
   try {
@@ -675,7 +780,7 @@ $("send-form").onsubmit = async (e) => {
       const p = pending; showPending($("pending-name").textContent, "Cifrando e enviando…");
       const path = `${me.id}/${peer.id}/${crypto.randomUUID()}`;
       const sealed = await uploadSealed(p.bytes, path);
-      content = { v: 1, type: "media", kind: p.kind, path, key: sealed.key, iv: sealed.iv, mime: p.mime, w: p.w, h: p.h, size: p.bytes.length, caption: text };
+      content = { v: 1, type: "media", kind: p.kind, path, key: sealed.key, iv: sealed.iv, mime: p.mime, w: p.w, h: p.h, dur: p.dur, size: p.bytes.length, caption: text };
       row = await sendContent(peer, content);
       mediaCache.set(path, p.url); clearPending(true); // reaproveita a prévia local, sem baixar de novo
     } else { content = { type: "text", text }; row = await sendContent(peer, content); }

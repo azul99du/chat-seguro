@@ -39,3 +39,15 @@ export function makeJpegWithExif(dir, name = "foto.jpg") {
 }
 export const probe = (file, ...args) => execFileSync("ffprobe", ["-v", "error", ...args, file], { encoding: "utf8" });
 export const decodes = (file) => spawnSync("ffmpeg", ["-v", "error", "-i", file, "-f", "null", "-"]).status === 0;
+
+// Áudio de 2 s com metadados "secretos". formato: mp3 (ID3v2 + ID3v1), wav (LIST/INFO), m4a (©nam/©xyz...) ou webm (título em Info).
+export function makeAudio(dir, formato) {
+  const out = join(dir, "audio." + formato);
+  const meta = ["-metadata", "title=SEGREDOTITULO", "-metadata", "artist=SEGREDOARTISTA", "-metadata", "comment=SEGREDOCOMENT", "-metadata", "album=SEGREDOALBUM"];
+  const base = ["-f", "lavfi", "-i", "sine=frequency=440:duration=2"];
+  if (formato === "mp3") ff(...base, "-c:a", "libmp3lame", "-id3v2_version", "3", "-write_id3v1", "1", ...meta, out);
+  else if (formato === "wav") ff(...base, "-c:a", "pcm_s16le", ...meta, "-metadata", "location=+12.3456-045.6789/", out);
+  else if (formato === "m4a") ff(...base, "-c:a", "aac", ...meta, "-metadata", "location=+12.3456-045.6789/", "-metadata", "creation_time=2019-03-04T05:06:07Z", out);
+  else if (formato === "webm") ff(...base, "-c:a", "libopus", "-metadata", "title=SEGREDOTITULO", out);
+  return out;
+}

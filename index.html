@@ -82,7 +82,7 @@
         <button id="bg-btn" class="ghost icon" aria-label="Mudar o fundo desta conversa" hidden>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/></svg>
         </button>
-        <div class="badge" id="badge" hidden><i class="seal" aria-hidden="true"></i>lacrada</div>
+        <div class="badge" id="badge" title="Conversa lacrada de ponta a ponta" hidden><i class="seal" aria-hidden="true"></i>lacrada</div>
       </header>
       <div id="messages" aria-live="polite"></div>
       <div id="conv-empty" class="empty big">
@@ -91,14 +91,18 @@
       </div>
       <div id="pending" hidden>
         <div id="pending-thumb" aria-hidden="true"></div>
-        <div class="pending-info"><strong id="pending-name"></strong><small id="pending-info"></small></div>
+        <div class="pending-info"><strong id="pending-name"></strong><small id="pending-info"></small><div id="pending-extra"></div></div>
+        <button type="button" id="pending-stop" class="primary" hidden>Parar</button>
         <button type="button" id="pending-x" class="ghost icon" aria-label="Remover anexo">×</button>
       </div>
       <form id="send-form" hidden>
-        <button type="button" id="attach" class="ghost icon" aria-label="Anexar foto ou vídeo">
+        <button type="button" id="attach" class="ghost icon" aria-label="Anexar foto, vídeo ou áudio">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11l-9 9a5 5 0 0 1-7-7l9-9a3.5 3.5 0 0 1 5 5l-9 9a2 2 0 0 1-3-3l8-8"/></svg>
         </button>
-        <input type="file" id="file" accept="image/*,video/mp4,video/quicktime,.mp4,.m4v,.mov" hidden>
+        <button type="button" id="mic" class="ghost icon" aria-label="Gravar áudio">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
+        </button>
+        <input type="file" id="file" accept="image/*,video/mp4,video/quicktime,audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/x-wav,.mp4,.m4v,.mov,.mp3,.m4a,.wav" hidden>
         <label class="sr" for="text">Mensagem</label>
         <input id="text" placeholder="Escreva uma mensagem" autocomplete="off" maxlength="4000">
         <button class="primary">Enviar</button>

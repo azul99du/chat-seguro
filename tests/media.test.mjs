@@ -3,8 +3,8 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { cleanVideo, sealBytes, openBytes } from "../media.js";
-import { hasFfmpeg, tmp, makeVideo, probe, decodes } from "./helpers/fixtures.mjs";
+import { cleanVideo, cleanAudio, sealBytes, openBytes } from "../media.js";
+import { hasFfmpeg, tmp, makeVideo, makeAudio, probe, decodes } from "./helpers/fixtures.mjs";
 
 const SECRETS = ["SEGREDO"]; // texto simples; GPS e data são guardados em formato próprio e são checados pelo ffprobe e pelo bloco loci
 const ab = (buf) => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
@@ -54,5 +54,36 @@ describe("cifra de arquivo (AES-GCM, chave aleatória por arquivo)", () => {
     await assert.rejects(openBytes(a.data, b.key, a.iv));
     const adult = new Uint8Array(a.data); adult[0] ^= 1;
     await assert.rejects(openBytes(adult, a.key, a.iv));
+  });
+});
+
+describe("limpeza de áudio", { skip }, () => {
+  const SEGREDOS = ["SEGREDO"];
+  for (const [formato, mime] of [["mp3", "audio/mpeg"], ["wav", "audio/wav"], ["m4a", "audio/mp4"], ["webm", "audio/webm"]]) {
+    test(`${formato.toUpperCase()}: tags, artista, título, comentário, GPS e data saem; continua decodificando`, () => {
+      const dir = tmp(), src = makeAudio(dir, formato), orig = readFileSync(src);
+      assert.ok(orig.toString("latin1").includes("SEGREDO") || formato === "webm", "o arquivo de teste precisa ter os metadados");
+      const r = cleanAudio(ab(orig), { gravado: formato === "webm" });
+      assert.equal(r.mime, mime);
+      const dst = join(dir, "out." + formato); writeFileSync(dst, r.bytes);
+      const txt = Buffer.from(r.bytes).toString("latin1");
+      assert.deepEqual(SEGREDOS.filter((x) => txt.includes(x)), [], "nenhum metadado pode sobrar");
+      assert.ok(decodes(dst), "o áudio continua decodificando");
+      const tags = probe(dst, "-show_entries", "format_tags:stream_tags", "-of", "default=nw=1");
+      assert.doesNotMatch(tags, /SEGREDO|location|creation_time|2019|12\.3456|artist|album|comment|=Lavf/i);
+      const dur = Number(probe(dst, "-show_entries", "format=duration", "-of", "csv=p=0")); assert.ok(Math.abs(dur - 2) < 0.2, `duração preservada (${dur}s)`);
+    });
+  }
+  test("MP3: ID3v2 no início e ID3v1 no fim são removidos (os quadros ficam intactos)", () => {
+    const orig = readFileSync(makeAudio(tmp(), "mp3")), r = cleanAudio(ab(orig));
+    assert.equal(Buffer.from(orig.subarray(0, 3)).toString(), "ID3"); assert.equal(Buffer.from(orig.subarray(orig.length - 128, orig.length - 125)).toString(), "TAG");
+    assert.ok(!Buffer.from(r.bytes.subarray(0, 3)).equals(Buffer.from("ID3")));
+    assert.equal(r.bytes[0], 0xff); assert.ok(r.bytes.length < orig.length - 128);
+  });
+  test("WebM de arquivo (não gravado pelo app) e formatos desconhecidos são recusados com mensagem clara", () => {
+    const webm = readFileSync(makeAudio(tmp(), "webm"));
+    assert.throws(() => cleanAudio(ab(webm)), /Formato não suportado/);
+    assert.throws(() => cleanAudio(new TextEncoder().encode("isto não é um áudio de verdade, só texto comprido").buffer), /Formato não suportado|limpar/);
+    assert.throws(() => cleanAudio(new Uint8Array(4).buffer), /limpar/);
   });
 });

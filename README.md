@@ -15,6 +15,7 @@ ECDH P-256 (WebCrypto) -> AES-GCM 256. Chave privada no IndexedDB. O banco só v
 - Vídeos MP4/MOV (até 45 MB): o contêiner é limpo sem recodificar (título, GPS, datas, faixas de metadados). Resta só a assinatura do codificador dentro dos dados do vídeo.
 - O arquivo é cifrado no navegador (AES-GCM, chave aleatória por arquivo) antes de ir para o Storage; a chave vai dentro da mensagem cifrada.
 - Fundo de conversa: pessoal, limpo de metadados e cifrado.
+- **Áudio:** grave pelo microfone (botão do microfone; até 5 min, com prévia antes de enviar) ou anexe MP3, M4A ou WAV (até 20 MB). MP3 perde ID3v2/ID3v1/APE (artista, título, capa, comentário); WAV guarda só `fmt`/`data` (some LIST/INFO, bext, iXML); M4A passa pela mesma limpeza do MP4 (GPS, data, título); a gravação do navegador (MP4/AAC ou WebM/Opus) tem aplicativo, título e data zerados e blocos Tags/Attachments/Chapters apagados. Tudo sem recodificar, no mesmo tamanho. O amigo baixa e decifra só ao tocar em "Ouvir áudio". Outros formatos (OGG, FLAC, AAC solto) são recusados com aviso.
 
 ## Pendente
 - Trocar a frase-senha; revogar aparelhos.

@@ -129,3 +129,107 @@ export function cleanVideo(input) {
   }
   return buf;
 }
+
+// ---------- Áudio: remove tags (ID3, LIST/INFO, ©xyz...) sem recodificar ----------
+const BADA = "Não consegui limpar este áudio. Use um arquivo MP3, M4A ou WAV, ou grave pelo microfone.";
+const ascii = (b, o, n) => String.fromCharCode(...b.subarray(o, o + n));
+const u32le = (b, o) => (b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24)) >>> 0;
+
+// MP3: tira ID3v2 (início; pode haver mais de um), ID3v1 e APEv2 (fim). Os quadros de áudio ficam intactos.
+function cleanMp3(b) {
+  let s = 0, e = b.length;
+  while (ascii(b, s, 3) === "ID3") {
+    const size = ((b[s + 6] & 0x7f) << 21) | ((b[s + 7] & 0x7f) << 14) | ((b[s + 8] & 0x7f) << 7) | (b[s + 9] & 0x7f);
+    s += 10 + size + (b[s + 5] & 0x10 ? 10 : 0);
+    if (s >= e) throw new Error(BADA);
+  }
+  if (e - 128 >= s && ascii(b, e - 128, 3) === "TAG") e -= 128;
+  if (e - 32 >= s && ascii(b, e - 32, 8) === "APETAGEX") { // tamanho do APE já inclui o rodapé; o cabeçalho (32 bytes) é opcional
+    const tam = u32le(b, e - 32 + 12), flags = u32le(b, e - 32 + 20);
+    e -= tam + (flags & 0x80000000 ? 32 : 0); if (e < s) throw new Error(BADA);
+  }
+  const limite = Math.min(e - 4, s + 4096); // pode haver algum preenchimento antes do 1º quadro
+  while (s < limite && !(b[s] === 0xff && (b[s + 1] & 0xe0) === 0xe0)) s++;
+  if (!(b[s] === 0xff && (b[s + 1] & 0xe0) === 0xe0) || e - s < 4) throw new Error(BADA);
+  return b.slice(s, e);
+}
+
+// WAV: guarda só "fmt " e "data"; some tudo o mais (LIST/INFO com artista e software, bext, iXML, id3...).
+function cleanWav(b) {
+  const guardar = [];
+  for (let o = 12; o + 8 <= b.length;) {
+    const id = ascii(b, o, 4); let n = u32le(b, o + 4);
+    if (o + 8 + n > b.length) n = b.length - o - 8; // "data" truncado: aproveita o que existe
+    if (id === "fmt " || id === "data") guardar.push({ id, d: b.subarray(o + 8, o + 8 + n) });
+    o += 8 + n + (n & 1);
+  }
+  if (!guardar.some((c) => c.id === "fmt ") || !guardar.some((c) => c.id === "data")) throw new Error(BADA);
+  const total = 4 + guardar.reduce((s, c) => s + 8 + c.d.length + (c.d.length & 1), 0), out = new Uint8Array(8 + total), dv = new DataView(out.buffer);
+  out.set(new TextEncoder().encode("RIFF"), 0); dv.setUint32(4, total, true); out.set(new TextEncoder().encode("WAVE"), 8);
+  let o = 12;
+  for (const c of guardar) { out.set(new TextEncoder().encode(c.id), o); dv.setUint32(o + 4, c.d.length, true); out.set(c.d, o + 8); o += 8 + c.d.length + (c.d.length & 1); }
+  return out;
+}
+
+// WebM (só da gravação feita pelo próprio app): zera aplicativo gerador, título e data no bloco "Info" e
+// transforma Tags, Attachments e Chapters em elementos "Void" (o formato prevê isso: o leitor os ignora).
+// Tudo no mesmo lugar, sem mudar o tamanho do arquivo.
+function scrubWebm(b) {
+  const vint = (o, manterMarca) => { // número de tamanho variável (EBML)
+    let len = 1; while (len <= 8 && !(b[o] & (0x80 >> (len - 1)))) len++;
+    if (len > 8 || o + len > b.length) throw new Error(BADA);
+    let v = manterMarca ? b[o] : b[o] & (0xff >> len);
+    for (let i = 1; i < len; i++) v = v * 256 + b[o + i];
+    const desconhecido = !manterMarca && [...b.subarray(o, o + len)].every((x, i) => (i === 0 ? (x & (0xff >> len)) === (0xff >> len) : x === 0xff));
+    return { v, len, desconhecido };
+  };
+  const filho = (o, fim) => {
+    const id = vint(o, true), tam = vint(o + id.len, false), ini = o + id.len + tam.len;
+    return { id: id.v, o, ini, tam: tam.desconhecido ? fim - ini : tam.v, desconhecido: tam.desconhecido };
+  };
+  const ID = { EBML: 0x1a45dfa3, SEGMENT: 0x18538067, INFO: 0x1549a966, CLUSTER: 0x1f43b675,
+    TAGS: 0x1254c367, ATTACHMENTS: 0x1941a469, CHAPTERS: 0x1043a770, MUXING: 0x4d80, WRITING: 0x5741, TITLE: 0x7ba9, DATE: 0x4461 };
+  const VAZIAR = [ID.TAGS, ID.ATTACHMENTS, ID.CHAPTERS], ZERAR = [ID.MUXING, ID.WRITING, ID.TITLE, ID.DATE];
+  const voidEm = (ini, fim) => { // preenche [ini, fim) com elementos Void (id 0xEC + tamanho de 1 byte)
+    while (ini < fim) {
+      let r = fim - ini, t = Math.min(r, 128); if (r - t === 1) t -= 1;
+      b[ini] = 0xec; b[ini + 1] = 0x80 | (t - 2); b.fill(0, ini + 2, ini + t); ini += t;
+    }
+  };
+  const cab = filho(0, b.length); if (cab.id !== ID.EBML) throw new Error(BADA);
+  const seg = filho(cab.ini + cab.tam, b.length); if (seg.id !== ID.SEGMENT) throw new Error(BADA);
+  let o = seg.ini, achouInfo = false, cauda = -1;
+  while (o < b.length - 2) {
+    const el = filho(o, b.length), fim = Math.min(b.length, el.ini + el.tam);
+    if (VAZIAR.includes(el.id)) voidEm(el.o, fim);
+    else if (el.id === ID.INFO) {
+      achouInfo = true;
+      for (let p = el.ini; p < fim;) { const c = filho(p, fim); if (ZERAR.includes(c.id)) b.fill(0, c.ini, Math.min(fim, c.ini + c.tam)); p = c.ini + c.tam; }
+    } else if (el.id === ID.CLUSTER && el.desconhecido) { cauda = el.ini; break; } // gravação ao vivo: o fim do cluster não é conhecido
+    o = fim;
+  }
+  if (!achouInfo) throw new Error(BADA);
+  if (cauda >= 0) { // não dá para andar pelos clusters: se algum desses blocos aparecer mais adiante, não confiamos
+    const aparece = (id) => { // procura os 4 bytes do id (sem Buffer: isto roda no navegador)
+      const p = [id >>> 24, (id >>> 16) & 255, (id >>> 8) & 255, id & 255];
+      for (let i = cauda; i <= b.length - 4; i++) if (b[i] === p[0] && b[i + 1] === p[1] && b[i + 2] === p[2] && b[i + 3] === p[3]) return true;
+      return false;
+    };
+    if ([ID.TAGS, ID.ATTACHMENTS, ID.CHAPTERS].some(aparece)) throw new Error(BADA);
+  }
+  return b;
+}
+
+// Devolve { bytes, mime }. `gravado` = veio da gravação do próprio app (único caso em que aceitamos WebM).
+export function cleanAudio(input, { gravado = false } = {}) {
+  const b = new Uint8Array(input);
+  if (b.length < 12) throw new Error(BADA);
+  if (ascii(b, 0, 4) === "RIFF" && ascii(b, 8, 4) === "WAVE") return { bytes: cleanWav(b), mime: "audio/wav" };
+  if (ascii(b, 4, 4) === "ftyp") return { bytes: cleanVideo(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength)), mime: "audio/mp4" };
+  if (b[0] === 0x1a && b[1] === 0x45 && b[2] === 0xdf && b[3] === 0xa3) {
+    if (!gravado) throw new Error("Formato não suportado. Use um arquivo MP3, M4A ou WAV, ou grave pelo microfone.");
+    return { bytes: scrubWebm(b), mime: "audio/webm" };
+  }
+  if (ascii(b, 0, 3) === "ID3" || (b[0] === 0xff && (b[1] & 0xe0) === 0xe0)) return { bytes: cleanMp3(b), mime: "audio/mpeg" };
+  throw new Error("Formato não suportado. Use um arquivo MP3, M4A ou WAV, ou grave pelo microfone.");
+}

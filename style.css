@@ -92,7 +92,7 @@ label{display:grid;gap:6px;font-size:.85rem;font-weight:600;color:var(--mut)}
 #conv-empty{position:absolute;inset:64px 0 0;display:grid;place-content:center;justify-items:center;text-align:center;
   background-color:var(--ink);background-image:var(--hatch);color:#C9CDF5;gap:8px}
 #conv-empty p{margin:0;color:#C9CDF5}#conv-empty .wordmark{color:#fff}
-#send-form{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:var(--card);border-top:1.5px solid var(--line)}
+#send-form{display:grid;grid-template-columns:auto auto 1fr auto;align-items:center;gap:8px;padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:var(--card);border-top:1.5px solid var(--line)}
 #back{display:none;color:#fff;border-color:rgba(255,255,255,.35)}
 
 /* celular: uma tela por vez */
@@ -147,3 +147,26 @@ dialog#viewer::backdrop{background:rgba(10,12,40,.85)}
 .me-box{flex:1 1 auto;min-width:0;justify-content:flex-end}
 #me{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .me-box button{flex:none}
+
+/* ===== áudio ===== */
+#mic.rec{background:var(--seal);border-color:var(--seal);color:#fff;animation:pulsa 1.2s ease-in-out infinite}
+@keyframes pulsa{0%,100%{box-shadow:0 0 0 0 rgba(232,51,95,.5)}50%{box-shadow:0 0 0 8px rgba(232,51,95,0)}}
+#pending-thumb svg{width:26px;height:26px;color:var(--ink-2)}
+#pending-thumb.gravando{background:#FFF0F4}#pending-thumb.gravando svg{color:var(--seal);animation:pulsa-op 1.2s ease-in-out infinite}
+@keyframes pulsa-op{50%{opacity:.35}}
+#pending-extra:empty{display:none}#pending-extra{margin-top:6px}
+.media.audio{width:min(64vw,300px)}
+.player{display:flex;align-items:center;gap:10px;min-width:0}
+.player .play{flex:none;position:relative;width:44px;height:44px;min-height:44px;padding:0;border-radius:50%;background:var(--ink);color:#fff}
+.bubble.mine .player .play{background:#fff;color:var(--ink)}
+.player .play::before{content:"";position:absolute;left:17px;top:13px;border-left:15px solid currentColor;border-top:9px solid transparent;border-bottom:9px solid transparent}
+.player .play.on::before{left:14px;top:14px;width:5px;height:16px;border:0;background:currentColor;box-shadow:11px 0 0 currentColor}
+.player .barra{flex:1;min-width:40px;height:6px;border-radius:3px;background:rgba(127,127,160,.3);overflow:hidden}
+.player .barra i{display:block;height:100%;width:0;background:var(--seal)}
+.player .tempo{flex:none;font:400 .75rem var(--mono);opacity:.8}
+.media .ph.audio-ph{aspect-ratio:auto;min-height:44px;padding:10px 12px;justify-content:start}
+@media(prefers-reduced-motion:reduce){#mic.rec,#pending-thumb.gravando svg{animation:none}}
+
+/* cabeçalho da conversa no celular: o nome encolhe com reticências e o selo "lacrada" vira só o ponto rosa */
+.title-box{min-width:0}#conv-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:520px){.badge{font-size:0;gap:0}}
