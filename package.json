@@ -1,0 +1,14 @@
+{
+  "name": "chat-seguro",
+  "private": true,
+  "type": "module",
+  "description": "Lacre: chat com criptografia ponta a ponta e sigilo futuro (site estático + Supabase)",
+  "scripts": {
+    "test": "npm run test:unit",
+    "test:unit": "node --test tests/ratchet.test.mjs tests/verify.test.mjs tests/media.test.mjs tests/static.test.mjs",
+    "test:e2e": "node --test --test-concurrency=1 tests/e2e/"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

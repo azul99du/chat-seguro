@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  testes:
+    name: Testes rápidos (protocolo, mídia, código, schema)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Instalar ffmpeg (gera os vídeos de teste)
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: npm ci
+      - run: npm run test:unit
+
+  e2e:
+    name: Ponta a ponta (navegador + projeto Supabase de teste)
+    needs: testes
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    # um de cada vez: todos usam o mesmo projeto de teste
+    concurrency:
+      group: e2e-projeto-de-teste
+      cancel-in-progress: false
+    env:
+      # Projeto Supabase SÓ de testes (nunca o que as pessoas usam). A chave publishable é pública por natureza.
+      SUPABASE_URL: https://ggcohoewsqsdasovsuxl.supabase.co
+      SUPABASE_KEY: sb_publishable_WyNuVIqK39YZ_EXjqdqdbw_J8_FH3hF
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Instalar ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
