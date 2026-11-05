@@ -1,6 +1,6 @@
 // Responder a uma mensagem (citação). Funções puras: não dependem do navegador, então são testadas em Node.
 // A citação viaja DENTRO da mensagem cifrada; o servidor nunca vê qual mensagem foi respondida.
-const KINDS = ["text", "image", "video", "audio"];
+const KINDS = ["text", "image", "video", "audio", "sticker"];
 const UUID = /^[0-9a-f-]{36}$/;
 export const MAX_PREVIEW = 80;
 // corta com reticências, para não parecer que a frase terminou ali (idempotente: um texto já cortado não muda)
@@ -37,6 +37,7 @@ export function limpaCitacao(re) {
 // Texto curto que descreve o que foi citado: "Foto · legenda", "Áudio · 0:23", ou o próprio texto.
 export function rotulo(r) {
   const extra = r.text ? ` · ${r.text}` : "";
+  if (r.kind === "sticker") return "Figurinha";
   if (r.kind === "image") return "Foto" + extra;
   if (r.kind === "video") return "Vídeo" + extra;
   if (r.kind === "audio") return `Áudio${r.dur ? " · " + mmss(r.dur) : ""}${extra}`;

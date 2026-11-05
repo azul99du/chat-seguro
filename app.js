@@ -1,6 +1,7 @@
 import { createClient } from "./vendor/supabase.js";
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js";
+import { montarFigurinhas } from "./figurinhas.js";
 import { commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js";
 import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js";
 import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js";
@@ -383,11 +384,11 @@ function unpack(s) {
 const sizeLabel = (n) => (n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB");
 
 // baixa o arquivo cifrado, decifra e devolve uma URL local (nunca sai do navegador decifrado)
-const mediaCache = new Map();
-const OK_MIME = { image: ["image/jpeg", "image/png", "image/webp"], video: ["video/mp4", "video/quicktime"], audio: ["audio/mp4", "audio/mpeg", "audio/wav", "audio/webm"] };
+const mediaCache = new Map(), stickerBytes = new Map();
+const OK_MIME = { image: ["image/jpeg", "image/png", "image/webp"], sticker: ["image/png", "image/webp", "image/gif"], video: ["video/mp4", "video/quicktime"], audio: ["audio/mp4", "audio/mpeg", "audio/wav", "audio/webm"] };
 const OK_PATH = /^[0-9a-f-]{36}\/[0-9a-f-]{36}\/[A-Za-z0-9._-]{1,80}$/;
 // o tipo vem da mensagem (quem enviou controla): só aceitamos tipos de imagem/vídeo, nunca text/html
-const safeMime = (c) => { const l = OK_MIME[c.kind === "video" ? "video" : c.kind === "audio" ? "audio" : "image"]; return l.includes(c.mime) ? c.mime : l[0]; };
+const safeMime = (c) => { const l = OK_MIME[c.kind === "video" ? "video" : c.kind === "audio" ? "audio" : c.kind === "sticker" ? "sticker" : "image"]; return l.includes(c.mime) ? c.mime : l[0]; };
 async function loadMedia(c) {
   if (typeof c.path !== "string" || !OK_PATH.test(c.path) || typeof c.key !== "string" || typeof c.iv !== "string") throw new Error("midia invalida");
   if (mediaCache.has(c.path)) return mediaCache.get(c.path);
@@ -395,7 +396,21 @@ async function loadMedia(c) {
   if (error) throw error;
   const bytes = await openBytes(new Uint8Array(await data.arrayBuffer()), c.key, c.iv);
   const url = URL.createObjectURL(new Blob([bytes], { type: safeMime(c) }));
+  if (c.kind === "sticker") stickerBytes.set(c.path, bytes); // a política de segurança não deixa ler blob: por fetch; guardamos os bytes para "Salvar figurinha"
   mediaCache.set(c.path, url); return url;
+}
+// quem recebe uma figurinha pode guardá-la na própria lista
+function botaoSalvarFigurinha(path) {
+  const b = el("button", "stk-save", "Salvar figurinha"); b.type = "button";
+  b.onclick = async () => {
+    b.disabled = true;
+    try {
+      const bytes = stickerBytes.get(path); if (!bytes) throw new Error("sem bytes");
+      const r = await figurinhas().salvarRecebida(bytes);
+      b.textContent = r === "ok" ? "Salva ✓" : r === "repetida" ? "Você já tem" : r === "cheia" ? "Lista cheia" : "Não deu";
+    } catch { b.textContent = "Não deu"; }
+  };
+  return b;
 }
 // ---------- Tocador de áudio (próprio: a duração vem da mensagem, porque gravações do navegador não trazem duração) ----------
 let tocando = null;
@@ -417,7 +432,7 @@ function playerAudio(url, dur, { auto = false } = {}) {
   return box;
 }
 
-function mediaBlock(c) {
+function mediaBlock(c, mine) {
   const box = el("div", "media");
   const w = Number(c.w), h = Number(c.h), okDims = w > 0 && h > 0 && w < 20000 && h < 20000;
   box.style.setProperty("--ar", c.kind === "video" ? "16/9" : okDims ? `${Math.round(w)}/${Math.round(h)}` : "4/3");
@@ -428,6 +443,12 @@ function mediaBlock(c) {
       const img = new Image(); img.alt = c.caption || "Foto enviada";
       img.onload = () => ph.replaceWith(img); img.onerror = fail; img.src = url;
       img.onclick = () => { $("viewer-img").src = url; $("viewer").showModal(); };
+    }).catch(fail);
+  } else if (c.kind === "sticker") {
+    box.classList.add("sticker"); const ph = el("div", "ph", "…"); box.append(ph);
+    loadMedia(c).then((url) => {
+      const img = new Image(); img.alt = "Figurinha"; img.draggable = false;
+      img.onload = () => { ph.replaceWith(img); if (!mine) box.append(botaoSalvarFigurinha(c.path)); }; img.onerror = fail; img.src = url;
     }).catch(fail);
   } else if (c.kind === "audio") {
     box.classList.add("audio");
@@ -462,8 +483,8 @@ function addMessage(m, content, { err = false, animate = false } = {}) {
   const text = String(content.type === "media" ? content.caption ?? "" : content.text ?? "");
   const mine = m.sender_id === me.id, at = new Date(m.created_at);
   const wrap = el("div", "msg" + (mine ? " mine" : "")), line = el("div", "line");
-  const b = el("div", "bubble" + (mine ? " mine" : "") + (err ? " err" : "") + (media ? " has-media" : ""));
-  const label = media ? (content.kind === "video" ? "Vídeo enviado. " : content.kind === "audio" ? "Áudio enviado. " : "Foto enviada. ") : "";
+  const b = el("div", "bubble" + (mine ? " mine" : "") + (err ? " err" : "") + (media ? " has-media" : "") + (media && content.kind === "sticker" ? " sticker" : ""));
+  const label = media ? (content.kind === "sticker" ? "Figurinha enviada. " : content.kind === "video" ? "Vídeo enviado. " : content.kind === "audio" ? "Áudio enviado. " : "Foto enviada. ") : "";
   const re = limpaCitacao(content.re), citado = re ? exibir(re, msgs.get(re.id), { me: me.id, peer: active?.id }) : null;
   const quemCitado = citado?.autor === "mine" ? "Você" : citado?.autor === "theirs" ? "@" + active.username : "Mensagem";
   const sr = el("span", "sr", (citado ? `Em resposta a ${quemCitado}: ${citado.rotulo}. ` : "") + label + text), vis = el("span", "vis", text), meta = el("div", "meta");
@@ -477,7 +498,7 @@ function addMessage(m, content, { err = false, animate = false } = {}) {
     q.onclick = () => irPara(re.id);
     b.append(q);
   }
-  if (media) b.append(mediaBlock(content));
+  if (media) b.append(mediaBlock(content, mine));
   b.append(sr, vis, meta); line.append(b);
   const rx = el("div", "rx");
   wrap.append(line, rx);
@@ -852,6 +873,25 @@ async function finalizarGravacao(g) {
 }
 $("mic").onclick = () => (gravador ? pararGravacao() : iniciarGravacao());
 $("pending-stop").onclick = pararGravacao;
+
+// ---------- Figurinhas ----------
+let figs = null;
+const figurinhas = () => (figs && figs.uid === me.id ? figs : (figs = montarFigurinhas({ $, el, uid: me.id, note, choose, enviar: enviarFigurinha })));
+const subidas = new Map(); // figurinha+amigo -> arquivo já enviado (reaproveita; economiza o limite de uploads por hora)
+async function enviarFigurinha(st) {
+  const peer = active; if (!peer) throw new Error("Abra uma conversa primeiro.");
+  try {
+    const k = st.id + "|" + peer.id; let up = subidas.get(k);
+    if (!up) { const path = `${me.id}/${peer.id}/${crypto.randomUUID()}`, sealed = await uploadSealed(st.bytes, path); up = { path, key: sealed.key, iv: sealed.iv }; subidas.set(k, up); }
+    const content = { v: 1, type: "media", kind: "sticker", ...up, mime: st.mime, w: st.w, h: st.h, size: st.bytes.length, anim: !!st.anim };
+    if (replyTo) content.re = replyTo;
+    const row = await sendContent(peer, content);
+    if (!mediaCache.has(up.path)) mediaCache.set(up.path, URL.createObjectURL(new Blob([st.bytes], { type: st.mime })));
+    if (active === peer) { $("msgs-empty")?.remove(); addMessage(row, content); }
+    cancelarResposta();
+  } catch (e) { throw new Error(sendError(e, peer)); }
+}
+$("sticker").onclick = () => { if (active) figurinhas().abrir(); };
 
 async function uploadSealed(bytes, path) {
   const sealed = await sealBytes(bytes);

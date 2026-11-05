@@ -2,8 +2,8 @@
 // Tudo é cifrado com uma chave AES não extraível guardada no próprio navegador. Fica em outro banco
 // ("lacre-sf") para não interferir nas chaves de identidade.
 const dbp = new Promise((res, rej) => {
-  const r = indexedDB.open("lacre-sf", 1);
-  r.onupgradeneeded = () => { for (const n of ["sessions", "history", "meta"]) r.result.createObjectStore(n); };
+  const r = indexedDB.open("lacre-sf", 2);
+  r.onupgradeneeded = () => { for (const n of ["sessions", "history", "meta", "stickers"]) if (!r.result.objectStoreNames.contains(n)) r.result.createObjectStore(n); };
   r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
 });
 const req = (r) => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
@@ -77,10 +77,24 @@ export async function pruneSpks(uid, cutoff) { // apagar a chave privada é o qu
   if (keep.length !== list.length) await putSpks(uid, keep);
 }
 
+// ---------- Figurinhas (biblioteca pessoal, só neste aparelho, cifrada como o resto) ----------
+const stKey = (uid, id) => `${uid}|${id}`;
+export async function listStickers(uid) {
+  const t = await tx(["stickers"], "readonly"), s = t.objectStore("stickers"), rng = range(uid + "|");
+  const vals = await req(s.getAll(rng)), out = [];
+  for (const v of vals) { try { const o = await unseal(uid, v); out.push({ ...o, bytes: unb64(o.b) }); } catch {} }
+  return out;
+}
+export async function putSticker(uid, st) { // st: { id, mime, w, h, anim, t, u, bytes }
+  const { bytes, ...resto } = st, rec = await seal(uid, { ...resto, b: b64(bytes) });
+  const t = await tx(["stickers"], "readwrite"); t.objectStore("stickers").put(rec, stKey(uid, st.id)); await done(t);
+}
+export async function delSticker(uid, id) { const t = await tx(["stickers"], "readwrite"); t.objectStore("stickers").delete(stKey(uid, id)); await done(t); }
+
 // ---------- Limpeza e trava entre abas ----------
 export async function wipeLocal(uid) {
-  const t = await tx(["sessions", "history", "meta"], "readwrite");
-  for (const n of ["sessions", "history"]) {
+  const t = await tx(["sessions", "history", "meta", "stickers"], "readwrite");
+  for (const n of ["sessions", "history", "stickers"]) {
     const s = t.objectStore(n), keys = await req(s.getAllKeys(range(uid + "|"))); keys.forEach((k) => s.delete(k));
   }
   const m = t.objectStore("meta"); const mk = await req(m.getAllKeys());
