@@ -77,3 +77,37 @@ alter policy "cria proprio perfil" on public.profiles with check (id = (select a
 alter policy "atualiza proprio perfil" on public.profiles using (id = (select auth.uid())) with check (id = (select auth.uid()));
 alter policy "le proprias mensagens" on public.messages using ((select auth.uid()) in (sender_id, recipient_id));
 alter policy "envia como si mesmo" on public.messages with check (sender_id = (select auth.uid()));
+
+-- ===== Mídia (cifrada no navegador) e fundo por conversa (migração midia_e_fundos) =====
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('media', 'media', false, 52428800, array['application/octet-stream'])
+on conflict (id) do nothing;
+-- caminho: {remetente}/{destinatario}/{arquivo}
+create policy "envia midia na propria pasta" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'media' and (storage.foldername(name))[1] = (select auth.uid())::text);
+create policy "le midia das suas conversas" on storage.objects
+  for select to authenticated
+  using (bucket_id = 'media' and (select auth.uid())::text in ((storage.foldername(name))[1], (storage.foldername(name))[2]));
+create policy "apaga a propria midia" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'media' and (storage.foldername(name))[1] = (select auth.uid())::text);
+
+create table public.chat_backgrounds (
+  user_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  peer_id uuid not null references public.profiles(id) on delete cascade,
+  ciphertext text not null,   -- caminho + chave da imagem, cifrados
+  iv text not null,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, peer_id)
+);
+create index on public.chat_backgrounds (peer_id);
+alter table public.chat_backgrounds enable row level security;
+create policy "le o proprio fundo" on public.chat_backgrounds
+  for select to authenticated using (user_id = (select auth.uid()));
+create policy "cria o proprio fundo" on public.chat_backgrounds
+  for insert to authenticated with check (user_id = (select auth.uid()));
+create policy "troca o proprio fundo" on public.chat_backgrounds
+  for update to authenticated using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
+create policy "remove o proprio fundo" on public.chat_backgrounds
+  for delete to authenticated using (user_id = (select auth.uid()));

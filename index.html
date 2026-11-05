@@ -65,6 +65,9 @@
           <div id="conv-title">Escolha um amigo</div>
           <div id="conv-status" class="status" hidden><i class="dot" aria-hidden="true"></i>online</div>
         </div>
+        <button id="bg-btn" class="ghost icon" aria-label="Mudar o fundo desta conversa" hidden>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/></svg>
+        </button>
         <div class="badge" id="badge" hidden><i class="seal" aria-hidden="true"></i>lacrada</div>
       </header>
       <div id="messages" aria-live="polite"></div>
@@ -72,9 +75,18 @@
         <div class="wordmark mid">lacre<i class="seal" aria-hidden="true"></i></div>
         <p>Escolha um amigo na lista para abrir a conversa.</p>
       </div>
+      <div id="pending" hidden>
+        <div id="pending-thumb" aria-hidden="true"></div>
+        <div class="pending-info"><strong id="pending-name"></strong><small id="pending-info"></small></div>
+        <button type="button" id="pending-x" class="ghost icon" aria-label="Remover anexo">×</button>
+      </div>
       <form id="send-form" hidden>
+        <button type="button" id="attach" class="ghost icon" aria-label="Anexar foto ou vídeo">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11l-9 9a5 5 0 0 1-7-7l9-9a3.5 3.5 0 0 1 5 5l-9 9a2 2 0 0 1-3-3l8-8"/></svg>
+        </button>
+        <input type="file" id="file" accept="image/*,video/mp4,video/quicktime,.mp4,.m4v,.mov" hidden>
         <label class="sr" for="text">Mensagem</label>
-        <input id="text" placeholder="Escreva uma mensagem" autocomplete="off" required>
+        <input id="text" placeholder="Escreva uma mensagem" autocomplete="off">
         <button class="primary">Enviar</button>
       </form>
     </section>
@@ -91,6 +103,21 @@
       </div>
     </form>
   </dialog>
+
+  <dialog id="bgdlg">
+    <form method="dialog">
+      <h2>Fundo da conversa</h2>
+      <p>Só você vê este fundo. Antes de salvar, a imagem é limpa de metadados (local, data, aparelho) e cifrada.</p>
+      <div class="dialog-actions col">
+        <button type="button" id="bg-pick" class="primary">Escolher imagem</button>
+        <button type="button" id="bg-clear" class="ghost">Remover fundo</button>
+        <button value="cancel" class="ghost">Fechar</button>
+      </div>
+    </form>
+    <input type="file" id="bg-file" accept="image/*" hidden>
+  </dialog>
+
+  <dialog id="viewer"><img id="viewer-img" alt="Foto ampliada"></dialog>
 
   <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
 

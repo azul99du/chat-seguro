@@ -1,5 +1,6 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm";
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
+import { cleanImage, cleanVideo, sealBytes, openBytes } from "./media.js";
 import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup } from "./crypto.js";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -200,14 +201,64 @@ function setReceipt(e) {
   e.rcpt.classList.toggle("read", !!e.m.read_at);
 }
 
-function addMessage(m, text, { err = false, animate = false } = {}) {
+// Mensagens novas viajam como texto simples; só viram JSON quando precisam (mídia, ou texto que começa com "{")
+const packText = (t) => (t.startsWith("{") ? JSON.stringify({ v: 1, type: "text", text: t }) : t);
+function unpack(s) {
+  if (s.startsWith('{"v":1')) {
+    try { const o = JSON.parse(s); if (o.type === "text") return { type: "text", text: String(o.text) }; if (o.type === "media") return o; } catch {}
+  }
+  return { type: "text", text: s };
+}
+const sizeLabel = (n) => (n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB");
+
+// baixa o arquivo cifrado, decifra e devolve uma URL local (nunca sai do navegador decifrado)
+const mediaCache = new Map();
+async function loadMedia(c) {
+  if (mediaCache.has(c.path)) return mediaCache.get(c.path);
+  const { data, error } = await sb.storage.from("media").download(c.path);
+  if (error) throw error;
+  const bytes = await openBytes(new Uint8Array(await data.arrayBuffer()), c.key, c.iv);
+  const url = URL.createObjectURL(new Blob([bytes], { type: c.mime }));
+  mediaCache.set(c.path, url); return url;
+}
+function mediaBlock(c) {
+  const box = el("div", "media");
+  box.style.setProperty("--ar", c.kind === "video" ? "16/9" : c.w && c.h ? `${c.w}/${c.h}` : "4/3");
+  const fail = () => box.replaceChildren(el("div", "ph", "Não foi possível abrir este arquivo."));
+  if (c.kind === "image") {
+    const ph = el("div", "ph", "Carregando foto…"); box.append(ph);
+    loadMedia(c).then((url) => {
+      const img = new Image(); img.alt = c.caption || "Foto enviada";
+      img.onload = () => ph.replaceWith(img); img.onerror = fail; img.src = url;
+      img.onclick = () => { $("viewer-img").src = url; $("viewer").showModal(); };
+    }).catch(fail);
+  } else {
+    const btn = el("button", "ph", `Tocar para carregar o vídeo · ${sizeLabel(c.size || 0)}`); btn.type = "button";
+    btn.onclick = async () => {
+      btn.disabled = true; btn.textContent = "Carregando vídeo…";
+      try {
+        const v = document.createElement("video"); v.controls = true; v.playsInline = true; v.preload = "metadata";
+        v.src = await loadMedia(c); btn.replaceWith(v);
+      } catch { fail(); }
+    };
+    box.append(btn);
+  }
+  return box;
+}
+
+function addMessage(m, content, { err = false, animate = false } = {}) {
+  if (typeof content === "string") content = { type: "text", text: content };
+  const media = content.type === "media" && !err;
+  const text = content.type === "media" ? content.caption || "" : content.text;
   const mine = m.sender_id === me.id, at = new Date(m.created_at);
   const wrap = el("div", "msg" + (mine ? " mine" : "")), line = el("div", "line");
-  const b = el("div", "bubble" + (mine ? " mine" : "") + (err ? " err" : ""));
-  const sr = el("span", "sr", text), vis = el("span", "vis", text), meta = el("div", "meta");
+  const b = el("div", "bubble" + (mine ? " mine" : "") + (err ? " err" : "") + (media ? " has-media" : ""));
+  const label = media ? (content.kind === "video" ? "Vídeo enviado. " : "Foto enviada. ") : "";
+  const sr = el("span", "sr", label + text), vis = el("span", "vis", text), meta = el("div", "meta");
   vis.setAttribute("aria-hidden", "true");
   const tm = el("time", null, hhmm(at)); tm.dateTime = at.toISOString();
   const rcpt = el("span", "rcpt"); meta.append(tm, rcpt);
+  if (media) b.append(mediaBlock(content));
   b.append(sr, vis, meta); line.append(b);
   const rx = el("div", "rx");
   wrap.append(line, rx);
@@ -217,7 +268,7 @@ function addMessage(m, text, { err = false, animate = false } = {}) {
   }
   $("messages").append(wrap);
   const e = { m, mine, rcpt, rx }; msgs.set(m.id, e); setReceipt(e);
-  if (animate && !err) { b.classList.add("deciphering"); reveal(vis, text, () => b.classList.remove("deciphering")); }
+  if (animate && !err && text) { b.classList.add("deciphering"); reveal(vis, text, () => b.classList.remove("deciphering")); }
   $("messages").scrollTop = 1e9;
   return e;
 }
@@ -289,7 +340,7 @@ async function markRead() {
 }
 
 async function show(m, peer, animate) {
-  try { addMessage(m, await decrypt(myKeys.privateKey, peer.public_key, m), { animate }); }
+  try { addMessage(m, unpack(await decrypt(myKeys.privateKey, peer.public_key, m)), { animate }); }
   catch { addMessage(m, "Não foi possível decifrar esta mensagem.", { err: true }); }
 }
 async function open(peer) {
@@ -297,6 +348,7 @@ async function open(peer) {
   $("chat").classList.add("in-conv");
   $("conv-title").textContent = "@" + peer.username;
   $("badge").hidden = false; $("conv-empty").hidden = true; $("send-form").hidden = false;
+  $("bg-btn").hidden = false; clearPending(); setBg(bgCache.get(peer.id) ?? null); applyBackground(peer);
   $("messages").replaceChildren(); msgs.clear(); reactions.clear();
   const { data } = await sb.from("messages").select("*")
     .or(`and(sender_id.eq.${me.id},recipient_id.eq.${peer.id}),and(sender_id.eq.${peer.id},recipient_id.eq.${me.id})`)
@@ -322,16 +374,127 @@ async function onIncoming(m) {
   else unread.add(m.sender_id);
   renderContacts();
 }
+async function sendPlain(plain, peer) {
+  const enc = await encrypt(myKeys.privateKey, peer.public_key, plain);
+  const { data, error } = await sb.from("messages").insert({ recipient_id: peer.id, ...enc }).select().single();
+  if (error) throw error;
+  return data;
+}
+
+// ---------- Anexos: limpa os metadados ANTES de qualquer coisa sair do aparelho ----------
+const MAX_VIDEO = 45 * 1048576;
+let pending = null; // anexo pronto (ou {busy:true} enquanto limpa)
+const niceErr = (e, fallback) => (/^(Não|Vídeo|Formato)/.test(e?.message || "") ? e.message : fallback);
+function showPending(name, info, ok = false) {
+  $("pending").hidden = false; $("pending-name").textContent = name;
+  const i = $("pending-info"); i.textContent = info; i.className = ok ? "ok" : "";
+}
+function clearPending(keepUrl) {
+  if (pending?.url && !keepUrl) URL.revokeObjectURL(pending.url);
+  pending = null; $("pending").hidden = true; $("pending-thumb").replaceChildren();
+}
+$("pending-x").onclick = () => clearPending();
+$("attach").onclick = () => $("file").click();
+$("file").onchange = async () => { const f = $("file").files[0]; $("file").value = ""; if (f) await prepare(f); };
+
+async function prepare(f) {
+  clearPending(); const token = (pending = { busy: true });
+  showPending(f.name, "Removendo metadados…");
+  try {
+    let r;
+    if (f.type.startsWith("image/")) {
+      const c = await cleanImage(f); r = { kind: "image", bytes: c.bytes, mime: c.mime, w: c.w, h: c.h };
+    } else if (/\.(mp4|m4v|mov)$/i.test(f.name) || /^video\/(mp4|quicktime)$/.test(f.type)) {
+      if (f.size > MAX_VIDEO) throw new Error("Vídeo grande demais. O limite é de 45 MB.");
+      const mov = f.type === "video/quicktime" || /\.mov$/i.test(f.name);
+      r = { kind: "video", bytes: cleanVideo(await f.arrayBuffer()), mime: mov ? "video/quicktime" : "video/mp4" };
+    } else throw new Error("Formato não suportado. Envie foto (JPG, PNG, WebP) ou vídeo MP4/MOV.");
+    if (pending !== token) return; // removido enquanto limpava
+    r.url = URL.createObjectURL(new Blob([r.bytes], { type: r.mime })); pending = r;
+    const t = r.kind === "image" ? el("img") : el("video"); t.src = r.url; if (r.kind === "video") { t.muted = true; t.preload = "metadata"; }
+    $("pending-thumb").replaceChildren(t);
+    showPending(f.name, `${sizeLabel(r.bytes.length)} · metadados removidos` + (f.type === "image/gif" ? " · GIF vira imagem parada" : ""), true);
+  } catch (e) {
+    if (pending === token) clearPending();
+    note(niceErr(e, "Não foi possível preparar este arquivo."));
+  }
+}
+
+async function uploadSealed(bytes, path) {
+  const sealed = await sealBytes(bytes);
+  const { error } = await sb.storage.from("media").upload(path, new Blob([sealed.data], { type: "application/octet-stream" }), { contentType: "application/octet-stream" });
+  if (error) throw error;
+  return sealed;
+}
+
 $("send-form").onsubmit = async (e) => {
   e.preventDefault();
-  const text = $("text").value.trim(); if (!text || !active) return;
-  const btn = e.submitter; btn.disabled = true;
+  const text = $("text").value.trim(), peer = active;
+  if (!peer || (!text && !pending)) return;
+  if (pending?.busy) return note("Aguarde um instante: ainda estou limpando os metadados do arquivo.");
+  const btn = e.submitter ?? e.target.querySelector(".primary"); btn.disabled = true;
   try {
-    const enc = await encrypt(myKeys.privateKey, active.public_key, text);
-    const { data, error } = await sb.from("messages").insert({ recipient_id: active.id, ...enc }).select().single();
-    if (error) return note("Não foi possível enviar. Verifique a conexão e tente de novo.");
-    $("msgs-empty")?.remove(); addMessage(data, text); $("text").value = "";
+    let row, content;
+    if (pending) {
+      const p = pending; showPending($("pending-name").textContent, "Cifrando e enviando…");
+      const path = `${me.id}/${peer.id}/${crypto.randomUUID()}`;
+      const sealed = await uploadSealed(p.bytes, path);
+      content = { v: 1, type: "media", kind: p.kind, path, key: sealed.key, iv: sealed.iv, mime: p.mime, w: p.w, h: p.h, size: p.bytes.length, caption: text };
+      row = await sendPlain(JSON.stringify(content), peer);
+      mediaCache.set(path, p.url); clearPending(true); // reaproveita a prévia local, sem baixar de novo
+    } else { row = await sendPlain(packText(text), peer); content = { type: "text", text }; }
+    if (active === peer) { $("msgs-empty")?.remove(); addMessage(row, content); }
+    $("text").value = "";
+  } catch {
+    if (pending) showPending($("pending-name").textContent, "Falhou. Toque em Enviar para tentar de novo.");
+    note("Não foi possível enviar. Verifique a conexão e tente de novo.");
   } finally { btn.disabled = false; $("text").focus(); }
 };
+
+// ---------- Fundo da conversa (pessoal, limpo de metadados e cifrado) ----------
+const bgCache = new Map(), bgPath = new Map(); // peerId -> url|null / caminho no storage
+function setBg(url) {
+  $("messages").style.backgroundImage = url ? `linear-gradient(rgba(233,236,248,.5),rgba(233,236,248,.5)),url("${url}")` : "";
+  $("messages").classList.toggle("has-bg", !!url);
+}
+async function applyBackground(peer) {
+  if (bgCache.has(peer.id)) return;
+  let url = null;
+  const { data } = await sb.from("chat_backgrounds").select("*").eq("peer_id", peer.id).maybeSingle();
+  if (data) {
+    try {
+      const c = JSON.parse(await decrypt(myKeys.privateKey, peer.public_key, data));
+      url = await loadMedia(c); bgPath.set(peer.id, c.path);
+    } catch {}
+  }
+  bgCache.set(peer.id, url);
+  if (active === peer) setBg(url);
+}
+$("bg-btn").onclick = () => $("bgdlg").showModal();
+$("bg-pick").onclick = () => $("bg-file").click();
+$("bg-file").onchange = async () => {
+  const f = $("bg-file").files[0], peer = active; $("bg-file").value = "";
+  if (!f || !peer) return;
+  $("bgdlg").close();
+  try {
+    const c = await cleanImage(f, 1600);
+    const path = `${me.id}/${me.id}/bg-${crypto.randomUUID()}`;
+    const sealed = await uploadSealed(c.bytes, path);
+    const enc = await encrypt(myKeys.privateKey, peer.public_key, JSON.stringify({ path, key: sealed.key, iv: sealed.iv, mime: c.mime }));
+    const { error } = await sb.from("chat_backgrounds").upsert({ user_id: me.id, peer_id: peer.id, ...enc, updated_at: new Date().toISOString() }, { onConflict: "user_id,peer_id" });
+    if (error) throw error;
+    const old = bgPath.get(peer.id); if (old) sb.storage.from("media").remove([old]);
+    const url = URL.createObjectURL(new Blob([c.bytes], { type: c.mime }));
+    mediaCache.set(path, url); bgPath.set(peer.id, path); bgCache.set(peer.id, url);
+    if (active === peer) setBg(url);
+  } catch (e) { note(niceErr(e, "Não foi possível salvar o fundo. Tente de novo.")); }
+};
+$("bg-clear").onclick = async () => {
+  const peer = active; $("bgdlg").close(); if (!peer) return;
+  await sb.from("chat_backgrounds").delete().eq("peer_id", peer.id);
+  const old = bgPath.get(peer.id); if (old) sb.storage.from("media").remove([old]);
+  bgPath.delete(peer.id); bgCache.set(peer.id, null); if (active === peer) setBg(null);
+};
+$("viewer").onclick = () => $("viewer").close();
 
 start();
