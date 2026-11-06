@@ -56,6 +56,9 @@ export function criarRecorte(img) {
       for (let j = y0; j <= y1; j++) for (let i = x0; i <= x1; i++) { const p = j * W + i; if ((i - x) ** 2 + (j - y) ** 2 <= r2 && keep[p] !== v && (v === 0 || d[p * 4 + 3] >= 128)) { if (!traco.has(p)) traco.set(p, keep[p]); keep[p] = v; } }
     },
     fimTraco() { const r = traco; traco = null; return r ? empurra(r) : 0; },
+    // máscara vinda da IA (confiança 0..1 por pixel, no tamanho da imagem): soma ao que foi mantido, ou tira dele
+    manterMascara(conf, lim = 0.5) { const r = new Map(); for (let i = 0; i < conf.length; i++) if (conf[i] >= lim && d[i * 4 + 3] >= 128 && !keep[i]) { r.set(i, 0); keep[i] = 1; } return empurra(r); },
+    apagarMascara(conf, lim = 0.5) { const r = new Map(); for (let i = 0; i < conf.length; i++) if (conf[i] >= lim && keep[i]) { r.set(i, 1); keep[i] = 0; } return empurra(r); },
     desfazer() { const h = hist.pop(); if (!h) return false; for (const [p, v] of h) keep[p] = v; return true; },
     recomecar() { keep.fill(0); hist.length = 0; traco = null; },
     passos: () => hist.length,

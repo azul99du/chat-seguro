@@ -109,6 +109,17 @@ describe("recorte por cliques", () => {
   });
 });
 
+describe("recorte com máscara da IA", () => {
+  test("manter soma só o que passa do limiar; apagar tira; cada um é um passo desfazível", () => {
+    const img = cena(), rc = criarRecorte(img), conf = new Float32Array(200); for (let y = 2; y <= 7; y++) for (let x = 6; x <= 13; x++) conf[y * 20 + x] = 0.9; conf[0] = 0.3;
+    assert.equal(rc.manterMascara(conf), 48); assert.equal(rc.keep[0], 0, "abaixo do limiar não entra"); assert.equal(rc.manterMascara(conf), 0, "repetir não cria passo");
+    const peq = new Float32Array(200); peq[5 * 20 + 7] = 1; peq[0] = 1; assert.equal(rc.apagarMascara(peq), 1, "só apaga o que estava mantido"); assert.equal(rc.mantidos(), 47);
+    rc.desfazer(); assert.equal(rc.mantidos(), 48); rc.desfazer(); assert.equal(rc.mantidos(), 0);
+  });
+  test("a IA não mantém pixel que já era transparente na imagem", () => {
+    const img = cena(); img.data[3] = 0; const rc = criarRecorte(img), conf = new Float32Array(200).fill(1); rc.manterMascara(conf); assert.equal(rc.keep[0], 0); assert.equal(rc.mantidos(), 199);
+  });
+});
 describe("recorte: fundo automático, pincel e buracos", () => {
   test("tirar o fundo automaticamente deixa só o boneco (com a pele dentro) e se desfaz", () => {
     const rc = criarRecorte(cena()); assert.ok(rc.fundo(30) > 0);

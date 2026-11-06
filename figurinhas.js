@@ -3,6 +3,7 @@
 // Figurinha animada (GIF, WebP, APNG) é limpa sem recodificar. O envio em si é feito pelo app (cifrado como qualquer mídia).
 import { listStickers, putSticker, delSticker } from "./store.js";
 import { detectar, limparAnimada } from "./sticker.js";
+import { carregarIA, definirImagem, segmentar } from "./ia.js";
 import { criarRecorte, finalizar, alfaSuave, preencherBuracos } from "./cutout.js";
 
 const MAX_BIBLIOTECA = 80, LADO = 512, TRABALHO = 1024, MAX_ARQUIVO = 20 * 1048576, MAX_ESTATICA = 500_000;
@@ -98,7 +99,7 @@ export function montarFigurinhas({ $, el, uid, note, choose, enviar }) {
       const c = document.createElement("canvas"); c.width = w; c.height = h; const g = c.getContext("2d", { willReadFrequently: true }); g.drawImage(bmp, 0, 0, w, h); bmp.close?.();
       const dados = g.getImageData(0, 0, w, h); let claros = 0; for (let i = 3; i < dados.data.length; i += 4) if (dados.data[i] < 128) claros++;
       if (claros / (w * h) >= 0.02) { conta(await guardar(await exportar(dados, { ampliar: false }))); return false; } // já vem com fundo transparente: é uma figurinha pronta
-      editar(dados); return true;
+      editar(dados, c); return true;
     } catch (e) { resumo.falhas++; resumo.erro = e?.message; return false; }
   }
 
@@ -116,8 +117,12 @@ export function montarFigurinhas({ $, el, uid, note, choose, enviar }) {
     $("stk-status").textContent = n ? `${rc.passos()} toque${rc.passos() === 1 ? "" : "s"} · ${pct}% da imagem mantida` : "Nada mantido ainda: toque no que você quer guardar.";
     $("stk-save").disabled = !n; $("stk-undo").disabled = !rc.passos(); $("stk-reset").disabled = !rc.passos();
   }
-  function editar(imagem) {
-    img = imagem; rc = criarRecorte(img); modo = "manter"; ver = false; $("stk-preview").checked = false; marcaModo();
+  let trab = null, iaPronta = null, iaOk = true, ocupado = false;
+  function editar(imagem, canvas) {
+    img = imagem; trab = canvas; iaOk = true; ocupado = false; $("stk-cor").checked = false;
+    // começa a preparar o recorte inteligente já (1ª vez baixa uns 45 MB; depois fica guardado no navegador)
+    const meu = (iaPronta = carregarIA().then(() => definirImagem(trab)).then(() => true).catch(() => { iaOk = false; return false; }));
+    $("stk-status").textContent = "Preparando o recorte inteligente (só na 1ª vez baixa uns 45 MB)…"; meu.then((ok) => { if (iaPronta === meu && !ok) $("stk-status").textContent = "Recorte inteligente indisponível neste aparelho: usando recorte por cor."; }); rc = criarRecorte(img); modo = "manter"; ver = false; $("stk-preview").checked = false; marcaModo();
     cv().width = img.width; cv().height = img.height; pinta(); $("stk").close(); $("stkedit").showModal();
   }
   const MODOS = { manter: "stk-mode-add", apagar: "stk-mode-del", mais: "stk-mode-brush", menos: "stk-mode-erase" };
@@ -125,10 +130,21 @@ export function montarFigurinhas({ $, el, uid, note, choose, enviar }) {
   for (const [m, id] of Object.entries(MODOS)) $(id).onclick = () => { modo = m; marcaModo(); };
   $("stk-auto").onclick = () => { const n = rc.fundo(Number($("stk-tol").value)); ver = false; $("stk-preview").checked = false; pinta(); if (!n) $("stk-status").textContent = "Não achei fundo nas bordas. Use Manter/Pincel."; };
   const ponto = (e) => { const r = cv().getBoundingClientRect(); return [((e.clientX - r.left) / r.width) * img.width, ((e.clientY - r.top) / r.height) * img.height, (Number($("stk-brush").value) / r.width) * img.width]; };
+  async function tocarIA(x, y, manter) {
+    if (ocupado) return; ocupado = true; const meu = iaPronta; cv().style.cursor = "progress"; $("stk-status").textContent = "Recortando…";
+    try {
+      if (!(await meu)) throw new Error("ia");
+      const o = await segmentar(x, y, img.width, img.height); if (iaPronta !== meu) return; // editor trocou de imagem enquanto pensava
+      const n = manter ? rc.manterMascara(o.conf) : rc.apagarMascara(o.conf); ver = false; $("stk-preview").checked = false; pinta();
+      if (!n) $("stk-status").textContent = manter ? "Essa parte já está mantida. Toque em outra, ou use o Pincel." : "Nada para apagar aí: toque numa parte mantida.";
+    } catch { iaOk = false; $("stk-status").textContent = "O recorte inteligente falhou: usando recorte por cor. Toque de novo."; }
+    finally { ocupado = false; marcaModo(); }
+  }
   let pintando = false;
   cv().addEventListener("pointerdown", (e) => {
     e.preventDefault(); const [x, y, raio] = ponto(e), tol = Number($("stk-tol").value);
     if (modo === "mais" || modo === "menos") { pintando = true; cv().setPointerCapture(e.pointerId); rc.pincel(x, y, raio, modo === "mais" ? 1 : 0); pinta(); return; }
+    if (!$("stk-cor").checked && iaOk) { tocarIA(x, y, modo === "manter"); return; }
     const n = modo === "manter" ? rc.manter(x, y, tol) : rc.apagar(x, y, tol); ver = false; $("stk-preview").checked = false; pinta();
     if (!n) $("stk-status").textContent = modo === "manter" ? "Essa parte já está mantida ou é transparente. Tente outra." : "Nada para apagar aí: toque numa parte mantida.";
   });

@@ -17,7 +17,7 @@ async function cadastrar(page, usuario) {
 }
 function vigiar(nome, page) {
   page.on("pageerror", (e) => erros.push(`${nome}: ${e.message}`));
-  page.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) erros.push(`${nome}: ${m.text().slice(0, 160)}`); });
+  page.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource|gl_context|inference_feedback|XNNPACK|TensorFlow Lite/.test(m.text())) erros.push(`${nome}: ${m.text().slice(0, 160)}`); });
   page.on("request", (r) => { const m = r.url().match(/\/storage\/v1\/object\/media\/(.+)$/); if (m && r.method() === "POST") enviados.push({ page, path: decodeURIComponent(m[1]) }); });
 }
 // PNG 120x80: fundo azul, quadrado vermelho no meio, com um texto escondido (tEXt) que NÃO pode sair na figurinha
@@ -65,7 +65,7 @@ after(async () => {
 
 t("gaveta vazia explica como criar; editor abre com a imagem e sem nada mantido", async () => {
   await A.click("#sticker"); await A.waitForSelector("#stk[open]"); assert.equal(await A.locator("#stk-empty").isVisible(), true); assert.equal(await A.locator("#stk-recent-sec").isVisible(), false);
-  await A.setInputFiles("#stk-file", join(dir, "boneco.png")); await A.waitForSelector("#stkedit[open]");
+  await A.setInputFiles("#stk-file", join(dir, "boneco.png")); await A.waitForSelector("#stkedit[open]"); await A.check("#stk-cor"); // nos testes, o recorte por cor é determinístico
   assert.equal(await A.locator("#stk-save").isDisabled(), true); assert.match(await A.locator("#stk-status").innerText(), /Nada mantido/);
   assert.ok((await pixel("#stk-canvas", 0.5, 0.5))[3] < 100, "tudo apagado/esmaecido no começo");
 });
@@ -129,6 +129,16 @@ t("apagar: pede confirmação, remove só da lista e não mexe nas mensagens já
   await A.locator("#stk-mine .stk-item").first().click(); await A.waitForSelector("#choice[open]"); await A.click("#choice button[value=sim]");
   await A.waitForFunction(() => document.querySelectorAll("#stk-mine .stk-item").length === 1); await A.click("#stk-close");
   assert.ok((await A.locator(".msg.mine .bubble.sticker").count()) >= 3);
+});
+t("recorte inteligente (IA no aparelho): carrega do próprio site, responde ao toque e não cai no recorte por cor", async () => {
+  await A.click("#sticker"); await A.waitForSelector("#stk[open]"); await A.setInputFiles("#stk-file", join(dir, "boneco.png")); await A.waitForSelector("#stkedit[open]");
+  assert.equal(await A.locator("#stk-cor").isChecked(), false, "a IA é o padrão");
+  await tocar(0.5, 0.5); await A.waitForFunction(() => !/Recortando|Preparando/.test(document.getElementById("stk-status").textContent), null, { timeout: 100000 });
+  const st = await A.locator("#stk-status").innerText(); assert.doesNotMatch(st, /falhou|indispon/i, st);
+  const recursos = await A.evaluate(() => performance.getEntriesByType("resource").map((r) => r.name));
+  assert.ok(recursos.some((u) => u.endsWith("interactive_segmentation.task")) && recursos.some((u) => u.endsWith("vision_wasm_internal.wasm")), "modelo e WebAssembly vieram do próprio site");
+  assert.ok(recursos.every((u) => !/^https?:\/\/(?!127\.0\.0\.1|[a-z0-9]+\.supabase\.co|fonts\.g)/.test(u)), "nada de servidor de terceiros");
+  await A.click("#stk-cancel"); await A.waitForSelector("#stk[open]"); await A.click("#stk-close");
 });
 t("importar vários: pronta (transparente) entra direto; foto abre o editor; 'tirar fundo' e pincel; recorte pequeno é ampliado", async () => {
   await A.click("#sticker"); await A.waitForSelector("#stk[open]"); const antes = await A.locator("#stk-mine .stk-item").count();

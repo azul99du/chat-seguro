@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#15174A">
   <meta name="referrer" content="no-referrer">
   <!-- Só roda código deste próprio site; só conversa com o seu Supabase. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob: data:; media-src blob:; connect-src https://okiurdcgbjaylihbycxn.supabase.co wss://okiurdcgbjaylihbycxn.supabase.co; base-uri 'none'; form-action 'self'; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob: data:; media-src blob:; connect-src 'self' https://okiurdcgbjaylihbycxn.supabase.co wss://okiurdcgbjaylihbycxn.supabase.co; base-uri 'none'; form-action 'self'; object-src 'none'">
   <title>Lacre — conversa só entre vocês</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="icon" href="favicon.ico" sizes="48x48">
@@ -160,7 +160,7 @@
 
   <dialog id="stkedit">
     <h2>Criar figurinha</h2>
-    <p id="stkedit-hint" class="muted">Comece por "Tirar o fundo automaticamente" ou toque nas partes que quer <strong>manter</strong>. Ajuste com Apagar e com o Pincel (+ mantém, − apaga). Errou? Desfazer. Imagens animadas (GIF/WebP) são guardadas inteiras, sem recorte.</p>
+    <p id="stkedit-hint" class="muted">Toque no que quer <strong>manter</strong>: a inteligência artificial acha o contorno do objeto (tudo no seu aparelho). Ajuste com Apagar e com o Pincel (+ mantém, − apaga). Errou? Desfazer. Imagens animadas (GIF/WebP) são guardadas inteiras, sem recorte.</p>
     <div class="stk-canvas-wrap"><canvas id="stk-canvas" aria-label="Imagem para recortar: toque nas partes que quer manter"></canvas></div>
     <div class="stk-tools">
       <div class="seg" role="group" aria-label="O que o toque faz">
@@ -170,7 +170,8 @@
         <button type="button" id="stk-mode-erase" aria-pressed="false">Pincel −</button>
       </div>
       <button type="button" id="stk-auto" class="ghost">Tirar o fundo automaticamente</button>
-      <label class="stk-tol">Alcance do toque <input type="range" id="stk-tol" min="5" max="80" value="28"></label>
+      <label class="stk-prev"><input type="checkbox" id="stk-cor"> Recorte por cor (sem IA)</label>
+      <label class="stk-tol">Alcance (cor) <input type="range" id="stk-tol" min="5" max="80" value="28"></label>
       <label class="stk-brush" id="stk-brush-box" hidden>Pincel <input type="range" id="stk-brush" min="6" max="80" value="24"></label>
       <label class="stk-prev"><input type="checkbox" id="stk-holes" checked> Preencher buracos</label>
       <label class="stk-prev"><input type="checkbox" id="stk-preview"> Ver resultado</label>

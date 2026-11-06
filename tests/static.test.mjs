@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const raiz = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const ler = (f) => readFileSync(join(raiz, f), "utf8");
-const APP = ["guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "cutout.js", "figurinhas.js"];
+const APP = ["guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "cutout.js", "figurinhas.js", "ia.js"];
 const rastreados = execFileSync("git", ["ls-files"], { cwd: raiz, encoding: "utf8" }).split("\n").filter(Boolean);
 
 describe("código", () => {
@@ -60,14 +60,14 @@ describe("política de segurança do navegador (CSP)", () => {
   const dir = (n) => csp.split(";").map((s) => s.trim()).find((s) => s.startsWith(n + " ")) ?? "";
   test("existe e só roda script do próprio site", () => {
     assert.ok(csp, "meta CSP ausente");
-    assert.equal(dir("script-src"), "script-src 'self'");
-    assert.doesNotMatch(csp, /unsafe-inline|unsafe-eval|\*/);
+    assert.equal(dir("script-src"), "script-src 'self' 'wasm-unsafe-eval'", "wasm-unsafe-eval só deixa compilar WebAssembly (recorte inteligente); não libera eval de texto");
+    assert.doesNotMatch(csp, /unsafe-inline|(?<!wasm-)unsafe-eval|\*/);
     assert.match(csp, /default-src 'none'/);
     assert.match(csp, /object-src 'none'/);
   });
   test("só conversa com o Supabase configurado em config.js", () => {
     const host = new URL(ler("config.js").match(/SUPABASE_URL\s*=\s*"([^"]+)"/)[1]).host;
-    assert.equal(dir("connect-src"), `connect-src https://${host} wss://${host}`);
+    assert.equal(dir("connect-src"), `connect-src 'self' https://${host} wss://${host}`);
   });
 });
 
