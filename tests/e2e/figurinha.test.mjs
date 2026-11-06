@@ -78,6 +78,11 @@ t("SAM 2.1 no aparelho: tocar recorta (contorno branco, fundo transparente); toc
   await tocar(0.5, 0.5); await tocar(0.65, 0.6); await A.waitForFunction(() => /^2 pontos/.test(document.getElementById("stk-info").textContent));
   await A.click("#stk-clear"); assert.match(await A.locator("#stk-info").innerText(), /^0 pontos/); assert.equal(await A.locator("#stk-clear").isDisabled(), true);
   await tocar(0.5, 0.5); await resultado();
+  const foto = await A.locator("#stk-canvas").evaluate((c) => ({ ar: c.width / c.height, css: c.getBoundingClientRect() }));
+  assert.ok(Math.abs(foto.css.width / foto.css.height - foto.ar) < 0.02, "a foto não pode aparecer esticada: proporção na tela = proporção da imagem");
+  const url = () => A.locator("#stk-out").evaluate((c) => c.toDataURL()); const comContorno = await url();
+  await A.uncheck("#stk-contorno"); await A.waitForFunction((u) => document.getElementById("stk-out").toDataURL() !== u, comContorno); const semContorno = await url();
+  await A.check("#stk-contorno"); await A.waitForFunction((u) => document.getElementById("stk-out").toDataURL() !== u, semContorno); assert.equal(await url(), comContorno, "ligar de novo volta ao resultado com contorno");
   const recursos = await A.evaluate(() => performance.getEntriesByType("resource").map((r) => r.name));
   assert.ok(recursos.some((u) => u.endsWith("vision_encoder_int8.onnx")) && recursos.some((u) => u.endsWith("ort.wasm.min.mjs")), "modelo e programa vieram do próprio site");
   assert.ok(recursos.every((u) => !/^https?:\/\/(?!127\.0\.0\.1|[a-z0-9]+\.supabase\.co|fonts\.g)/.test(u)), "nada de servidor de terceiros");
@@ -132,7 +137,7 @@ t("apagar: pede confirmação, remove só da lista e não mexe nas mensagens já
   await A.waitForFunction(() => document.querySelectorAll("#stk-mine .stk-item").length === 1); await A.click("#stk-close");
   assert.ok((await A.locator(".msg.mine .bubble.sticker").count()) >= 3);
 });
-t("importar vários: figurinha pronta (transparente) entra direto; foto abre o editor e 'Pular foto' volta para a gaveta", async () => {
+t("importar vários: figurinha pronta (transparente) entra direto; foto abre o editor e 'Cancelar' volta para a gaveta", async () => {
   await A.click("#sticker"); await A.waitForSelector("#stk[open]"); const antes = await A.locator("#stk-mine .stk-item").count();
   await A.setInputFiles("#stk-file", [join(dir, "pronta.png"), join(dir, "boneco.png")]); await A.waitForSelector("#stkedit[open]");
   await A.click("#stk-skip"); await A.waitForSelector("#stk[open]"); await A.waitForFunction((n) => document.querySelectorAll("#stk-mine .stk-item").length === n, antes + 1);

@@ -5,7 +5,8 @@ import { listStickers, putSticker, delSticker } from "./store.js";
 import { detectar, limparAnimada } from "./sticker.js";
 import { carregarSAM, definirImagem, segmentar } from "./sam2.js";
 import { escolherMascara, ampliarLogits, rampa, montarFigurinha } from "./recorte.js";
-import { TAMANHO, KB_MAXIMO, LADO_PROCESSO, LARGURA_TELA } from "./recorte-config.js";
+import * as CFG from "./recorte-config.js";
+const { TAMANHO, KB_MAXIMO, LADO_PROCESSO, LARGURA_TELA } = CFG;
 
 const MAX_BIBLIOTECA = 80, LADO = 512, TRABALHO = LADO_PROCESSO, MAX_ARQUIVO = 20 * 1048576, MAX_ESTATICA = 500_000;
 const hex = (u8) => [...u8].map((x) => x.toString(16).padStart(2, "0")).join("");
@@ -106,7 +107,9 @@ export function montarFigurinhas({ $, el, uid, note, choose, enviar }) {
 
   // ---------- Editor de recorte (SAM 2.1: toque no que quer recortar) ----------
   // Fluxo do notebook recortador_figurinhas_sam2: pontos verdes sobre o objeto, o recorte aparece ao lado; tocar num ponto o remove.
-  let foto = null, pontos = [], pedido = 0, resultado = null, analise = null, interno = false;
+  let foto = null, pontos = [], pedido = 0, resultado = null, analise = null, interno = false, ultAlfa = null;
+  const cfgAtual = () => ({ ...CFG, CONTORNO_PX: $("stk-contorno").checked ? CFG.CONTORNO_PX || 14 : 0 }); // contorno branco ligado/desligado pela pessoa
+  function mostrar(fig) { const out = $("stk-out"); out.width = fig.width; out.height = fig.height; out.getContext("2d").putImageData(new ImageData(fig.data, fig.width, fig.height), 0, 0); resultado = fig; msg(""); $("stk-save").disabled = false; }
   const cv = () => $("stk-canvas");
   const msg = (t) => { $("stk-msg").textContent = t || ""; $("stk-msg").hidden = !t; $("stk-out").hidden = !!t; };
   function desenharFoto() {
@@ -120,7 +123,7 @@ export function montarFigurinhas({ $, el, uid, note, choose, enviar }) {
     $("stk-clear").disabled = !pontos.length;
   }
   function editar(imagem, canvas) {
-    foto = { rgba: imagem.data, w: imagem.width, h: imagem.height, canvas }; pontos = []; resultado = null; pedido++;
+    foto = { rgba: imagem.data, w: imagem.width, h: imagem.height, canvas }; pontos = []; resultado = null; ultAlfa = null; pedido++; $("stk-contorno").checked = (CFG.CONTORNO_PX || 0) > 0;
     cv().width = foto.w; cv().height = foto.h; cv().style.maxWidth = LARGURA_TELA + "px"; $("stk-save").disabled = true; $("stk-skip").disabled = false;
     msg("Toque no que quer recortar. Pode tocar em vários pontos.");
     $("stk-status").textContent = "Analisando a foto (só na 1ª vez baixa uns 62 MB)…";
@@ -129,17 +132,16 @@ export function montarFigurinhas({ $, el, uid, note, choose, enviar }) {
     desenharFoto(); interno = true; $("stk").close(); $("stkedit").showModal(); interno = false;
   }
   async function recortar() {
-    const meu = ++pedido; resultado = null; $("stk-save").disabled = true;
+    const meu = ++pedido; resultado = null; ultAlfa = null; $("stk-save").disabled = true;
     if (!pontos.length) return msg("O recorte aparece aqui.");
     msg("Recortando…"); await new Promise((r) => setTimeout(r, 30)); // deixa a tela pintar antes do cálculo
     try {
       if (!(await analise)) throw new Error("ia");
       const o = await segmentar(pontos.map((p) => [...p]), () => meu === pedido); if (meu !== pedido || !o) return;
-      const alfa = rampa(ampliarLogits(escolherMascara(o.notas, o.logits, 256), 256, foto.w, foto.h)), fig = montarFigurinha(foto.rgba, foto.w, foto.h, alfa);
+      const alfa = rampa(ampliarLogits(escolherMascara(o.notas, o.logits, 256), 256, foto.w, foto.h)), fig = montarFigurinha(foto.rgba, foto.w, foto.h, alfa, cfgAtual());
       if (meu !== pedido) return;
       if (!fig) return msg("Não achei nada nesses pontos. Tente tocar em outro lugar.");
-      const out = $("stk-out"); out.width = fig.width; out.height = fig.height; out.getContext("2d").putImageData(new ImageData(fig.data, fig.width, fig.height), 0, 0);
-      resultado = fig; msg(""); $("stk-save").disabled = false;
+      ultAlfa = alfa; mostrar(fig);
     } catch (e) { console.warn("SAM 2.1:", e); if (meu === pedido) msg("Não consegui recortar. Toque de novo ou use outra foto."); }
   }
   cv().addEventListener("click", (e) => {
@@ -148,6 +150,7 @@ export function montarFigurinhas({ $, el, uid, note, choose, enviar }) {
     if (i >= 0) pontos.splice(i, 1); else pontos.push([px, py]);
     desenharFoto(); recortar();
   });
+  $("stk-contorno").onchange = () => { if (ultAlfa && resultado) { const fig = montarFigurinha(foto.rgba, foto.w, foto.h, ultAlfa, cfgAtual()); if (fig) mostrar(fig); } }; // refaz só o acabamento: não chama a IA de novo
   $("stk-clear").onclick = () => { pontos = []; desenharFoto(); recortar(); };
   $("stk-skip").onclick = () => { fechar(); proxima(); };
   $("stkedit").addEventListener("close", () => { if (!interno) { fila = []; abrir(); } }); // Esc/fechar: volta para a gaveta
