@@ -3,10 +3,11 @@
 // Figurinha animada (GIF, WebP, APNG) é limpa sem recodificar. O envio em si é feito pelo app (cifrado como qualquer mídia).
 import { listStickers, putSticker, delSticker } from "./store.js";
 import { detectar, limparAnimada } from "./sticker.js";
-import { carregarIA, definirImagem, segmentar } from "./ia.js";
-import { criarRecorte, finalizar, alfaSuave, preencherBuracos } from "./cutout.js";
+import { carregarSAM, definirImagem, segmentar } from "./sam2.js";
+import { escolherMascara, ampliarLogits, rampa, montarFigurinha } from "./recorte.js";
+import { TAMANHO, KB_MAXIMO, LADO_PROCESSO, LARGURA_TELA } from "./recorte-config.js";
 
-const MAX_BIBLIOTECA = 80, LADO = 512, TRABALHO = 1024, MAX_ARQUIVO = 20 * 1048576, MAX_ESTATICA = 500_000;
+const MAX_BIBLIOTECA = 80, LADO = 512, TRABALHO = LADO_PROCESSO, MAX_ARQUIVO = 20 * 1048576, MAX_ESTATICA = 500_000;
 const hex = (u8) => [...u8].map((x) => x.toString(16).padStart(2, "0")).join("");
 const idDe = async (bytes) => hex(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))).slice(0, 32);
 const blobPng = (c) => new Promise((r) => c.toBlob(r, "image/png"));
@@ -98,81 +99,81 @@ export function montarFigurinhas({ $, el, uid, note, choose, enviar }) {
       const k = Math.min(1, TRABALHO / Math.max(bmp.width, bmp.height)), w = Math.max(1, Math.round(bmp.width * k)), h = Math.max(1, Math.round(bmp.height * k));
       const c = document.createElement("canvas"); c.width = w; c.height = h; const g = c.getContext("2d", { willReadFrequently: true }); g.drawImage(bmp, 0, 0, w, h); bmp.close?.();
       const dados = g.getImageData(0, 0, w, h); let claros = 0; for (let i = 3; i < dados.data.length; i += 4) if (dados.data[i] < 128) claros++;
-      if (claros / (w * h) >= 0.02) { conta(await guardar(await exportar(dados, { ampliar: false }))); return false; } // já vem com fundo transparente: é uma figurinha pronta
+      if (claros / (w * h) >= 0.02) { conta(await guardar(await exportar(dados))); return false; } // já vem com fundo transparente: é uma figurinha pronta
       editar(dados, c); return true;
     } catch (e) { resumo.falhas++; resumo.erro = e?.message; return false; }
   }
 
-  // ---------- Editor de recorte ----------
-  let img, rc, modo = "manter", ver = false;
+  // ---------- Editor de recorte (SAM 2.1: toque no que quer recortar) ----------
+  // Fluxo do notebook recortador_figurinhas_sam2: pontos verdes sobre o objeto, o recorte aparece ao lado; tocar num ponto o remove.
+  let foto = null, pontos = [], pedido = 0, resultado = null, analise = null, interno = false;
   const cv = () => $("stk-canvas");
-  function pinta() {
-    const { width: W, height: H, data } = img, out = new ImageData(W, H), a = ver ? alfaSuave($("stk-holes").checked ? preencherBuracos(rc.keep, img) : rc.keep, W, H) : null;
-    for (let i = 0, p = 0; i < W * H; i++, p += 4) {
-      out.data[p] = data[p]; out.data[p + 1] = data[p + 1]; out.data[p + 2] = data[p + 2];
-      out.data[p + 3] = ver ? Math.round(a[i] * data[p + 3] / 255) : rc.keep[i] ? data[p + 3] : Math.round(data[p + 3] * 0.22);
-    }
-    cv().getContext("2d").putImageData(out, 0, 0);
-    const n = rc.mantidos(), pct = Math.round((n / (W * H)) * 100);
-    $("stk-status").textContent = n ? `${rc.passos()} toque${rc.passos() === 1 ? "" : "s"} · ${pct}% da imagem mantida` : "Nada mantido ainda: toque no que você quer guardar.";
-    $("stk-save").disabled = !n; $("stk-undo").disabled = !rc.passos(); $("stk-reset").disabled = !rc.passos();
+  const msg = (t) => { $("stk-msg").textContent = t || ""; $("stk-msg").hidden = !t; $("stk-out").hidden = !!t; };
+  function desenharFoto() {
+    const c = cv(), g = c.getContext("2d"); g.drawImage(foto.canvas, 0, 0, c.width, c.height);
+    const r = Math.max(10, c.width / 40);
+    pontos.forEach(([px, py], n) => {
+      const x = px * c.width, y = py * c.height; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fillStyle = "rgba(0,200,0,.9)"; g.fill();
+      g.lineWidth = Math.max(2, r / 3); g.strokeStyle = "#fff"; g.stroke(); g.fillStyle = "#fff"; g.font = `bold ${Math.round(r * 1.2)}px sans-serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(String(n + 1), x, y);
+    });
+    $("stk-info").textContent = pontos.length + (pontos.length === 1 ? " ponto" : " pontos");
+    $("stk-clear").disabled = !pontos.length;
   }
-  let trab = null, iaPronta = null, iaOk = true, ocupado = false;
   function editar(imagem, canvas) {
-    img = imagem; trab = canvas; iaOk = true; ocupado = false; $("stk-cor").checked = false;
-    // começa a preparar o recorte inteligente já (1ª vez baixa uns 45 MB; depois fica guardado no navegador)
-    const meu = (iaPronta = carregarIA().then(() => definirImagem(trab)).then(() => true).catch(() => { iaOk = false; return false; }));
-    $("stk-status").textContent = "Preparando o recorte inteligente (só na 1ª vez baixa uns 45 MB)…"; meu.then((ok) => { if (iaPronta === meu && !ok) $("stk-status").textContent = "Recorte inteligente indisponível neste aparelho: usando recorte por cor."; }); rc = criarRecorte(img); modo = "manter"; ver = false; $("stk-preview").checked = false; marcaModo();
-    cv().width = img.width; cv().height = img.height; pinta(); $("stk").close(); $("stkedit").showModal();
+    foto = { rgba: imagem.data, w: imagem.width, h: imagem.height, canvas }; pontos = []; resultado = null; pedido++;
+    cv().width = foto.w; cv().height = foto.h; cv().style.maxWidth = LARGURA_TELA + "px"; $("stk-save").disabled = true; $("stk-skip").disabled = false;
+    msg("Toque no que quer recortar. Pode tocar em vários pontos.");
+    $("stk-status").textContent = "Analisando a foto (só na 1ª vez baixa uns 62 MB)…";
+    const meu = (analise = definirImagem(canvas).then(() => true).catch((e) => { console.warn("SAM 2.1:", e); return false; }));
+    meu.then((ok) => { if (analise === meu) $("stk-status").textContent = ok ? "Pronto: toque no objeto." : "Não consegui carregar o recorte inteligente neste aparelho."; });
+    desenharFoto(); interno = true; $("stk").close(); $("stkedit").showModal(); interno = false;
   }
-  const MODOS = { manter: "stk-mode-add", apagar: "stk-mode-del", mais: "stk-mode-brush", menos: "stk-mode-erase" };
-  const marcaModo = () => { for (const [m, id] of Object.entries(MODOS)) $(id).setAttribute("aria-pressed", String(modo === m)); $("stk-brush-box").hidden = !(modo === "mais" || modo === "menos"); cv().style.cursor = modo === "mais" || modo === "menos" ? "cell" : "crosshair"; };
-  for (const [m, id] of Object.entries(MODOS)) $(id).onclick = () => { modo = m; marcaModo(); };
-  $("stk-auto").onclick = () => { const n = rc.fundo(Number($("stk-tol").value)); ver = false; $("stk-preview").checked = false; pinta(); if (!n) $("stk-status").textContent = "Não achei fundo nas bordas. Use Manter/Pincel."; };
-  const ponto = (e) => { const r = cv().getBoundingClientRect(); return [((e.clientX - r.left) / r.width) * img.width, ((e.clientY - r.top) / r.height) * img.height, (Number($("stk-brush").value) / r.width) * img.width]; };
-  async function tocarIA(x, y, manter) {
-    if (ocupado) return; ocupado = true; const meu = iaPronta; cv().style.cursor = "progress"; $("stk-status").textContent = "Recortando…";
+  async function recortar() {
+    const meu = ++pedido; resultado = null; $("stk-save").disabled = true;
+    if (!pontos.length) return msg("O recorte aparece aqui.");
+    msg("Recortando…"); await new Promise((r) => setTimeout(r, 30)); // deixa a tela pintar antes do cálculo
     try {
-      if (!(await meu)) throw new Error("ia");
-      const o = await segmentar(x, y, img.width, img.height); if (iaPronta !== meu) return; // editor trocou de imagem enquanto pensava
-      const n = manter ? rc.manterMascara(o.conf) : rc.apagarMascara(o.conf); ver = false; $("stk-preview").checked = false; pinta();
-      if (!n) $("stk-status").textContent = manter ? "Essa parte já está mantida. Toque em outra, ou use o Pincel." : "Nada para apagar aí: toque numa parte mantida.";
-    } catch { iaOk = false; $("stk-status").textContent = "O recorte inteligente falhou: usando recorte por cor. Toque de novo."; }
-    finally { ocupado = false; marcaModo(); }
+      if (!(await analise)) throw new Error("ia");
+      const o = await segmentar(pontos.map((p) => [...p]), () => meu === pedido); if (meu !== pedido || !o) return;
+      const alfa = rampa(ampliarLogits(escolherMascara(o.notas, o.logits, 256), 256, foto.w, foto.h)), fig = montarFigurinha(foto.rgba, foto.w, foto.h, alfa);
+      if (meu !== pedido) return;
+      if (!fig) return msg("Não achei nada nesses pontos. Tente tocar em outro lugar.");
+      const out = $("stk-out"); out.width = fig.width; out.height = fig.height; out.getContext("2d").putImageData(new ImageData(fig.data, fig.width, fig.height), 0, 0);
+      resultado = fig; msg(""); $("stk-save").disabled = false;
+    } catch (e) { console.warn("SAM 2.1:", e); if (meu === pedido) msg("Não consegui recortar. Toque de novo ou use outra foto."); }
   }
-  let pintando = false;
-  cv().addEventListener("pointerdown", (e) => {
-    e.preventDefault(); const [x, y, raio] = ponto(e), tol = Number($("stk-tol").value);
-    if (modo === "mais" || modo === "menos") { pintando = true; cv().setPointerCapture(e.pointerId); rc.pincel(x, y, raio, modo === "mais" ? 1 : 0); pinta(); return; }
-    if (!$("stk-cor").checked && iaOk) { tocarIA(x, y, modo === "manter"); return; }
-    const n = modo === "manter" ? rc.manter(x, y, tol) : rc.apagar(x, y, tol); ver = false; $("stk-preview").checked = false; pinta();
-    if (!n) $("stk-status").textContent = modo === "manter" ? "Essa parte já está mantida ou é transparente. Tente outra." : "Nada para apagar aí: toque numa parte mantida.";
+  cv().addEventListener("click", (e) => {
+    if (!foto) return; const r = cv().getBoundingClientRect(), px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+    const i = pontos.findIndex(([x, y]) => Math.hypot((x - px) * r.width, (y - py) * r.height) <= 14); // tocar num ponto o remove
+    if (i >= 0) pontos.splice(i, 1); else pontos.push([px, py]);
+    desenharFoto(); recortar();
   });
-  cv().addEventListener("pointermove", (e) => { if (!pintando) return; const [x, y, raio] = ponto(e); rc.pincel(x, y, raio, modo === "mais" ? 1 : 0); pinta(); });
-  const solta = () => { if (pintando) { pintando = false; rc.fimTraco(); ver = false; $("stk-preview").checked = false; pinta(); } };
-  cv().addEventListener("pointerup", solta); cv().addEventListener("pointercancel", solta);
-  $("stk-undo").onclick = () => { rc.desfazer(); pinta(); };
-  $("stk-reset").onclick = () => { rc.recomecar(); pinta(); };
-  $("stk-preview").onchange = () => { ver = $("stk-preview").checked; pinta(); };
-  $("stk-holes").onchange = () => pinta();
-  $("stkedit").addEventListener("keydown", (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); rc.desfazer(); pinta(); } });
-  $("stk-cancel").onclick = () => { $("stkedit").close(); proxima(); };
-  async function exportar(dados, { ampliar = true } = {}) { // ImageData -> PNG de até 512 px; se ficar pesado, reduz
+  $("stk-clear").onclick = () => { pontos = []; desenharFoto(); recortar(); };
+  $("stk-skip").onclick = () => { fechar(); proxima(); };
+  $("stkedit").addEventListener("close", () => { if (!interno) { fila = []; abrir(); } }); // Esc/fechar: volta para a gaveta
+  function fechar() { interno = true; $("stkedit").close(); interno = false; }
+  const paraBlob = (c, tipo, q) => new Promise((r) => c.toBlob(r, tipo, q));
+  async function codificar(fig) { // WebP até KB_MAXIMO (limite do WhatsApp); se o navegador não gera WebP (Safari), PNG
+    const c = document.createElement("canvas"); c.width = fig.width; c.height = fig.height; c.getContext("2d").putImageData(new ImageData(fig.data, fig.width, fig.height), 0, 0);
+    let blob = null;
+    for (let q = 0.95; q > 0.2; q -= 0.05) { blob = await paraBlob(c, "image/webp", q); if (!blob || blob.type !== "image/webp" || blob.size <= KB_MAXIMO * 1024) break; }
+    if (!blob || blob.type !== "image/webp") blob = await paraBlob(c, "image/png");
+    if (!blob) throw new Error("Não foi possível preparar a figurinha.");
+    return { bytes: new Uint8Array(await blob.arrayBuffer()), mime: blob.type, w: fig.width, h: fig.height, anim: false };
+  }
+  async function exportar(dados) { // figurinha pronta (já transparente): PNG, no tamanho original (até TAMANHO)
     const c = document.createElement("canvas"); c.width = dados.width; c.height = dados.height; c.getContext("2d").putImageData(new ImageData(new Uint8ClampedArray(dados.data), dados.width, dados.height), 0, 0);
-    for (const lado of [LADO, 384, 256]) {
-      const k = Math.min(ampliar ? Infinity : 1, lado / Math.max(c.width, c.height)), w = Math.max(1, Math.round(c.width * k)), h = Math.max(1, Math.round(c.height * k));
+    for (const lado of [TAMANHO, 384, 256]) {
+      const k = Math.min(1, lado / Math.max(c.width, c.height)), w = Math.max(1, Math.round(c.width * k)), h = Math.max(1, Math.round(c.height * k));
       const o = document.createElement("canvas"); o.width = w; o.height = h; const g = o.getContext("2d"); g.imageSmoothingQuality = "high"; g.drawImage(c, 0, 0, w, h);
       const blob = await blobPng(o); if (!blob) throw new Error("Não foi possível preparar a figurinha.");
       const bytes = new Uint8Array(await blob.arrayBuffer()); if (bytes.length <= MAX_ESTATICA || lado === 256) return { bytes, mime: "image/png", w, h, anim: false };
     }
   }
-  async function salvarEditado(dados, opc) {
-    $("stk-save").disabled = true;
-    try {
-      conta(await guardar(await exportar(dados, opc))); $("stkedit").close(); await proxima();
-    } catch (e) { $("stk-save").disabled = false; note(e?.message || "Não foi possível salvar a figurinha."); }
-  }
-  $("stk-save").onclick = () => { const o = finalizar(img, rc.keep, { buracos: $("stk-holes").checked }); if (o) salvarEditado(o); };
-  $("stk-whole").onclick = () => salvarEditado(new ImageData(new Uint8ClampedArray(img.data), img.width, img.height), { ampliar: false });
+  $("stk-save").onclick = async () => {
+    if (!resultado) return; $("stk-save").disabled = true;
+    try { conta(await guardar(await codificar(resultado))); fechar(); await proxima(); }
+    catch (e) { $("stk-save").disabled = false; note(e?.message || "Não foi possível salvar a figurinha."); }
+  };
   return { abrir, salvarRecebida, uid };
 }

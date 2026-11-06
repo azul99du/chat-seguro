@@ -2,7 +2,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { detectar, limparAnimada, MAX_ANIM_BYTES } from "../sticker.js";
-import { regiao, criarRecorte, alfaSuave, finalizar, preencherBuracos } from "../cutout.js";
 import { limpaCitacao, rotulo, resumo } from "../reply.js";
 
 const B = (...p) => Buffer.concat(p.map((x) => (typeof x === "string" ? Buffer.from(x, "latin1") : Buffer.from(x))));
@@ -60,84 +59,6 @@ describe("APNG", () => {
     assert.throws(() => limparAnimada(B(png(true), Buffer.alloc(MAX_ANIM_BYTES * 2))), /1 MB/);
   });
   test("formato desconhecido", () => assert.equal(detectar(B("nada a ver com imagem")), null));
-});
-
-// ---- Recorte por cliques ----
-// imagem 20x10: fundo azul; "boneco" vermelho no meio (x 6..13, y 2..7); pele clara dentro do boneco (x 9..10, y 3..4)
-function cena() {
-  const W = 20, H = 10, data = new Uint8ClampedArray(W * H * 4);
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    let c = [30, 60, 200]; if (x >= 6 && x <= 13 && y >= 2 && y <= 7) c = [200, 30, 30]; if (x >= 9 && x <= 10 && y >= 3 && y <= 4) c = [240, 200, 170];
-    data.set([...c, 255], (y * W + x) * 4);
-  }
-  return { data, width: W, height: H };
-}
-describe("recorte por cliques", () => {
-  test("um toque no boneco pega só a região de cor parecida, não o fundo", () => {
-    const r = regiao(cena(), 7, 5, 30); assert.equal(r.length, 8 * 6 - 4); assert.ok(!r.includes(0));
-  });
-  test("tolerância maior engole as cores vizinhas parecidas; fora do limite não mexe", () => {
-    assert.equal(regiao(cena(), -1, 0, 30).length, 0);
-    assert.ok(regiao(cena(), 7, 5, 100).length >= 8 * 6 - 4);
-  });
-  test("manter soma regiões; desfazer volta passo a passo; recomeçar zera", () => {
-    const rc = criarRecorte(cena()); assert.equal(rc.mantidos(), 0);
-    rc.manter(7, 5, 30); const a = rc.mantidos(); assert.equal(a, 44);
-    rc.manter(9, 3, 30); assert.equal(rc.mantidos(), 48); assert.equal(rc.passos(), 2);
-    assert.equal(rc.manter(9, 3, 30), 0, "tocar de novo no que já está mantido não cria passo"); assert.equal(rc.passos(), 2);
-    assert.ok(rc.desfazer()); assert.equal(rc.mantidos(), 44); assert.ok(rc.desfazer()); assert.equal(rc.mantidos(), 0); assert.equal(rc.desfazer(), false);
-    rc.manter(7, 5, 30); rc.recomecar(); assert.equal(rc.mantidos(), 0); assert.equal(rc.passos(), 0);
-  });
-  test("apagar tira só o que estava mantido e também se desfaz", () => {
-    const rc = criarRecorte(cena()); rc.manter(7, 5, 30); rc.manter(9, 3, 30); const antes = rc.mantidos();
-    rc.apagar(9, 3, 30); assert.equal(rc.mantidos(), antes - 4); assert.equal(rc.apagar(0, 0, 30), 0, "o fundo não estava mantido");
-    rc.desfazer(); assert.equal(rc.mantidos(), antes);
-  });
-  test("finalizar corta na caixa do que foi mantido e deixa o resto transparente", () => {
-    const img = cena(), rc = criarRecorte(img); rc.manter(7, 5, 30); rc.manter(9, 3, 30);
-    const o = finalizar(img, rc.keep, { margem: 1 }); assert.ok(o.width <= 8 + 2 && o.width >= 8 && o.height >= 6 && o.height <= 8, `${o.width}x${o.height}`);
-    const mid = (Math.floor(o.height / 2) * o.width + Math.floor(o.width / 2)) * 4; assert.equal(o.data[mid + 3], 255, "centro opaco");
-    assert.equal(o.data[3], 0, "canto transparente");
-    assert.equal(finalizar(img, new Uint8Array(200)), null, "nada mantido = sem figurinha");
-  });
-  test("alfa suave: interior 255, longe 0, borda intermediária", () => {
-    const rc = criarRecorte(cena()); rc.manter(7, 5, 30); const a = alfaSuave(rc.keep, 20, 10);
-    assert.equal(a[5 * 20 + 9], 255); assert.equal(a[0], 0); assert.ok(a.some((v) => v > 0 && v < 255));
-  });
-  test("pixel já transparente na origem não é pego", () => {
-    const img = cena(); for (let x = 0; x < 20; x++) img.data[x * 4 + 3] = 0; assert.equal(regiao(img, 5, 0, 100).length, 0);
-  });
-});
-
-describe("recorte com máscara da IA", () => {
-  test("manter soma só o que passa do limiar; apagar tira; cada um é um passo desfazível", () => {
-    const img = cena(), rc = criarRecorte(img), conf = new Float32Array(200); for (let y = 2; y <= 7; y++) for (let x = 6; x <= 13; x++) conf[y * 20 + x] = 0.9; conf[0] = 0.3;
-    assert.equal(rc.manterMascara(conf), 48); assert.equal(rc.keep[0], 0, "abaixo do limiar não entra"); assert.equal(rc.manterMascara(conf), 0, "repetir não cria passo");
-    const peq = new Float32Array(200); peq[5 * 20 + 7] = 1; peq[0] = 1; assert.equal(rc.apagarMascara(peq), 1, "só apaga o que estava mantido"); assert.equal(rc.mantidos(), 47);
-    rc.desfazer(); assert.equal(rc.mantidos(), 48); rc.desfazer(); assert.equal(rc.mantidos(), 0);
-  });
-  test("a IA não mantém pixel que já era transparente na imagem", () => {
-    const img = cena(); img.data[3] = 0; const rc = criarRecorte(img), conf = new Float32Array(200).fill(1); rc.manterMascara(conf); assert.equal(rc.keep[0], 0); assert.equal(rc.mantidos(), 199);
-  });
-});
-describe("recorte: fundo automático, pincel e buracos", () => {
-  test("tirar o fundo automaticamente deixa só o boneco (com a pele dentro) e se desfaz", () => {
-    const rc = criarRecorte(cena()); assert.ok(rc.fundo(30) > 0);
-    assert.equal(rc.mantidos(), 8 * 6, "sobra o quadrado do boneco (cores diferentes do fundo)"); assert.equal(rc.keep[0], 0); assert.equal(rc.keep[5 * 20 + 7], 1);
-    assert.ok(rc.desfazer()); assert.equal(rc.mantidos(), 0);
-  });
-  test("pincel: uma pincelada inteira é um passo só; − apaga; desfazer devolve", () => {
-    const rc = criarRecorte(cena()); rc.pincel(3, 3, 2, 1); rc.pincel(4, 3, 2, 1); assert.equal(rc.passos(), 0, "ainda em andamento");
-    const n = rc.mantidos(); assert.ok(n > 10); rc.fimTraco(); assert.equal(rc.passos(), 1);
-    rc.pincel(3, 3, 1, 0); rc.fimTraco(); assert.ok(rc.mantidos() < n); rc.desfazer(); assert.equal(rc.mantidos(), n); rc.desfazer(); assert.equal(rc.mantidos(), 0);
-    assert.equal(rc.fimTraco(), 0, "pincelada vazia não cria passo");
-  });
-  test("buracos cercados entram; o que encosta na borda da imagem não", () => {
-    const img = cena(), rc = criarRecorte(img); rc.manter(7, 5, 30); // boneco com a "pele" 2x2 de fora
-    assert.equal(rc.mantidos(), 44); const c = preencherBuracos(rc.keep, img); assert.equal(c.reduce((a, v) => a + v, 0), 48); assert.equal(c[0], 0);
-    const o = finalizar(img, rc.keep, { margem: 0 }), sem = finalizar(img, rc.keep, { margem: 0, buracos: false });
-    const centro = (f) => f.data[((Math.floor(f.height / 2) - 1) * f.width + Math.floor(f.width / 2) - 1) * 4 + 3]; assert.ok(centro(o) > centro(sem) || centro(o) === 255);
-  });
 });
 
 // ---- Citar figurinha ----

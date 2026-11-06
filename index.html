@@ -160,29 +160,20 @@
 
   <dialog id="stkedit">
     <h2>Criar figurinha</h2>
-    <p id="stkedit-hint" class="muted">Toque no que quer <strong>manter</strong>: a inteligência artificial acha o contorno do objeto (tudo no seu aparelho). Ajuste com Apagar e com o Pincel (+ mantém, − apaga). Errou? Desfazer. Imagens animadas (GIF/WebP) são guardadas inteiras, sem recorte.</p>
-    <div class="stk-canvas-wrap"><canvas id="stk-canvas" aria-label="Imagem para recortar: toque nas partes que quer manter"></canvas></div>
-    <div class="stk-tools">
-      <div class="seg" role="group" aria-label="O que o toque faz">
-        <button type="button" id="stk-mode-add" aria-pressed="true">Manter</button>
-        <button type="button" id="stk-mode-del" aria-pressed="false">Apagar</button>
-        <button type="button" id="stk-mode-brush" aria-pressed="false">Pincel +</button>
-        <button type="button" id="stk-mode-erase" aria-pressed="false">Pincel −</button>
+    <p id="stkedit-hint" class="muted">Toque no que quer recortar: a inteligência artificial acha o contorno (tudo no seu aparelho). Pode tocar em vários pontos; para tirar um ponto, toque nele de novo.</p>
+    <p id="stk-status" role="status" class="stk-status"></p>
+    <div class="stk-duo">
+      <canvas id="stk-canvas" aria-label="Foto para recortar: toque no que quer recortar"></canvas>
+      <div class="stk-resultado">
+        <canvas id="stk-out" hidden aria-label="Prévia da figurinha"></canvas>
+        <div id="stk-msg" role="status">O recorte aparece aqui.</div>
       </div>
-      <button type="button" id="stk-auto" class="ghost">Tirar o fundo automaticamente</button>
-      <label class="stk-prev"><input type="checkbox" id="stk-cor"> Recorte por cor (sem IA)</label>
-      <label class="stk-tol">Alcance (cor) <input type="range" id="stk-tol" min="5" max="80" value="28"></label>
-      <label class="stk-brush" id="stk-brush-box" hidden>Pincel <input type="range" id="stk-brush" min="6" max="80" value="24"></label>
-      <label class="stk-prev"><input type="checkbox" id="stk-holes" checked> Preencher buracos</label>
-      <label class="stk-prev"><input type="checkbox" id="stk-preview"> Ver resultado</label>
     </div>
-    <p id="stk-status" role="status"></p>
+    <p id="stk-info" class="muted">0 pontos</p>
     <div class="dialog-actions col">
       <button type="button" id="stk-save" class="primary" disabled>Salvar figurinha</button>
-      <button type="button" id="stk-undo" class="ghost" disabled>Desfazer último toque</button>
-      <button type="button" id="stk-reset" class="ghost" disabled>Recomeçar</button>
-      <button type="button" id="stk-whole" class="ghost">Salvar sem recortar</button>
-      <button type="button" id="stk-cancel" class="ghost">Cancelar</button>
+      <button type="button" id="stk-clear" class="ghost" disabled>Limpar pontos</button>
+      <button type="button" id="stk-skip" class="ghost">Pular foto</button>
     </div>
   </dialog>
 

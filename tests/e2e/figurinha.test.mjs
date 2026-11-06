@@ -10,14 +10,14 @@ import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, n
 import { hasFfmpeg, tmp } from "../helpers/fixtures.mjs";
 
 let skip = configurado ? false : motivoSemConfig, browser, srv, A, B, nomeA, nomeB, dir; const erros = [], enviados = [];
-const t = (nome, fn, { ffmpeg = false } = {}) => test(nome, { timeout: 120000 }, async (c) => (skip ? c.skip(skip) : ffmpeg && !hasFfmpeg() ? c.skip("ffmpeg não instalado") : fn(c)));
+const t = (nome, fn, { ffmpeg = false, timeout = 120000 } = {}) => test(nome, { timeout }, async (c) => (skip ? c.skip(skip) : ffmpeg && !hasFfmpeg() ? c.skip("ffmpeg não instalado") : fn(c)));
 async function cadastrar(page, usuario) {
   await page.goto(srv.url); await page.click("#tab-signup"); await page.fill("#username", usuario); await page.fill("#email", novoEmail()); await page.fill("#password", SENHA); await page.click("#auth-submit");
   await page.waitForSelector("#ask[open]", { timeout: 30000 }); await page.fill("#ask-input", FRASE); await page.click("#ask button[value=ok]"); await page.waitForSelector("#chat:not([hidden])", { timeout: 30000 });
 }
 function vigiar(nome, page) {
   page.on("pageerror", (e) => erros.push(`${nome}: ${e.message}`));
-  page.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource|gl_context|inference_feedback|XNNPACK|TensorFlow Lite/.test(m.text())) erros.push(`${nome}: ${m.text().slice(0, 160)}`); });
+  page.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) erros.push(`${nome}: ${m.text().slice(0, 160)}`); });
   page.on("request", (r) => { const m = r.url().match(/\/storage\/v1\/object\/media\/(.+)$/); if (m && r.method() === "POST") enviados.push({ page, path: decodeURIComponent(m[1]) }); });
 }
 // PNG 120x80: fundo azul, quadrado vermelho no meio, com um texto escondido (tEXt) que NÃO pode sair na figurinha
@@ -63,28 +63,30 @@ after(async () => {
   await browser.close(); await srv.close();
 });
 
-t("gaveta vazia explica como criar; editor abre com a imagem e sem nada mantido", async () => {
+const resultado = () => A.waitForFunction(() => { const o = document.getElementById("stk-out"); return o && !o.hidden; }, null, { timeout: 200000 });
+t("gaveta vazia explica como criar; editor abre com a foto, sem recorte e sem pontos", async () => {
   await A.click("#sticker"); await A.waitForSelector("#stk[open]"); assert.equal(await A.locator("#stk-empty").isVisible(), true); assert.equal(await A.locator("#stk-recent-sec").isVisible(), false);
-  await A.setInputFiles("#stk-file", join(dir, "boneco.png")); await A.waitForSelector("#stkedit[open]"); await A.check("#stk-cor"); // nos testes, o recorte por cor é determinístico
-  assert.equal(await A.locator("#stk-save").isDisabled(), true); assert.match(await A.locator("#stk-status").innerText(), /Nada mantido/);
-  assert.ok((await pixel("#stk-canvas", 0.5, 0.5))[3] < 100, "tudo apagado/esmaecido no começo");
+  await A.setInputFiles("#stk-file", join(dir, "boneco.png")); await A.waitForSelector("#stkedit[open]");
+  assert.equal(await A.locator("#stk-save").isDisabled(), true); assert.match(await A.locator("#stk-info").innerText(), /^0 pontos/);
+  assert.equal(await A.locator("#stk-out").isHidden(), true); assert.equal(await A.locator("#stk-cor, #stk-mode-add, #stk-mode-brush, #stk-holes").count(), 0, "os modos antigos (Manter/Apagar/Pincel) foram removidos");
 });
-t("tocar mantém só a região (o resto fica esmaecido); desfazer volta; recomeçar zera", async () => {
-  await tocar(0.5, 0.5); assert.match(await A.locator("#stk-status").innerText(), /1 toque/);
-  assert.equal((await pixel("#stk-canvas", 0.5, 0.5))[3], 255, "boneco opaco"); assert.ok((await pixel("#stk-canvas", 0.05, 0.05))[3] < 100, "fundo esmaecido");
-  assert.equal(await A.locator("#stk-save").isDisabled(), false);
-  await A.click("#stk-undo"); assert.ok((await pixel("#stk-canvas", 0.5, 0.5))[3] < 100); assert.equal(await A.locator("#stk-save").isDisabled(), true);
-  await tocar(0.5, 0.5); await tocar(0.05, 0.05); assert.match(await A.locator("#stk-status").innerText(), /2 toques/); // o 2º toque (fundo azul) entrou por engano...
-  await A.click("#stk-undo"); assert.ok((await pixel("#stk-canvas", 0.05, 0.05))[3] < 100, "...e foi desfeito sozinho");
-  await A.click("#stk-mode-del"); await tocar(0.5, 0.5); assert.ok((await pixel("#stk-canvas", 0.5, 0.5))[3] < 100, "modo Apagar tira a região"); await A.click("#stk-undo");
-  assert.equal((await pixel("#stk-canvas", 0.5, 0.5))[3], 255, "desfazer o apagar traz de volta"); await A.click("#stk-mode-add");
-  await A.check("#stk-preview"); assert.equal((await pixel("#stk-canvas", 0.05, 0.05))[3], 0, "prévia: fundo transparente de verdade");
-});
-t("salvar: a figurinha vai para 'Suas figurinhas' como PNG transparente, cortada e sem o texto escondido", async () => {
+t("SAM 2.1 no aparelho: tocar recorta (contorno branco, fundo transparente); tocar no ponto o remove; limpar zera", async () => {
+  await tocar(0.5, 0.5); await A.waitForFunction(() => /^1 ponto/.test(document.getElementById("stk-info").textContent)); await resultado();
+  assert.equal(await A.locator("#stk-save").isDisabled(), false); assert.equal(await A.locator("#stk-out").evaluate((c) => [c.width, c.height].join("x")), "512x512");
+  assert.equal((await pixel("#stk-out", 0.01, 0.01))[3], 0, "canto transparente"); assert.equal((await pixel("#stk-out", 0.5, 0.5))[3], 255, "miolo opaco");
+  await tocar(0.5, 0.5); await A.waitForFunction(() => /^0 pontos/.test(document.getElementById("stk-info").textContent)); assert.equal(await A.locator("#stk-save").isDisabled(), true, "sem pontos não salva");
+  await tocar(0.5, 0.5); await tocar(0.65, 0.6); await A.waitForFunction(() => /^2 pontos/.test(document.getElementById("stk-info").textContent));
+  await A.click("#stk-clear"); assert.match(await A.locator("#stk-info").innerText(), /^0 pontos/); assert.equal(await A.locator("#stk-clear").isDisabled(), true);
+  await tocar(0.5, 0.5); await resultado();
+  const recursos = await A.evaluate(() => performance.getEntriesByType("resource").map((r) => r.name));
+  assert.ok(recursos.some((u) => u.endsWith("vision_encoder_int8.onnx")) && recursos.some((u) => u.endsWith("ort.wasm.min.mjs")), "modelo e programa vieram do próprio site");
+  assert.ok(recursos.every((u) => !/^https?:\/\/(?!127\.0\.0\.1|[a-z0-9]+\.supabase\.co|fonts\.g)/.test(u)), "nada de servidor de terceiros");
+}, { timeout: 420000 });
+t("salvar: vai para 'Suas figurinhas' como WebP 512x512 de até 100 KB, transparente e sem o texto escondido", async () => {
   await A.click("#stk-save"); await A.waitForSelector("#stk[open]"); await A.waitForFunction(() => document.querySelectorAll("#stk-mine .stk-item").length === 1);
   assert.match(await A.locator("#stk-count").innerText(), /^1\//);
-  const r = await imagem(A, "#stk-mine img"); assert.equal(Math.max(r.w, r.h), 512, `ampliada até 512: ${r.w}x${r.h}`); assert.ok(Math.abs(r.w - r.h) <= 24, "cortada na caixa do quadrado"); assert.equal(r.canto[3], 0, "canto transparente");
-  const [b] = await biblioteca(A); assert.ok(!b.texto.includes("SEGREDO")); assert.ok(b.texto.startsWith("\x89PNG")); assert.equal(b.mime, "image/png");
+  const r = await imagem(A, "#stk-mine img"); assert.equal(r.w, 512); assert.equal(r.h, 512); assert.equal(r.canto[3], 0, "canto transparente");
+  const [b] = await biblioteca(A); assert.ok(!b.texto.includes("SEGREDO")); assert.equal(b.mime, "image/webp"); assert.ok(b.texto.startsWith("RIFF") && b.texto.slice(8, 12) === "WEBP"); assert.ok(b.texto.length <= 100 * 1024, `${b.texto.length} bytes`);
 });
 t("enviar: A vê a figurinha sem balão; B recebe, com o canto transparente e botão de salvar", async () => {
   await A.click("#stk-mine .stk-item"); await A.waitForSelector("#stk", { state: "hidden" });
@@ -130,28 +132,11 @@ t("apagar: pede confirmação, remove só da lista e não mexe nas mensagens já
   await A.waitForFunction(() => document.querySelectorAll("#stk-mine .stk-item").length === 1); await A.click("#stk-close");
   assert.ok((await A.locator(".msg.mine .bubble.sticker").count()) >= 3);
 });
-t("recorte inteligente (IA no aparelho): carrega do próprio site, responde ao toque e não cai no recorte por cor", async () => {
-  await A.click("#sticker"); await A.waitForSelector("#stk[open]"); await A.setInputFiles("#stk-file", join(dir, "boneco.png")); await A.waitForSelector("#stkedit[open]");
-  assert.equal(await A.locator("#stk-cor").isChecked(), false, "a IA é o padrão");
-  await tocar(0.5, 0.5); await A.waitForFunction(() => !/Recortando|Preparando/.test(document.getElementById("stk-status").textContent), null, { timeout: 100000 });
-  const st = await A.locator("#stk-status").innerText(); assert.doesNotMatch(st, /falhou|indispon/i, st);
-  const recursos = await A.evaluate(() => performance.getEntriesByType("resource").map((r) => r.name));
-  assert.ok(recursos.some((u) => u.endsWith("interactive_segmentation.task")) && recursos.some((u) => u.endsWith("vision_wasm_internal.wasm")), "modelo e WebAssembly vieram do próprio site");
-  assert.ok(recursos.every((u) => !/^https?:\/\/(?!127\.0\.0\.1|[a-z0-9]+\.supabase\.co|fonts\.g)/.test(u)), "nada de servidor de terceiros");
-  await A.click("#stk-cancel"); await A.waitForSelector("#stk[open]"); await A.click("#stk-close");
-});
-t("importar vários: pronta (transparente) entra direto; foto abre o editor; 'tirar fundo' e pincel; recorte pequeno é ampliado", async () => {
+t("importar vários: figurinha pronta (transparente) entra direto; foto abre o editor e 'Pular foto' volta para a gaveta", async () => {
   await A.click("#sticker"); await A.waitForSelector("#stk[open]"); const antes = await A.locator("#stk-mine .stk-item").count();
   await A.setInputFiles("#stk-file", [join(dir, "pronta.png"), join(dir, "boneco.png")]); await A.waitForSelector("#stkedit[open]");
-  await A.click("#stk-auto"); assert.equal((await pixel("#stk-canvas", 0.5, 0.5))[3], 255, "boneco mantido"); assert.ok((await pixel("#stk-canvas", 0.05, 0.05))[3] < 100, "fundo tirado");
-  await A.click("#stk-undo"); assert.equal(await A.locator("#stk-save").isDisabled(), true, "desfazer o automático zera");
-  await A.click("#stk-auto"); await A.click("#stk-mode-erase"); const b = await A.locator("#stk-canvas").boundingBox();
-  await A.mouse.move(b.x + b.width * 0.5, b.y + b.height * 0.5); await A.mouse.down(); await A.mouse.move(b.x + b.width * 0.6, b.y + b.height * 0.5, { steps: 4 }); await A.mouse.up();
-  assert.ok((await pixel("#stk-canvas", 0.55, 0.5))[3] < 100, "o pincel − apagou um pedaço"); await A.click("#stk-undo"); assert.equal((await pixel("#stk-canvas", 0.55, 0.5))[3], 255, "uma pincelada = um desfazer");
-  await A.mouse.move(b.x + b.width * 0.5, b.y + b.height * 0.45); await A.mouse.down(); await A.mouse.move(b.x + b.width * 0.55, b.y + b.height * 0.45, { steps: 3 }); await A.mouse.up(); // um corte a mais, para não repetir a figurinha de antes
-  await A.click("#stk-save"); await A.waitForSelector("#stk[open]"); await A.waitForFunction((n) => document.querySelectorAll("#stk-mine .stk-item").length === n, antes + 2);
-  const lib = await biblioteca(A); const grande = lib.find((x) => x.w === 512 || x.h === 512); assert.ok(grande, "o recorte pequeno foi ampliado até 512");
-  assert.ok(lib.some((x) => x.w === 120 && x.h === 80), "a figurinha pronta manteve o tamanho (sem recortar nem ampliar)");
+  await A.click("#stk-skip"); await A.waitForSelector("#stk[open]"); await A.waitForFunction((n) => document.querySelectorAll("#stk-mine .stk-item").length === n, antes + 1);
+  const lib = await biblioteca(A); assert.ok(lib.some((x) => x.w === 120 && x.h === 80 && x.mime === "image/png"), "a pronta manteve o tamanho e o formato (sem recortar)");
   await A.click("#stk-close");
 });
 t("limite: arquivo que não é imagem é recusado com aviso", async () => {
