@@ -124,18 +124,18 @@ t("pedido em lote: mais de 20 mensagens num só pedido é recusado (não dá par
   assert.ok(limitado(await g.c.from("messages").insert(Array.from({ length: 21 }, () => msg(b.id)))), "lote de 21");
   assert.ok(!(await g.c.from("messages").insert(Array.from({ length: 3 }, () => msg(b.id)))).error, "(controle) lote pequeno passa");
 });
-t("busca de usuário: 15 por minuto; a 16ª é recusada (enumeração fica lenta)", async () => {
-  const h = await usuario("h");
-  let ok = 0, bloqueada = null;
-  for (let i = 0; i < 16; i++) { const r = await h.c.rpc("find_user", { p_username: "naoexiste" + i }); if (r.error) { bloqueada = r; break; } ok++; }
-  assert.equal(ok, 15); assert.ok(limitado(bloqueada), JSON.stringify(bloqueada?.error));
-});
-t("busca de prekey: 30 por minuto; a 31ª é recusada", async () => {
-  const i = await usuario("i");
-  let ok = 0, bloqueada = null;
-  for (let n = 0; n < 31; n++) { const r = await i.c.rpc("get_prekey", { p_user: a.id }); if (r.error) { bloqueada = r; break; } ok++; }
-  assert.equal(ok, 30); assert.ok(limitado(bloqueada), JSON.stringify(bloqueada?.error));
-});
+// O limite é por janela de 1 minuto: se a janela virar no meio da sequência, passam mais do que o limite. Nesse caso (e só nele) repete com outra pessoa.
+async function testaLimite(prefixo, max, chamada) {
+  for (let tent = 0; tent < 3; tent++) {
+    const u = await usuario(prefixo); let ok = 0, bloqueada = null;
+    for (let n = 0; n <= max; n++) { const r = await chamada(u, n); if (r.error) { bloqueada = r; break; } ok++; }
+    if (bloqueada && ok === max) { assert.ok(limitado(bloqueada), JSON.stringify(bloqueada?.error)); return; }
+    assert.ok(!bloqueada || ok > max, `bloqueou cedo demais: depois de ${ok} chamadas (o limite é ${max})`);
+  }
+  assert.fail(`a janela de 1 minuto virou 3 vezes seguidas sem bloquear (limite ${max})`);
+}
+t("busca de usuário: 15 por minuto; a 16ª é recusada (enumeração fica lenta)", () => testaLimite("h", 15, (u, i) => u.c.rpc("find_user", { p_username: "naoexiste" + i })));
+t("busca de prekey: 30 por minuto; a 31ª é recusada", () => testaLimite("i", 30, (u) => u.c.rpc("get_prekey", { p_user: a.id })));
 t("prekeys: no máximo 30 por pessoa e 5 por pedido", async () => {
   const j = await usuario("j"), spk = { kty: "EC", crv: "P-256", x: "px", y: "py" };
   assert.ok(limitado(await j.c.from("prekeys").insert(Array.from({ length: 6 }, () => ({ id: hex(), public_key: spk })))), "lote de 6");
