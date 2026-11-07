@@ -6,7 +6,7 @@
   --hatch:repeating-linear-gradient(45deg,transparent 0 7px,rgba(255,255,255,.09) 7px 8px),
           repeating-linear-gradient(-45deg,transparent 0 7px,rgba(255,255,255,.09) 7px 8px);
 }
-*{box-sizing:border-box}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 [hidden]{display:none!important}
 body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.45 var(--body);-webkit-font-smoothing:antialiased}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -20,7 +20,7 @@ button,input{font:inherit;color:inherit}
   background:radial-gradient(circle at 35% 30%,#FF7B9A,var(--seal) 45%,var(--seal-dk));box-shadow:0 0 0 .05em rgba(232,51,95,.25)}
 
 /* botões e campos */
-button{cursor:pointer;min-height:44px;border-radius:10px;border:0;padding:0 18px;font-weight:600}
+button{touch-action:manipulation;cursor:pointer;min-height:44px;border-radius:10px;border:0;padding:0 18px;font-weight:600}
 .primary{background:var(--ink);color:#fff}.primary:hover{background:var(--ink-2)}
 .ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink)}.ghost:hover{background:var(--card)}
 .icon{width:44px;padding:0;font-size:1.3rem}

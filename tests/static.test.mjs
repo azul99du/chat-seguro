@@ -55,6 +55,10 @@ describe("ícones do site", () => {
   });
 });
 
+describe("visual", () => {
+  test("sem o destaque azul do toque no celular (tap highlight)", () => assert.match(ler("style.css"), /-webkit-tap-highlight-color:\s*transparent/));
+});
+
 describe("política de segurança do navegador (CSP)", () => {
   const html = ler("index.html"), csp = html.match(/Content-Security-Policy"\s+content="([^"]+)"/)?.[1] ?? "";
   const dir = (n) => csp.split(";").map((s) => s.trim()).find((s) => s.startsWith(n + " ")) ?? "";
