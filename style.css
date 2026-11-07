@@ -92,7 +92,7 @@ label{display:grid;gap:6px;font-size:.85rem;font-weight:600;color:var(--mut)}
 #conv-empty{position:absolute;inset:64px 0 0;display:grid;place-content:center;justify-items:center;text-align:center;
   background-color:var(--ink);background-image:var(--hatch);color:#C9CDF5;gap:8px}
 #conv-empty p{margin:0;color:#C9CDF5}#conv-empty .wordmark{color:#fff}
-#send-form{display:grid;grid-template-columns:auto auto auto minmax(0,1fr) auto;align-items:center;gap:8px;padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:var(--card);border-top:1.5px solid var(--line)}
+#send-form{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;padding:10px 12px calc(12px + env(safe-area-inset-bottom));background:var(--card);border-top:1.5px solid var(--line)}
 #back{display:none;color:#fff;border-color:rgba(255,255,255,.35)}
 
 /* celular: uma tela por vez */
@@ -194,7 +194,7 @@ dialog#viewer::backdrop{background:rgba(10,12,40,.85)}
 
 /* ---------- Figurinhas ---------- */
 #sticker{color:var(--ink)}
-@media(max-width:520px){#send-form{gap:6px;padding-left:10px;padding-right:10px}#send-form .icon{width:40px}}
+
 dialog#stk{width:min(94vw,460px);max-height:88dvh;padding:18px}
 .stk-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}.stk-head h2{margin:0;flex:1}.stk-head .icon{color:var(--ink);border-color:var(--line)}
 .stk-new{width:100%;margin-bottom:12px}
@@ -241,6 +241,33 @@ dialog#stkedit{width:min(94vw,900px);max-height:94dvh;overflow:auto}
 .stk-modo svg{flex:none}
 
 /* campo de mensagem (div editável): mesmo visual do input */
-.msg-input{min-height:48px;max-height:132px;overflow-y:auto;width:100%;padding:12px 14px;line-height:1.35;border:1.5px solid var(--line);border-radius:10px;background:var(--card);font-size:16px;white-space:pre-wrap;overflow-wrap:anywhere;-webkit-user-select:text;user-select:text;box-sizing:border-box;outline:none}
+.msg-input{min-height:48px;border-radius:24px!important;padding:12px 16px!important;max-height:132px;overflow-y:auto;width:100%;padding:12px 14px;line-height:1.35;border:1.5px solid var(--line);border-radius:10px;background:var(--card);font-size:16px;white-space:pre-wrap;overflow-wrap:anywhere;-webkit-user-select:text;user-select:text;box-sizing:border-box;outline:none}
 .msg-input:focus{border-color:var(--ink);box-shadow:0 0 0 3px rgba(21,23,74,.15)}
 .msg-input:empty::before{content:attr(data-placeholder);color:#757575;pointer-events:none}
+
+/* barra de mensagem: + (bandeja), campo em cápsula e botão redondo que alterna entre microfone e enviar */
+.mais,.redondo{width:48px;height:48px;min-height:48px;padding:0;border-radius:50%;display:grid;place-items:center;flex:none}
+.mais{border:1.5px solid var(--line);background:#fff;color:var(--ink);transition:background .25s,color .25s,border-color .25s,transform .12s}
+.mais svg{transition:transform .42s cubic-bezier(.34,1.56,.64,1)}
+.mais[aria-expanded=true]{background:var(--ink);color:#fff;border-color:var(--ink)}.mais[aria-expanded=true] svg{transform:rotate(45deg)}
+.mais:active,.redondo:active{transform:scale(.9)}
+.redondo{background:var(--ink);color:#fff;border:0}.redondo:hover{background:var(--ink-2)}
+.acao{position:relative;width:48px;height:48px}
+.acao>button{position:absolute;inset:0;transition:opacity .22s,transform .22s cubic-bezier(.34,1.56,.64,1),background .2s,visibility 0s}
+.acao svg{transition:transform .45s cubic-bezier(.34,1.56,.64,1)}
+.acao[data-modo=mic] .primary,.acao[data-modo=send] #mic{opacity:0;transform:scale(.4);visibility:hidden;pointer-events:none;transition:opacity .18s,transform .18s,visibility 0s .18s}
+.acao[data-modo=mic] .primary svg{transform:rotate(-70deg) scale(.5)}.acao[data-modo=send] #mic svg{transform:rotate(70deg) scale(.5)}
+.acao .primary:disabled{opacity:.65}
+.primary.voou svg{animation:voa .55s cubic-bezier(.5,0,.3,1)}
+@keyframes voa{0%{transform:none;opacity:1}40%{transform:translate(12px,-12px) scale(.6);opacity:0}41%{transform:translate(-12px,12px) scale(.6);opacity:0}100%{transform:none;opacity:1}}
+#mic.rec{animation:pulsa 1.2s ease-in-out infinite}
+/* bandeja do + */
+.tray{grid-column:1/-1;display:grid;grid-template-rows:0fr;transition:grid-template-rows .34s cubic-bezier(.22,1,.36,1)}
+.tray.on{grid-template-rows:1fr}
+.tray-in{min-height:0;overflow:hidden;display:grid;grid-template-columns:repeat(2,1fr);gap:8px;visibility:hidden;transition:visibility 0s .34s}
+.tray.on .tray-in{visibility:visible;transition-delay:0s;padding-bottom:2px}
+.tile{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;min-height:0;border:1.5px solid var(--line);border-radius:14px;background:#fff;color:var(--ink);font-size:13px;font-weight:600;opacity:0;transform:translateY(16px) scale(.9);transition:opacity .24s,transform .42s cubic-bezier(.34,1.56,.64,1)}
+.tray.on .tile{opacity:1;transform:none}.tray.on .tile:nth-child(2){transition-delay:.07s}
+.tile:active{transform:scale(.95)!important}
+.tile .ti{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#fff}.ti1{background:var(--ink-2)}.ti2{background:var(--seal)}
+@media(prefers-reduced-motion:reduce){.mais,.mais svg,.acao>button,.acao svg,.tray,.tray-in,.tile{transition:none!important}.primary.voou svg,#mic.rec{animation:none}}

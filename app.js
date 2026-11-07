@@ -724,6 +724,7 @@ $("safety-btn").onclick = async () => {
   $("safety").showModal();
 };
 async function open(peer) {
+  bandeja(false);
   if (!(await checkPin(peer))) return;
   active = peer; unread.delete(peer.id); renderContacts(); updateStatus();
   $("chat").classList.add("in-conv");
@@ -772,6 +773,7 @@ const niceErr = (e, fallback) => (/^(Não|Vídeo|Áudio|Formato)/.test(e?.messag
 function showPending(name, info, ok = false) {
   $("pending").hidden = false; $("pending-name").textContent = name;
   const i = $("pending-info"); i.textContent = info; i.className = ok ? "ok" : "";
+  atualizaBotao();
 }
 function clearPending(keepUrl) {
   if (gravador) { // cancelar: o botão do microfone volta ao normal na hora, sem esperar o navegador avisar que parou
@@ -780,13 +782,13 @@ function clearPending(keepUrl) {
   }
   if (pending?.url && !keepUrl) URL.revokeObjectURL(pending.url);
   if (tocando) { tocando.pause(); tocando = null; }
-  pending = null; $("pending").hidden = true; $("pending-thumb").replaceChildren(); $("pending-thumb").classList.remove("gravando");
+  pending = null; atualizaBotao(); $("pending").hidden = true; $("pending-thumb").replaceChildren(); $("pending-thumb").classList.remove("gravando");
   $("pending-extra").replaceChildren(); $("pending-stop").hidden = true;
 }
 // Campo de mensagem: <div contenteditable> (sem a barra de senhas/cartões/endereços do teclado do Android). Enter envia; sem quebra de linha.
 const MAX_TEXTO = 4000;
 const lerTexto = () => $("text").textContent.replace(/\u00a0/g, " ").replace(/\n/g, " ");
-const limparTexto = () => $("text").replaceChildren();
+const limparTexto = () => { $("text").replaceChildren(); atualizaBotao(); };
 {
   const t = $("text");
   if (t.contentEditable !== "plaintext-only") { // Firefox antigo: editável comum, colando só texto puro
@@ -806,7 +808,15 @@ const limparTexto = () => $("text").replaceChildren();
   for (const ev of ["pointerdown", "mousedown"]) enviar.addEventListener(ev, (e) => e.preventDefault());
 }
 $("pending-x").onclick = () => clearPending();
-$("attach").onclick = () => $("file").click();
+// Bandeja do "+" (foto/vídeo e figurinha) e botão que alterna entre microfone e enviar
+const bandeja = (abrir) => { $("tray").classList.toggle("on", abrir); $("mais").setAttribute("aria-expanded", String(abrir)); for (const b of $("tray").querySelectorAll("button")) b.tabIndex = abrir ? 0 : -1; };
+$("mais").onclick = () => bandeja(!$("tray").classList.contains("on"));
+$("attach").onclick = () => { bandeja(false); $("file").click(); };
+document.addEventListener("click", (e) => { if ($("tray").classList.contains("on") && !e.target.closest("#tray, #mais")) bandeja(false); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && $("tray").classList.contains("on")) { bandeja(false); $("mais").focus(); } });
+// campo vazio e nada anexado = microfone; texto ou anexo pronto = enviar (durante a gravação continua o microfone, que para a gravação)
+function atualizaBotao() { $("acao").dataset.modo = lerTexto().trim() !== "" || (pending && !pending.gravando) ? "send" : "mic"; }
+$("text").addEventListener("input", atualizaBotao);
 $("file").onchange = async () => { const f = $("file").files[0]; $("file").value = ""; if (f) await prepare(f); };
 
 async function prepare(f) {
@@ -913,7 +923,7 @@ async function enviarFigurinha(st) {
     cancelarResposta();
   } catch (e) { throw new Error(sendError(e, peer)); }
 }
-$("sticker").onclick = () => { if (active) figurinhas().abrir(); };
+$("sticker").onclick = () => { bandeja(false); if (active) figurinhas().abrir(); };
 
 async function uploadSealed(bytes, path) {
   const sealed = await sealBytes(bytes);
@@ -929,6 +939,8 @@ $("send-form").onsubmit = async (e) => {
   if (pending?.gravando) return note("Pare a gravação antes de enviar.");
   if (pending?.busy) return note("Aguarde um instante: ainda estou limpando os metadados do arquivo.");
   const btn = e.submitter ?? e.target.querySelector(".primary"); btn.disabled = true;
+  // o campo e a citação são liberados já no início: dá para digitar a próxima mensagem enquanto esta ainda está indo (se falhar, o texto volta)
+  const resp = replyTo; limparTexto(); cancelarResposta();
   try {
     let row, content;
     if (pending) {
@@ -936,14 +948,16 @@ $("send-form").onsubmit = async (e) => {
       const path = `${me.id}/${peer.id}/${crypto.randomUUID()}`;
       const sealed = await uploadSealed(p.bytes, path);
       content = { v: 1, type: "media", kind: p.kind, path, key: sealed.key, iv: sealed.iv, mime: p.mime, w: p.w, h: p.h, dur: p.dur, size: p.bytes.length, caption: text };
-      if (replyTo) content.re = replyTo;
+      if (resp) content.re = resp;
       row = await sendContent(peer, content);
       mediaCache.set(path, p.url); clearPending(true); // reaproveita a prévia local, sem baixar de novo
-    } else { content = { type: "text", text }; if (replyTo) content.re = replyTo; row = await sendContent(peer, content); }
+    } else { content = { type: "text", text }; if (resp) content.re = resp; row = await sendContent(peer, content); }
     if (active === peer) { $("msgs-empty")?.remove(); addMessage(row, content); }
-    limparTexto(); cancelarResposta();
+    btn.classList.add("voou"); setTimeout(() => btn.classList.remove("voou"), 650);
   } catch (e) {
     if (pending) showPending($("pending-name").textContent, "Falhou. Toque em Enviar para tentar de novo.");
+    if (!lerTexto()) { $("text").textContent = text; atualizaBotao(); } // devolve o que a pessoa tinha digitado
+    if (resp && !replyTo) { replyTo = resp; mostrarResposta(); }
     note(sendError(e, peer));
   } finally { btn.disabled = false; if (document.activeElement !== $("text")) $("text").focus(); }
 };

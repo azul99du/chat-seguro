@@ -63,9 +63,10 @@ after(async () => {
   await browser.close(); await srv.close();
 });
 
+const abrirFig = async (p) => { await p.click("#mais"); await p.click("#sticker"); };
 const resultado = () => A.waitForFunction(() => { const o = document.getElementById("stk-out"); return o && !o.hidden; }, null, { timeout: 200000 });
 t("gaveta vazia explica como criar; editor abre com a foto, sem recorte e sem pontos", async () => {
-  await A.click("#sticker"); await A.waitForSelector("#stk[open]"); assert.equal(await A.locator("#stk-empty").isVisible(), true); assert.equal(await A.locator("#stk-recent-sec").isVisible(), false);
+  await abrirFig(A); await A.waitForSelector("#stk[open]"); assert.equal(await A.locator("#stk-empty").isVisible(), true); assert.equal(await A.locator("#stk-recent-sec").isVisible(), false);
   await A.setInputFiles("#stk-file", join(dir, "boneco.png")); await A.waitForSelector("#stkedit[open]");
   assert.equal(await A.locator("#stk-save").isDisabled(), true); assert.match(await A.locator("#stk-info").innerText(), /^0 pontos/);
   assert.equal(await A.locator("#stk-out").isHidden(), true); assert.equal(await A.locator("#stk-cor, #stk-mode-add, #stk-mode-brush, #stk-holes").count(), 0, "os modos antigos (Manter/Apagar/Pincel) foram removidos");
@@ -112,7 +113,7 @@ t("enviar: A vê a figurinha sem balão; B recebe, com o canto transparente e bo
   assert.match(await B.locator(".bubble.sticker .sr").innerText(), /Figurinha enviada/);
 });
 t("recentes: aparecem depois do uso; reenviar a mesma figurinha ao mesmo amigo não sobe outro arquivo", async () => {
-  await A.click("#sticker"); await A.waitForSelector("#stk[open]"); assert.equal(await A.locator("#stk-recent .stk-item").count(), 1);
+  await abrirFig(A); await A.waitForSelector("#stk[open]"); assert.equal(await A.locator("#stk-recent .stk-item").count(), 1);
   const antes = enviados.filter((u) => u.page === A).length; await A.click("#stk-recent .stk-item");
   await A.waitForFunction(() => document.querySelectorAll(".msg.mine .bubble.sticker").length === 2, null, { timeout: 30000 }); await B.waitForFunction(() => document.querySelectorAll(".msg:not(.mine) .bubble.sticker").length === 2, null, { timeout: 30000 });
   assert.equal(enviados.filter((u) => u.page === A).length, antes, "aproveitou o arquivo já enviado");
@@ -121,11 +122,11 @@ t("B salva a figurinha recebida; ela continua lá depois de recarregar a página
   await B.locator(".bubble.sticker .stk-save").first().click(); await B.waitForFunction(() => /Salva/.test(document.querySelector(".bubble.sticker .stk-save").textContent));
   await B.locator(".bubble.sticker .stk-save").nth(1).click(); await B.waitForFunction(() => /já tem/i.test(document.querySelectorAll(".bubble.sticker .stk-save")[1].textContent), null, { timeout: 15000 });
   await B.reload(); await B.waitForSelector("#chat:not([hidden])", { timeout: 30000 }); await B.click("#contacts button"); await B.waitForSelector("#send-form:not([hidden])");
-  await B.click("#sticker"); await B.waitForSelector("#stk[open]"); assert.equal(await B.locator("#stk-mine .stk-item").count(), 1); assert.equal(await B.locator("#stk-recent-sec").isVisible(), false, "salva mas nunca usada: não é recente");
+  await abrirFig(B); await B.waitForSelector("#stk[open]"); assert.equal(await B.locator("#stk-mine .stk-item").count(), 1); assert.equal(await B.locator("#stk-recent-sec").isVisible(), false, "salva mas nunca usada: não é recente");
   await B.click("#stk-close");
 });
 t("animada (GIF com comentário): vai direto para a lista, sai sem o comentário e continua animada", async () => {
-  const gif = gifTeste(dir); await A.click("#sticker"); await A.waitForSelector("#stk[open]");
+  const gif = gifTeste(dir); await abrirFig(A); await A.waitForSelector("#stk[open]");
   await A.setInputFiles("#stk-file", gif); await A.waitForFunction(() => document.querySelectorAll("#stk-mine .stk-item").length === 2, null, { timeout: 20000 });
   assert.equal(await A.locator("#stkedit[open]").count(), 0, "sem editor para animadas");
   const item = A.locator('#stk-mine img[alt="Figurinha animada"]'); await item.click(); await A.waitForSelector("#stk", { state: "hidden" });
@@ -141,21 +142,21 @@ t("responder a uma figurinha mostra 'Figurinha' na citação", async () => {
   await B.fill("#text", "kkk"); await B.click("#send-form .primary"); await A.waitForSelector('.msg:not(.mine):has(.vis:text-is("kkk")) .quote .q-text:text-is("Figurinha")', { timeout: 30000 });
 });
 t("apagar: pede confirmação, remove só da lista e não mexe nas mensagens já enviadas", async () => {
-  await A.click("#sticker"); await A.waitForSelector("#stk[open]"); await A.click("#stk-manage"); await A.locator("#stk-mine .stk-item").first().click();
+  await abrirFig(A); await A.waitForSelector("#stk[open]"); await A.click("#stk-manage"); await A.locator("#stk-mine .stk-item").first().click();
   await A.waitForSelector("#choice[open]"); await A.click("#choice button[value=nao]"); assert.equal(await A.locator("#stk-mine .stk-item").count(), 2, "cancelar mantém");
   await A.locator("#stk-mine .stk-item").first().click(); await A.waitForSelector("#choice[open]"); await A.click("#choice button[value=sim]");
   await A.waitForFunction(() => document.querySelectorAll("#stk-mine .stk-item").length === 1); await A.click("#stk-close");
   assert.ok((await A.locator(".msg.mine .bubble.sticker").count()) >= 3);
 });
 t("importar vários: figurinha pronta (transparente) entra direto; foto abre o editor e 'Cancelar' volta para a gaveta", async () => {
-  await A.click("#sticker"); await A.waitForSelector("#stk[open]"); const antes = await A.locator("#stk-mine .stk-item").count();
+  await abrirFig(A); await A.waitForSelector("#stk[open]"); const antes = await A.locator("#stk-mine .stk-item").count();
   await A.setInputFiles("#stk-file", [join(dir, "pronta.png"), join(dir, "boneco.png")]); await A.waitForSelector("#stkedit[open]");
   await A.click("#stk-skip"); await A.waitForSelector("#stk[open]"); await A.waitForFunction((n) => document.querySelectorAll("#stk-mine .stk-item").length === n, antes + 1);
   const lib = await biblioteca(A); assert.ok(lib.some((x) => x.w === 120 && x.h === 80 && x.mime === "image/png"), "a pronta manteve o tamanho e o formato (sem recortar)");
   await A.click("#stk-close");
 });
 t("limite: arquivo que não é imagem é recusado com aviso", async () => {
-  await A.click("#sticker"); await A.waitForSelector("#stk[open]"); writeFileSync(join(dir, "x.txt"), "oi"); await A.setInputFiles("#stk-file", join(dir, "x.txt"));
+  await abrirFig(A); await A.waitForSelector("#stk[open]"); writeFileSync(join(dir, "x.txt"), "oi"); await A.setInputFiles("#stk-file", join(dir, "x.txt"));
   await A.waitForSelector("#note[open]"); assert.match(await A.locator("#note-text").innerText(), /imagem/i);
 });
 t("nenhum erro de script durante o fluxo", () => { assert.deepEqual(erros, []); });
