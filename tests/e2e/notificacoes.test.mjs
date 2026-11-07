@@ -31,7 +31,8 @@ const swDe = async () => { for (let i = 0; i < 50; i++) { const w = ctx.serviceW
 
 before(async () => {
   if (skip) return; const s = await cadastroFunciona(); if (!s.ok) { skip = s.motivo; return; }
-  srv = await servir(prepararSite()); browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
+  srv = await servir(prepararSite()); // notificações exigem o Chromium completo ("novo headless"): o "headless shell" padrão do Playwright recusa a permissão de notificações
+  browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : { channel: "chromium" });
   ctx = await browser.newContext({ viewport: { width: 1100, height: 800 }, permissions: ["notifications"] }); await ctx.addInitScript(falsa);
   A = await ctx.newPage(); A.on("pageerror", (e) => erros.push(e.message));
   B = await (await browser.newContext()).newPage(); emailA = novoEmail(); nomeB = novoUsuario("b");
