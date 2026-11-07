@@ -81,6 +81,8 @@ t("arrastar para a esquerda cancela: nada é enviado", async () => {
   const antes = enviados.length, n = await audios(A), { x, y } = await alvo(A); await A.mouse.down(); await A.waitForSelector("#send-form[data-rec=segurando]"); await A.waitForTimeout(1200);
   await A.mouse.move(x - 60, y, { steps: 4 }); await A.mouse.move(x - 140, y, { steps: 4 });
   await A.waitForSelector("#send-form.cancelando"); assert.match(await A.locator("#rec-dica").innerText(), /Solte para cancelar/);
+  const tempo = await A.locator("#rec-tempo").boundingBox(), dica = await A.locator("#rec-dica").boundingBox();
+  assert.ok(dica.x >= tempo.x + tempo.width - 1, `o texto não pode ficar em cima do tempo (tempo termina em ${tempo.x + tempo.width}, texto começa em ${dica.x})`);
   await A.mouse.up(); await A.waitForFunction(() => !document.getElementById("send-form").dataset.rec); await A.waitForTimeout(800);
   assert.equal(enviados.length, antes); assert.equal(await audios(A), n); assert.equal(await A.locator("#pending").isHidden(), true);
 });

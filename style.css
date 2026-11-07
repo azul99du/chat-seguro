@@ -288,7 +288,7 @@ dialog#stkedit{width:min(94vw,900px);max-height:94dvh;overflow:auto}
 .rec-bar b{font:500 16px var(--mono);flex:none}
 .rec-bar .ponto{width:11px;height:11px;border-radius:50%;background:var(--seal);flex:none;box-shadow:0 0 0 4px rgba(232,51,95,.2);animation:piscaPonto 1.2s ease-in-out infinite}
 @keyframes piscaPonto{50%{opacity:.35;transform:scale(.8)}}
-.rec-bar .dica{display:flex;align-items:center;gap:2px;color:var(--mut);font-size:14px;white-space:nowrap;margin-left:6px;opacity:calc(1 - var(--pc,0));transform:translateX(calc(var(--dx,0px) * .5))}
+.rec-bar .dica{display:flex;align-items:center;gap:2px;color:var(--mut);font-size:14px;white-space:nowrap;margin-left:6px;min-width:0;overflow:hidden;opacity:calc(1 - var(--pc,0) * .5)}
 .cancelando .rec-bar .dica{color:var(--seal);opacity:1;font-weight:700}
 .rec-bar .lixo{display:none;width:44px;height:44px;min-height:44px;border-radius:50%;place-items:center;color:var(--seal);padding:0;flex:none;transition:transform .12s}.rec-bar .lixo:active{transform:scale(.88)}
 .rec-bar .onda{display:none;align-items:center;gap:3px;height:28px;min-width:0;flex:1;overflow:hidden}

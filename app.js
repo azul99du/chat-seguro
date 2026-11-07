@@ -970,7 +970,7 @@ async function finalizarGravacao(g) {
 function moverGesto(e) {
   if (!hold || e.pointerId !== hold.id || !gravador || gravador.travado) return;
   const dx = Math.max(0, hold.x0 - e.clientX), dy = Math.max(0, hold.y0 - e.clientY), vertical = dy > dx, f = $("send-form");
-  f.style.setProperty("--dx", vertical ? "0px" : -Math.min(dx, 160) + "px"); f.style.setProperty("--dy", vertical ? -Math.min(dy, 110) + "px" : "0px");
+  f.style.setProperty("--dx", vertical ? "0px" : -Math.min(dx, 66) + "px"); f.style.setProperty("--dy", vertical ? -Math.min(dy, 110) + "px" : "0px");
   f.style.setProperty("--pt", String(vertical ? Math.min(1, dy / LIM_TRAVAR) : 0)); f.style.setProperty("--pc", String(vertical ? 0 : Math.min(1, dx / LIM_CANCELAR)));
   const cancelando = !vertical && dx >= LIM_CANCELAR;
   if (cancelando !== hold.cancelando) { hold.cancelando = cancelando; f.classList.toggle("cancelando", cancelando); $("rec-dica-txt").textContent = cancelando ? "Solte para cancelar" : "Deslize para cancelar"; if (cancelando) vibra(8); }
