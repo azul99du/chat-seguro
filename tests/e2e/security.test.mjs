@@ -147,3 +147,38 @@ t("o contador de uso e a função de cota não são acessíveis pelo cliente", a
   assert.ok((await x.c.rpc("consome", { p_funcao: "find_user", p_max_min: 999, p_max_hora: 999 })).error, "consome()");
   assert.ok((await anon.rpc("pode_enviar_arquivo")).error, "anônimo");
 });
+
+// ---------- avisos push ----------
+const PUB = "B" + "x".repeat(86), AUTH = "a".repeat(22), ep = (n) => `https://push.example/${hex()}-${n}`;
+t("push: a pessoa registra o aparelho, só ela vê, e os outros não leem nem apagam", async () => {
+  const e = ep("um"); assert.ifError((await a.c.rpc("registrar_push", { p_endpoint: e, p_p256dh: PUB, p_auth: AUTH })).error);
+  assert.equal((await a.c.from("push_subscriptions").select("endpoint").eq("endpoint", e)).data.length, 1);
+  assert.equal((await b.c.from("push_subscriptions").select("endpoint").eq("endpoint", e)).data.length, 0, "outra conta não vê");
+  assert.equal((await anon.from("push_subscriptions").select("endpoint")).data?.length ?? 0, 0, "sem login não vê");
+  const apagou = await b.c.from("push_subscriptions").delete().eq("endpoint", e).select(); assert.equal(apagou.data?.length ?? 0, 0, "outra conta não apaga");
+  assert.equal((await a.c.from("push_subscriptions").delete().eq("endpoint", e).select()).data.length, 1, "o dono apaga");
+});
+t("push: não dá para inserir direto na tabela, nem registrar sem login, nem com dados inválidos", async () => {
+  assert.ok((await a.c.from("push_subscriptions").insert({ user_id: a.id, endpoint: ep("d"), p256dh: PUB, auth: AUTH })).error, "insert direto bloqueado");
+  assert.ok((await anon.rpc("registrar_push", { p_endpoint: ep("s"), p_p256dh: PUB, p_auth: AUTH })).error, "anônimo bloqueado");
+  assert.ok((await a.c.rpc("registrar_push", { p_endpoint: "http://inseguro.example/x", p_p256dh: PUB, p_auth: AUTH })).error, "só https");
+  assert.ok((await a.c.rpc("registrar_push", { p_endpoint: ep("c"), p_p256dh: "curta", p_auth: AUTH })).error, "chave curta demais");
+  assert.ok((await a.c.rpc("registrar_push", { p_endpoint: "https://x.example/" + "a".repeat(900), p_p256dh: PUB, p_auth: AUTH })).error, "endereço enorme");
+});
+t("push: no máximo 5 aparelhos por pessoa (os mais antigos saem) e o mesmo endereço muda de dono", async () => {
+  const u = await usuario("p"), es = []; for (let i = 0; i < 7; i++) { es.push(ep("m" + i)); assert.ifError((await u.c.rpc("registrar_push", { p_endpoint: es[i], p_p256dh: PUB, p_auth: AUTH })).error); }
+  const minhas = (await u.c.from("push_subscriptions").select("endpoint")).data.map((r) => r.endpoint); assert.equal(minhas.length, 5); assert.ok(!minhas.includes(es[0]) && minhas.includes(es[6]));
+  assert.ifError((await b.c.rpc("registrar_push", { p_endpoint: es[6], p_p256dh: PUB, p_auth: AUTH })).error); // outro login no mesmo aparelho
+  assert.equal((await b.c.from("push_subscriptions").select("endpoint").eq("endpoint", es[6])).data.length, 1); assert.equal((await u.c.from("push_subscriptions").select("endpoint").eq("endpoint", es[6])).data.length, 0, "saiu da conta anterior");
+});
+t("push: a configuração interna (chave privada de push) e a marca 'notificada' são inacessíveis para contas comuns", async () => {
+  assert.ok((await a.c.from("push_config").select("*")).error, "logado não lê"); assert.ok((await anon.from("push_config").select("*")).error, "anônimo não lê");
+  assert.ok((await a.c.from("push_config").insert({ chave: "vapid_private_jwk", valor: "x" })).error, "não escreve");
+  assert.ok((await a.c.from("messages").insert({ ...base(b.id), v: 2, header: hdr(), notificada: true })).error, "não marca como já avisada");
+  assert.ok((await b.c.from("messages").update({ notificada: true }).eq("id", mid)).error, "não atualiza 'notificada'");
+});
+t("push: o remetente pode marcar avisar=false (mensagens invisíveis) e o padrão é avisar", async () => {
+  const quieta = await a.c.from("messages").insert({ ...base(b.id), v: 2, header: hdr(), avisar: false }).select("avisar").single(); assert.ifError(quieta.error); assert.equal(quieta.data.avisar, false);
+  const normal = await a.c.from("messages").insert({ ...base(b.id), v: 2, header: hdr() }).select("avisar").single(); assert.equal(normal.data.avisar, true);
+});
+

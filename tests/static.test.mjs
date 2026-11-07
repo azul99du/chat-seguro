@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const raiz = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const ler = (f) => readFileSync(join(raiz, f), "utf8");
-const APP = ["guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "recorte.js", "recorte-config.js", "sam2.js", "figurinhas.js"];
+const APP = ["guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "recorte.js", "recorte-config.js", "sam2.js", "figurinhas.js", "sw.js", "supabase/functions/notificar/vapid.js"];
 const rastreados = execFileSync("git", ["ls-files"], { cwd: raiz, encoding: "utf8" }).split("\n").filter(Boolean);
 
 describe("código", () => {
@@ -72,6 +72,20 @@ describe("política de segurança do navegador (CSP)", () => {
   test("só conversa com o Supabase configurado em config.js", () => {
     const host = new URL(ler("config.js").match(/SUPABASE_URL\s*=\s*"([^"]+)"/)[1]).host;
     assert.equal(dir("connect-src"), `connect-src 'self' https://${host} wss://${host}`);
+  });
+});
+
+describe("avisos push (supabase/schema.sql)", () => {
+  const sql = ler("supabase/schema.sql");
+  test("inscrições: RLS, só o dono vê/apaga, registro só pela função, no máximo 5 por pessoa", () => {
+    assert.match(sql, /alter table public\.push_subscriptions enable row level security/); assert.match(sql, /revoke all on public\.push_subscriptions from anon, authenticated/);
+    assert.match(sql, /grant select, delete on public\.push_subscriptions to authenticated/); assert.doesNotMatch(sql, /grant [^;]*insert[^;]*on public\.push_subscriptions/); assert.match(sql, /limit 5\)/);
+  });
+  test("configuração interna (chave privada de push): ninguém logado lê", () => {
+    assert.match(sql, /alter table public\.push_config enable row level security/); assert.match(sql, /revoke all on public\.push_config from anon, authenticated/); assert.doesNotMatch(sql, /create policy "[^"]*" on public\.push_config\s+for (select|all)/);
+  });
+  test("o cliente não escreve 'notificada' e o gatilho só dispara para mensagens que querem aviso", () => {
+    assert.match(sql, /grant insert \(recipient_id, ciphertext, iv, v, header, avisar\) on public\.messages/); assert.match(sql, /when \(new\.avisar\)/);
   });
 });
 

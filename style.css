@@ -328,3 +328,9 @@ dialog#stkedit{width:min(94vw,900px);max-height:94dvh;overflow:auto}
 
 #chat.preparando{pointer-events:none}
 #chat.preparando #contacts:empty::before{content:"Carregando conversas…";display:block;padding:16px;color:var(--mut);font-size:.9rem}
+
+/* sino de notificações: riscado quando desligado */
+#notif-btn .sino-corte{transition:stroke-dashoffset .3s;stroke-dasharray:26;stroke-dashoffset:0}
+#notif-btn[aria-pressed=true] .sino-corte{stroke-dashoffset:26}
+#notif-btn[aria-pressed=true]{background:rgba(255,255,255,.16)}
+#notif-btn:active svg{transform:rotate(-14deg);transition:transform .15s}

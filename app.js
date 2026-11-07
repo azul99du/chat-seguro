@@ -115,6 +115,7 @@ $("logout").onclick = async () => {
     { label: "Sair e apagar chaves deste aparelho", value: "wipe", cls: "ghost" },
     { label: "Cancelar", value: "", cls: "ghost" }]);
   if (!r) return;
+  await removerRegistroPush(); // este aparelho deixa de receber avisos desta conta
   if (r === "wipe" && me) { await deleteLocalKeys(me.id); await wipeLocal(me.id); }
   await sb.auth.signOut(); location.reload();
 };
@@ -195,6 +196,7 @@ async function start() {
   document.addEventListener("visibilitychange", markRead);
   addEventListener("focus", markRead);
   $("chat").classList.remove("preparando"); document.body.dataset.pronto = "1";
+  sincronizarNotificacoes();
 }
 
 // ---------- Verificação em dois passos (código de app autenticador, TOTP) ----------
@@ -786,7 +788,7 @@ async function sendContent(peer, content) {
   return withLock(lockName(peer), async () => {
     const r = await ratchetEncrypt(await sendSession(peer), me.id, peer.id, toBytes(JSON.stringify(content)));
     await commit(me.id, peer.id, { session: r.state, active: r.state.sid }); // grava ANTES de enviar: uma chave nunca é usada duas vezes
-    const { data, error } = await sb.from("messages").insert({ recipient_id: peer.id, ciphertext: r.ciphertext, iv: r.iv, v: 2, header: r.header }).select().single();
+    const { data, error } = await sb.from("messages").insert({ recipient_id: peer.id, ciphertext: r.ciphertext, iv: r.iv, v: 2, header: r.header, avisar: !["hello", "delete"].includes(content.type) }).select().single();
     if (error) throw error;
     await commit(me.id, peer.id, { entryId: data.id, entry: { content, at: data.created_at, mine: true } });
     return data;
@@ -874,6 +876,60 @@ async function onIncoming(m) {
   if (active?.id === m.sender_id) { $("msgs-empty")?.remove(); await show(m, active, true); markRead(); }
   else unread.add(m.sender_id);
   renderContacts();
+}
+
+// ---------- Notificações (push) ----------
+// O aviso é um toque sem texto: o servidor não vê nome nem conteúdo, e o navegador mostra "Você tem uma nova mensagem". Nada aparece com o Lacre aberto na tela.
+const FN_URL = SUPABASE_URL + "/functions/v1/notificar";
+const suportaPush = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+const b64uBytes = (t) => Uint8Array.from(atob(t.replaceAll("-", "+").replaceAll("_", "/").padEnd(Math.ceil(t.length / 4) * 4, "=")), (c) => c.charCodeAt(0));
+const bytesB64u = (b) => btoa(String.fromCharCode(...new Uint8Array(b))).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+const flagNotif = () => "lacre:notif:" + me?.id;
+let swReg = null;
+async function registrarSW() { if (!("serviceWorker" in navigator)) return null; try { swReg ||= await navigator.serviceWorker.register("./sw.js"); await navigator.serviceWorker.ready; return swReg; } catch { return null; } }
+async function inscricaoAtual() { const reg = await registrarSW(); return reg ? reg.pushManager.getSubscription() : null; }
+async function salvarInscricao(sub) {
+  const j = sub.toJSON(), { error } = await sb.rpc("registrar_push", { p_endpoint: j.endpoint, p_p256dh: j.keys?.p256dh, p_auth: j.keys?.auth });
+  if (error) throw error;
+}
+const notifLigado = () => { try { return localStorage.getItem(flagNotif()) === "1" && suportaPush() && Notification.permission === "granted"; } catch { return false; } };
+function desenharSino() {
+  const on = notifLigado(), b = $("notif-btn"); b.setAttribute("aria-pressed", String(on));
+  b.setAttribute("aria-label", on ? "Notificações: ligadas. Tocar para desligar" : "Notificações: desligadas. Tocar para ligar");
+}
+async function ligarNotificacoes() {
+  if (!suportaPush()) {
+    const iphone = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    return note(iphone ? "No iPhone, as notificações só funcionam com o Lacre instalado na tela inicial: toque em Compartilhar e depois em “Adicionar à Tela de Início”, abra o Lacre por lá e ligue o sino de novo." : "Este navegador não tem notificações. Use o Chrome, o Edge ou o Firefox atualizado.");
+  }
+  if ((await Notification.requestPermission()) !== "granted") return note("As notificações estão bloqueadas para este site. Libere nas configurações do navegador (ícone do cadeado ao lado do endereço) e toque no sino de novo.");
+  const reg = await registrarSW(); if (!reg) throw new Error("sem service worker");
+  const { chave } = await (await fetch(FN_URL)).json();
+  let sub = await reg.pushManager.getSubscription();
+  if (sub && sub.options?.applicationServerKey && bytesB64u(sub.options.applicationServerKey) !== chave) { await sub.unsubscribe(); sub = null; } // a chave do servidor mudou
+  sub ||= await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uBytes(chave) });
+  await salvarInscricao(sub); try { localStorage.setItem(flagNotif(), "1"); } catch {}
+}
+async function desligarNotificacoes() {
+  const sub = await inscricaoAtual();
+  if (sub) { await sb.from("push_subscriptions").delete().eq("endpoint", sub.endpoint); await sub.unsubscribe().catch(() => {}); }
+  try { localStorage.removeItem(flagNotif()); } catch {}
+}
+async function removerRegistroPush() { try { const sub = await inscricaoAtual(); if (sub) await sb.from("push_subscriptions").delete().eq("endpoint", sub.endpoint); } catch {} }
+$("notif-btn").onclick = async () => {
+  const b = $("notif-btn"); b.disabled = true;
+  try { if (notifLigado()) await desligarNotificacoes(); else await ligarNotificacoes(); }
+  catch { note("Não consegui mudar as notificações agora. Tente de novo em instantes."); }
+  finally { b.disabled = false; desenharSino(); }
+};
+async function sincronizarNotificacoes() { // ao entrar: se estava ligado neste aparelho, garante que ele está registrado para ESTA conta
+  registrarSW(); desenharSino();
+  try {
+    if (!suportaPush() || localStorage.getItem(flagNotif()) !== "1") return;
+    if (Notification.permission !== "granted") { localStorage.removeItem(flagNotif()); return desenharSino(); }
+    const sub = await inscricaoAtual(); if (sub) await salvarInscricao(sub); else await ligarNotificacoes();
+  } catch {}
+  desenharSino();
 }
 
 // ---------- Anexos: limpa os metadados ANTES de qualquer coisa sair do aparelho ----------
