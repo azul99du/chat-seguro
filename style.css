@@ -334,3 +334,14 @@ dialog#stkedit{width:min(94vw,900px);max-height:94dvh;overflow:auto}
 #notif-btn[aria-pressed=true] .sino-corte{stroke-dashoffset:26}
 #notif-btn[aria-pressed=true]{background:rgba(255,255,255,.16)}
 #notif-btn:active svg{transform:rotate(-14deg);transition:transform .15s}
+
+/* ===== foto de perfil ===== */
+.avatar{overflow:hidden}.avatar img{width:100%;height:100%;object-fit:cover;display:block;border-radius:50%}
+.avatar.on{overflow:visible}.avatar.on img{border-radius:50%}
+.avatar.peq{width:34px;height:34px;font-size:.95rem;padding:0;border:2px solid rgba(255,255,255,.4)}
+button.avatar.peq{min-height:34px;cursor:pointer}
+#conv-av:empty{display:none}
+.foto-area{display:grid;place-items:center;margin:4px 0 12px}
+#perfil-cv{width:min(62vw,240px);aspect-ratio:1;border-radius:50%;background:var(--paper);touch-action:none;cursor:grab}
+#perfil-zoom{width:100%;margin:0 0 8px}
+#perfil-msg{min-height:1.2em;margin:0 0 4px;font-size:.9rem}#perfil-msg.ok{color:#137A3F}

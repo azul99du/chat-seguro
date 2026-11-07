@@ -104,3 +104,9 @@ O `index.html` não carrega o app direto: carrega o `guarda.js`, que decide prim
 
 ## Frase-senha do backup
 Mínimo de **16 caracteres** (e pelo menos 8 diferentes) para frases novas; "Segurança da conta → Trocar frase-senha" permite fortalecer uma frase antiga (pede confirmação digitada duas vezes). É o ponto que decide o dano se alguém descobrir a senha de login de uma conta sem 2FA: o backup cifrado pode ser atacado fora do site, sem limite de tentativas. Cinco palavras sorteadas ("rio-lua-pedra-nuvem-cafe") aguentam; "eduardo2026!" não.
+
+## Foto de perfil
+Toque no círculo ao lado do seu @ (topo da lista) → escolher foto → arraste e use o zoom → Salvar (ou Remover foto). O navegador recorta em quadrado 256×256, descarta os metadados (local, câmera) e guarda em WebP/JPEG de até 100 KB. A foto aparece na lista de conversas e no topo da conversa de quem já trocou mensagem com você.
+- Bucket privado `avatars` (`supabase/avatar.sql`): só o dono envia/apaga (no máximo 5 arquivos, o app apaga a antiga), só o dono e quem já conversou com ele leem; a coluna `profiles.avatar` só aceita um caminho da própria pasta. A política "exige dois passos" vale aqui também.
+- **Diferente das mensagens, a foto NÃO é cifrada de ponta a ponta**: o servidor consegue ver. Se isso incomodar, dá para cifrar a foto e mandar a chave pela conversa.
+- Testes: `tests/avatar.test.mjs` (recorte e nomes) e `tests/e2e/avatar.test.mjs` (envio, quem vê, estranhos, formatos e limites).

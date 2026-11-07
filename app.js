@@ -6,6 +6,7 @@ import { getBlob, hasBlob, putBlob, delBlob } from "./store.js";
 import { commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js";
 import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js";
 import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js";
 import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -134,7 +135,7 @@ async function start() {
   // conferimos no servidor, em segundo plano, se a sessão ainda vale (ex.: a senha foi trocada em outro aparelho)
   sb.auth.getUser().then(({ error }) => { if (error && [401, 403].includes(error.status)) sb.auth.signOut({ scope: "local" }).finally(() => location.reload()); }).catch(() => {});
   const uid = session.user.id;
-  let { data: prof } = await sb.from("profiles").select("id,username,public_key").eq("id", uid).maybeSingle();
+  let { data: prof } = await sb.from("profiles").select("id,username,public_key,avatar").eq("id", uid).maybeSingle();
   myKeys = await getLocalKeys(uid);
 
   if (!prof) { // primeiro acesso: gera chaves neste aparelho e publica só a chave pública
@@ -175,6 +176,7 @@ async function start() {
   const { data: hasBk } = await sb.from("key_backups").select("user_id").maybeSingle();
   if (!hasBk) await offerBackup(uid);
   $("me").textContent = "@" + me.username; try { localStorage.setItem("lacre:eu:" + uid, "@" + me.username); } catch {}
+  pintarAvatar($("eu-foto"), me);
   mostrarChat();
   ensureSpk();
   await loadContacts();
@@ -193,7 +195,7 @@ async function start() {
     renderContacts(); updateStatus();
   }).subscribe(async (st) => { if (st === "SUBSCRIBED") await pres.track({ at: Date.now() }); });
 
-  document.addEventListener("visibilitychange", markRead);
+  document.addEventListener("visibilitychange", () => { markRead(); if (!document.hidden) loadContacts().catch(() => {}); });
   addEventListener("focus", markRead);
   $("chat").classList.remove("preparando"); document.body.dataset.pronto = "1";
   sincronizarNotificacoes();
@@ -337,12 +339,108 @@ async function offerBackup(uid) {
   }
 }
 
+// ---------- Foto de perfil ----------
+const fotoCache = new Map(); // caminho -> blob: URL (o nome do arquivo muda a cada foto nova, então nunca fica velho)
+async function fotoUrl(path) {
+  if (typeof path !== "string" || !CAMINHO_OK.test(path)) return null;
+  if (fotoCache.has(path)) return fotoCache.get(path);
+  let bytes = await getBlob(me.id, "avatar:" + path).catch(() => null), tipo = path.endsWith(".webp") ? "image/webp" : "image/jpeg";
+  if (!bytes) {
+    const { data, error } = await sb.storage.from("avatars").download(path);
+    if (error) return null;
+    bytes = new Uint8Array(await data.arrayBuffer()); if (bytes.byteLength > 150 * 1024) return null;
+    putBlob(me.id, "avatar:" + path, bytes).catch(() => {});
+  }
+  const url = URL.createObjectURL(new Blob([bytes], { type: tipo })); fotoCache.set(path, url); return url;
+}
+// mostra a foto (ou a inicial do nome enquanto não há foto / carrega)
+function pintarAvatar(node, p) {
+  node.replaceChildren(); node.textContent = p.username[0]; node.dataset.foto = p.avatar || "";
+  if (!p.avatar) return;
+  fotoUrl(p.avatar).then((url) => {
+    if (!url || node.dataset.foto !== p.avatar) return;
+    const im = el("img"); im.alt = ""; im.src = url; im.draggable = false; node.replaceChildren(im);
+  }).catch(() => {});
+}
+async function atualizaFotoDe(peer) { // pega a foto mais nova de quem estou conversando
+  const { data } = await sb.from("profiles").select("avatar").eq("id", peer.id).maybeSingle();
+  if (data && (data.avatar || null) !== (peer.avatar || null)) { peer.avatar = data.avatar; renderContacts(); if (active === peer) pintarAvatar($("conv-av"), peer); }
+}
+const perfil = { img: null, w: 0, h: 0, zoom: 1, cx: 0.5, cy: 0.5, novo: false };
+function desenhaPerfil() {
+  const cv = $("perfil-cv"), ctx = cv.getContext("2d");
+  if (perfil.img) desenhar(ctx, perfil.img, perfil.w, perfil.h, perfil.zoom, perfil.cx, perfil.cy, LADO);
+}
+async function mostraFotoAtualNoPerfil() {
+  const cv = $("perfil-cv"), ctx = cv.getContext("2d"); ctx.clearRect(0, 0, LADO, LADO);
+  perfil.img = null; perfil.novo = false;
+  const url = me.avatar ? await fotoUrl(me.avatar) : null;
+  if (url) { const im = new Image(); im.src = url; await im.decode().catch(() => {}); ctx.drawImage(im, 0, 0, LADO, LADO); }
+  else { ctx.fillStyle = "#3A3F9E"; ctx.fillRect(0, 0, LADO, LADO); ctx.fillStyle = "#fff"; ctx.font = "700 110px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(me.username[0].toUpperCase(), LADO / 2, LADO / 2 + 6); }
+  $("perfil-zoom").hidden = true; $("perfil-salvar").hidden = true; $("perfil-remover").hidden = !me.avatar;
+  $("perfil-escolher").textContent = me.avatar ? "Trocar foto" : "Escolher foto";
+}
+function msgPerfil(t, ok) { const m = $("perfil-msg"); m.textContent = t; m.className = ok ? "ok" : ""; }
+$("eu-foto").onclick = async () => { msgPerfil(""); $("perfil").showModal(); await mostraFotoAtualNoPerfil(); };
+$("perfil-escolher").onclick = () => $("perfil-file").click();
+$("perfil-file").onchange = async () => {
+  const f = $("perfil-file").files[0]; $("perfil-file").value = ""; if (!f) return;
+  if (!TIPOS_ENTRADA.test(f.type)) return msgPerfil("Escolha uma imagem (JPG, PNG ou WebP).");
+  if (f.size > 20 * 1048576) return msgPerfil("Essa foto é grande demais (máximo 20 MB).");
+  try {
+    const bmp = await createImageBitmap(f);
+    Object.assign(perfil, { img: bmp, w: bmp.width, h: bmp.height, zoom: 1, cx: 0.5, cy: 0.5, novo: true });
+  } catch { return msgPerfil("Não consegui abrir essa imagem. Tente outra."); }
+  msgPerfil("Arraste para enquadrar e use o zoom.", true);
+  const z = $("perfil-zoom"); z.value = 1; z.hidden = false; $("perfil-salvar").hidden = false; $("perfil-remover").hidden = true; desenhaPerfil();
+};
+$("perfil-zoom").oninput = () => { perfil.zoom = Number($("perfil-zoom").value); desenhaPerfil(); };
+{ // arrastar a foto dentro do círculo
+  const cv = $("perfil-cv"); let ult = null;
+  cv.onpointerdown = (e) => { if (!perfil.novo) return; ult = { x: e.clientX, y: e.clientY }; cv.setPointerCapture(e.pointerId); };
+  cv.onpointermove = (e) => {
+    if (!ult || !perfil.novo) return;
+    const lado = Math.min(perfil.w, perfil.h) / perfil.zoom, k = lado / cv.getBoundingClientRect().width; // pixels da foto por pixel da tela
+    perfil.cx = Math.min(1, Math.max(0, perfil.cx - ((e.clientX - ult.x) * k) / perfil.w));
+    perfil.cy = Math.min(1, Math.max(0, perfil.cy - ((e.clientY - ult.y) * k) / perfil.h));
+    ult = { x: e.clientX, y: e.clientY }; desenhaPerfil();
+  };
+  cv.onpointerup = cv.onpointercancel = () => { ult = null; };
+}
+async function trocarAvatar(novoPath, blob) { // envia, aponta o perfil para ele e só então apaga o antigo
+  const velho = me.avatar;
+  if (blob) {
+    const up = await sb.storage.from("avatars").upload(novoPath, blob, { contentType: blob.type, upsert: false });
+    if (up.error) throw up.error;
+  }
+  const { error } = await sb.from("profiles").update({ avatar: novoPath }).eq("id", me.id);
+  if (error) { if (blob) sb.storage.from("avatars").remove([novoPath]).catch(() => {}); throw error; }
+  me.avatar = novoPath;
+  if (velho && velho !== novoPath) sb.storage.from("avatars").remove([velho]).catch(() => {});
+}
+$("perfil-salvar").onclick = async () => {
+  const b = $("perfil-salvar"); b.disabled = true; msgPerfil("Salvando…", true);
+  try {
+    const blob = await codificar($("perfil-cv"));
+    if (!blob) throw new Error("grande");
+    await trocarAvatar(caminhoNovo(me.id, blob), blob);
+    pintarAvatar($("eu-foto"), me); await mostraFotoAtualNoPerfil(); msgPerfil("Foto atualizada ✓", true);
+  } catch (e) { msgPerfil(limitado(e) ? "Muitas tentativas seguidas. Espere um minuto." : "Não foi possível salvar a foto. Tente de novo."); }
+  b.disabled = false;
+};
+$("perfil-remover").onclick = async () => {
+  const b = $("perfil-remover"); b.disabled = true;
+  try { await trocarAvatar(null, null); pintarAvatar($("eu-foto"), me); await mostraFotoAtualNoPerfil(); msgPerfil("Foto removida.", true); }
+  catch { msgPerfil("Não foi possível remover agora. Tente de novo."); }
+  b.disabled = false;
+};
+
 // ---------- Contatos ----------
 async function loadContacts() {
   const { data } = await sb.from("messages").select("sender_id,recipient_id").order("created_at", { ascending: false }).limit(200);
   const ids = [...new Set((data || []).flatMap((m) => [m.sender_id, m.recipient_id]))].filter((i) => i !== me.id);
   if (ids.length) {
-    const { data: ps } = await sb.from("profiles").select("id,username,public_key").in("id", ids);
+    const { data: ps } = await sb.from("profiles").select("id,username,public_key,avatar").in("id", ids);
     ps.forEach((p) => contacts.set(p.id, p));
   }
   renderContacts();
@@ -352,7 +450,7 @@ function renderContacts() {
   $("contacts").replaceChildren(...[...contacts.values()].map((p) => {
     const li = document.createElement("li"), b = document.createElement("button");
     const av = document.createElement("span"), nm = document.createElement("span");
-    av.className = "avatar" + (online.has(p.id) ? " on" : ""); av.textContent = p.username[0]; av.setAttribute("aria-hidden", "true");
+    av.className = "avatar" + (online.has(p.id) ? " on" : ""); pintarAvatar(av, p); av.setAttribute("aria-hidden", "true");
     nm.className = "who"; nm.textContent = "@" + p.username;
     if (online.has(p.id)) { const st = document.createElement("small"); st.textContent = "online"; nm.append(st); }
     b.append(av, nm);
@@ -830,6 +928,7 @@ async function open(peer) {
   bandeja(false);
   if (!(await checkPin(peer))) return;
   active = peer; unread.delete(peer.id); renderContacts(); updateStatus();
+  pintarAvatar($("conv-av"), peer); atualizaFotoDe(peer).catch(() => {});
   $("chat").classList.add("in-conv");
   $("conv-title").textContent = "@" + peer.username;
   $("badge").hidden = false; $("conv-empty").hidden = true; $("send-form").hidden = false;
@@ -863,7 +962,7 @@ $("back").onclick = () => { $("chat").classList.remove("in-conv"); active = null
 
 async function onIncoming(m) {
   if (!contacts.has(m.sender_id)) {
-    const { data } = await sb.from("profiles").select("id,username,public_key").eq("id", m.sender_id).single();
+    const { data } = await sb.from("profiles").select("id,username,public_key,avatar").eq("id", m.sender_id).single();
     contacts.set(data.id, data);
   }
   const peer = contacts.get(m.sender_id);
