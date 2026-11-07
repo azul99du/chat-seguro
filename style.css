@@ -351,3 +351,5 @@ button.avatar.peq{min-height:34px;cursor:pointer}
 #inbox .wordmark{flex:none}
 .me-box{gap:8px}
 @container (max-width:460px){#me{display:none}}
+#inbox .me-box{overflow:hidden;gap:6px}
+#inbox .me-box .ghost{padding:0 10px}
