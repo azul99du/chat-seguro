@@ -21,7 +21,7 @@ t("cadastro: frases de 12 caracteres, curtas ou repetitivas são recusadas; 16+ 
   await digitar(P, "doze-letras1"); await P.waitForFunction(() => /pelo menos 16/.test(document.getElementById("ask-text").textContent)); // 12 caracteres já não basta
   await digitar(P, "aaaaaaaaaaaaaaaaaaaa"); await P.waitForFunction(() => /repetir/.test(document.getElementById("ask-text").textContent));
   await digitar(P, "abababababababababab"); await P.waitForFunction(() => /repetir/.test(document.getElementById("ask-text").textContent)); // só 2 caracteres diferentes
-  await digitar(P, FRASE); await P.waitForSelector("#chat:not([hidden])", { timeout: 30000 });
+  await digitar(P, FRASE); await P.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 });
 });
 t("trocar a frase: valida o tamanho, exige confirmação igual e não altera nada se as duas forem diferentes", async () => {
   await P.click("#sec-btn"); await P.waitForSelector("#mfa[open]"); assert.match(await P.locator("#mfa h2").innerText(), /Segurança da conta/);
@@ -33,7 +33,7 @@ t("trocar a frase: valida o tamanho, exige confirmação igual e não altera nad
 });
 t("a frase antiga continua valendo depois da tentativa que não bateu", async () => {
   const c = await browser.newContext(), N = await c.newPage(); await N.goto(srv.url); await N.fill("#email", email); await N.fill("#password", SENHA); await N.click("#auth-submit");
-  await N.waitForSelector("#ask[open]", { timeout: 30000 }); await digitar(N, FRASE); await N.waitForSelector("#chat:not([hidden])", { timeout: 30000 }); await c.close();
+  await N.waitForSelector("#ask[open]", { timeout: 30000 }); await digitar(N, FRASE); await N.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 }); await c.close();
 });
 t("troca concluída: a frase NOVA abre num aparelho novo e a ANTIGA deixa de funcionar", async () => {
   await P.click("#mfa-pass"); await P.waitForSelector("#ask[open]"); await digitar(P, NOVA); await P.waitForFunction(() => /^Confirme/.test(document.getElementById("ask-title").textContent));
@@ -41,5 +41,5 @@ t("troca concluída: a frase NOVA abre num aparelho novo e a ANTIGA deixa de fun
   const c = await browser.newContext(), N = await c.newPage(); await N.goto(srv.url); await N.fill("#email", email); await N.fill("#password", SENHA); await N.click("#auth-submit");
   await N.waitForSelector("#ask[open]", { timeout: 30000 });
   await digitar(N, FRASE); await N.waitForFunction(() => /incorreta/.test(document.getElementById("ask-text").textContent), null, { timeout: 20000 }); // a antiga não abre mais
-  await digitar(N, NOVA); await N.waitForSelector("#chat:not([hidden])", { timeout: 30000 }); await c.close();
+  await digitar(N, NOVA); await N.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 }); await c.close();
 });

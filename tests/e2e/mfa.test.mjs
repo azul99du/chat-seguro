@@ -25,7 +25,7 @@ after(async () => { if (browser) { await browser.close(); await srv.close(); } }
 t("cadastro e aviso: conta nova sem verificação mostra o convite para ativar", async () => {
   await P.goto(srv.url); await P.click("#tab-signup"); await P.fill("#username", usuario); await P.fill("#email", email); await P.fill("#password", SENHA); await P.click("#auth-submit");
   await P.waitForSelector("#ask[open]", { timeout: 30000 }); await P.fill("#ask-input", FRASE); await P.click("#ask button[value=ok]");
-  await P.waitForSelector("#chat:not([hidden])", { timeout: 30000 });
+  await P.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 });
   await P.waitForSelector("#mfa-nudge:not([hidden])", { timeout: 15000 });
 });
 t("ativar: QR e chave aparecem; código errado é recusado; código certo ativa e some o convite", async () => {
@@ -41,7 +41,7 @@ t("ativar: QR e chave aparecem; código errado é recusado; código certo ativa 
   await P.click("#mfa button[value=cancel]"); await P.waitForSelector("#mfa-nudge", { state: "hidden" });
 });
 t("recarregar mantém a sessão (já passou pelo 2º passo): não pede código de novo", async () => {
-  await P.reload(); await P.waitForSelector("#chat:not([hidden])", { timeout: 30000 });
+  await P.reload(); await P.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 });
   assert.equal(await P.locator("#ask[open]").count(), 0);
 });
 t("novo login: senha certa NÃO basta; código errado é recusado; código certo abre", async () => {
@@ -53,7 +53,7 @@ t("novo login: senha certa NÃO basta; código errado é recusado; código certo
   await P.fill("#ask-input", "123456"); await P.click("#ask button[value=ok]");
   await P.waitForFunction(() => /incorreto/i.test(document.getElementById("ask-text").textContent), null, { timeout: 15000 });
   await P.fill("#ask-input", codigo()); await P.click("#ask button[value=ok]");
-  await P.waitForSelector("#chat:not([hidden])", { timeout: 30000 });
+  await P.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 });
 });
 t("cancelar o código volta para o login e não abre o chat", async () => {
   const c2 = await browser.newContext(), Q = await c2.newPage();
@@ -67,7 +67,7 @@ t("aparelho novo: primeiro o código do 2º passo, depois a frase-senha da chave
   await N.waitForSelector("#ask[open]", { timeout: 30000 }); assert.match(await N.locator("#ask-title").innerText(), /dois passos/i);
   await N.fill("#ask-input", codigo()); await N.click("#ask button[value=ok]");
   await N.waitForFunction(() => /aparelho novo/i.test(document.getElementById("ask-title").textContent), null, { timeout: 30000 });
-  await N.fill("#ask-input", FRASE); await N.click("#ask button[value=ok]"); await N.waitForSelector("#chat:not([hidden])", { timeout: 30000 }); await c3.close();
+  await N.fill("#ask-input", FRASE); await N.click("#ask button[value=ok]"); await N.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 }); await c3.close();
 });
 t("NO BANCO: sessão só com senha fica trancada (nem sem o site); com o código, libera", async () => {
   const c = cliente(); assert.ok(!(await c.auth.signInWithPassword({ email, password: SENHA })).error);

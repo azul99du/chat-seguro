@@ -27,7 +27,7 @@ async function cadastrar(page, usuario, email) {
   await page.fill("#ask-input", "curta"); await page.click("#ask button[value=ok]");
   await page.waitForSelector("#ask[open] #ask-text:has-text('pelo menos 16')");               // frase curta é recusada
   await page.fill("#ask-input", FRASE); await page.click("#ask button[value=ok]");
-  await page.waitForSelector("#chat:not([hidden])", { timeout: 30000 });
+  await page.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 });
 }
 function vigiar(nome, page) {
   page.on("pageerror", (e) => erros.push(`${nome} pageerror: ${e.message} @ ${(e.stack || "").split("\n").slice(1, 4).join(" | ")}`));
@@ -79,7 +79,7 @@ t("código de segurança é igual nos dois aparelhos", async () => {
   assert.match(ca, /^(\d{5} ?){12}$/); assert.equal(ca, cb);
 });
 t("reação chega (como mensagem cifrada), não vira balão, e pode ser removida", async () => {
-  await B.click(".msg:not(.mine) .react-btn >> nth=0"); await B.click(".picker .emojis button:nth-child(2)");
+  await B.locator(".msg:not(.mine) .bubble").first().click({ button: "right" }); await B.click(".picker .emojis button:nth-child(2)");
   await A.waitForSelector(".msg.mine .chip:has-text('❤️')", { timeout: 25000 });
   assert.equal((await textos(A)).length, 6);
   await B.click(".msg .chip.mine");
@@ -117,7 +117,7 @@ t("fundo da conversa: aplica, persiste ao recarregar e é pessoal (B não vê)",
   assert.equal(await B.evaluate(() => document.getElementById("messages").classList.contains("has-bg")), false);
 }, { ffmpeg: true });
 t("recarregar: histórico (enviado e recebido) volta do aparelho, sem balões de erro", async () => {
-  await A.reload(); await A.waitForSelector("#chat:not([hidden])", { timeout: 30000 }); await A.waitForSelector("#contacts button"); await A.click("#contacts button");
+  await A.reload(); await A.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 }); await A.waitForSelector("#contacts button"); await A.click("#contacts button");
   await A.waitForSelector(".msg .media img", { timeout: 30000 });
   const h = await textos(A);
   for (const x of ["oi bob, segredo número um", "oi alice, resposta dois", "mensagem 3", "mensagem 6", "foto com sigilo futuro"]) assert.ok(h.includes(x), x);
@@ -125,7 +125,7 @@ t("recarregar: histórico (enviado e recebido) volta do aparelho, sem balões de
   await A.waitForFunction(() => document.getElementById("messages").classList.contains("has-bg"), null, { timeout: 30000 }); // fundo voltou
 }, { ffmpeg: true });
 t("duas abas do mesmo usuário: a trava impede avançar a chave em dobro", async () => {
-  const A2 = await ctxA.newPage(); vigiar("A2", A2); await A2.goto(srv.url); await A2.waitForSelector("#chat:not([hidden])", { timeout: 30000 }); await A2.click("#contacts button");
+  const A2 = await ctxA.newPage(); vigiar("A2", A2); await A2.goto(srv.url); await A2.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 }); await A2.click("#contacts button");
   await A2.waitForSelector(".msg", { timeout: 30000 });
   await enviar(B, "para as duas abas"); await vista(A, "para as duas abas"); await vista(A2, "para as duas abas");
   assert.equal((await textos(A2)).filter((x) => x === "para as duas abas").length, 1);
@@ -147,7 +147,7 @@ t("aparelho novo: mensagens antigas com sigilo futuro ficam indisponíveis; a se
   await N.goto(srv.url); await N.fill("#email", emailA); await N.fill("#password", SENHA); await N.click("#auth-submit");
   await N.waitForSelector("#ask[open]", { timeout: 30000 });
   await N.fill("#ask-input", "frase-errada-qualquer"); await N.click("#ask button[value=ok]"); await N.waitForSelector("#ask-text:has-text('incorreta')");
-  await N.fill("#ask-input", FRASE); await N.click("#ask button[value=ok]"); await N.waitForSelector("#chat:not([hidden])", { timeout: 30000 });
+  await N.fill("#ask-input", FRASE); await N.click("#ask button[value=ok]"); await N.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 });
   await N.waitForTimeout(1500); await N.fill("#add-user", nomeB); await N.click("#add-form button");
   await N.waitForSelector(`#conv-title:has-text("@${nomeB}")`); await N.waitForSelector(".bubble.err", { timeout: 30000 });
   await N.waitForFunction(() => document.querySelectorAll(".bubble.err").length >= 5, null, { timeout: 30000 }); // a lista carrega em sequência

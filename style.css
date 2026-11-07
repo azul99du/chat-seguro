@@ -55,9 +55,6 @@ label{display:grid;gap:6px;font-size:.85rem;font-weight:600;color:var(--mut)}
 .line{display:flex;align-items:center;gap:2px;max-width:100%}.msg.mine .line{flex-direction:row-reverse}
 .meta{display:flex;justify-content:flex-end;gap:8px;margin-top:3px;font:400 .7rem var(--mono);opacity:.7}
 .rcpt.read{color:#7EE0A4;opacity:1}
-.react-btn{flex:none;width:44px;height:44px;min-height:44px;padding:0;background:none;color:var(--mut);font-size:1.3rem;opacity:0;border-radius:50%}
-.msg:hover .react-btn,.react-btn:focus-visible{opacity:1}
-@media(hover:none){.react-btn{opacity:.55}}
 .rx{display:flex;gap:4px;margin:-8px 10px 0;position:relative;z-index:1}.rx:empty{display:none}
 .chip{position:relative;min-height:28px;padding:0 8px;border-radius:999px;background:var(--card);border:1.5px solid var(--line);font-size:.95rem}
 .chip::after{content:"";position:absolute;inset:-9px -4px}
@@ -172,7 +169,7 @@ dialog#viewer::backdrop{background:rgba(10,12,40,.85)}
 @media(max-width:520px){.badge{font-size:0;gap:0}}
 
 /* ===== responder (citação) ===== */
-.picker .responder{width:100%;min-height:44px;margin:0;padding:0 14px;font:600 .95rem var(--body);color:var(--ink);border-top:1.5px solid var(--line);border-radius:0 0 20px 20px;background:none}
+.picker .responder{width:100%;min-height:44px;margin:0;padding:0 14px;font:600 .95rem var(--body);color:var(--ink);border-top:1.5px solid var(--line);border-radius:0;background:none}
 .picker .responder:hover{background:var(--paper)}
 #replybar{display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--card);border-top:1.5px solid var(--line)}
 #replybar::before{content:"";flex:none;align-self:stretch;width:4px;border-radius:2px;background:var(--seal)}
@@ -310,3 +307,24 @@ dialog#stkedit{width:min(94vw,900px);max-height:94dvh;overflow:auto}
 @keyframes cadeadoSobe{from{opacity:0;transform:translateY(20px) scale(.7)}to{opacity:1}}
 .rec-toast{position:absolute;right:0;bottom:calc(100% + 14px);background:var(--ink);color:#fff;padding:9px 13px;border-radius:12px;font-size:13px;font-weight:600;width:max-content;max-width:min(280px,72vw);z-index:6;animation:cadeadoSobe .3s cubic-bezier(.34,1.56,.64,1);transition:opacity .3s}.rec-toast.some{opacity:0}
 @media(prefers-reduced-motion:reduce){.rec-bar,.rec-bar .ponto,#mic.rec::before,.trava,.rec-toast,#send-form[data-rec=travado] .rec-bar{animation:none!important}.acao>#mic{transition:none!important}}
+
+/* tela de abertura */
+.abrindo{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:var(--paper)}
+.abrindo .wordmark{animation:respira 1.6s ease-in-out infinite}
+@keyframes respira{50%{opacity:.55;transform:scale(.97)}}
+@media(prefers-reduced-motion:reduce){.abrindo .wordmark{animation:none}}
+
+#messages.carregando{visibility:hidden}
+
+/* mensagem: segurar abre o menu; arrastar para a direita responde */
+#messages{overflow-x:hidden}
+.line{position:relative;transform:translateX(var(--x,0px));transition:transform .28s cubic-bezier(.34,1.56,.64,1)}.line.arrastando{transition:none}
+.msg .bubble{touch-action:pan-y}.bubble:focus-visible{outline-offset:3px}
+@media(pointer:coarse){.msg .bubble{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}}
+.resp-ico{position:absolute;left:-44px;top:50%;width:34px;height:34px;margin-top:-17px;border-radius:50%;background:var(--paper);color:var(--ink);display:grid;place-items:center;border:1.5px solid var(--line);opacity:var(--s,0);transform:scale(calc(.4 + var(--s,0) * .6));pointer-events:none;transition:background .15s,color .15s}
+.line.pronto .resp-ico{background:var(--ink);color:#fff;border-color:var(--ink);transform:scale(1.15)}
+.picker .copiar{width:100%;min-height:44px;margin:0;padding:0 14px;font:600 .95rem var(--body);color:var(--ink);border-top:1.5px solid var(--line);border-radius:0;background:none}.picker .copiar:hover{background:var(--paper)}
+@media(prefers-reduced-motion:reduce){.line{transition:none}}
+
+#chat.preparando{pointer-events:none}
+#chat.preparando #contacts:empty::before{content:"Carregando conversas…";display:block;padding:16px;color:var(--mut);font-size:.9rem}

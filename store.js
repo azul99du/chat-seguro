@@ -2,8 +2,8 @@
 // Tudo é cifrado com uma chave AES não extraível guardada no próprio navegador. Fica em outro banco
 // ("lacre-sf") para não interferir nas chaves de identidade.
 const dbp = new Promise((res, rej) => {
-  const r = indexedDB.open("lacre-sf", 2);
-  r.onupgradeneeded = () => { for (const n of ["sessions", "history", "meta", "stickers"]) if (!r.result.objectStoreNames.contains(n)) r.result.createObjectStore(n); };
+  const r = indexedDB.open("lacre-sf", 3);
+  r.onupgradeneeded = () => { for (const n of ["sessions", "history", "meta", "stickers", "blobs", "blobmeta"]) if (!r.result.objectStoreNames.contains(n)) r.result.createObjectStore(n); };
   r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
 });
 const req = (r) => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
@@ -91,10 +91,39 @@ export async function putSticker(uid, st) { // st: { id, mime, w, h, anim, t, u,
 }
 export async function delSticker(uid, id) { const t = await tx(["stickers"], "readwrite"); t.objectStore("stickers").delete(stKey(uid, id)); await done(t); }
 
+// ---------- Cache de arquivos baixados (áudio, foto, figurinha) ----------
+// Guarda o arquivo CIFRADO do jeito que está no servidor (a chave de cada arquivo fica só dentro das mensagens, que já são guardadas cifradas aqui).
+// Assim ouvir/ver de novo não baixa nada. Limite total com descarte dos menos usados.
+export const BLOB_MAX = 150 * 1048576, BLOB_ARQUIVO_MAX = 8 * 1048576;
+const bKey = (uid, path) => `${uid}|${path}`;
+export async function getBlob(uid, path) {
+  const r = await req((await tx(["blobs"], "readonly")).objectStore("blobs").get(bKey(uid, path)));
+  if (!r) return null;
+  tx(["blobmeta"], "readwrite").then((t) => t.objectStore("blobmeta").put({ t: Date.now(), n: r.byteLength }, bKey(uid, path))).catch(() => {}); // marca como usado agora
+  return new Uint8Array(r);
+}
+export async function hasBlob(uid, path) { return (await req((await tx(["blobs"], "readonly")).objectStore("blobs").getKey(bKey(uid, path)))) !== undefined; }
+export async function putBlob(uid, path, bytes) {
+  if (bytes.byteLength > BLOB_ARQUIVO_MAX) return;
+  const t = await tx(["blobs", "blobmeta"], "readwrite"), k = bKey(uid, path);
+  t.objectStore("blobs").put(bytes.slice().buffer, k); t.objectStore("blobmeta").put({ t: Date.now(), n: bytes.byteLength }, k); await done(t);
+  await pruneBlobs(uid);
+}
+export async function delBlob(uid, path) { const t = await tx(["blobs", "blobmeta"], "readwrite"), k = bKey(uid, path); t.objectStore("blobs").delete(k); t.objectStore("blobmeta").delete(k); await done(t); }
+async function pruneBlobs(uid) { // passou do limite: apaga os usados há mais tempo até sobrar 80%
+  const t = await tx(["blobs", "blobmeta"], "readwrite"), m = t.objectStore("blobmeta"), rng = range(uid + "|");
+  const [keys, vals] = await Promise.all([req(m.getAllKeys(rng)), req(m.getAll(rng))]);
+  let total = vals.reduce((a, v) => a + (v?.n || 0), 0); if (total <= BLOB_MAX) return done(t);
+  const ordem = keys.map((k, i) => ({ k, t: vals[i]?.t || 0, n: vals[i]?.n || 0 })).sort((a, b) => a.t - b.t);
+  for (const x of ordem) { if (total <= BLOB_MAX * 0.8) break; t.objectStore("blobs").delete(x.k); m.delete(x.k); total -= x.n; }
+  await done(t);
+}
+export async function blobsUsados(uid) { const vals = await req((await tx(["blobmeta"], "readonly")).objectStore("blobmeta").getAll(range(uid + "|"))); return { arquivos: vals.length, bytes: vals.reduce((a, v) => a + (v?.n || 0), 0) }; }
+
 // ---------- Limpeza e trava entre abas ----------
 export async function wipeLocal(uid) {
-  const t = await tx(["sessions", "history", "meta", "stickers"], "readwrite");
-  for (const n of ["sessions", "history", "stickers"]) {
+  const t = await tx(["sessions", "history", "meta", "stickers", "blobs", "blobmeta"], "readwrite");
+  for (const n of ["sessions", "history", "stickers", "blobs", "blobmeta"]) {
     const s = t.objectStore(n), keys = await req(s.getAllKeys(range(uid + "|"))); keys.forEach((k) => s.delete(k));
   }
   const m = t.objectStore("meta"); const mk = await req(m.getAllKeys());

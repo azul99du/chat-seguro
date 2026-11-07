@@ -11,7 +11,7 @@ let skip = configurado ? false : motivoSemConfig, browser, srv, A, B, dir, nomeB
 const t = (nome, fn) => test(nome, { timeout: 120000 }, async (c) => (skip ? c.skip(skip) : !hasFfmpeg() ? c.skip("ffmpeg não instalado") : fn(c)));
 async function cadastrar(page, usuario) {
   await page.goto(srv.url); await page.click("#tab-signup"); await page.fill("#username", usuario); await page.fill("#email", novoEmail()); await page.fill("#password", SENHA); await page.click("#auth-submit");
-  await page.waitForSelector("#ask[open]", { timeout: 30000 }); await page.fill("#ask-input", FRASE); await page.click("#ask button[value=ok]"); await page.waitForSelector("#chat:not([hidden])", { timeout: 30000 });
+  await page.waitForSelector("#ask[open]", { timeout: 30000 }); await page.fill("#ask-input", FRASE); await page.click("#ask button[value=ok]"); await page.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 });
 }
 function vigiar(nome, page) {
   page.on("pageerror", (e) => erros.push(`${nome}: ${e.message}`));
@@ -72,10 +72,24 @@ t("segurar o microfone grava (barra com tempo e dica); soltar envia sozinho; o a
   const b = guardados.filter(Boolean); assert.ok(b.length > 0, "baixou do storage");
   for (const x of b) assert.ok(![[0x1a, 0x45, 0xdf, 0xa3], [0x66, 0x74, 0x79, 0x70]].some((m) => m.every((v, i) => x[i + (m[0] === 0x66 ? 4 : 0)] === v)), "o servidor guarda só bytes cifrados");
 });
+t("áudios ficam guardados no aparelho: depois de recarregar já aparecem prontos para tocar, sem baixar de novo (quem ouviu e quem enviou)", async () => {
+  const gets = { A: 0, B: 0 }; for (const [n, p] of [["A", A], ["B", B]]) p.on("request", (r) => { if (r.method() === "GET" && /\/storage\/v1\/object\/(authenticated\/)?media\//.test(r.url())) gets[n]++; });
+  for (const p of [A, B]) { await p.reload(); await p.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 }); await p.click("#contacts button"); await p.waitForSelector("#send-form:not([hidden])"); }
+  await B.waitForSelector(".msg:not(.mine) .media.audio .player", { timeout: 20000 }); await A.waitForSelector(".msg.mine .media.audio .player", { timeout: 20000 });
+  await B.waitForTimeout(800); assert.deepEqual(gets, { A: 0, B: 0 }, "nenhum download: tudo veio do aparelho");
+  const tempo = await B.locator(".msg:not(.mine) .media.audio .player .tempo").first().innerText(); assert.match(tempo, /^0:00 \/ 0:0\d/);
+  await B.locator(".msg:not(.mine) .media.audio .player .play").first().click(); await B.waitForFunction(() => { const x = document.querySelector(".msg:not(.mine) .player .tempo"); return x && !/^0:00 \//.test(x.textContent) && !/não toca/.test(x.textContent); }, null, { timeout: 15000 });
+});
 t("toque curto no microfone não envia nada e explica como usar", async () => {
-  const antes = enviados.length, n = await audios(A); await alvo(A); await A.mouse.down(); await A.waitForSelector("#send-form[data-rec]"); await A.mouse.up();
+  const antes = enviados.length, n = await audios(A); await alvo(A); await A.mouse.down(); await A.waitForSelector("#send-form[data-rec]"); await A.waitForTimeout(60); await A.mouse.up();
   await A.waitForSelector("#rec-toast", { state: "visible" }); assert.match(await A.locator("#rec-toast").innerText(), /Segure o botão/);
   await A.waitForFunction(() => !document.getElementById("send-form").dataset.rec); await A.waitForTimeout(800); assert.equal(enviados.length, antes); assert.equal(await audios(A), n);
+});
+t("sem espera: a barra de gravação aparece no mesmo instante do toque e um áudio curto (cerca de 1 s) é enviado", async () => {
+  const n = await audios(A), { x, y } = await alvo(A);
+  await A.evaluate(() => { window.__t = 0; new MutationObserver(() => { if (!window.__t && document.getElementById("send-form").dataset.rec) window.__t = performance.now(); }).observe(document.getElementById("send-form"), { attributes: true }); window.__d = 0; document.getElementById("mic").addEventListener("pointerdown", () => { window.__d = performance.now(); }, true); });
+  await A.mouse.down(); await A.waitForSelector("#send-form[data-rec=segurando]"); const atraso = await A.evaluate(() => Math.round(window.__t - window.__d)); assert.ok(atraso < 100, `a tela demorou ${atraso} ms para reagir ao toque`);
+  await A.waitForTimeout(1100); await A.mouse.up(); await A.waitForFunction((k) => document.querySelectorAll(".msg.mine .media.audio").length > k, n, { timeout: 30000 });
 });
 t("arrastar para a esquerda cancela: nada é enviado", async () => {
   const antes = enviados.length, n = await audios(A), { x, y } = await alvo(A); await A.mouse.down(); await A.waitForSelector("#send-form[data-rec=segurando]"); await A.waitForTimeout(1200);

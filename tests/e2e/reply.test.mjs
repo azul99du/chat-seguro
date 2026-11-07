@@ -9,7 +9,7 @@ let skip = configurado ? false : motivoSemConfig, browser, srv, A, B, nomeA, nom
 const t = (nome, fn, { ffmpeg = false } = {}) => test(nome, { timeout: 120000 }, async (c) => (skip ? c.skip(skip) : ffmpeg && !hasFfmpeg() ? c.skip("ffmpeg não instalado") : fn(c)));
 async function cadastrar(page, usuario) {
   await page.goto(srv.url); await page.click("#tab-signup"); await page.fill("#username", usuario); await page.fill("#email", novoEmail()); await page.fill("#password", SENHA); await page.click("#auth-submit");
-  await page.waitForSelector("#ask[open]", { timeout: 30000 }); await page.fill("#ask-input", FRASE); await page.click("#ask button[value=ok]"); await page.waitForSelector("#chat:not([hidden])", { timeout: 30000 });
+  await page.waitForSelector("#ask[open]", { timeout: 30000 }); await page.fill("#ask-input", FRASE); await page.click("#ask button[value=ok]"); await page.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 });
 }
 function vigiar(nome, page) {
   page.on("pageerror", (e) => erros.push(`${nome}: ${e.message}`));
@@ -19,7 +19,7 @@ function vigiar(nome, page) {
 const enviar = async (p, txt) => { await p.fill("#text", txt); await p.click("#send-form .primary"); };
 const ver = (p, txt, { meu = false } = {}) => p.waitForSelector(`.msg${meu ? ".mine" : ":not(.mine)"} .vis:has-text("${txt}")`, { timeout: 30000 });
 // abre o menu da mensagem que contém `txt` e toca em Responder
-async function responderA(p, seletorMsg) { const m = p.locator(seletorMsg).first(); await m.hover(); await m.locator(".react-btn").click(); await p.locator(".picker .responder").click(); }
+async function responderA(p, seletorMsg) { const m = p.locator(seletorMsg).first(); await m.locator(".bubble").first().click({ button: "right" }); await p.locator(".picker .responder").click(); }
 const msgCom = (txt) => `.msg:has(.vis:text-is("${txt}"))`;
 
 before(async () => {
@@ -41,7 +41,7 @@ after(async () => {
 });
 
 t("o menu da mensagem tem os 6 emojis e o botão Responder", async () => {
-  const m = B.locator(msgCom("qual o horário do jantar?")); await m.hover(); await m.locator(".react-btn").click();
+  const m = B.locator(msgCom("qual o horário do jantar?")); await m.locator(".bubble").first().click({ button: "right" });
   assert.equal(await B.locator(".picker .emojis button").count(), 6); assert.equal(await B.locator(".picker .responder").innerText(), "Responder");
   await B.keyboard.press("Escape"); await B.mouse.click(5, 5); await B.waitForSelector(".picker", { state: "detached" });
 });
@@ -71,7 +71,7 @@ t("cancelar: pelo botão × e pela tecla Esc; a mensagem seguinte sai sem citaç
   assert.equal(await B.locator(".msg.mine:has(.vis:text-is('sem citação')) .quote").count(), 0); assert.equal(await A.locator(".msg:not(.mine):has(.vis:text-is('sem citação')) .quote").count(), 0);
 });
 t("recarregar: as citações voltam do histórico do aparelho", async () => {
-  await B.reload(); await B.waitForSelector("#chat:not([hidden])", { timeout: 30000 }); await B.waitForSelector("#contacts button"); await B.click("#contacts button"); await ver(B, "às 20h", { meu: true });
+  await B.reload(); await B.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 }); await B.waitForSelector("#contacts button"); await B.click("#contacts button"); await ver(B, "às 20h", { meu: true });
   assert.equal(await B.locator(".msg.mine:has(.vis:text-is('às 20h')) .quote .q-text").innerText(), "qual o horário do jantar?");
 });
 t("responder a uma FOTO e a um ÁUDIO: a citação mostra 'Foto · legenda' e 'Áudio · duração'", async () => {
@@ -98,12 +98,38 @@ t("citação de uma mensagem que NÃO está na tela: mostra o resumo recebido, m
     const r = await route.fetch(), linhas = await r.json();
     await route.fulfill({ response: r, json: linhas.length ? [linhas.reduce((a, b) => (a.id > b.id ? a : b))] : [] });
   });
-  await B.reload(); await B.waitForSelector("#chat:not([hidden])", { timeout: 30000 }); await B.waitForSelector("#contacts button"); await B.click("#contacts button");
+  await B.reload(); await B.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 }); await B.waitForSelector("#contacts button"); await B.click("#contacts button");
   await ver(B, "resposta recente", { meu: true });
   assert.equal(await B.locator(".msg .vis").count(), 1, "só a mensagem mais nova está na tela");
   const q = B.locator(".quote.sem-original"); await q.waitFor();
   assert.equal(await q.locator(".q-text").innerText(), "alvo antigo"); assert.equal(await q.locator(".q-who").innerText(), `@${nomeA}`);
   await q.click(); await B.waitForSelector("#note[open]"); assert.match(await B.locator("#note-text").innerText(), /não está mais nesta tela/);
   await B.click("#note button"); await B.unroute("**/rest/v1/messages?*");
+});
+// gestos de toque simulados com eventos de ponteiro "touch" (o app só escuta toque/caneta para segurar e arrastar)
+const ALVO = ".msg:not(.mine):has(.vis:text-is(\"alvo de toque\")) .bubble";
+const toque = (p, seletor, etapas) => p.locator(seletor).first().evaluate(async (el, etapas) => {
+  const r = el.getBoundingClientRect(), x = r.x + r.width / 2, y = r.y + r.height / 2;
+  const ev = (tipo, dx = 0) => (tipo === "pointerdown" ? el : window).dispatchEvent(new PointerEvent(tipo, { pointerType: "touch", pointerId: 9, isPrimary: true, bubbles: true, cancelable: true, clientX: x + dx, clientY: y }));
+  for (const e of etapas) { if (e.espera) await new Promise((ok) => setTimeout(ok, e.espera)); else ev(e.tipo, e.dx || 0); }
+}, etapas);
+t("não existe mais o botão + ao lado das mensagens", async () => assert.equal(await B.locator(".react-btn").count(), 0));
+t("(prepara) uma mensagem nova do A chega no B para os testes de toque", async () => { await enviar(A, "alvo de toque"); await ver(B, "alvo de toque"); });
+t("segurar a mensagem (toque) abre o menu; soltar não clica na mensagem; tocar fora fecha", async () => {
+  const seletor = ALVO; await toque(B, seletor, [{ tipo: "pointerdown" }, { espera: 650 }]);
+  await B.waitForSelector(".picker .emojis"); assert.equal(await B.locator(".picker .responder").count(), 1); assert.equal(await B.locator(".picker .apagar").count(), 1);
+  await toque(B, seletor, [{ tipo: "pointerup" }]); await B.waitForTimeout(200); assert.equal(await B.locator(".picker").count(), 1, "levantar o dedo não fecha o menu");
+  await B.mouse.click(5, 5); await B.waitForSelector(".picker", { state: "detached" });
+});
+t("toque curto na mensagem não abre o menu", async () => {
+  await toque(B, ALVO, [{ tipo: "pointerdown" }, { espera: 120 }, { tipo: "pointerup" }, { espera: 600 }]); assert.equal(await B.locator(".picker").count(), 0);
+});
+t("arrastar a mensagem para a direita responde (e arrastar pouco ou para o lado errado não)", async () => {
+  const sel = ALVO;
+  await toque(B, sel, [{ tipo: "pointerdown" }, { tipo: "pointermove", dx: 30 }, { tipo: "pointerup", dx: 30 }]); await B.waitForTimeout(300); assert.equal(await B.locator("#replybar").isHidden(), true, "30 px não basta");
+  await toque(B, sel, [{ tipo: "pointerdown" }, { tipo: "pointermove", dx: -90 }, { tipo: "pointerup", dx: -90 }]); await B.waitForTimeout(300); assert.equal(await B.locator("#replybar").isHidden(), true, "para a esquerda não responde");
+  await toque(B, sel, [{ tipo: "pointerdown" }, { tipo: "pointermove", dx: 30 }, { tipo: "pointermove", dx: 80 }]);
+  assert.equal(await B.locator(".line.pronto").count(), 1, "passou do limite: o ícone fica ativo"); await toque(B, sel, [{ tipo: "pointerup", dx: 80 }]);
+  await B.waitForSelector("#replybar:not([hidden])"); assert.match(await B.locator("#reply-who").innerText(), /^Respondendo a @/); await B.click("#reply-x");
 });
 t("nenhum erro de JavaScript nem violação da política de segurança", async () => { assert.deepEqual(erros, []); });

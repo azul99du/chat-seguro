@@ -22,7 +22,7 @@ const abrir = async (p) => { await p.click("#mfa-senha"); await p.waitForSelecto
 
 t("cadastro e outro aparelho já conectado com a senha antiga", async () => {
   await P.goto(srv.url); await P.click("#tab-signup"); await P.fill("#username", novoUsuario("s")); await P.fill("#email", email); await P.fill("#password", SENHA); await P.click("#auth-submit");
-  await P.waitForSelector("#ask[open]", { timeout: 30000 }); await digitar(P, FRASE); await P.waitForSelector("#chat:not([hidden])", { timeout: 30000 });
+  await P.waitForSelector("#ask[open]", { timeout: 30000 }); await digitar(P, FRASE); await P.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 });
   outra = cliente(); const r = await outra.auth.signInWithPassword({ email, password: SENHA }); assert.ok(r.data.session, "outro aparelho entrou");
 });
 t("senha atual errada: recusa e não pede a nova", async () => {
@@ -51,7 +51,7 @@ t("troca concluída: nova senha entra, antiga é recusada e o outro aparelho é 
 });
 t("aparelho novo entra com a senha nova (e a frase-senha de sempre)", async () => {
   const c = await browser.newContext(), N = await c.newPage(); await N.goto(srv.url); await N.fill("#email", email); await N.fill("#password", NOVA); await N.click("#auth-submit");
-  await N.waitForSelector("#ask[open]", { timeout: 30000 }); await digitar(N, FRASE); await N.waitForSelector("#chat:not([hidden])", { timeout: 30000 }); await c.close();
+  await N.waitForSelector("#ask[open]", { timeout: 30000 }); await digitar(N, FRASE); await N.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 }); await c.close();
 });
 t("com 2 passos ativos: sessão só com senha não troca a senha; com o código troca", async () => {
   const em = novoEmail(), c = cliente(); assert.ok((await c.auth.signUp({ email: em, password: SENHA })).data.session);

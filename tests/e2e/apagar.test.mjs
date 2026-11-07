@@ -9,7 +9,7 @@ let skip = configurado ? false : motivoSemConfig, browser, srv, A, B, nomeA, nom
 const t = (nome, fn, { ffmpeg = false } = {}) => test(nome, { timeout: 120000 }, async (c) => (skip ? c.skip(skip) : ffmpeg && !hasFfmpeg() ? c.skip("ffmpeg não instalado") : fn(c)));
 async function cadastrar(page, usuario) {
   await page.goto(srv.url); await page.click("#tab-signup"); await page.fill("#username", usuario); await page.fill("#email", novoEmail()); await page.fill("#password", SENHA); await page.click("#auth-submit");
-  await page.waitForSelector("#ask[open]", { timeout: 30000 }); await page.fill("#ask-input", FRASE); await page.click("#ask button[value=ok]"); await page.waitForSelector("#chat:not([hidden])", { timeout: 30000 });
+  await page.waitForSelector("#ask[open]", { timeout: 30000 }); await page.fill("#ask-input", FRASE); await page.click("#ask button[value=ok]"); await page.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 });
 }
 function vigiar(nome, page) {
   page.on("pageerror", (e) => erros.push(`${nome}: ${e.message}`));
@@ -21,9 +21,9 @@ const msg = (txt) => `.msg:has(.vis:text-is("${txt}"))`;
 const verTexto = (p, txt, { meu = false } = {}) => p.waitForSelector(`.msg${meu ? ".mine" : ":not(.mine)"} .vis:text-is("${txt}")`, { timeout: 30000 });
 const apagadas = (p) => p.locator(".bubble.apagada").count();
 // abre o menu da mensagem (o seletor deve achar UMA .msg) e escolhe Apagar…
-const menuApagar = async (p, seletor) => { const m = p.locator(seletor).first(); await m.hover(); await m.locator(".react-btn").click(); await p.locator(".picker .apagar").click(); await p.waitForSelector("#choice[open]"); };
+const menuApagar = async (p, seletor) => { const m = p.locator(seletor).first(); await m.locator(".bubble").first().click({ button: "right" }); await p.locator(".picker .apagar").click(); await p.waitForSelector("#choice[open]"); };
 const opcoes = (p) => p.locator("#choice-actions button").evaluateAll((bs) => bs.map((b) => b.value));
-const recarregar = async (p) => { await p.reload(); await p.waitForSelector("#chat:not([hidden])", { timeout: 30000 }); await p.click("#contacts button"); await p.waitForSelector("#send-form:not([hidden])"); await p.waitForTimeout(1200); };
+const recarregar = async (p) => { await p.reload(); await p.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 }); await p.click("#contacts button"); await p.waitForSelector("#send-form:not([hidden])"); await p.waitForTimeout(1200); };
 
 before(async () => {
   if (skip) return; const s = await cadastroFunciona(); if (!s.ok) { skip = s.motivo; return; }
@@ -84,7 +84,7 @@ t("apagar para todos uma foto: o arquivo cifrado sai do servidor", async () => {
 }, { ffmpeg: true });
 t("responder a uma mensagem apagada mostra 'Mensagem apagada' na citação", async () => {
   await enviar(A, "pergunta"); await verTexto(B, "pergunta");
-  const m = B.locator(msg("pergunta")).first(); await m.hover(); await m.locator(".react-btn").click(); await B.locator(".picker .responder").click(); await enviar(B, "resposta"); await verTexto(A, "resposta");
+  const m = B.locator(msg("pergunta")).first(); await m.locator(".bubble").first().click({ button: "right" }); await B.locator(".picker .responder").click(); await enviar(B, "resposta"); await verTexto(A, "resposta");
   await menuApagar(A, msg("pergunta")); await A.click("#choice button[value=todos]"); await A.waitForSelector(".msg.mine .bubble.apagada");
   await B.waitForFunction(() => [...document.querySelectorAll(".msg.mine .q-text")].some((q) => q.textContent === "Mensagem apagada"), null, { timeout: 30000 });
   assert.equal(await B.locator(".msg.mine:has(.vis:text-is('resposta')) .q-text").innerText(), "Mensagem apagada");
@@ -98,5 +98,12 @@ t("apagar para todos não puxa a tela para o fim: a rolagem fica onde estava", a
   await A.evaluate(() => { const m = document.getElementById("messages"); m.scrollTop = Math.max(0, m.scrollTop - 150); }); await A.waitForTimeout(300); const antes = (await rola(A)).top;
   await A.click("#choice button[value=todos]"); await A.waitForSelector(".msg.mine .bubble.apagada >> nth=-1");
   await A.waitForTimeout(600); const depois = await rola(A); assert.ok(Math.abs(depois.top - antes) <= 60 && depois.top < depois.max - 100, `rolagem antes ${antes}, depois ${depois.top} (fim = ${depois.max})`);
+});
+t("abrir a conversa: a lista só aparece pronta, já nas últimas mensagens (não desce na frente da pessoa)", async () => {
+  await A.reload(); await A.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 });
+  await A.evaluate(() => { window.__vis = []; const m = document.getElementById("messages"); new MutationObserver(() => window.__vis.push(getComputedStyle(m).visibility)).observe(m, { childList: true }); });
+  await A.click("#contacts button"); await A.waitForSelector("#messages:not(.carregando) .msg", { timeout: 30000 });
+  const r = await A.evaluate(() => { const m = document.getElementById("messages"); return { vis: window.__vis, top: Math.round(m.scrollTop), max: m.scrollHeight - m.clientHeight }; });
+  assert.ok(r.vis.length > 5 && r.vis.every((v) => v === "hidden"), `a lista ficou visível durante o carregamento: ${[...new Set(r.vis)]}`); assert.ok(r.max > 200 && r.max - r.top <= 5, `abriu em ${r.top} de ${r.max}`);
 });
 t("nenhum erro de script", () => assert.deepEqual(erros, []));

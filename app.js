@@ -2,6 +2,7 @@ import { createClient } from "./vendor/supabase.js";
 import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js";
 import { montarFigurinhas } from "./figurinhas.js";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js";
 import { commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js";
 import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js";
 import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js";
@@ -119,17 +120,25 @@ $("logout").onclick = async () => {
 };
 
 // ---------- Início: perfil + chaves ----------
+const mostrarLogin = () => { $("abrindo").hidden = true; $("chat").hidden = true; $("auth").hidden = false; };
+const mostrarChat = () => { $("abrindo").hidden = true; $("auth").hidden = true; $("chat").hidden = false; $("chat").classList.add("preparando"); }; // "preparando": já aparece, mas só aceita toques quando as chaves e as conversas estiverem prontas
 async function start() {
   const { data: { session } } = await sb.auth.getSession();
-  if (!session) return;
-  if (await precisaDoisPassos() && !(await pedirCodigoLogin())) { await sb.auth.signOut(); return location.reload(); } // sem o código, nada abre
+  if (!session) return mostrarLogin();
+  // com verificação em dois passos, nada abre antes do código (a tela de abertura fica por trás do pedido)
+  if (await precisaDoisPassos() && !(await pedirCodigoLogin())) { await sb.auth.signOut(); return location.reload(); }
+  // já estava logado: vai direto para a lista de contatos (sem piscar a tela de login)
+  try { const n = localStorage.getItem("lacre:eu:" + session.user.id); if (n) $("me").textContent = n; } catch {}
+  mostrarChat();
+  // conferimos no servidor, em segundo plano, se a sessão ainda vale (ex.: a senha foi trocada em outro aparelho)
+  sb.auth.getUser().then(({ error }) => { if (error && [401, 403].includes(error.status)) sb.auth.signOut({ scope: "local" }).finally(() => location.reload()); }).catch(() => {});
   const uid = session.user.id;
   let { data: prof } = await sb.from("profiles").select("id,username,public_key").eq("id", uid).maybeSingle();
   myKeys = await getLocalKeys(uid);
 
   if (!prof) { // primeiro acesso: gera chaves neste aparelho e publica só a chave pública
     const username = localStorage.getItem("pending-username");
-    if (!username) { await sb.auth.signOut(); return note("Não achamos seu perfil. Crie a conta de novo na aba Criar conta."); }
+    if (!username) { await sb.auth.signOut(); mostrarLogin(); return note("Não achamos seu perfil. Crie a conta de novo na aba Criar conta."); }
     const publicKey = await createKeys(uid);
     myKeys = await getLocalKeys(uid);
     let pass, hint = "Ela recupera suas mensagens se você trocar de aparelho. Use algo diferente da senha de login (dica: cinco palavras sorteadas, como rio-lua-pedra-nuvem-cafe) e guarde bem: não dá para redefinir.";
@@ -141,7 +150,7 @@ async function start() {
     }
     const { error } = await sb.from("profiles").insert({ id: uid, username, public_key: publicKey });
     if (error) {
-      await sb.auth.signOut();
+      await sb.auth.signOut(); mostrarLogin();
       return note(error.code === "23505" ? "Esse nome de usuário já existe. Crie a conta de novo com outro nome." : "Não foi possível criar seu perfil: " + error.message);
     }
     localStorage.removeItem("pending-username");
@@ -149,7 +158,7 @@ async function start() {
     if (await saveBackup(uid, pass)) note("Não consegui salvar o backup da sua chave agora. Vou pedir de novo na próxima vez que você entrar.");
   } else if (!myKeys) {
     const { data: bk } = await sb.from("key_backups").select("backup").maybeSingle();
-    if (!bk) { await sb.auth.signOut(); return note("Este aparelho não tem sua chave e não existe backup, então as mensagens antigas não podem ser lidas."); }
+    if (!bk) { await sb.auth.signOut(); mostrarLogin(); return note("Este aparelho não tem sua chave e não existe backup, então as mensagens antigas não podem ser lidas."); }
     let hint = "Para ler suas mensagens neste aparelho, digite a frase-senha que você criou no cadastro.";
     for (;;) {
       const pass = await ask("Aparelho novo", hint);
@@ -164,8 +173,8 @@ async function start() {
   me = prof;
   const { data: hasBk } = await sb.from("key_backups").select("user_id").maybeSingle();
   if (!hasBk) await offerBackup(uid);
-  $("me").textContent = "@" + me.username;
-  $("auth").hidden = true; $("chat").hidden = false;
+  $("me").textContent = "@" + me.username; try { localStorage.setItem("lacre:eu:" + uid, "@" + me.username); } catch {}
+  mostrarChat();
   ensureSpk();
   await loadContacts();
   atualizarAviso2fa();
@@ -185,6 +194,7 @@ async function start() {
 
   document.addEventListener("visibilitychange", markRead);
   addEventListener("focus", markRead);
+  $("chat").classList.remove("preparando"); document.body.dataset.pronto = "1";
 }
 
 // ---------- Verificação em dois passos (código de app autenticador, TOTP) ----------
@@ -392,9 +402,14 @@ const safeMime = (c) => { const l = OK_MIME[c.kind === "video" ? "video" : c.kin
 async function loadMedia(c) {
   if (typeof c.path !== "string" || !OK_PATH.test(c.path) || typeof c.key !== "string" || typeof c.iv !== "string") throw new Error("midia invalida");
   if (mediaCache.has(c.path)) return mediaCache.get(c.path);
-  const { data, error } = await sb.storage.from("media").download(c.path);
-  if (error) throw error;
-  const bytes = await openBytes(new Uint8Array(await data.arrayBuffer()), c.key, c.iv);
+  let enc = c.kind === "video" ? null : await getBlob(me.id, c.path).catch(() => null), bytes = null, doCache = false;
+  if (enc) { try { bytes = await openBytes(enc, c.key, c.iv); } catch { delBlob(me.id, c.path).catch(() => {}); enc = null; } } // cópia local estragada: baixa de novo
+  if (!bytes) {
+    const { data, error } = await sb.storage.from("media").download(c.path);
+    if (error) throw error;
+    enc = new Uint8Array(await data.arrayBuffer()); bytes = await openBytes(enc, c.key, c.iv); doCache = c.kind !== "video";
+  }
+  if (doCache) putBlob(me.id, c.path, enc).catch(() => {}); // fica no aparelho: da próxima vez não baixa
   const url = URL.createObjectURL(new Blob([bytes], { type: safeMime(c) }));
   if (c.kind === "sticker") stickerBytes.set(c.path, bytes); // a política de segurança não deixa ler blob: por fetch; guardamos os bytes para "Salvar figurinha"
   mediaCache.set(c.path, url); return url;
@@ -462,6 +477,8 @@ function mediaBlock(c, mine) {
         try { box.replaceChildren(playerAudio(await loadMedia(c), dur, { auto: true })); } catch { fail(); }
       };
       box.append(btn);
+      // se o áudio já está guardado neste aparelho, o player aparece pronto: é só tocar (nada para baixar)
+      if (typeof c.path === "string" && OK_PATH.test(c.path)) hasBlob(me.id, c.path).then(async (ok) => { if (ok && btn.isConnected) { try { const u = await loadMedia(c); if (btn.isConnected) box.replaceChildren(playerAudio(u, dur)); } catch {} } }).catch(() => {});
     }
   } else {
     const btn = el("button", "ph", `Tocar para carregar o vídeo · ${sizeLabel(Number(c.size) || 0)}`); btn.type = "button";
@@ -503,10 +520,7 @@ function addMessage(m, content, { err = false, animate = false, em = null } = {}
   b.append(sr, vis, meta); line.append(b);
   const rx = el("div", "rx");
   wrap.append(line, rx);
-  if (!err) {
-    const rb = el("button", "react-btn", "+"); rb.type = "button"; rb.setAttribute("aria-label", apagada ? "Opções desta mensagem apagada" : "Reagir, responder ou apagar esta mensagem");
-    rb.onclick = () => togglePicker(wrap, m.id); line.append(rb);
-  }
+  if (!err) gestosMensagem(wrap, line, b, m.id);
   if (em) em.replaceWith(wrap); else $("messages").append(wrap);
   const e = { m, mine, rcpt, rx, wrap, content: err ? null : content }; msgs.set(m.id, e); if (!apagada) setReceipt(e);
   if (animate && !err && text) { b.classList.add("deciphering"); reveal(vis, text, () => b.classList.remove("deciphering")); }
@@ -539,22 +553,63 @@ function irPara(id) { // vai até a mensagem original e a destaca por um instant
   e.wrap.classList.add("flash"); setTimeout(() => e.wrap.classList.remove("flash"), 1500);
 }
 
-function togglePicker(wrap, id) {
-  const had = wrap.querySelector(".picker");
+// Menu da mensagem (reagir, responder, copiar, apagar): abre ao SEGURAR a mensagem (celular) ou com o botão direito (computador).
+let aberturaPorToque = 0; // quando o menu foi aberto por segurar com o dedo (o navegador pode mandar um 'botão direito' logo em seguida: ignoramos)
+function abrirPicker(wrap, id) {
   document.querySelectorAll(".picker").forEach((p) => p.remove());
-  if (had) return;
-  const p = el("div", "picker"), linha = el("div", "emojis"), apagada = msgs.get(id)?.content?.type === "deleted";
-  p.setAttribute("role", "group"); p.setAttribute("aria-label", apagada ? "Apagar" : "Reagir, responder ou apagar");
+  const p = el("div", "picker"), linha = el("div", "emojis"), e = msgs.get(id), apagada = e?.content?.type === "deleted";
+  p.setAttribute("role", "group"); p.setAttribute("aria-label", apagada ? "Apagar" : "Reagir, responder, copiar ou apagar");
   for (const em of apagada ? [] : EMOJIS) {
     const b = el("button", null, em); b.type = "button"; b.setAttribute("aria-label", "Reagir com " + em);
     b.onclick = () => { p.remove(); react(id, em); }; linha.append(b);
   }
   if (!apagada) p.append(linha);
   if (citavel(id)) { const r = el("button", "responder", "Responder"); r.type = "button"; r.onclick = () => { p.remove(); responder(id); }; p.append(r); }
+  const texto = e?.content?.type === "text" ? e.content.text : e?.content?.type === "media" ? e.content.caption : "";
+  if (texto && navigator.clipboard?.writeText) { const c = el("button", "copiar", "Copiar"); c.type = "button"; c.onclick = () => { p.remove(); navigator.clipboard.writeText(String(texto)).catch(() => {}); }; p.append(c); }
   const ap = el("button", "apagar", "Apagar…"); ap.type = "button"; ap.onclick = () => { p.remove(); perguntarApagar(id); }; p.append(ap);
-  wrap.append(p); p.querySelector("button").focus();
+  wrap.append(p); p.querySelector("button").focus({ preventScroll: true });
 }
-document.addEventListener("click", (ev) => { if (!ev.target.closest(".picker,.react-btn")) document.querySelectorAll(".picker").forEach((p) => p.remove()); });
+document.addEventListener("click", (ev) => { if (!ev.target.closest(".picker")) document.querySelectorAll(".picker").forEach((p) => p.remove()); });
+document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") document.querySelectorAll(".picker").forEach((p) => p.remove()); });
+// Gestos na mensagem: segurar = menu; arrastar para a direita = responder
+const LIM_RESPONDER = 60, SEGURAR_MS = 420;
+function gestosMensagem(wrap, line, bubble, id) {
+  bubble.tabIndex = 0;
+  const ico = el("span", "resp-ico"); ico.setAttribute("aria-hidden", "true");
+  { const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg"); for (const [k, v] of Object.entries({ viewBox: "0 0 24 24", width: "20", height: "20", fill: "none", stroke: "currentColor", "stroke-width": "2.2", "stroke-linecap": "round", "stroke-linejoin": "round" })) svg.setAttribute(k, v);
+    for (const d of ["M9 14L4 9l5-5", "M4 9h10a6 6 0 0 1 6 6v3"]) { const pa = document.createElementNS(ns, "path"); pa.setAttribute("d", d); svg.append(pa); } ico.append(svg); }
+  line.prepend(ico);
+  let st = null, suprime = false;
+  const fim = () => { if (!st) return; clearTimeout(st.timer); removeEventListener("pointermove", mover); removeEventListener("pointerup", soltar); removeEventListener("pointercancel", soltar); line.classList.remove("arrastando"); line.style.removeProperty("--x"); line.style.removeProperty("--s"); st = null; };
+  function mover(e) {
+    if (!st || e.pointerId !== st.id) return;
+    const dx = e.clientX - st.x0, dy = e.clientY - st.y0;
+    if (!st.arrasta) {
+      if (Math.hypot(dx, dy) > 10) clearTimeout(st.timer); // mexeu: não é mais "segurar"
+      if (dx > 10 && dx > Math.abs(dy) * 1.5 && !st.longo) { st.arrasta = true; line.classList.add("arrastando"); }
+      else return;
+    }
+    const x = Math.min(dx, 90); line.style.setProperty("--x", Math.max(0, x) + "px"); line.style.setProperty("--s", String(Math.min(1, Math.max(0, x) / LIM_RESPONDER)));
+    const passou = x >= LIM_RESPONDER; if (passou !== st.passou) { st.passou = passou; line.classList.toggle("pronto", passou); if (passou) vibra(15); }
+  }
+  function soltar(e) {
+    if (!st || e.pointerId !== st.id) return;
+    const responderAgora = st.arrasta && st.passou && e.type !== "pointercancel", longo = st.longo; fim();
+    if (longo) suprime = true;
+    line.classList.remove("pronto");
+    if (responderAgora && citavel(id)) responder(id);
+  }
+  bubble.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse" || !e.isPrimary || st) return; // com o mouse: botão direito abre o menu
+    st = { id: e.pointerId, x0: e.clientX, y0: e.clientY, arrasta: false, longo: false, passou: false, timer: 0 };
+    st.timer = setTimeout(() => { if (!st || st.arrasta) return; st.longo = true; vibra(15); aberturaPorToque = Date.now(); abrirPicker(wrap, id); }, SEGURAR_MS);
+    addEventListener("pointermove", mover); addEventListener("pointerup", soltar); addEventListener("pointercancel", soltar);
+  });
+  bubble.addEventListener("click", (e) => { if (suprime) { suprime = false; e.stopPropagation(); e.preventDefault(); } }, true); // o dedo levantado depois de segurar não "clica" na mensagem
+  bubble.addEventListener("contextmenu", (e) => { e.preventDefault(); if (Date.now() - aberturaPorToque < 900) return; abrirPicker(wrap, id); });
+  bubble.addEventListener("keydown", (e) => { if (e.target === bubble && (e.key === "Enter" || e.key === "ContextMenu" || (e.shiftKey && e.key === "F10"))) { e.preventDefault(); abrirPicker(wrap, id); } });
+}
 
 function renderRx(id) {
   const e = msgs.get(id); if (!e) return;
@@ -599,6 +654,7 @@ async function aplicarApagar(c, m) {
 async function apagarParaMim(id) {
   const e = msgs.get(id), peer = active; if (!e || !peer) return;
   await commit(me.id, peer.id, { entryId: id, entry: { content: { type: "hidden" }, at: e.m.created_at, mine: e.mine } });
+  { const c = e.content; if (c?.type === "media" && c.kind !== "sticker" && typeof c.path === "string") delBlob(me.id, c.path).catch(() => {}); } // some também a cópia guardada
   e.wrap.remove(); msgs.delete(id); reactions.delete(id);
   if (!msgs.size && !$("msgs-empty")) { const p = el("p", "empty", "Nenhuma mensagem aqui."); p.id = "msgs-empty"; $("messages").append(p); }
 }
@@ -606,7 +662,7 @@ async function apagarParaTodos(id) {
   const e = msgs.get(id), peer = active; if (!e || !peer || !e.mine || e.content?.type === "deleted") return;
   try { await sendContent(peer, { type: "delete", to: id }); } catch (err) { return note(sendError(err, peer)); }
   const c = e.content; // o arquivo cifrado de foto/vídeo/áudio sai do servidor (figurinha não: o mesmo arquivo é reaproveitado em outras mensagens)
-  if (c?.type === "media" && c.kind !== "sticker" && typeof c.path === "string") { await sb.storage.from("media").remove([c.path]).catch(() => {}); const u = mediaCache.get(c.path); if (u) { URL.revokeObjectURL(u); mediaCache.delete(c.path); } }
+  if (c?.type === "media" && c.kind !== "sticker" && typeof c.path === "string") { await sb.storage.from("media").remove([c.path]).catch(() => {}); delBlob(me.id, c.path).catch(() => {}); const u = mediaCache.get(c.path); if (u) { URL.revokeObjectURL(u); mediaCache.delete(c.path); } }
   await commit(me.id, peer.id, { entryId: id, entry: { content: { type: "deleted", by: me.id }, at: e.m.created_at, mine: true } });
   trocaPorApagada(id);
 }
@@ -777,6 +833,8 @@ async function open(peer) {
   $("badge").hidden = false; $("conv-empty").hidden = true; $("send-form").hidden = false;
   $("bg-btn").hidden = false; $("safety-btn").hidden = false; clearPending(); setBg(bgCache.get(peer.id) ?? null); applyBackground(peer);
   $("messages").replaceChildren(); msgs.clear(); reactions.clear(); cancelarResposta();
+  $("messages").classList.add("carregando"); // a lista só aparece pronta, já nas últimas mensagens (sem descer na frente da pessoa)
+  try {
   const { data } = await sb.from("messages").select("*")
     .or(`and(sender_id.eq.${me.id},recipient_id.eq.${peer.id}),and(sender_id.eq.${peer.id},recipient_id.eq.${me.id})`)
     .order("id", { ascending: false }).limit(200); // as 200 mais NOVAS (e depois ficam em ordem de envio)
@@ -789,6 +847,13 @@ async function open(peer) {
     const p = el("p", "empty", "Nenhuma mensagem ainda. Diga oi: só vocês dois vão ler."); p.id = "msgs-empty";
     $("messages").append(p);
   }
+  } finally {
+    if (active === peer) { // (se a pessoa já abriu outra conversa, quem cuida da lista é a outra chamada)
+      const L = $("messages"); L.scrollTop = L.scrollHeight; // já no fim, antes de aparecer
+      requestAnimationFrame(() => { L.scrollTop = L.scrollHeight; L.classList.remove("carregando"); });
+    }
+  }
+  if (active !== peer) return;
   $("text").focus({ preventScroll: true });
   markRead();
 }
@@ -907,16 +972,17 @@ function duracaoAudio(url) { // lê a duração do arquivo; 0 se o formato não 
 // AAC em MP4 toca em todo lugar (inclusive iPhone); WebM/Opus é a alternativa para Chrome e Firefox
 const tipoGravacao = () => ["audio/mp4;codecs=mp4a.40.2", "audio/webm;codecs=opus", "audio/mp4", "audio/webm"].find((t) => window.MediaRecorder?.isTypeSupported?.(t)) ?? "";
 let pedindoMic = false; // evita duas gravações se tocarem duas vezes enquanto o navegador pergunta pela permissão
-const LIMITE_TOQUE = 800, LIM_TRAVAR = 70, LIM_CANCELAR = 100; // ms mínimos de gravação; px de arrasto para travar / cancelar
+const LIMITE_TOQUE = 250, LIM_TRAVAR = 70, LIM_CANCELAR = 100; // ms: abaixo disso é toque sem querer (nem dá tempo de falar); px de arrasto para travar / cancelar
+let preparando = false, travarAoIniciar = false; // preparando = dedo já no botão, esperando o navegador abrir o microfone (a tela já reage)
 let hold = null; // gesto em andamento: { id, x0, y0, soltou, cancelando }
 const vibra = (n = 12) => { try { navigator.vibrate?.(n); } catch {} };
 // Atualiza a barra de gravação, o microfone e o cadeado conforme o estado: sem gravação / segurando / travado
 function uiGravacao() {
-  const g = gravador, f = $("send-form");
-  if (g) f.dataset.rec = g.travado ? "travado" : "segurando"; else delete f.dataset.rec;
-  $("rec-bar").hidden = !g; $("lock-pill").hidden = !g || g.travado;
-  $("mic").classList.toggle("rec", !!g); $("mic").setAttribute("aria-label", g ? "Parar gravação e enviar" : "Gravar áudio: segure o botão");
-  if (g) { $("rec-dica-txt").textContent = "Deslize para cancelar"; $("rec-tempo").textContent = mmss((Date.now() - g.t0) / 1000); }
+  const g = gravador, f = $("send-form"), ativo = !!g || preparando;
+  if (g) f.dataset.rec = g.travado ? "travado" : "segurando"; else if (preparando) f.dataset.rec = "segurando"; else delete f.dataset.rec;
+  $("rec-bar").hidden = !ativo; $("lock-pill").hidden = !ativo || !!g?.travado;
+  $("mic").classList.toggle("rec", ativo); $("mic").setAttribute("aria-label", ativo ? "Parar gravação e enviar" : "Gravar áudio: segure o botão");
+  if (ativo) { $("rec-dica-txt").textContent = hold?.cancelando ? "Solte para cancelar" : "Deslize para cancelar"; $("rec-tempo").textContent = mmss(g ? (Date.now() - g.t0) / 1000 : 0); }
   atualizaBotao();
 }
 let toastT = 0;
@@ -948,7 +1014,7 @@ async function iniciarGravacao({ travado = false } = {}) {
   const g = (gravador = { rec, stream, chunks: [], t0: Date.now(), cancelado: false, travado, enviar: false, timer: 0, ondaT: 0, ac: null });
   rec.ondataavailable = (e) => { if (e.data?.size) g.chunks.push(e.data); };
   rec.onstop = () => finalizarGravacao(g);
-  rec.start(1000); iniciarOnda(g); uiGravacao(); vibra();
+  rec.start(1000); preparando = false; uiGravacao(); vibra(); iniciarOnda(g);
   g.timer = setInterval(() => { const s = (Date.now() - g.t0) / 1000; $("rec-tempo").textContent = mmss(s); if (s >= MAX_GRAVACAO) pararGravacao(true); }, 250);
   return true;
 }
@@ -957,8 +1023,8 @@ function cancelarGravacao() { const g = gravador; if (!g) return; g.cancelado = 
 async function finalizarGravacao(g) {
   encerrar(g);
   if (g.cancelado) return;
-  const dur = Math.round((Date.now() - g.t0) / 1000);
-  if (!g.chunks.length || dur < 1) return note("A gravação ficou curta demais. Grave por pelo menos 1 segundo.");
+  const ms = Date.now() - g.t0, dur = Math.max(1, Math.round(ms / 1000)); // áudio de menos de 1 s aparece como 0:01
+  if (!g.chunks.length || ms < 300) return note("A gravação ficou curta demais. Segure o botão enquanto fala.");
   try {
     const r = cleanAudio(await new Blob(g.chunks).arrayBuffer(), { gravado: true }); // metadados removidos antes de qualquer envio
     r.url = URL.createObjectURL(new Blob([r.bytes], { type: r.mime })); r.kind = "audio"; r.dur = dur; pending = r;
@@ -968,13 +1034,13 @@ async function finalizarGravacao(g) {
 }
 // ----- gesto: segurar = gravar, soltar = enviar, arrastar para cima = travar, arrastar para o lado = cancelar -----
 function moverGesto(e) {
-  if (!hold || e.pointerId !== hold.id || !gravador || gravador.travado) return;
+  if (!hold || e.pointerId !== hold.id || (!gravador && !preparando) || gravador?.travado) return;
   const dx = Math.max(0, hold.x0 - e.clientX), dy = Math.max(0, hold.y0 - e.clientY), vertical = dy > dx, f = $("send-form");
   f.style.setProperty("--dx", "0px"); // o microfone só acompanha o dedo para cima (para o lado ele não desliza: não cobre o texto) f.style.setProperty("--dy", vertical ? -Math.min(dy, 110) + "px" : "0px");
   f.style.setProperty("--pt", String(vertical ? Math.min(1, dy / LIM_TRAVAR) : 0)); f.style.setProperty("--pc", String(vertical ? 0 : Math.min(1, dx / LIM_CANCELAR)));
   const cancelando = !vertical && dx >= LIM_CANCELAR;
   if (cancelando !== hold.cancelando) { hold.cancelando = cancelando; f.classList.toggle("cancelando", cancelando); $("rec-dica-txt").textContent = cancelando ? "Solte para cancelar" : "Deslize para cancelar"; if (cancelando) vibra(8); }
-  if (vertical && dy >= LIM_TRAVAR) { gravador.travado = true; desfazGesto(); uiGravacao(); vibra(20); }
+  if (vertical && dy >= LIM_TRAVAR) { if (gravador) gravador.travado = true; else travarAoIniciar = true; desfazGesto(); uiGravacao(); vibra(20); }
 }
 function desfazGesto() {
   removeEventListener("pointermove", moverGesto); removeEventListener("pointerup", fimGesto); removeEventListener("pointercancel", fimGesto);
@@ -995,12 +1061,15 @@ function fimGesto(e) {
 }
 const mic = $("mic");
 mic.addEventListener("pointerdown", async (e) => {
-  if (gravador || pedindoMic || (e.pointerType === "mouse" && e.button !== 0)) return;
+  if (gravador || pedindoMic || preparando || (e.pointerType === "mouse" && e.button !== 0)) return;
   e.preventDefault();
   hold = { id: e.pointerId, x0: e.clientX, y0: e.clientY, soltou: false, cancelando: false, t: Date.now() };
   addEventListener("pointermove", moverGesto); addEventListener("pointerup", fimGesto); addEventListener("pointercancel", fimGesto);
+  preparando = true; travarAoIniciar = false; uiGravacao(); // a tela já reage ao toque; o microfone abre em seguida
   const ok = await iniciarGravacao();
-  if (!ok) return desfazGesto();
+  preparando = false;
+  if (!ok) { desfazGesto(); uiGravacao(); return; }
+  if (travarAoIniciar) { travarAoIniciar = false; gravador.travado = true; uiGravacao(); }
   if (hold?.soltou) { const demorou = Date.now() - hold.t > 900; soltar(); if (demorou) dicaGravar("Microfone liberado. Agora segure o botão para gravar e solte para enviar."); } // o dedo já saiu enquanto o navegador pedia o microfone
 });
 mic.addEventListener("click", (e) => { if (e.detail !== 0) return; gravador ? pararGravacao(true) : iniciarGravacao({ travado: true }); }); // teclado/leitor de tela: liga e desliga (grava travado)
@@ -1030,6 +1099,7 @@ async function uploadSealed(bytes, path) {
   const sealed = await sealBytes(bytes);
   const { error } = await sb.storage.from("media").upload(path, new Blob([sealed.data], { type: "application/octet-stream" }), { contentType: "application/octet-stream" });
   if (error) throw error;
+  putBlob(me.id, path, sealed.data).catch(() => {}); // quem enviou também não precisa baixar de novo
   return sealed;
 }
 

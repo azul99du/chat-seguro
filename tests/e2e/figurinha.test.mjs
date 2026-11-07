@@ -13,7 +13,7 @@ let skip = configurado ? false : motivoSemConfig, browser, srv, A, B, nomeA, nom
 const t = (nome, fn, { ffmpeg = false, timeout = 120000 } = {}) => test(nome, { timeout }, async (c) => (skip ? c.skip(skip) : ffmpeg && !hasFfmpeg() ? c.skip("ffmpeg não instalado") : fn(c)));
 async function cadastrar(page, usuario) {
   await page.goto(srv.url); await page.click("#tab-signup"); await page.fill("#username", usuario); await page.fill("#email", novoEmail()); await page.fill("#password", SENHA); await page.click("#auth-submit");
-  await page.waitForSelector("#ask[open]", { timeout: 30000 }); await page.fill("#ask-input", FRASE); await page.click("#ask button[value=ok]"); await page.waitForSelector("#chat:not([hidden])", { timeout: 30000 });
+  await page.waitForSelector("#ask[open]", { timeout: 30000 }); await page.fill("#ask-input", FRASE); await page.click("#ask button[value=ok]"); await page.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 });
 }
 function vigiar(nome, page) {
   page.on("pageerror", (e) => erros.push(`${nome}: ${e.message}`));
@@ -121,7 +121,7 @@ t("recentes: aparecem depois do uso; reenviar a mesma figurinha ao mesmo amigo n
 t("B salva a figurinha recebida; ela continua lá depois de recarregar a página", async () => {
   await B.locator(".bubble.sticker .stk-save").first().click(); await B.waitForFunction(() => /Salva/.test(document.querySelector(".bubble.sticker .stk-save").textContent));
   await B.locator(".bubble.sticker .stk-save").nth(1).click(); await B.waitForFunction(() => /já tem/i.test(document.querySelectorAll(".bubble.sticker .stk-save")[1].textContent), null, { timeout: 15000 });
-  await B.reload(); await B.waitForSelector("#chat:not([hidden])", { timeout: 30000 }); await B.click("#contacts button"); await B.waitForSelector("#send-form:not([hidden])");
+  await B.reload(); await B.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 }); await B.click("#contacts button"); await B.waitForSelector("#send-form:not([hidden])");
   await abrirFig(B); await B.waitForSelector("#stk[open]"); assert.equal(await B.locator("#stk-mine .stk-item").count(), 1); assert.equal(await B.locator("#stk-recent-sec").isVisible(), false, "salva mas nunca usada: não é recente");
   await B.click("#stk-close");
 });
@@ -137,7 +137,7 @@ t("animada (GIF com comentário): vai direto para a lista, sai sem o comentário
   assert.ok((g.texto.match(/\x21\xf9\x04/g) || []).length >= 2, "os quadros e tempos continuam lá");
 });
 t("responder a uma figurinha mostra 'Figurinha' na citação", async () => {
-  const m = B.locator(".msg:not(.mine):has(.bubble.sticker)").first(); await m.hover(); await m.locator(".react-btn").click(); await B.locator(".picker .responder").click();
+  const m = B.locator(".msg:not(.mine):has(.bubble.sticker)").first(); await m.locator(".bubble").first().click({ button: "right" }); await B.locator(".picker .responder").click();
   assert.equal(await B.locator("#reply-text").innerText(), "Figurinha");
   await B.fill("#text", "kkk"); await B.click("#send-form .primary"); await A.waitForSelector('.msg:not(.mine):has(.vis:text-is("kkk")) .quote .q-text:text-is("Figurinha")', { timeout: 30000 });
 });
