@@ -77,3 +77,9 @@ describe("exibir: a original local manda sobre o resumo recebido (anti-forja)", 
     assert.equal(exibir({ id: 1, from: PEER, kind: "text", text: "x", dur: 0 }, { mine: false, content: { type: "reaction" } }, ids).original, false);
   });
 });
+
+test("citar mensagem apagada para todos mostra 'Mensagem apagada', não o texto antigo", () => {
+  const e = exibir({ id: 5, from: "a", kind: "text", text: "segredo antigo", dur: 0 }, { mine: true, content: { type: "deleted", by: "a" } }, { me: "a", peer: "b" });
+  assert.equal(e.rotulo, "Mensagem apagada"); assert.equal(e.autor, "mine"); assert.equal(e.original, true);
+  assert.equal(resumo({ type: "deleted" }), null, "mensagem apagada não pode ser citada");
+});

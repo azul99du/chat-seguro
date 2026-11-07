@@ -477,13 +477,14 @@ function mediaBlock(c, mine) {
   return box;
 }
 
-function addMessage(m, content, { err = false, animate = false } = {}) {
+function addMessage(m, content, { err = false, animate = false, em = null } = {}) {
   if (typeof content === "string") content = { type: "text", text: content };
+  const apagada = content.type === "deleted";
   const media = content.type === "media" && !err;
-  const text = String(content.type === "media" ? content.caption ?? "" : content.text ?? "");
+  const text = apagada ? "Mensagem apagada" : String(content.type === "media" ? content.caption ?? "" : content.text ?? "");
   const mine = m.sender_id === me.id, at = new Date(m.created_at);
   const wrap = el("div", "msg" + (mine ? " mine" : "")), line = el("div", "line");
-  const b = el("div", "bubble" + (mine ? " mine" : "") + (err ? " err" : "") + (media ? " has-media" : "") + (media && content.kind === "sticker" ? " sticker" : ""));
+  const b = el("div", "bubble" + (mine ? " mine" : "") + (err ? " err" : "") + (media ? " has-media" : "") + (media && content.kind === "sticker" ? " sticker" : "") + (apagada ? " apagada" : ""));
   const label = media ? (content.kind === "sticker" ? "Figurinha enviada. " : content.kind === "video" ? "Vídeo enviado. " : content.kind === "audio" ? "Áudio enviado. " : "Foto enviada. ") : "";
   const re = limpaCitacao(content.re), citado = re ? exibir(re, msgs.get(re.id), { me: me.id, peer: active?.id }) : null;
   const quemCitado = citado?.autor === "mine" ? "Você" : citado?.autor === "theirs" ? "@" + active.username : "Mensagem";
@@ -495,7 +496,7 @@ function addMessage(m, content, { err = false, animate = false } = {}) {
     const q = el("button", "quote" + (citado.original ? "" : " sem-original")); q.type = "button";
     q.append(el("span", "q-who", quemCitado), el("span", "q-text", citado.rotulo));
     q.setAttribute("aria-label", `Mensagem citada de ${quemCitado}: ${citado.rotulo}. Ir para a mensagem`);
-    q.onclick = () => irPara(re.id);
+    q.onclick = () => irPara(re.id); q.dataset.re = String(re.id);
     b.append(q);
   }
   if (media) b.append(mediaBlock(content, mine));
@@ -503,11 +504,11 @@ function addMessage(m, content, { err = false, animate = false } = {}) {
   const rx = el("div", "rx");
   wrap.append(line, rx);
   if (!err) {
-    const rb = el("button", "react-btn", "+"); rb.type = "button"; rb.setAttribute("aria-label", "Reagir a esta mensagem");
+    const rb = el("button", "react-btn", "+"); rb.type = "button"; rb.setAttribute("aria-label", apagada ? "Opções desta mensagem apagada" : "Reagir, responder ou apagar esta mensagem");
     rb.onclick = () => togglePicker(wrap, m.id); line.append(rb);
   }
-  $("messages").append(wrap);
-  const e = { m, mine, rcpt, rx, wrap, content: err ? null : content }; msgs.set(m.id, e); setReceipt(e);
+  if (em) em.replaceWith(wrap); else $("messages").append(wrap);
+  const e = { m, mine, rcpt, rx, wrap, content: err ? null : content }; msgs.set(m.id, e); if (!apagada) setReceipt(e);
   if (animate && !err && text) { b.classList.add("deciphering"); reveal(vis, text, () => b.classList.remove("deciphering")); }
   $("messages").scrollTop = 1e9;
   return e;
@@ -542,21 +543,22 @@ function togglePicker(wrap, id) {
   const had = wrap.querySelector(".picker");
   document.querySelectorAll(".picker").forEach((p) => p.remove());
   if (had) return;
-  const p = el("div", "picker"), linha = el("div", "emojis");
-  p.setAttribute("role", "group"); p.setAttribute("aria-label", "Reagir ou responder");
-  for (const em of EMOJIS) {
+  const p = el("div", "picker"), linha = el("div", "emojis"), apagada = msgs.get(id)?.content?.type === "deleted";
+  p.setAttribute("role", "group"); p.setAttribute("aria-label", apagada ? "Apagar" : "Reagir, responder ou apagar");
+  for (const em of apagada ? [] : EMOJIS) {
     const b = el("button", null, em); b.type = "button"; b.setAttribute("aria-label", "Reagir com " + em);
     b.onclick = () => { p.remove(); react(id, em); }; linha.append(b);
   }
-  p.append(linha);
+  if (!apagada) p.append(linha);
   if (citavel(id)) { const r = el("button", "responder", "Responder"); r.type = "button"; r.onclick = () => { p.remove(); responder(id); }; p.append(r); }
+  const ap = el("button", "apagar", "Apagar…"); ap.type = "button"; ap.onclick = () => { p.remove(); perguntarApagar(id); }; p.append(ap);
   wrap.append(p); p.querySelector("button").focus();
 }
 document.addEventListener("click", (ev) => { if (!ev.target.closest(".picker,.react-btn")) document.querySelectorAll(".picker").forEach((p) => p.remove()); });
 
 function renderRx(id) {
   const e = msgs.get(id); if (!e) return;
-  e.rx.replaceChildren();
+  e.rx.replaceChildren(); if (e.content?.type === "deleted") return;
   for (const [uid, emoji] of reactions.get(id) || []) {
     const mineChip = uid === me.id, c = el("button", "chip" + (mineChip ? " mine" : ""), emoji); c.type = "button";
     c.setAttribute("aria-label", mineChip ? `Sua reação ${emoji}. Toque para remover` : `Reação de @${active.username}: ${emoji}`);
@@ -576,6 +578,45 @@ function applyReaction(c, m) { // reação nova = mensagem cifrada (com sigilo f
   const map = reactions.get(id) || new Map(); reactions.set(id, map);
   const em = typeof c.emoji === "string" ? c.emoji.slice(0, 16) : "";
   em ? map.set(m.sender_id, em) : map.delete(m.sender_id); renderRx(id);
+}
+// ---------- Apagar mensagens ----------
+// Para todos: vai uma mensagem cifrada {type:"delete"} para o amigo e, nos dois aparelhos, o texto guardado é trocado por "Mensagem apagada".
+// Só para mim: o aparelho guarda que aquela mensagem ficou escondida. O aviso "Mensagem apagada" também pode ser apagado, só para mim.
+function trocaPorApagada(id) {
+  for (const q of document.querySelectorAll(`.quote[data-re="${Number(id)}"]`)) { const t = q.querySelector(".q-text"); if (t) t.textContent = "Mensagem apagada"; q.setAttribute("aria-label", "Mensagem citada apagada"); } // citações já na tela não guardam o texto antigo
+  const e = msgs.get(id); if (!e) return; reactions.delete(id); addMessage(e.m, { type: "deleted" }, { em: e.wrap });
+}
+async function aplicarApagar(c, m) {
+  const id = Number(c.to); if (!Number.isSafeInteger(id) || id <= 0) return;
+  const peerId = m.sender_id === me.id ? m.recipient_id : m.sender_id, cur = await getHistory(me.id, peerId, id);
+  if (cur?.content?.type === "deleted") { if (msgs.get(id)?.content?.type !== "deleted") trocaPorApagada(id); return; }
+  let autor = msgs.get(id)?.m.sender_id;
+  if (!autor) { const { data } = await sb.from("messages").select("sender_id").eq("id", id).maybeSingle(); autor = data?.sender_id; }
+  if (!autor || autor !== m.sender_id) return; // só quem escreveu a mensagem pode apagá-la para todos
+  await commit(me.id, peerId, { entryId: id, entry: { content: { type: "deleted", by: autor }, at: cur?.at || m.created_at, mine: autor === me.id } });
+  trocaPorApagada(id);
+}
+async function apagarParaMim(id) {
+  const e = msgs.get(id), peer = active; if (!e || !peer) return;
+  await commit(me.id, peer.id, { entryId: id, entry: { content: { type: "hidden" }, at: e.m.created_at, mine: e.mine } });
+  e.wrap.remove(); msgs.delete(id); reactions.delete(id);
+  if (!msgs.size && !$("msgs-empty")) { const p = el("p", "empty", "Nenhuma mensagem aqui."); p.id = "msgs-empty"; $("messages").append(p); }
+}
+async function apagarParaTodos(id) {
+  const e = msgs.get(id), peer = active; if (!e || !peer || !e.mine || e.content?.type === "deleted") return;
+  try { await sendContent(peer, { type: "delete", to: id }); } catch (err) { return note(sendError(err, peer)); }
+  const c = e.content; // o arquivo cifrado de foto/vídeo/áudio sai do servidor (figurinha não: o mesmo arquivo é reaproveitado em outras mensagens)
+  if (c?.type === "media" && c.kind !== "sticker" && typeof c.path === "string") { await sb.storage.from("media").remove([c.path]).catch(() => {}); const u = mediaCache.get(c.path); if (u) { URL.revokeObjectURL(u); mediaCache.delete(c.path); } }
+  await commit(me.id, peer.id, { entryId: id, entry: { content: { type: "deleted", by: me.id }, at: e.m.created_at, mine: true } });
+  trocaPorApagada(id);
+}
+async function perguntarApagar(id) {
+  const e = msgs.get(id); if (!e || !active) return;
+  const aviso = e.content?.type === "deleted", todos = e.mine && !aviso, nome = "@" + active.username;
+  const r = await choose("Apagar mensagem?",
+    aviso ? "O aviso some só da sua tela." : todos ? `Para todos: some também para ${nome}, e fica o aviso "Mensagem apagada". Só para mim: some só desta tela e ${nome} continua vendo.` : `Some só da sua tela. ${nome} não é avisado e continua com a mensagem.`,
+    [...(todos ? [{ label: "Apagar para todos", value: "todos", cls: "primary" }] : []), { label: "Apagar só para mim", value: "mim", cls: todos ? "ghost" : "primary" }, { label: "Cancelar", value: "nao", cls: "ghost" }]);
+  if (r === "todos") await apagarParaTodos(id); else if (r === "mim") await apagarParaMim(id);
 }
 async function loadLegacyReactions(rows, peer) { // reações antigas (tabela, chave fixa) de mensagens antigas
   const ids = rows.filter((m) => m.v !== 2).map((m) => m.id);
@@ -628,7 +669,7 @@ async function pinStatus(peer) {
 }
 function parseContent(s) {
   const o = JSON.parse(s);
-  if (o && ["text", "media", "reaction", "hello"].includes(o.type)) { if (o.re !== undefined) o.re = limpaCitacao(o.re); return o; }
+  if (o && ["text", "media", "reaction", "hello", "delete"].includes(o.type)) { if (o.re !== undefined) o.re = limpaCitacao(o.re); return o; }
   throw new Error("conteudo invalido");
 }
 async function decryptV2(m, peer) {
@@ -660,7 +701,10 @@ async function readV2(m, peer) {
   });
 }
 async function readRow(m, peer) {
-  try { return m.v === 2 ? await readV2(m, peer) : unpack(await decrypt(myKeys.privateKey, peer.public_key, m)); }
+  try {
+    const ov = await getHistory(me.id, peer.id, m.id); // mensagem apagada (para todos ou só para mim): vale o que está guardado aqui, mesmo nas antigas
+    if (ov?.content?.type === "deleted" || ov?.content?.type === "hidden") return ov.content;
+    return m.v === 2 ? await readV2(m, peer) : unpack(await decrypt(myKeys.privateKey, peer.public_key, m)); }
   catch { return gone("Não foi possível decifrar esta mensagem."); }
 }
 function sayHello(peer) { // refaz a sessão sozinho quando este aparelho não consegue ler o que o amigo mandou
@@ -701,7 +745,8 @@ const sendError = (e, peer) => limitado(e) ? "Você fez muitas coisas em pouco t
 async function show(m, peer, animate) {
   const c = await readRow(m, peer);
   if (c.type === "reaction") return applyReaction(c, m);
-  if (c.type === "hello") return;
+  if (c.type === "hello" || c.type === "hidden") return;
+  if (c.type === "delete") return aplicarApagar(c, m);
   if (c.type === "unreadable") return addMessage(m, c.text, { err: true });
   addMessage(m, c, { animate });
 }
@@ -759,6 +804,7 @@ async function onIncoming(m) {
     const c = await readRow(m, peer);
     if (c.type === "reaction") { if (active?.id === peer.id) applyReaction(c, m); return; }
     if (c.type === "hello") return;
+    if (c.type === "delete") { await aplicarApagar(c, m); return; }
   }
   if (active?.id === m.sender_id) { $("msgs-empty")?.remove(); await show(m, active, true); markRead(); }
   else unread.add(m.sender_id);

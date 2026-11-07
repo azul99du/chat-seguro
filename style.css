@@ -271,3 +271,8 @@ dialog#stkedit{width:min(94vw,900px);max-height:94dvh;overflow:auto}
 .tile:active{transform:scale(.95)!important}
 .tile .ti{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#fff}.ti1{background:var(--ink-2)}.ti2{background:var(--seal)}
 @media(prefers-reduced-motion:reduce){.mais,.mais svg,.acao>button,.acao svg,.tray,.tray-in,.tile{transition:none!important}.primary.voou svg,#mic.rec{animation:none}}
+
+/* mensagem apagada */
+.bubble.apagada,.bubble.apagada.mine{background:transparent;border:1.5px dashed var(--line);color:var(--mut);font-style:italic}
+.bubble.apagada .meta{color:var(--mut)}
+.picker .apagar{width:100%;min-height:44px;margin:0;padding:0 14px;font:700 .95rem var(--body);color:var(--seal-dk);border-top:1.5px solid var(--line);border-radius:0 0 20px 20px;background:none}.picker .apagar:hover{background:var(--paper)}.picker .apagar:only-child{border-top:0;border-radius:20px}

@@ -49,6 +49,7 @@ export function rotulo(r) {
 //   local = { mine: boolean, content } | undefined      ids = { me, peer }
 export function exibir(re, local, ids) {
   if (local) {
+    if (local.content?.type === "deleted") return { autor: local.mine ? "mine" : "theirs", rotulo: "Mensagem apagada", original: true }; // apagada para todos: não mostra mais o texto
     const r = resumo(local.content);
     if (r) return { autor: local.mine ? "mine" : "theirs", rotulo: rotulo(r), original: true };
   }
