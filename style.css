@@ -276,3 +276,35 @@ dialog#stkedit{width:min(94vw,900px);max-height:94dvh;overflow:auto}
 .bubble.apagada,.bubble.apagada.mine{background:transparent;border:1.5px dashed var(--line);color:var(--mut);font-style:italic}
 .bubble.apagada .meta{color:var(--mut)}
 .picker .apagar{width:100%;min-height:44px;margin:0;padding:0 14px;font:700 .95rem var(--body);color:var(--seal-dk);border-top:1.5px solid var(--line);border-radius:0 0 20px 20px;background:none}.picker .apagar:hover{background:var(--paper)}.picker .apagar:only-child{border-top:0;border-radius:20px}
+
+/* gravar áudio: segurar = gravar, soltar = enviar, arrastar para cima = travar, para o lado = cancelar */
+#send-form{position:relative}
+#mic{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.acao{isolation:isolate}
+#mic.rec{animation:none}
+#send-form[data-rec] #mais,#send-form[data-rec] #text{display:none}
+.rec-bar{grid-column:1/3;display:flex;align-items:center;gap:10px;min-width:0;min-height:48px;animation:recEntra .3s cubic-bezier(.22,1,.36,1)}
+@keyframes recEntra{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+.rec-bar b{font:500 16px var(--mono);flex:none}
+.rec-bar .ponto{width:11px;height:11px;border-radius:50%;background:var(--seal);flex:none;box-shadow:0 0 0 4px rgba(232,51,95,.2);animation:piscaPonto 1.2s ease-in-out infinite}
+@keyframes piscaPonto{50%{opacity:.35;transform:scale(.8)}}
+.rec-bar .dica{display:flex;align-items:center;gap:2px;color:var(--mut);font-size:14px;white-space:nowrap;margin-left:6px;opacity:calc(1 - var(--pc,0));transform:translateX(calc(var(--dx,0px) * .5))}
+.cancelando .rec-bar .dica{color:var(--seal);opacity:1;font-weight:700}
+.rec-bar .lixo{display:none;width:44px;height:44px;min-height:44px;border-radius:50%;place-items:center;color:var(--seal);padding:0;flex:none;transition:transform .12s}.rec-bar .lixo:active{transform:scale(.88)}
+.rec-bar .onda{display:none;align-items:center;gap:3px;height:28px;min-width:0;flex:1;overflow:hidden}
+.rec-bar .onda i{width:3px;border-radius:2px;background:var(--seal);flex:none;height:8%;transition:height .08s linear}
+#send-form[data-rec=travado] .rec-bar{background:var(--paper);border-radius:24px;padding:0 14px 0 4px;animation:recTrava .35s cubic-bezier(.34,1.56,.64,1)}
+@keyframes recTrava{from{transform:scale(.96)}to{transform:none}}
+#send-form[data-rec=travado] .rec-bar .lixo{display:grid}#send-form[data-rec=travado] .rec-bar .onda{display:flex}#send-form[data-rec=travado] .rec-bar .dica{display:none}
+/* microfone grande enquanto segura */
+#send-form[data-rec=segurando] .acao>#mic{inset:-8px;background:var(--seal);transform:translate(var(--dx,0px),var(--dy,0px));z-index:3;transition:inset .35s cubic-bezier(.34,1.56,.64,1),background .2s,opacity .2s}
+#send-form[data-rec=segurando].cancelando .acao>#mic{background:#6d7099}
+#mic.rec::before{content:"";position:absolute;inset:-9px;border-radius:50%;border:2px solid rgba(232,51,95,.35);background:rgba(232,51,95,.12);z-index:-1;animation:halo 1.4s ease-in-out infinite}
+.cancelando #mic.rec::before{border-color:rgba(109,112,153,.4);background:rgba(109,112,153,.14)}
+@keyframes halo{50%{transform:scale(1.18);opacity:.6}}
+/* cadeado que sobe do microfone */
+.trava{position:absolute;right:-4px;bottom:calc(100% + 30px);width:44px;height:78px;border-radius:22px;border:1.5px solid var(--line);box-shadow:0 6px 18px rgba(21,23,74,.18);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;z-index:2;
+  background:color-mix(in srgb,var(--ink) calc(var(--pt,0) * 100%),#fff);color:color-mix(in srgb,#fff calc(var(--pt,0) * 100%),var(--ink));transform:translateY(calc(var(--pt,0) * -14px)) scale(calc(1 + var(--pt,0) * .12));animation:cadeadoSobe .35s cubic-bezier(.34,1.56,.64,1)}
+@keyframes cadeadoSobe{from{opacity:0;transform:translateY(20px) scale(.7)}to{opacity:1}}
+.rec-toast{position:absolute;right:0;bottom:calc(100% + 14px);background:var(--ink);color:#fff;padding:9px 13px;border-radius:12px;font-size:13px;font-weight:600;width:max-content;max-width:min(280px,72vw);z-index:6;animation:cadeadoSobe .3s cubic-bezier(.34,1.56,.64,1);transition:opacity .3s}.rec-toast.some{opacity:0}
+@media(prefers-reduced-motion:reduce){.rec-bar,.rec-bar .ponto,#mic.rec::before,.trava,.rec-toast,#send-form[data-rec=travado] .rec-bar{animation:none!important}.acao>#mic{transition:none!important}}

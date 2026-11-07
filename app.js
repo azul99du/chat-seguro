@@ -822,14 +822,11 @@ function showPending(name, info, ok = false) {
   atualizaBotao();
 }
 function clearPending(keepUrl) {
-  if (gravador) { // cancelar: o botão do microfone volta ao normal na hora, sem esperar o navegador avisar que parou
-    gravador.cancelado = true; try { gravador.rec.stop(); } catch {}
-    $("mic").classList.remove("rec"); $("mic").setAttribute("aria-label", "Gravar áudio");
-  }
+  if (gravador) cancelarGravacao(); // descartar o anexo também descarta uma gravação em andamento
   if (pending?.url && !keepUrl) URL.revokeObjectURL(pending.url);
   if (tocando) { tocando.pause(); tocando = null; }
   pending = null; atualizaBotao(); $("pending").hidden = true; $("pending-thumb").replaceChildren(); $("pending-thumb").classList.remove("gravando");
-  $("pending-extra").replaceChildren(); $("pending-stop").hidden = true;
+  $("pending-extra").replaceChildren();
 }
 // Campo de mensagem: <div contenteditable> (sem a barra de senhas/cartões/endereços do teclado do Android). Enter envia; sem quebra de linha.
 const MAX_TEXTO = 4000;
@@ -861,7 +858,7 @@ $("attach").onclick = () => { bandeja(false); $("file").click(); };
 document.addEventListener("click", (e) => { if ($("tray").classList.contains("on") && !e.target.closest("#tray, #mais")) bandeja(false); });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && $("tray").classList.contains("on")) { bandeja(false); $("mais").focus(); } });
 // campo vazio e nada anexado = microfone; texto ou anexo pronto = enviar (durante a gravação continua o microfone, que para a gravação)
-function atualizaBotao() { $("acao").dataset.modo = lerTexto().trim() !== "" || (pending && !pending.gravando) ? "send" : "mic"; }
+function atualizaBotao() { $("acao").dataset.modo = lerTexto().trim() !== "" || pending || gravador?.travado ? "send" : "mic"; }
 $("text").addEventListener("input", atualizaBotao);
 $("file").onchange = async () => { const f = $("file").files[0]; $("file").value = ""; if (f) await prepare(f); };
 
@@ -910,47 +907,105 @@ function duracaoAudio(url) { // lê a duração do arquivo; 0 se o formato não 
 // AAC em MP4 toca em todo lugar (inclusive iPhone); WebM/Opus é a alternativa para Chrome e Firefox
 const tipoGravacao = () => ["audio/mp4;codecs=mp4a.40.2", "audio/webm;codecs=opus", "audio/mp4", "audio/webm"].find((t) => window.MediaRecorder?.isTypeSupported?.(t)) ?? "";
 let pedindoMic = false; // evita duas gravações se tocarem duas vezes enquanto o navegador pergunta pela permissão
-async function iniciarGravacao() {
-  if (pedindoMic) return;
-  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) return note("Este navegador não grava áudio. Use o Chrome ou o Safari atualizado, ou anexe um arquivo de áudio.");
+const LIMITE_TOQUE = 800, LIM_TRAVAR = 70, LIM_CANCELAR = 100; // ms mínimos de gravação; px de arrasto para travar / cancelar
+let hold = null; // gesto em andamento: { id, x0, y0, soltou, cancelando }
+const vibra = (n = 12) => { try { navigator.vibrate?.(n); } catch {} };
+// Atualiza a barra de gravação, o microfone e o cadeado conforme o estado: sem gravação / segurando / travado
+function uiGravacao() {
+  const g = gravador, f = $("send-form");
+  if (g) f.dataset.rec = g.travado ? "travado" : "segurando"; else delete f.dataset.rec;
+  $("rec-bar").hidden = !g; $("lock-pill").hidden = !g || g.travado;
+  $("mic").classList.toggle("rec", !!g); $("mic").setAttribute("aria-label", g ? "Parar gravação e enviar" : "Gravar áudio: segure o botão");
+  if (g) { $("rec-dica-txt").textContent = "Deslize para cancelar"; $("rec-tempo").textContent = mmss((Date.now() - g.t0) / 1000); }
+  atualizaBotao();
+}
+let toastT = 0;
+function dicaGravar(t) { const e = $("rec-toast"); e.textContent = t; e.hidden = false; e.classList.remove("some"); clearTimeout(toastT); toastT = setTimeout(() => { e.classList.add("some"); toastT = setTimeout(() => (e.hidden = true), 300); }, 2200); }
+function encerrar(g) { // solta o microfone e para os relógios (pode ser chamada mais de uma vez)
+  clearInterval(g.timer); clearInterval(g.ondaT); g.stream.getTracks().forEach((t) => t.stop()); if (g.ac) { g.ac.close().catch(() => {}); g.ac = null; }
+  if (gravador === g) { gravador = null; uiGravacao(); }
+}
+function iniciarOnda(g) { // ondas de voz ao vivo (só aparecem com a gravação travada)
+  const box = $("rec-onda"); box.replaceChildren(...Array.from({ length: 26 }, () => el("i")));
+  try {
+    const ac = (g.ac = new (window.AudioContext || window.webkitAudioContext)()), an = ac.createAnalyser(); an.fftSize = 256; ac.createMediaStreamSource(g.stream).connect(an);
+    const buf = new Uint8Array(an.fftSize), niveis = Array(26).fill(0.08);
+    g.ondaT = setInterval(() => {
+      an.getByteTimeDomainData(buf); let s = 0; for (const v of buf) s += (v - 128) ** 2; niveis.push(Math.min(1, Math.sqrt(s / buf.length) / 40) * 0.92 + 0.08); niveis.shift();
+      box.childNodes.forEach((b, i) => (b.style.height = Math.round(niveis[i] * 100) + "%"));
+    }, 80);
+  } catch { box.replaceChildren(); }
+}
+async function iniciarGravacao({ travado = false } = {}) {
+  if (pedindoMic || gravador) return false;
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { note("Este navegador não grava áudio. Use o Chrome ou o Safari atualizado, ou anexe um arquivo de áudio."); return false; }
   clearPending(); pedindoMic = true;
   let stream;
   try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
-  catch { return note("Não consegui usar o microfone. Permita o acesso ao microfone nas configurações do navegador e tente de novo."); }
+  catch { note("Não consegui usar o microfone. Permita o acesso ao microfone nas configurações do navegador e tente de novo."); return false; }
   finally { pedindoMic = false; }
   const tipo = tipoGravacao(), rec = new MediaRecorder(stream, tipo ? { mimeType: tipo, audioBitsPerSecond: 48000 } : { audioBitsPerSecond: 48000 });
-  const g = (gravador = { rec, stream, chunks: [], t0: Date.now(), cancelado: false, timer: 0 });
-  pending = { busy: true, gravando: true };
+  const g = (gravador = { rec, stream, chunks: [], t0: Date.now(), cancelado: false, travado, enviar: false, timer: 0, ondaT: 0, ac: null });
   rec.ondataavailable = (e) => { if (e.data?.size) g.chunks.push(e.data); };
   rec.onstop = () => finalizarGravacao(g);
-  rec.start(1000);
-  $("mic").classList.add("rec"); $("mic").setAttribute("aria-label", "Parar gravação");
-  $("pending-thumb").classList.add("gravando"); $("pending-thumb").replaceChildren(iconeMic()); $("pending-stop").hidden = false;
-  showPending("Gravando…", "0:00");
-  g.timer = setInterval(() => {
-    const s = (Date.now() - g.t0) / 1000; $("pending-info").textContent = `${mmss(s)} (máx. ${mmss(MAX_GRAVACAO)})`;
-    if (s >= MAX_GRAVACAO) pararGravacao();
-  }, 250);
+  rec.start(1000); iniciarOnda(g); uiGravacao(); vibra();
+  g.timer = setInterval(() => { const s = (Date.now() - g.t0) / 1000; $("rec-tempo").textContent = mmss(s); if (s >= MAX_GRAVACAO) pararGravacao(true); }, 250);
+  return true;
 }
-function pararGravacao() { if (gravador?.rec.state === "recording") gravador.rec.stop(); }
+function pararGravacao(enviar = false) { if (gravador?.rec.state === "recording") { gravador.enviar = enviar; gravador.rec.stop(); } }
+function cancelarGravacao() { const g = gravador; if (!g) return; g.cancelado = true; encerrar(g); try { g.rec.stop(); } catch {} }
 async function finalizarGravacao(g) {
-  clearInterval(g.timer); g.stream.getTracks().forEach((t) => t.stop());
-  $("mic").classList.remove("rec"); $("mic").setAttribute("aria-label", "Gravar áudio"); $("pending-stop").hidden = true; $("pending-thumb").classList.remove("gravando");
-  if (gravador === g) gravador = null;
+  encerrar(g);
   if (g.cancelado) return;
-  const dur = Math.round((Date.now() - g.t0) / 1000), token = pending;
-  if (!g.chunks.length || dur < 1) { clearPending(); return note("A gravação ficou curta demais. Grave por pelo menos 1 segundo."); }
-  showPending("Áudio gravado", "Removendo metadados…");
+  const dur = Math.round((Date.now() - g.t0) / 1000);
+  if (!g.chunks.length || dur < 1) return note("A gravação ficou curta demais. Grave por pelo menos 1 segundo.");
   try {
-    const r = cleanAudio(await new Blob(g.chunks).arrayBuffer(), { gravado: true });
-    if (pending !== token) return; // descartado enquanto limpava
+    const r = cleanAudio(await new Blob(g.chunks).arrayBuffer(), { gravado: true }); // metadados removidos antes de qualquer envio
     r.url = URL.createObjectURL(new Blob([r.bytes], { type: r.mime })); r.kind = "audio"; r.dur = dur; pending = r;
-    $("pending-thumb").replaceChildren(iconeMic()); $("pending-extra").replaceChildren(playerAudio(r.url, dur));
     showPending("Áudio gravado", `${mmss(dur)} · ${sizeLabel(r.bytes.length)} · metadados removidos`, true);
-  } catch (e) { if (pending === token) clearPending(); note(niceErr(e, "Não foi possível preparar a gravação.")); }
+    if (g.enviar) $("send-form").requestSubmit(); // soltou o botão (ou tocou em enviar): manda na hora
+  } catch (e) { clearPending(); note(niceErr(e, "Não foi possível preparar a gravação.")); }
 }
-$("mic").onclick = () => (gravador ? pararGravacao() : iniciarGravacao());
-$("pending-stop").onclick = pararGravacao;
+// ----- gesto: segurar = gravar, soltar = enviar, arrastar para cima = travar, arrastar para o lado = cancelar -----
+function moverGesto(e) {
+  if (!hold || e.pointerId !== hold.id || !gravador || gravador.travado) return;
+  const dx = Math.max(0, hold.x0 - e.clientX), dy = Math.max(0, hold.y0 - e.clientY), vertical = dy > dx, f = $("send-form");
+  f.style.setProperty("--dx", vertical ? "0px" : -Math.min(dx, 160) + "px"); f.style.setProperty("--dy", vertical ? -Math.min(dy, 110) + "px" : "0px");
+  f.style.setProperty("--pt", String(vertical ? Math.min(1, dy / LIM_TRAVAR) : 0)); f.style.setProperty("--pc", String(vertical ? 0 : Math.min(1, dx / LIM_CANCELAR)));
+  const cancelando = !vertical && dx >= LIM_CANCELAR;
+  if (cancelando !== hold.cancelando) { hold.cancelando = cancelando; f.classList.toggle("cancelando", cancelando); $("rec-dica-txt").textContent = cancelando ? "Solte para cancelar" : "Deslize para cancelar"; if (cancelando) vibra(8); }
+  if (vertical && dy >= LIM_TRAVAR) { gravador.travado = true; desfazGesto(); uiGravacao(); vibra(20); }
+}
+function desfazGesto() {
+  removeEventListener("pointermove", moverGesto); removeEventListener("pointerup", fimGesto); removeEventListener("pointercancel", fimGesto);
+  const f = $("send-form"); f.classList.remove("cancelando"); for (const v of ["--dx", "--dy", "--pt", "--pc"]) f.style.removeProperty(v);
+  hold = null;
+}
+function soltar() {
+  const g = gravador, cancelando = hold?.cancelando; desfazGesto();
+  if (!g || g.travado) return;
+  if (cancelando) return cancelarGravacao();
+  if (Date.now() - g.t0 < LIMITE_TOQUE) { cancelarGravacao(); return dicaGravar("Segure o botão para gravar e solte para enviar."); }
+  pararGravacao(true);
+}
+function fimGesto(e) {
+  if (!hold || e.pointerId !== hold.id) return;
+  if (e.type === "pointercancel") hold.cancelando = true; // o sistema tomou o toque: descarta
+  hold.soltou = true; if (gravador) soltar();
+}
+const mic = $("mic");
+mic.addEventListener("pointerdown", async (e) => {
+  if (gravador || pedindoMic || (e.pointerType === "mouse" && e.button !== 0)) return;
+  e.preventDefault();
+  hold = { id: e.pointerId, x0: e.clientX, y0: e.clientY, soltou: false, cancelando: false, t: Date.now() };
+  addEventListener("pointermove", moverGesto); addEventListener("pointerup", fimGesto); addEventListener("pointercancel", fimGesto);
+  const ok = await iniciarGravacao();
+  if (!ok) return desfazGesto();
+  if (hold?.soltou) { const demorou = Date.now() - hold.t > 900; soltar(); if (demorou) dicaGravar("Microfone liberado. Agora segure o botão para gravar e solte para enviar."); } // o dedo já saiu enquanto o navegador pedia o microfone
+});
+mic.addEventListener("click", (e) => { if (e.detail !== 0) return; gravador ? pararGravacao(true) : iniciarGravacao({ travado: true }); }); // teclado/leitor de tela: liga e desliga (grava travado)
+mic.addEventListener("contextmenu", (e) => e.preventDefault());
+$("rec-lixo").onclick = () => cancelarGravacao();
 
 // ---------- Figurinhas ----------
 let figs = null;
@@ -980,9 +1035,9 @@ async function uploadSealed(bytes, path) {
 
 $("send-form").onsubmit = async (e) => {
   e.preventDefault();
+  if (gravador) { if (gravador.travado) pararGravacao(true); return; } // gravação travada: enviar = parar e mandar
   const text = lerTexto().trim(), peer = active;
   if (!peer || (!text && !pending)) return;
-  if (pending?.gravando) return note("Pare a gravação antes de enviar.");
   if (pending?.busy) return note("Aguarde um instante: ainda estou limpando os metadados do arquivo.");
   const btn = e.submitter ?? e.target.querySelector(".primary"); btn.disabled = true;
   // o campo e a citação são liberados já no início: dá para digitar a próxima mensagem enquanto esta ainda está indo (se falhar, o texto volta)

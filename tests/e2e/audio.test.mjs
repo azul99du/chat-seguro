@@ -52,27 +52,61 @@ t("o arquivo do gravador REAL do navegador sai limpo (sem o nome do navegador), 
   if (r.mime === "audio/webm") { assert.ok(orig.includes("Chrome") || orig.includes("Lavf") || true); assert.ok(!limpo.includes("Chrome"), "o nome do navegador some"); }
   assert.doesNotMatch(probe(f, "-show_entries", "format_tags:stream_tags", "-of", "default=nw=1"), /encoder=Chrome|creation_time=20|handler_name=Sound/i);
 });
-t("gravar pelo botão: mostra o estado de gravação, para, prévia com 'metadados removidos', envia, e o amigo ouve", async () => {
-  await A.click("#mic");
-  await A.waitForSelector("#mic.rec"); assert.equal(await A.locator("#pending-name").innerText(), "Gravando…");
-  assert.equal(await A.locator("#pending-stop").isVisible(), true);
-  await A.waitForTimeout(2600);
-  assert.match(await A.locator("#pending-info").innerText(), /^0:0[1-9]/, "o contador anda");
-  await A.click("#pending-stop"); await A.waitForSelector("#pending-info.ok", { timeout: 20000 });
-  assert.match(await A.locator("#pending-info").innerText(), /metadados removidos/);
-  assert.equal(await A.locator("#pending-extra .player").count(), 1, "prévia para ouvir antes de enviar");
-  assert.equal(await A.locator("#mic.rec").count(), 0);
-  await A.fill("#text", "recado de voz"); await A.click("#send-form .primary");
-  await A.waitForSelector(".msg.mine .media.audio .player", { timeout: 30000 });
+const alvo = async (p) => { const b = await p.locator("#mic").boundingBox(), x = b.x + b.width / 2, y = b.y + b.height / 2; await p.mouse.move(x, y); return { x, y }; };
+const audios = (p) => p.locator(".msg.mine .media.audio").count();
+const modo = async (p) => (await p.locator("#send-form").getAttribute("data-rec")) ?? "";
+t("segurar o microfone grava (barra com tempo e dica); soltar envia sozinho; o amigo ouve", async () => {
+  await alvo(A); await A.mouse.down(); await A.waitForSelector("#send-form[data-rec=segurando]");
+  assert.equal(await A.locator("#rec-bar").isVisible(), true); assert.equal(await A.locator("#text").isVisible(), false, "o campo de texto cede lugar à barra de gravação");
+  assert.match(await A.locator("#rec-dica").innerText(), /Deslize para cancelar/); assert.equal(await A.locator("#lock-pill").isVisible(), true, "o cadeado aparece");
+  await A.waitForTimeout(2600); assert.match(await A.locator("#rec-tempo").innerText(), /^0:0[1-9]/, "o contador anda");
+  const antes = await audios(A); await A.mouse.up();
+  await A.waitForFunction((n) => document.querySelectorAll(".msg.mine .media.audio").length > n, antes, { timeout: 30000 });
+  assert.equal(await modo(A), "", "voltou ao normal"); assert.equal(await A.locator("#rec-bar").isVisible(), false); assert.equal(await A.locator("#text").isVisible(), true);
   await B.waitForSelector("#contacts button .unread", { timeout: 30000 }); await B.click("#contacts button");
   const ouvir = B.locator(".msg:not(.mine) .media.audio button.ph"); await ouvir.waitFor({ timeout: 30000 });
   assert.match(await ouvir.innerText(), /Ouvir áudio · 0:0\d · \d+ KB/, "chega como 'Ouvir áudio', sem baixar sozinho");
-  assert.equal((await B.locator(".msg:not(.mine) .vis").innerText()), "recado de voz");
   await ouvir.click();
   await B.waitForSelector(".msg:not(.mine) .player", { timeout: 30000 });
   await B.waitForFunction(() => { const x = document.querySelector(".msg:not(.mine) .player .tempo"); return x && !/^0:00 \//.test(x.textContent) && !/não toca/.test(x.textContent); }, null, { timeout: 15000 });
   const b = guardados.filter(Boolean); assert.ok(b.length > 0, "baixou do storage");
   for (const x of b) assert.ok(![[0x1a, 0x45, 0xdf, 0xa3], [0x66, 0x74, 0x79, 0x70]].some((m) => m.every((v, i) => x[i + (m[0] === 0x66 ? 4 : 0)] === v)), "o servidor guarda só bytes cifrados");
+});
+t("toque curto no microfone não envia nada e explica como usar", async () => {
+  const antes = enviados.length, n = await audios(A); await alvo(A); await A.mouse.down(); await A.waitForSelector("#send-form[data-rec]"); await A.mouse.up();
+  await A.waitForSelector("#rec-toast", { state: "visible" }); assert.match(await A.locator("#rec-toast").innerText(), /Segure o botão/);
+  await A.waitForFunction(() => !document.getElementById("send-form").dataset.rec); await A.waitForTimeout(800); assert.equal(enviados.length, antes); assert.equal(await audios(A), n);
+});
+t("arrastar para a esquerda cancela: nada é enviado", async () => {
+  const antes = enviados.length, n = await audios(A), { x, y } = await alvo(A); await A.mouse.down(); await A.waitForSelector("#send-form[data-rec=segurando]"); await A.waitForTimeout(1200);
+  await A.mouse.move(x - 60, y, { steps: 4 }); await A.mouse.move(x - 140, y, { steps: 4 });
+  await A.waitForSelector("#send-form.cancelando"); assert.match(await A.locator("#rec-dica").innerText(), /Solte para cancelar/);
+  await A.mouse.up(); await A.waitForFunction(() => !document.getElementById("send-form").dataset.rec); await A.waitForTimeout(800);
+  assert.equal(enviados.length, antes); assert.equal(await audios(A), n); assert.equal(await A.locator("#pending").isHidden(), true);
+});
+t("voltar o dedo antes de passar do limite não cancela: soltar ainda envia", async () => {
+  const n = await audios(A), { x, y } = await alvo(A); await A.mouse.down(); await A.waitForSelector("#send-form[data-rec=segurando]"); await A.waitForTimeout(1300);
+  await A.mouse.move(x - 140, y, { steps: 4 }); await A.waitForSelector("#send-form.cancelando"); await A.mouse.move(x - 10, y, { steps: 4 }); await A.waitForFunction(() => !document.getElementById("send-form").classList.contains("cancelando"));
+  await A.mouse.up(); await A.waitForFunction((k) => document.querySelectorAll(".msg.mine .media.audio").length > k, n, { timeout: 30000 });
+});
+t("arrastar para cima trava: soltar o dedo mantém gravando, com ondas e lixeira; o botão de enviar manda", async () => {
+  const n = await audios(A), { x, y } = await alvo(A); await A.mouse.down(); await A.waitForSelector("#send-form[data-rec=segurando]"); await A.waitForTimeout(800);
+  await A.mouse.move(x, y - 40, { steps: 4 }); await A.mouse.move(x, y - 100, { steps: 4 }); await A.waitForSelector("#send-form[data-rec=travado]");
+  await A.mouse.up(); await A.waitForTimeout(1500); assert.equal(await modo(A), "travado", "continua gravando depois de soltar");
+  assert.equal(await A.locator("#rec-lixo").isVisible(), true); assert.equal(await A.locator("#rec-onda").isVisible(), true); assert.equal(await A.locator("#lock-pill").isVisible(), false);
+  assert.match(await A.locator("#rec-tempo").innerText(), /^0:0[2-9]/); assert.equal(await A.locator("#send-form .primary").isVisible(), true, "o botão vira enviar");
+  assert.ok((await A.locator("#rec-onda i").count()) > 10, "ondas de voz");
+  await A.click("#send-form .primary"); await A.waitForFunction((k) => document.querySelectorAll(".msg.mine .media.audio").length > k, n, { timeout: 30000 }); assert.equal(await modo(A), "");
+});
+t("gravação travada: a lixeira descarta tudo", async () => {
+  const antes = enviados.length, n = await audios(A), { x, y } = await alvo(A); await A.mouse.down(); await A.waitForSelector("#send-form[data-rec=segurando]");
+  await A.mouse.move(x, y - 100, { steps: 6 }); await A.waitForSelector("#send-form[data-rec=travado]"); await A.mouse.up(); await A.waitForTimeout(1000);
+  await A.click("#rec-lixo"); await A.waitForFunction(() => !document.getElementById("send-form").dataset.rec); await A.waitForTimeout(800);
+  assert.equal(enviados.length, antes); assert.equal(await audios(A), n); assert.equal(await A.locator("#text").isVisible(), true);
+});
+t("teclado: Enter no microfone grava (travado) e o botão enviar manda", async () => {
+  const n = await audios(A); await A.focus("#mic"); await A.keyboard.press("Enter"); await A.waitForSelector("#send-form[data-rec=travado]"); await A.waitForTimeout(1300);
+  await A.click("#send-form .primary"); await A.waitForFunction((k) => document.querySelectorAll(".msg.mine .media.audio").length > k, n, { timeout: 30000 });
 });
 t("anexar MP3 com tags (artista, título, comentário, ID3v1): sai limpo, mostra a duração e o amigo ouve", async () => {
   const mp3 = makeAudio(dir, "mp3"), bytes = [...readFileSync(mp3)];
@@ -82,19 +116,8 @@ t("anexar MP3 com tags (artista, título, comentário, ID3v1): sai limpo, mostra
   await A.setInputFiles("#file", mp3); await A.waitForSelector("#pending-info.ok", { timeout: 25000 });
   assert.match(await A.locator("#pending-info").innerText(), /^0:0[1-3] · \d+ KB · metadados removidos/);
   await A.click("#send-form .primary"); await A.waitForSelector(".msg.mine .media.audio .player >> nth=1", { timeout: 30000 });
-  const ouvir = B.locator(".msg:not(.mine) .media.audio button.ph"); await ouvir.waitFor({ timeout: 30000 }); await ouvir.click();
+  const ouvir = B.locator(".msg:not(.mine) .media.audio button.ph").last(); await ouvir.waitFor({ timeout: 30000 }); await ouvir.click();
   await B.waitForSelector(".msg:not(.mine) .media.audio .player >> nth=1", { timeout: 30000 });
-});
-t("cancelar a gravação descarta tudo (nada fica anexado nem é enviado)", async () => {
-  const antes = enviados.length;
-  await A.click("#mic"); await A.waitForSelector("#mic.rec"); await A.waitForTimeout(1200); await A.click("#pending-x");
-  await A.waitForSelector("#pending", { state: "hidden" }); assert.equal(await A.locator("#mic.rec").count(), 0);
-  await A.waitForTimeout(500); assert.equal(await A.locator("#pending-extra .player").count(), 0); assert.equal(enviados.length, antes);
-});
-t("enviar durante a gravação é barrado com aviso claro", async () => {
-  await A.click("#mic"); await A.waitForSelector("#mic.rec"); await A.fill("#text", "x"); await A.click("#send-form .primary");
-  await A.waitForSelector("#note[open]"); assert.match(await A.locator("#note-text").innerText(), /Pare a gravação/); await A.click("#note button");
-  await A.click("#pending-x"); await A.waitForSelector("#pending", { state: "hidden" }); await A.fill("#text", "");
 });
 t("formato não suportado (OGG) é recusado com mensagem clara", async () => {
   await A.setInputFiles("#file", { name: "x.ogg", mimeType: "audio/ogg", buffer: Buffer.concat([Buffer.from("OggS"), Buffer.alloc(200)]) });
