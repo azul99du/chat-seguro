@@ -89,4 +89,14 @@ t("responder a uma mensagem apagada mostra 'Mensagem apagada' na citação", asy
   await B.waitForFunction(() => [...document.querySelectorAll(".msg.mine .q-text")].some((q) => q.textContent === "Mensagem apagada"), null, { timeout: 30000 });
   assert.equal(await B.locator(".msg.mine:has(.vis:text-is('resposta')) .q-text").innerText(), "Mensagem apagada");
 });
+t("apagar para todos não puxa a tela para o fim: a rolagem fica onde estava", async () => {
+  for (let i = 0; i < 14; i++) await enviar(A, "rolagem " + i);
+  await verTexto(A, "rolagem 13", { meu: true }); await A.waitForTimeout(800);
+  const rola = (p) => p.evaluate(() => { const m = document.getElementById("messages"); return { top: Math.round(m.scrollTop), max: m.scrollHeight - m.clientHeight }; });
+  assert.ok((await rola(A)).max > 300, "a lista precisa rolar para o teste valer");
+  await menuApagar(A, msg("rolagem 6")); await A.waitForTimeout(500); // (o Playwright rola até a mensagem para abrir o menu: medimos DEPOIS disso)
+  await A.evaluate(() => { const m = document.getElementById("messages"); m.scrollTop = Math.max(0, m.scrollTop - 150); }); await A.waitForTimeout(300); const antes = (await rola(A)).top;
+  await A.click("#choice button[value=todos]"); await A.waitForSelector(".msg.mine .bubble.apagada >> nth=-1");
+  await A.waitForTimeout(600); const depois = await rola(A); assert.ok(Math.abs(depois.top - antes) <= 60 && depois.top < depois.max - 100, `rolagem antes ${antes}, depois ${depois.top} (fim = ${depois.max})`);
+});
 t("nenhum erro de script", () => assert.deepEqual(erros, []));

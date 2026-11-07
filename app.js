@@ -510,7 +510,7 @@ function addMessage(m, content, { err = false, animate = false, em = null } = {}
   if (em) em.replaceWith(wrap); else $("messages").append(wrap);
   const e = { m, mine, rcpt, rx, wrap, content: err ? null : content }; msgs.set(m.id, e); if (!apagada) setReceipt(e);
   if (animate && !err && text) { b.classList.add("deciphering"); reveal(vis, text, () => b.classList.remove("deciphering")); }
-  $("messages").scrollTop = 1e9;
+  if (!em) $("messages").scrollTop = 1e9; // trocar uma mensagem por "Mensagem apagada" não pode puxar a tela para o fim
   return e;
 }
 
