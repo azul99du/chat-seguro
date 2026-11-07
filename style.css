@@ -345,3 +345,9 @@ button.avatar.peq{min-height:34px;cursor:pointer}
 #perfil-cv{width:min(62vw,240px);aspect-ratio:1;border-radius:50%;background:var(--paper);touch-action:none;cursor:grab}
 #perfil-zoom{width:100%;margin:0 0 8px}
 #perfil-msg{min-height:1.2em;margin:0 0 4px;font-size:.9rem}#perfil-msg.ok{color:#137A3F}
+
+/* topo da lista: sem espaço para o @, some só o texto (a foto fica; o nome aparece ao tocar/segurar) e nada passa por cima do logo */
+#inbox{container-type:inline-size}
+#inbox .wordmark{flex:none}
+.me-box{gap:8px}
+@container (max-width:460px){#me{display:none}}

@@ -176,7 +176,7 @@ async function start() {
   const { data: hasBk } = await sb.from("key_backups").select("user_id").maybeSingle();
   if (!hasBk) await offerBackup(uid);
   $("me").textContent = "@" + me.username; try { localStorage.setItem("lacre:eu:" + uid, "@" + me.username); } catch {}
-  pintarAvatar($("eu-foto"), me);
+  pintarAvatar($("eu-foto"), me); $("eu-foto").title = "@" + me.username;
   mostrarChat();
   ensureSpk();
   await loadContacts();
