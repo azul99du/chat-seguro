@@ -26,13 +26,13 @@ export function definirImagem(canvas) {
   });
   embeddings = meu; return meu.then(() => true);
 }
-// Pontos (x,y de 0 a 1) sobre o que se quer recortar -> { notas[3], logits Float32Array(3*256*256) }. null se a foto trocou no meio.
+// Pontos [x, y, tipo] (x,y de 0 a 1; tipo 1 = manter, 0 = remover) sobre o que se quer recortar -> { notas[3], logits Float32Array(3*256*256) }. null se a foto trocou no meio.
 export async function segmentar(pontos, aindaVale = () => true) {
   const meu = embeddings; if (!meu) throw new Error("sem imagem");
   const em = await meu; if (meu !== embeddings) return null;
   const { dec } = await carregarSAM(), n = pontos.length, T = ortMod.Tensor;
   const pts = new Float32Array(n * 2); pontos.forEach(([x, y], i) => { pts[i * 2] = x * 1024; pts[i * 2 + 1] = y * 1024; });
-  const o = await serial(() => (aindaVale() ? dec.run({ input_points: new T("float32", pts, [1, 1, n, 2]), input_labels: new T("int64", BigInt64Array.from(pontos.map(() => 1n)), [1, 1, n]), input_boxes: new T("float32", new Float32Array(0), [1, 0, 4]), ...Object.fromEntries(em.map((x, k) => ["image_embeddings." + k, new T("float32", x.dados.slice(), x.dims)])) }) : null)); // toque que já foi substituído por outro não gasta tempo
+  const o = await serial(() => (aindaVale() ? dec.run({ input_points: new T("float32", pts, [1, 1, n, 2]), input_labels: new T("int64", BigInt64Array.from(pontos.map((p) => BigInt(p[2] === 0 ? 0 : 1))), [1, 1, n]), input_boxes: new T("float32", new Float32Array(0), [1, 0, 4]), ...Object.fromEntries(em.map((x, k) => ["image_embeddings." + k, new T("float32", x.dados.slice(), x.dims)])) }) : null)); // toque que já foi substituído por outro não gasta tempo
   if (!o) return null;
   return { notas: Array.from(o.iou_scores.data), logits: o.pred_masks.data };
 }

@@ -160,8 +160,12 @@
 
   <dialog id="stkedit">
     <h2>Criar figurinha</h2>
-    <p id="stkedit-hint" class="muted">Toque no que quer recortar: a inteligência artificial acha o contorno (tudo no seu aparelho). Pode tocar em vários pontos; para tirar um ponto, toque nele de novo.</p>
+    <p id="stkedit-hint" class="muted">Toque no que quer recortar: a inteligência artificial acha o contorno (tudo no seu aparelho). Pode tocar em vários pontos. Se pegou demais, troque para o ponto vermelho (setas) e toque no que deve sair. Para tirar um ponto, toque nele de novo.</p>
     <p id="stk-status" role="status" class="stk-status"></p>
+    <button type="button" id="stk-modo" class="stk-modo" data-modo="verde" aria-label="Trocar o tipo de ponto: verde mantém, vermelho remove">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11a8 8 0 0 1 13.5-5.2L20 8"/><path d="M20 3.5V8h-4.5"/><path d="M20 13a8 8 0 0 1-13.5 5.2L4 16"/><path d="M4 20.5V16h4.5"/></svg>
+      <i class="stk-bolinha" aria-hidden="true"></i><span id="stk-modo-txt">Ponto verde: manter</span>
+    </button>
     <div class="stk-duo">
       <canvas id="stk-canvas" aria-label="Foto para recortar: toque no que quer recortar"></canvas>
       <div class="stk-resultado">

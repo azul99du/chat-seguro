@@ -5,11 +5,17 @@ import * as C from "./recorte-config.js";
 export const sigmoide = (x) => 1 / (1 + Math.exp(-Math.max(-30, Math.min(30, x))));
 
 // Entre as 3 máscaras do SAM: a MAIOR entre as de nota >= notaMin; se nenhuma passar, a de maior nota. Devolve os logits (M*M).
-export function escolherMascara(notas, logits, M, notaMin = C.NOTA_MINIMA) {
-  const n = notas.length, areas = [];
+// Com pontos [x, y, tipo] (x,y de 0 a 1; tipo 0 = vermelho/remover, 1 = verde/manter): máscaras que contêm um ponto vermelho são descartadas,
+// e se der, ficam só as que contêm todos os verdes (se nenhuma servir, relaxa a regra em vez de ficar sem recorte).
+export function escolherMascara(notas, logits, M, notaMin = C.NOTA_MINIMA, pontos = []) {
+  const n = notas.length, areas = [], dentro = (j, [x, y]) => logits[j * M * M + Math.min(M - 1, Math.round(y * (M - 1))) * M + Math.min(M - 1, Math.round(x * (M - 1)))] > 0;
   for (let j = 0; j < n; j++) { let a = 0; for (let i = j * M * M; i < (j + 1) * M * M; i++) a += logits[i] > 0; areas.push(a); }
-  let bons = [...Array(n).keys()].filter((j) => notas[j] >= notaMin);
-  if (!bons.length) bons = [notas.indexOf(Math.max(...notas))];
+  const vermelhos = pontos.filter((p) => p[2] === 0), verdes = pontos.filter((p) => p[2] !== 0);
+  let todos = [...Array(n).keys()];
+  const semVermelho = todos.filter((j) => !vermelhos.some((p) => dentro(j, p))), completos = semVermelho.filter((j) => verdes.every((p) => dentro(j, p)));
+  const cand = completos.length ? completos : semVermelho.length ? semVermelho : todos;
+  let bons = cand.filter((j) => notas[j] >= notaMin);
+  if (!bons.length) bons = [cand.reduce((a, b) => (notas[b] > notas[a] ? b : a))];
   const j = bons.reduce((a, b) => (areas[b] > areas[a] ? b : a));
   return logits.subarray(j * M * M, (j + 1) * M * M);
 }

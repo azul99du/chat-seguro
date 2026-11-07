@@ -12,6 +12,16 @@ describe("escolha da máscara do SAM", () => {
   test("a maior com nota boa, não a maior de todas", () => { const m = escolherMascara([0.9, 0.7, 0.3], lg, M, 0.6); assert.equal(m.filter((v) => v > 0).length, 8); });
   test("se nenhuma passar, a de maior nota", () => { const m = escolherMascara([0.2, 0.5, 0.1], lg, M, 0.6); assert.equal(m.filter((v) => v > 0).length, 8); });
 });
+describe("pontos vermelhos (remover) e verdes (manter) na escolha da máscara", () => {
+  const M = 4, lg = new Float32Array(3 * M * M).fill(-1); // máscara 0: tudo (16); máscara 1: metade esquerda (8); máscara 2: quarto superior esquerdo (4)
+  for (let i = 0; i < 16; i++) lg[i] = 1; for (let y = 0; y < 4; y++) for (let x = 0; x < 2; x++) lg[M * M + y * M + x] = 1; for (let y = 0; y < 2; y++) for (let x = 0; x < 2; x++) lg[2 * M * M + y * M + x] = 1;
+  const n = (m) => m.filter((v) => v > 0).length;
+  test("sem pontos nada muda: a maior com nota boa", () => assert.equal(n(escolherMascara([0.9, 0.9, 0.9], lg, M, 0.6, [])), 16));
+  test("a máscara que contém o ponto vermelho é descartada, mesmo sendo a maior", () => assert.equal(n(escolherMascara([0.95, 0.8, 0.8], lg, M, 0.6, [[0.2, 0.2, 1], [1, 1, 0]])), 8)); // vermelho no canto inferior direito: só a 0 o contém
+  test("prefere máscaras que contêm todos os pontos verdes", () => assert.equal(n(escolherMascara([0.9, 0.9, 0.9], lg, M, 0.6, [[0.1, 0.1, 1], [0.9, 0.9, 0]])), 8));
+  test("se nenhuma servir, relaxa em vez de ficar sem recorte", () => { const m = escolherMascara([0.9, 0.9, 0.9], lg, M, 0.6, [[0, 0, 0]]); assert.ok(n(m) > 0); });
+  test("vermelho tem prioridade sobre verde: sem máscara que cubra o verde, fica a que evita o vermelho", () => assert.equal(n(escolherMascara([0.9, 0.9, 0.9], lg, M, 0.6, [[1, 0.5, 1], [0.1, 0.9, 0]])), 4));
+});
 describe("rampa de borda e sigmoide", () => {
   test("<= mínimo = 0, > máximo = 1, no meio sobe aos poucos", () => {
     const r = rampa(Float32Array.from([0, 0.35, 0.5, 0.9, 0.95, 1]), 0.35, 0.9);

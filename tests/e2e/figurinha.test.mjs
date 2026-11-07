@@ -87,6 +87,16 @@ t("SAM 2.1 no aparelho: tocar recorta (contorno branco, fundo transparente); toc
   assert.ok(recursos.some((u) => u.endsWith("vision_encoder_int8.onnx")) && recursos.some((u) => u.endsWith("ort.wasm.min.mjs")), "modelo e programa vieram do próprio site");
   assert.ok(recursos.every((u) => !/^https?:\/\/(?!127\.0\.0\.1|[a-z0-9]+\.supabase\.co|fonts\.g)/.test(u)), "nada de servidor de terceiros");
 }, { timeout: 420000 });
+t("ponto vermelho (botão de setas): sozinho avisa, com um verde tira partes; o botão volta ao verde", async () => {
+  await A.click("#stk-clear"); assert.equal(await A.locator("#stk-modo").getAttribute("data-modo"), "verde"); assert.match(await A.locator("#stk-modo-txt").innerText(), /verde: manter/);
+  await A.click("#stk-modo"); assert.equal(await A.locator("#stk-modo").getAttribute("data-modo"), "vermelho"); assert.match(await A.locator("#stk-modo-txt").innerText(), /vermelho: remover/);
+  await tocar(0.2, 0.2); await A.waitForFunction(() => /^1 ponto \(0 verdes, 1 vermelho\)/.test(document.getElementById("stk-info").textContent));
+  await A.waitForFunction(() => /primeiro no que quer manter/.test(document.getElementById("stk-msg").textContent)); assert.equal(await A.locator("#stk-save").isDisabled(), true, "só vermelho não gera recorte");
+  const cor = await pixel("#stk-canvas", 0.25, 0.2); assert.ok(cor[0] > 180 && cor[1] < 90 && cor[2] < 90, `o ponto é vermelho: ${cor}`);
+  await A.click("#stk-modo"); assert.equal(await A.locator("#stk-modo").getAttribute("data-modo"), "verde");
+  await tocar(0.5, 0.5); await A.waitForFunction(() => /^2 pontos \(1 verde, 1 vermelho\)/.test(document.getElementById("stk-info").textContent)); await resultado();
+  await A.click("#stk-clear"); await tocar(0.5, 0.5); await resultado(); // deixa um recorte pronto para salvar
+}, { timeout: 420000 });
 t("salvar: vai para 'Suas figurinhas' como WebP 512x512 de até 100 KB, transparente e sem o texto escondido", async () => {
   await A.click("#stk-save"); await A.waitForSelector("#stk[open]"); await A.waitForFunction(() => document.querySelectorAll("#stk-mine .stk-item").length === 1);
   assert.match(await A.locator("#stk-count").innerText(), /^1\//);

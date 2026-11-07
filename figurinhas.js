@@ -107,7 +107,7 @@ export function montarFigurinhas({ $, el, uid, note, choose, enviar }) {
 
   // ---------- Editor de recorte (SAM 2.1: toque no que quer recortar) ----------
   // Fluxo do notebook recortador_figurinhas_sam2: pontos verdes sobre o objeto, o recorte aparece ao lado; tocar num ponto o remove.
-  let foto = null, pontos = [], pedido = 0, resultado = null, analise = null, interno = false, ultAlfa = null;
+  let foto = null, pontos = [], pedido = 0, resultado = null, analise = null, interno = false, ultAlfa = null, remover = false;
   const cfgAtual = () => ({ ...CFG, CONTORNO_PX: $("stk-contorno").checked ? CFG.CONTORNO_PX || 14 : 0 }); // contorno branco ligado/desligado pela pessoa
   function mostrar(fig) { const out = $("stk-out"); out.width = fig.width; out.height = fig.height; out.getContext("2d").putImageData(new ImageData(fig.data, fig.width, fig.height), 0, 0); resultado = fig; msg(""); $("stk-save").disabled = false; }
   const cv = () => $("stk-canvas");
@@ -115,15 +115,16 @@ export function montarFigurinhas({ $, el, uid, note, choose, enviar }) {
   function desenharFoto() {
     const c = cv(), g = c.getContext("2d"); g.drawImage(foto.canvas, 0, 0, c.width, c.height);
     const r = Math.max(10, c.width / 40);
-    pontos.forEach(([px, py], n) => {
-      const x = px * c.width, y = py * c.height; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fillStyle = "rgba(0,200,0,.9)"; g.fill();
+    pontos.forEach(([px, py, tipo], n) => {
+      const x = px * c.width, y = py * c.height; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fillStyle = tipo === 0 ? "rgba(214,40,57,.95)" : "rgba(0,200,0,.9)"; g.fill();
       g.lineWidth = Math.max(2, r / 3); g.strokeStyle = "#fff"; g.stroke(); g.fillStyle = "#fff"; g.font = `bold ${Math.round(r * 1.2)}px sans-serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(String(n + 1), x, y);
     });
-    $("stk-info").textContent = pontos.length + (pontos.length === 1 ? " ponto" : " pontos");
+    const verm = pontos.filter((p) => p[2] === 0).length;
+    $("stk-info").textContent = pontos.length + (pontos.length === 1 ? " ponto" : " pontos") + (verm ? ` (${pontos.length - verm} verde${pontos.length - verm === 1 ? "" : "s"}, ${verm} vermelho${verm === 1 ? "" : "s"})` : "");
     $("stk-clear").disabled = !pontos.length;
   }
   function editar(imagem, canvas) {
-    foto = { rgba: imagem.data, w: imagem.width, h: imagem.height, canvas }; pontos = []; resultado = null; ultAlfa = null; pedido++; $("stk-contorno").checked = (CFG.CONTORNO_PX || 0) > 0;
+    foto = { rgba: imagem.data, w: imagem.width, h: imagem.height, canvas }; pontos = []; resultado = null; ultAlfa = null; pedido++; remover = false; marcaModo(); $("stk-contorno").checked = (CFG.CONTORNO_PX || 0) > 0;
     cv().width = foto.w; cv().height = foto.h; cv().style.maxWidth = LARGURA_TELA + "px"; $("stk-save").disabled = true; $("stk-skip").disabled = false;
     msg("Toque no que quer recortar. Pode tocar em vários pontos.");
     $("stk-status").textContent = "Analisando a foto (só na 1ª vez baixa uns 62 MB)…";
@@ -131,14 +132,17 @@ export function montarFigurinhas({ $, el, uid, note, choose, enviar }) {
     meu.then((ok) => { if (analise === meu) $("stk-status").textContent = ok ? "Pronto: toque no objeto." : "Não consegui carregar o recorte inteligente neste aparelho."; });
     desenharFoto(); interno = true; $("stk").close(); $("stkedit").showModal(); interno = false;
   }
+  function marcaModo() { $("stk-modo").dataset.modo = remover ? "vermelho" : "verde"; $("stk-modo-txt").textContent = remover ? "Ponto vermelho: remover" : "Ponto verde: manter"; cv().style.cursor = remover ? "not-allowed" : "crosshair"; }
+  $("stk-modo").onclick = () => { remover = !remover; marcaModo(); };
   async function recortar() {
     const meu = ++pedido; resultado = null; ultAlfa = null; $("stk-save").disabled = true;
     if (!pontos.length) return msg("O recorte aparece aqui.");
+    if (!pontos.some((p) => p[2] !== 0)) return msg("Toque primeiro no que quer manter (ponto verde). O ponto vermelho só tira partes de um recorte.");
     msg("Recortando…"); await new Promise((r) => setTimeout(r, 30)); // deixa a tela pintar antes do cálculo
     try {
       if (!(await analise)) throw new Error("ia");
       const o = await segmentar(pontos.map((p) => [...p]), () => meu === pedido); if (meu !== pedido || !o) return;
-      const alfa = rampa(ampliarLogits(escolherMascara(o.notas, o.logits, 256), 256, foto.w, foto.h)), fig = montarFigurinha(foto.rgba, foto.w, foto.h, alfa, cfgAtual());
+      const alfa = rampa(ampliarLogits(escolherMascara(o.notas, o.logits, 256, undefined, pontos), 256, foto.w, foto.h)), fig = montarFigurinha(foto.rgba, foto.w, foto.h, alfa, cfgAtual());
       if (meu !== pedido) return;
       if (!fig) return msg("Não achei nada nesses pontos. Tente tocar em outro lugar.");
       ultAlfa = alfa; mostrar(fig);
@@ -147,7 +151,7 @@ export function montarFigurinhas({ $, el, uid, note, choose, enviar }) {
   cv().addEventListener("click", (e) => {
     if (!foto) return; const r = cv().getBoundingClientRect(), px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
     const i = pontos.findIndex(([x, y]) => Math.hypot((x - px) * r.width, (y - py) * r.height) <= 14); // tocar num ponto o remove
-    if (i >= 0) pontos.splice(i, 1); else pontos.push([px, py]);
+    if (i >= 0) pontos.splice(i, 1); else pontos.push([px, py, remover ? 0 : 1]);
     desenharFoto(); recortar();
   });
   $("stk-contorno").onchange = () => { if (ultAlfa && resultado) { const fig = montarFigurinha(foto.rgba, foto.w, foto.h, ultAlfa, cfgAtual()); if (fig) mostrar(fig); } }; // refaz só o acabamento: não chama a IA de novo
