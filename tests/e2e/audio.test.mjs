@@ -86,6 +86,17 @@ t("arrastar para a esquerda cancela: nada é enviado", async () => {
   await A.mouse.up(); await A.waitForFunction(() => !document.getElementById("send-form").dataset.rec); await A.waitForTimeout(800);
   assert.equal(enviados.length, antes); assert.equal(await audios(A), n); assert.equal(await A.locator("#pending").isHidden(), true);
 });
+t("em tela estreita (360 px) o texto de cancelar não encosta no contador nem no microfone", async () => {
+  await A.setViewportSize({ width: 360, height: 700 }); await A.waitForTimeout(300);
+  const { x, y } = await alvo(A); await A.mouse.down(); await A.waitForSelector("#send-form[data-rec=segurando]"); await A.waitForTimeout(1000);
+  for (const dx of [0, 70, 150]) {
+    await A.mouse.move(x - dx, y, { steps: 3 }); await A.waitForTimeout(450);
+    const tempo = await A.locator("#rec-tempo").boundingBox(), dica = await A.locator("#rec-dica").boundingBox(), mic = await A.locator("#mic").boundingBox(), txt = await A.locator("#rec-dica-txt").boundingBox();
+    assert.ok(dica.x >= tempo.x + tempo.width - 1, `texto sobre o tempo (dx ${dx})`); assert.ok(dica.x + dica.width <= mic.x + 1, `o microfone cobre o texto (dx ${dx}): texto até ${dica.x + dica.width}, microfone a partir de ${mic.x}`);
+    assert.ok(txt.x + txt.width <= dica.x + dica.width + 1, "o texto cabe no espaço (sem vazar)");
+  }
+  await A.mouse.up(); await A.waitForFunction(() => !document.getElementById("send-form").dataset.rec); await A.setViewportSize({ width: 1280, height: 720 });
+});
 t("voltar o dedo antes de passar do limite não cancela: soltar ainda envia", async () => {
   const n = await audios(A), { x, y } = await alvo(A); await A.mouse.down(); await A.waitForSelector("#send-form[data-rec=segurando]"); await A.waitForTimeout(1300);
   await A.mouse.move(x - 140, y, { steps: 4 }); await A.waitForSelector("#send-form.cancelando"); await A.mouse.move(x - 10, y, { steps: 4 }); await A.waitForFunction(() => !document.getElementById("send-form").classList.contains("cancelando"));

@@ -288,7 +288,9 @@ dialog#stkedit{width:min(94vw,900px);max-height:94dvh;overflow:auto}
 .rec-bar b{font:500 16px var(--mono);flex:none}
 .rec-bar .ponto{width:11px;height:11px;border-radius:50%;background:var(--seal);flex:none;box-shadow:0 0 0 4px rgba(232,51,95,.2);animation:piscaPonto 1.2s ease-in-out infinite}
 @keyframes piscaPonto{50%{opacity:.35;transform:scale(.8)}}
-.rec-bar .dica{display:flex;align-items:center;gap:2px;color:var(--mut);font-size:14px;white-space:nowrap;margin-left:6px;min-width:0;overflow:hidden;opacity:calc(1 - var(--pc,0) * .5)}
+.rec-bar .dica{display:flex;align-items:center;gap:2px;color:var(--mut);font-size:14px;white-space:nowrap;margin-left:6px;min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;opacity:calc(1 - var(--pc,0) * .5)}
+#send-form[data-rec=segurando] .rec-bar{padding-right:14px} /* o microfone grande invade ~8 px da barra: reserva essa folga para ele não cobrir o texto */
+@media(max-width:380px){.rec-bar .dica{font-size:13px}.cancelando .rec-bar .dica{font-weight:600}}
 .cancelando .rec-bar .dica{color:var(--seal);opacity:1;font-weight:700}
 .rec-bar .lixo{display:none;width:44px;height:44px;min-height:44px;border-radius:50%;place-items:center;color:var(--seal);padding:0;flex:none;transition:transform .12s}.rec-bar .lixo:active{transform:scale(.88)}
 .rec-bar .onda{display:none;align-items:center;gap:3px;height:28px;min-width:0;flex:1;overflow:hidden}
@@ -298,7 +300,7 @@ dialog#stkedit{width:min(94vw,900px);max-height:94dvh;overflow:auto}
 #send-form[data-rec=travado] .rec-bar .lixo{display:grid}#send-form[data-rec=travado] .rec-bar .onda{display:flex}#send-form[data-rec=travado] .rec-bar .dica{display:none}
 /* microfone grande enquanto segura */
 #send-form[data-rec=segurando] .acao>#mic{inset:-8px;background:var(--seal);transform:translate(var(--dx,0px),var(--dy,0px));z-index:3;transition:inset .35s cubic-bezier(.34,1.56,.64,1),background .2s,opacity .2s}
-#send-form[data-rec=segurando].cancelando .acao>#mic{background:#6d7099}
+#send-form[data-rec=segurando].cancelando .acao>#mic{background:#6d7099;transform:translate(var(--dx,0px),var(--dy,0px)) scale(.88)}
 #mic.rec::before{content:"";position:absolute;inset:-9px;border-radius:50%;border:2px solid rgba(232,51,95,.35);background:rgba(232,51,95,.12);z-index:-1;animation:halo 1.4s ease-in-out infinite}
 .cancelando #mic.rec::before{border-color:rgba(109,112,153,.4);background:rgba(109,112,153,.14)}
 @keyframes halo{50%{transform:scale(1.18);opacity:.6}}
