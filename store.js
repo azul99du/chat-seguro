@@ -132,3 +132,24 @@ export async function wipeLocal(uid) {
 }
 // Duas abas abertas não podem avançar a mesma sessão ao mesmo tempo
 export const withLock = (name, fn) => (navigator.locks ? navigator.locks.request(name, fn) : fn());
+
+// ---------- Exportar / importar o histórico (para trocar de aparelho) ----------
+// Lê tudo já decifrado (só nesta memória); quem chama é que cifra de novo com a senha do arquivo.
+export async function exportarHistorico(uid) {
+  const t = await tx(["history"], "readonly"), s = t.objectStore("history"), rng = range(uid + "|");
+  const [keys, vals] = await Promise.all([req(s.getAllKeys(rng)), req(s.getAll(rng))]);
+  const out = [];
+  for (let i = 0; i < keys.length; i++) {
+    const [, peer, id] = String(keys[i]).split("|");
+    try { out.push({ p: peer, i: Number(id), e: await unseal(uid, vals[i]) }); } catch {} // entrada estragada: fica de fora
+  }
+  return out;
+}
+// Só acrescenta o que este aparelho ainda não tem (o que já existe aqui nunca é sobrescrito).
+export async function importarHistorico(uid, itens) {
+  const sel = await Promise.all(itens.map(async (x) => ({ k: hKey(uid, x.p, x.i), rec: await seal(uid, x.e) })));
+  const t = await tx(["history"], "readwrite"), s = t.objectStore("history");
+  const ja = await Promise.all(sel.map((x) => req(s.getKey(x.k))));
+  let novos = 0; sel.forEach((x, i) => { if (ja[i] === undefined) { s.put(x.rec, x.k); novos++; } });
+  await done(t); return { novos, jaExistiam: sel.length - novos };
+}

@@ -353,3 +353,4 @@ button.avatar.peq{min-height:34px;cursor:pointer}
 @container (max-width:460px){#me{display:none}}
 #inbox .me-box{overflow:hidden;gap:6px}
 #inbox .me-box .ghost{padding:0 10px}
+#choice-text{white-space:pre-line;overflow-wrap:anywhere}

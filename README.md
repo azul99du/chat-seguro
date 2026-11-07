@@ -110,3 +110,12 @@ Toque no círculo ao lado do seu @ (topo da lista) → escolher foto → arraste
 - Bucket privado `avatars` (`supabase/avatar.sql`): só o dono envia/apaga (no máximo 5 arquivos, o app apaga a antiga), só o dono e quem já conversou com ele leem; a coluna `profiles.avatar` só aceita um caminho da própria pasta. A política "exige dois passos" vale aqui também.
 - **Diferente das mensagens, a foto NÃO é cifrada de ponta a ponta**: o servidor consegue ver. Se isso incomodar, dá para cifrar a foto e mandar a chave pela conversa.
 - Testes: `tests/avatar.test.mjs` (recorte e nomes) e `tests/e2e/avatar.test.mjs` (envio, quem vê, estranhos, formatos e limites).
+
+## Histórico para outro aparelho (exportar / importar)
+Por causa do sigilo futuro, um aparelho novo não consegue ler as mensagens antigas (as chaves delas foram apagadas). Em **Segurança da conta → Exportar histórico** o aparelho antigo gera um arquivo `.lacre`; no aparelho novo, **Importar histórico** traz tudo de volta.
+- O arquivo é cifrado no navegador com AES-256-GCM; a chave vem de uma senha própria dele (PBKDF2-SHA256, 1.000.000 de voltas). O app gera uma senha de 20 símbolos sorteados (~99 bits) ou aceita uma sua (16+ caracteres). Não vai para o servidor.
+- Só abre na MESMA conta (o id da conta é dado autenticado). Senha errada, conta errada e arquivo alterado dão o mesmo erro.
+- Importar só ACRESCENTA: o que o aparelho já tem nunca é sobrescrito, e importar duas vezes não duplica. Apagadas para todos/para mim continuam apagadas.
+- Inclui o texto e as chaves dos arquivos de mídia (que seguem no servidor, cifrados). Figurinhas salvas e o cache de arquivos não entram.
+- O arquivo é uma cópia legível do histórico para quem tiver arquivo + senha: guarde só onde você controla e apague depois de importar.
+- Testes: `tests/historico.test.mjs` e `tests/e2e/historico.test.mjs` (aparelho novo não lê → exporta → importa → lê).

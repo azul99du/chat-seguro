@@ -3,9 +3,10 @@ import { SUPABASE_URL, SUPABASE_KEY } from "./config.js";
 import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js";
 import { montarFigurinhas } from "./figurinhas.js";
 import { getBlob, hasBlob, putBlob, delBlob } from "./store.js";
-import { commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js";
+import { exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js";
 import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js";
 import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js";
 import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js";
 import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js";
 
@@ -295,6 +296,55 @@ async function trocarSenha() {
   msg.className = "ok"; msg.textContent = "Senha trocada. A antiga deixou de funcionar e os outros aparelhos foram desconectados.";
 }
 $("mfa-senha").onclick = trocarSenha;
+// ---------- Histórico para outro aparelho ----------
+const msgMfa = (t, ok) => { const m = $("mfa-msg"); m.textContent = t; m.className = ok ? "ok" : ""; };
+async function exportarMeuHistorico() {
+  msgMfa("");
+  const modo = await choose("Exportar o histórico", "Cria um arquivo com as suas mensagens já lidas, trancado por uma senha só dele. Ele NÃO vai para o servidor. Use no aparelho novo (Importar histórico) e depois apague o arquivo.", [
+    { value: "gerar", label: "Gerar uma senha forte (recomendado)", cls: "primary" }, { value: "minha", label: "Escolher minha própria senha", cls: "ghost" }, { value: "cancel", label: "Cancelar", cls: "ghost" }]);
+  if (!modo || modo === "cancel") return;
+  let senha;
+  if (modo === "gerar") {
+    senha = gerarSenha();
+    const r = await choose("Anote esta senha", `${senha}\n\nSem ela o arquivo não abre, e ninguém consegue recuperá-la. Anote em papel ou no seu gerenciador de senhas.`, [{ value: "ok", label: "Anotei, continuar", cls: "primary" }, { value: "cancel", label: "Cancelar", cls: "ghost" }]);
+    if (r !== "ok") return;
+  } else {
+    let dica = `Crie a senha do arquivo (${MIN_SENHA_ARQUIVO}+ caracteres). Ela é a única proteção do arquivo: use algo bem diferente das suas outras senhas.`;
+    for (;;) {
+      senha = await ask("Senha do arquivo", dica); if (senha === null) return;
+      const fraca = senha.length < MIN_SENHA_ARQUIVO ? `Use pelo menos ${MIN_SENHA_ARQUIVO} caracteres.` : fraseFraca(senha);
+      if (fraca) { dica = fraca; continue; }
+      const c = await ask("Confirme a senha", "Digite a mesma senha de novo."); if (c === null) return;
+      if (c === senha) break; dica = "As senhas não são iguais. Crie de novo.";
+    }
+  }
+  msgMfa("Preparando o arquivo…", true);
+  try {
+    const itens = await exportarHistorico(me.id);
+    const texto = await empacotar(me.id, itens, senha);
+    const url = URL.createObjectURL(new Blob([texto], { type: "application/octet-stream" }));
+    const a = el("a"); a.href = url; a.download = `lacre-historico-${new Date().toISOString().slice(0, 10)}.lacre`; document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    msgMfa(`Arquivo gerado com ${itens.length} mensagens. Guarde-o só onde você controla e apague depois de importar.`, true);
+  } catch { msgMfa("Não foi possível gerar o arquivo."); }
+}
+async function importarMeuHistorico(arquivo) {
+  msgMfa("");
+  if (!arquivo) return;
+  if (arquivo.size > 50 * 1048576) return msgMfa("Esse arquivo é grande demais para ser um histórico do Lacre.");
+  const texto = await arquivo.text();
+  const senha = await ask("Importar o histórico", "Digite a senha desse arquivo."); if (senha === null) return;
+  msgMfa("Abrindo o arquivo…", true);
+  try {
+    const itens = await abrirHistorico(me.id, texto, senha);
+    const r = await importarHistorico(me.id, itens);
+    msgMfa(`Pronto: ${r.novos} mensagens importadas${r.jaExistiam ? ` (${r.jaExistiam} já estavam aqui)` : ""}. Você pode apagar o arquivo.`, true);
+    if (active) open(active);
+  } catch (e) { msgMfa(e?.message === "formato" ? "Esse arquivo não é um histórico do Lacre." : "Senha errada, arquivo de outra conta ou arquivo alterado. Nada foi importado."); }
+}
+$("mfa-exp").onclick = exportarMeuHistorico;
+$("mfa-imp").onclick = () => $("mfa-file").click();
+$("mfa-file").onchange = () => { const f = $("mfa-file").files[0]; $("mfa-file").value = ""; importarMeuHistorico(f); };
 $("sec-btn").onclick = abrirSeguranca; $("mfa-nudge").onclick = abrirSeguranca;
 $("mfa").addEventListener("close", async () => { await limpar2faPendente(); });
 $("mfa-code").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("mfa-go").click(); } });
