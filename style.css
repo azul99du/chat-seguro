@@ -239,3 +239,8 @@ dialog#stkedit{width:min(94vw,900px);max-height:94dvh;overflow:auto}
 .stk-modo .stk-bolinha{width:14px;height:14px;border-radius:50%;background:#14a53c;border:2px solid #fff;box-shadow:0 0 0 1.5px #14a53c}
 .stk-modo[data-modo=vermelho]{border-color:#d62839}.stk-modo[data-modo=vermelho] .stk-bolinha{background:#d62839;box-shadow:0 0 0 1.5px #d62839}
 .stk-modo svg{flex:none}
+
+/* campo de mensagem (div editável): mesmo visual do input */
+.msg-input{min-height:48px;max-height:132px;overflow-y:auto;width:100%;padding:12px 14px;line-height:1.35;border:1.5px solid var(--line);border-radius:10px;background:var(--card);font-size:16px;white-space:pre-wrap;overflow-wrap:anywhere;-webkit-user-select:text;user-select:text;box-sizing:border-box;outline:none}
+.msg-input:focus{border-color:var(--ink);box-shadow:0 0 0 3px rgba(21,23,74,.15)}
+.msg-input:empty::before{content:attr(data-placeholder);color:#757575;pointer-events:none}

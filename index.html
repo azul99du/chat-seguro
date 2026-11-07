@@ -110,8 +110,8 @@
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
         </button>
         <input type="file" id="file" accept="image/*,video/mp4,video/quicktime,audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/x-wav,.mp4,.m4v,.mov,.mp3,.m4a,.wav" hidden>
-        <label class="sr" for="text">Mensagem</label>
-        <input id="text" placeholder="Escreva uma mensagem" autocomplete="off" maxlength="4000">
+        <!-- campo editável simples (e não <input>): o teclado do Android não oferece senhas, cartões e endereços (preenchimento automático) aqui -->
+        <div id="text" class="msg-input" contenteditable="plaintext-only" role="textbox" aria-multiline="false" aria-label="Mensagem" data-placeholder="Escreva uma mensagem" enterkeyhint="send" autocapitalize="sentences" spellcheck="true" translate="no"></div>
         <button class="primary">Enviar</button>
       </form>
     </section>

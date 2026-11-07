@@ -783,6 +783,28 @@ function clearPending(keepUrl) {
   pending = null; $("pending").hidden = true; $("pending-thumb").replaceChildren(); $("pending-thumb").classList.remove("gravando");
   $("pending-extra").replaceChildren(); $("pending-stop").hidden = true;
 }
+// Campo de mensagem: <div contenteditable> (sem a barra de senhas/cartões/endereços do teclado do Android). Enter envia; sem quebra de linha.
+const MAX_TEXTO = 4000;
+const lerTexto = () => $("text").textContent.replace(/\u00a0/g, " ").replace(/\n/g, " ");
+const limparTexto = () => $("text").replaceChildren();
+{
+  const t = $("text");
+  if (t.contentEditable !== "plaintext-only") { // Firefox antigo: editável comum, colando só texto puro
+    t.contentEditable = "true"; t.addEventListener("paste", (e) => { e.preventDefault(); document.execCommand("insertText", false, (e.clipboardData || window.clipboardData).getData("text/plain").replace(/\r?\n/g, " ")); });
+  }
+  t.addEventListener("beforeinput", (e) => {
+    if (e.inputType === "insertParagraph" || e.inputType === "insertLineBreak") { e.preventDefault(); $("send-form").requestSubmit(); return; } // Enter / "Ir" do teclado envia
+    if (e.inputType.startsWith("insert") && e.data && t.textContent.length + e.data.length > MAX_TEXTO) e.preventDefault();
+  });
+  t.addEventListener("input", () => {
+    if (t.textContent === "" || t.textContent === "\n") t.replaceChildren(); // deixa o :empty (texto de exemplo) funcionar
+    if (t.textContent.length > MAX_TEXTO) { t.textContent = t.textContent.slice(0, MAX_TEXTO); const r = document.createRange(); r.selectNodeContents(t); r.collapse(false); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); }
+  });
+  t.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); $("send-form").requestSubmit(); } });
+  // tocar em Enviar não pode tirar o foco do campo: foco perdido = teclado do celular some e volta
+  const enviar = $("send-form").querySelector(".primary");
+  for (const ev of ["pointerdown", "mousedown"]) enviar.addEventListener(ev, (e) => e.preventDefault());
+}
 $("pending-x").onclick = () => clearPending();
 $("attach").onclick = () => $("file").click();
 $("file").onchange = async () => { const f = $("file").files[0]; $("file").value = ""; if (f) await prepare(f); };
@@ -902,7 +924,7 @@ async function uploadSealed(bytes, path) {
 
 $("send-form").onsubmit = async (e) => {
   e.preventDefault();
-  const text = $("text").value.trim(), peer = active;
+  const text = lerTexto().trim(), peer = active;
   if (!peer || (!text && !pending)) return;
   if (pending?.gravando) return note("Pare a gravação antes de enviar.");
   if (pending?.busy) return note("Aguarde um instante: ainda estou limpando os metadados do arquivo.");
@@ -919,11 +941,11 @@ $("send-form").onsubmit = async (e) => {
       mediaCache.set(path, p.url); clearPending(true); // reaproveita a prévia local, sem baixar de novo
     } else { content = { type: "text", text }; if (replyTo) content.re = replyTo; row = await sendContent(peer, content); }
     if (active === peer) { $("msgs-empty")?.remove(); addMessage(row, content); }
-    $("text").value = ""; cancelarResposta();
+    limparTexto(); cancelarResposta();
   } catch (e) {
     if (pending) showPending($("pending-name").textContent, "Falhou. Toque em Enviar para tentar de novo.");
     note(sendError(e, peer));
-  } finally { btn.disabled = false; $("text").focus(); }
+  } finally { btn.disabled = false; if (document.activeElement !== $("text")) $("text").focus(); }
 };
 
 // ---------- Fundo da conversa (pessoal, limpo de metadados e cifrado) ----------
