@@ -46,9 +46,10 @@ t("quem conversa com o dono vê a foto (lista e cabeçalho da conversa)", async 
 t("tocar na foto (lista e topo da conversa) abre ela grande; fechar tocando nela", async () => {
   await B.click("#back").catch(() => {}); // (em tela larga o botão não aparece: a lista já está visível)
   await B.click("#contacts button .avatar"); await B.waitForSelector("#viewer[open] #viewer-img.perfil", { timeout: 15000 });
+  assert.ok((await B.locator("#viewer-img").evaluate((i) => i.getAnimations().length)) > 0, "a foto abre com animação (voa da miniatura)");
   assert.match(await B.locator("#viewer-img").getAttribute("alt"), /Foto de perfil de @/);
   assert.ok((await B.locator("#viewer-img").evaluate((i) => i.naturalWidth)) > 0, "a imagem carregou");
-  await B.click("#viewer"); await B.waitForFunction(() => !document.getElementById("viewer").open);
+  await B.click("#viewer"); assert.equal(await B.locator("#viewer").evaluate((d) => d.classList.contains("saindo")), true, "ao fechar anima a saída"); await B.waitForFunction(() => !document.getElementById("viewer").open);
   await B.click("#conv-av"); await B.waitForSelector("#viewer[open] #viewer-img.perfil"); await B.click("#viewer"); await B.waitForFunction(() => !document.getElementById("viewer").open);
 });
 t("servidor: formato do arquivo, dono da pasta e leitura por terceiros", async () => {

@@ -410,16 +410,40 @@ function pintarAvatar(node, p, abrivel = false) {
   if (!p.avatar) return;
   if (abrivel) { // tocar na foto abre ela grande (na lista, sem abrir a conversa junto)
     node.classList.add("abre"); node.title = "Ver a foto de @" + p.username; if (node.tagName === "BUTTON") node.disabled = false;
-    node.onclick = (e) => { e.stopPropagation(); e.preventDefault(); abrirFoto(p); };
+    node.onclick = (e) => { e.stopPropagation(); e.preventDefault(); abrirFoto(p, node); };
   }
   fotoUrl(p.avatar).then((url) => {
     if (!url || node.dataset.foto !== p.avatar) return;
     const im = el("img"); im.alt = ""; im.src = url; im.draggable = false; node.replaceChildren(im);
   }).catch(() => {});
 }
-async function abrirFoto(p) {
+// ---------- Foto ampliada (com animação: a foto "voa" do lugar onde está até o centro, e volta ao fechar) ----------
+let origemViewer = null, fechandoViewer = false;
+const EASE = "cubic-bezier(.2,.8,.2,1)";
+function transformaDe(origem, im) { // do centro da foto grande até o lugar da miniatura
+  const a = origem.getBoundingClientRect(), b = im.getBoundingClientRect();
+  return `translate(${a.left + a.width / 2 - (b.left + b.width / 2)}px, ${a.top + a.height / 2 - (b.top + b.height / 2)}px) scale(${a.width / b.width})`;
+}
+function abrirViewer(url, alt, { perfil = false, origem = null } = {}) {
+  const d = $("viewer"), im = $("viewer-img"); fechandoViewer = false; d.classList.remove("saindo");
+  im.className = perfil ? "perfil" : ""; im.alt = alt; im.src = url; origemViewer = origem; d.showModal();
+  if (reduced) return;
+  if (origem?.isConnected) im.animate([{ transform: transformaDe(origem, im), borderRadius: "50%" }, { transform: "none", borderRadius: getComputedStyle(im).borderRadius }], { duration: 340, easing: EASE });
+  else im.animate([{ transform: "scale(.9)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 220, easing: EASE });
+}
+async function fecharViewer() {
+  const d = $("viewer"), im = $("viewer-img"); if (!d.open || fechandoViewer) return;
+  if (reduced) return d.close();
+  fechandoViewer = true; d.classList.add("saindo");
+  const o = origemViewer?.isConnected ? origemViewer : null;
+  const anim = o ? im.animate([{ transform: "none", borderRadius: getComputedStyle(im).borderRadius }, { transform: transformaDe(o, im), borderRadius: "50%" }], { duration: 260, easing: "cubic-bezier(.4,0,.2,1)", fill: "forwards" })
+    : im.animate([{ transform: "none", opacity: 1 }, { transform: "scale(.92)", opacity: 0 }], { duration: 180, easing: "ease-in", fill: "forwards" });
+  await anim.finished.catch(() => {});
+  d.close(); d.classList.remove("saindo"); anim.cancel(); fechandoViewer = false;
+}
+async function abrirFoto(p, origem) {
   const url = await fotoUrl(p.avatar).catch(() => null); if (!url) return;
-  const im = $("viewer-img"); im.className = "perfil"; im.src = url; im.alt = "Foto de perfil de @" + p.username; $("viewer").showModal();
+  abrirViewer(url, "Foto de perfil de @" + p.username, { perfil: true, origem });
 }
 async function atualizaFotoDe(peer) { // pega a foto mais nova de quem estou conversando
   const { data } = await sb.from("profiles").select("avatar").eq("id", peer.id).maybeSingle();
@@ -616,7 +640,7 @@ function mediaBlock(c, mine) {
     loadMedia(c).then((url) => {
       const img = new Image(); img.alt = c.caption || "Foto enviada";
       img.onload = () => ph.replaceWith(img); img.onerror = fail; img.src = url;
-      img.onclick = () => { const v = $("viewer-img"); v.className = ""; v.alt = "Foto ampliada"; v.src = url; $("viewer").showModal(); };
+      img.onclick = () => abrirViewer(url, "Foto ampliada", { origem: img });
     }).catch(fail);
   } else if (c.kind === "sticker") {
     box.classList.add("sticker"); const ph = el("div", "ph", "…"); box.append(ph);
@@ -1391,6 +1415,7 @@ $("bg-clear").onclick = async () => {
   const old = bgPath.get(peer.id); if (old) sb.storage.from("media").remove([old]);
   bgPath.delete(peer.id); bgCache.set(peer.id, null); if (active === peer) setBg(null);
 };
-$("viewer").onclick = () => $("viewer").close();
+$("viewer").onclick = fecharViewer;
+$("viewer").oncancel = (e) => { e.preventDefault(); fecharViewer(); }; // Esc também anima
 
 start();

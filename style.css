@@ -358,3 +358,10 @@ button.avatar.peq{min-height:34px;cursor:pointer}
 .avatar.abre{cursor:zoom-in}
 #conv-av:disabled{opacity:1;cursor:default}
 #viewer-img.perfil{width:min(88vw,440px);height:auto;aspect-ratio:1;object-fit:cover}
+
+/* foto ampliada: o fundo escurece e some suavemente */
+@keyframes fundo-entra{from{opacity:0}to{opacity:1}}
+@keyframes fundo-sai{from{opacity:1}to{opacity:0}}
+dialog#viewer[open]::backdrop{animation:fundo-entra .28s ease-out}
+dialog#viewer.saindo::backdrop{animation:fundo-sai .26s ease-in forwards}
+@media (prefers-reduced-motion:reduce){dialog#viewer[open]::backdrop,dialog#viewer.saindo::backdrop{animation:none}}
