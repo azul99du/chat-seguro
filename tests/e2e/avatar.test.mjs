@@ -43,6 +43,14 @@ t("salvar: sobe, aponta o perfil, e o dono vê a foto no cabeçalho", async () =
 t("quem conversa com o dono vê a foto (lista e cabeçalho da conversa)", async () => {
   await B.click("#contacts button"); await B.waitForSelector("#contacts button .avatar img", { timeout: 30000 }); await B.waitForSelector("#conv-av img", { timeout: 30000 });
 });
+t("tocar na foto (lista e topo da conversa) abre ela grande; fechar tocando nela", async () => {
+  await B.click("#back").catch(() => {}); // (em tela larga o botão não aparece: a lista já está visível)
+  await B.click("#contacts button .avatar"); await B.waitForSelector("#viewer[open] #viewer-img.perfil", { timeout: 15000 });
+  assert.match(await B.locator("#viewer-img").getAttribute("alt"), /Foto de perfil de @/);
+  assert.ok((await B.locator("#viewer-img").evaluate((i) => i.naturalWidth)) > 0, "a imagem carregou");
+  await B.click("#viewer"); await B.waitForFunction(() => !document.getElementById("viewer").open);
+  await B.click("#conv-av"); await B.waitForSelector("#viewer[open] #viewer-img.perfil"); await B.click("#viewer"); await B.waitForFunction(() => !document.getElementById("viewer").open);
+});
 t("servidor: formato do arquivo, dono da pasta e leitura por terceiros", async () => {
   const [ca, cc] = [cliente(), cliente()];
   const em = novoEmail(); assert.ok((await cc.auth.signUp({ email: em, password: SENHA })).data.session);

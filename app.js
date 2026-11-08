@@ -404,17 +404,26 @@ async function fotoUrl(path) {
   const url = URL.createObjectURL(new Blob([bytes], { type: tipo })); fotoCache.set(path, url); return url;
 }
 // mostra a foto (ou a inicial do nome enquanto não há foto / carrega)
-function pintarAvatar(node, p) {
+function pintarAvatar(node, p, abrivel = false) {
   node.replaceChildren(); node.textContent = p.username[0]; node.dataset.foto = p.avatar || "";
+  if (abrivel) { node.onclick = null; node.classList.remove("abre"); node.removeAttribute("title"); if (node.tagName === "BUTTON") node.disabled = true; }
   if (!p.avatar) return;
+  if (abrivel) { // tocar na foto abre ela grande (na lista, sem abrir a conversa junto)
+    node.classList.add("abre"); node.title = "Ver a foto de @" + p.username; if (node.tagName === "BUTTON") node.disabled = false;
+    node.onclick = (e) => { e.stopPropagation(); e.preventDefault(); abrirFoto(p); };
+  }
   fotoUrl(p.avatar).then((url) => {
     if (!url || node.dataset.foto !== p.avatar) return;
     const im = el("img"); im.alt = ""; im.src = url; im.draggable = false; node.replaceChildren(im);
   }).catch(() => {});
 }
+async function abrirFoto(p) {
+  const url = await fotoUrl(p.avatar).catch(() => null); if (!url) return;
+  const im = $("viewer-img"); im.className = "perfil"; im.src = url; im.alt = "Foto de perfil de @" + p.username; $("viewer").showModal();
+}
 async function atualizaFotoDe(peer) { // pega a foto mais nova de quem estou conversando
   const { data } = await sb.from("profiles").select("avatar").eq("id", peer.id).maybeSingle();
-  if (data && (data.avatar || null) !== (peer.avatar || null)) { peer.avatar = data.avatar; renderContacts(); if (active === peer) pintarAvatar($("conv-av"), peer); }
+  if (data && (data.avatar || null) !== (peer.avatar || null)) { peer.avatar = data.avatar; renderContacts(); if (active === peer) pintarAvatar($("conv-av"), peer, true); }
 }
 const perfil = { img: null, w: 0, h: 0, zoom: 1, cx: 0.5, cy: 0.5, novo: false };
 function desenhaPerfil() {
@@ -500,7 +509,7 @@ function renderContacts() {
   $("contacts").replaceChildren(...[...contacts.values()].map((p) => {
     const li = document.createElement("li"), b = document.createElement("button");
     const av = document.createElement("span"), nm = document.createElement("span");
-    av.className = "avatar" + (online.has(p.id) ? " on" : ""); pintarAvatar(av, p); av.setAttribute("aria-hidden", "true");
+    av.className = "avatar" + (online.has(p.id) ? " on" : ""); pintarAvatar(av, p, true);
     nm.className = "who"; nm.textContent = "@" + p.username;
     if (online.has(p.id)) { const st = document.createElement("small"); st.textContent = "online"; nm.append(st); }
     b.append(av, nm);
@@ -607,7 +616,7 @@ function mediaBlock(c, mine) {
     loadMedia(c).then((url) => {
       const img = new Image(); img.alt = c.caption || "Foto enviada";
       img.onload = () => ph.replaceWith(img); img.onerror = fail; img.src = url;
-      img.onclick = () => { $("viewer-img").src = url; $("viewer").showModal(); };
+      img.onclick = () => { const v = $("viewer-img"); v.className = ""; v.alt = "Foto ampliada"; v.src = url; $("viewer").showModal(); };
     }).catch(fail);
   } else if (c.kind === "sticker") {
     box.classList.add("sticker"); const ph = el("div", "ph", "…"); box.append(ph);
@@ -978,7 +987,7 @@ async function open(peer) {
   bandeja(false);
   if (!(await checkPin(peer))) return;
   active = peer; unread.delete(peer.id); renderContacts(); updateStatus();
-  pintarAvatar($("conv-av"), peer); atualizaFotoDe(peer).catch(() => {});
+  pintarAvatar($("conv-av"), peer, true); atualizaFotoDe(peer).catch(() => {});
   $("chat").classList.add("in-conv");
   $("conv-title").textContent = "@" + peer.username;
   $("badge").hidden = false; $("conv-empty").hidden = true; $("send-form").hidden = false;
