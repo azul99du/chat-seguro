@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { chromium } from "playwright";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY } from "./env.mjs";
+import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY, menuConta, chamar } from "./env.mjs";
 import { hasFfmpeg, tmp, makeVideo, makeJpegWithExif } from "../helpers/fixtures.mjs";
 
 let skip = configurado ? false : motivoSemConfig;
@@ -60,7 +60,7 @@ t("cadastro de duas pessoas: frase-senha curta é recusada, chat abre", async ()
 });
 t("A adiciona B pelo nome exato e vê B online (canal privado de presença)", async () => {
   await A.waitForTimeout(1500);
-  await A.fill("#add-user", nomeB); await A.click("#add-form button");
+  await chamar(A, nomeB);
   await A.waitForSelector(`#conv-title:has-text("@${nomeB}")`);
   await A.waitForSelector("#conv-status:not([hidden])", { timeout: 20000 });
   assert.equal(await A.locator("#contacts .avatar.on").count(), 1);
@@ -148,7 +148,7 @@ t("aparelho novo: mensagens antigas com sigilo futuro ficam indisponíveis; a se
   await N.waitForSelector("#ask[open]", { timeout: 30000 });
   await N.fill("#ask-input", "frase-errada-qualquer"); await N.click("#ask button[value=ok]"); await N.waitForSelector("#ask-text:has-text('incorreta')");
   await N.fill("#ask-input", FRASE); await N.click("#ask button[value=ok]"); await N.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 });
-  await N.waitForTimeout(1500); await N.fill("#add-user", nomeB); await N.click("#add-form button");
+  await N.waitForTimeout(1500); await chamar(N, nomeB);
   await N.waitForSelector(`#conv-title:has-text("@${nomeB}")`); await N.waitForSelector(".bubble.err", { timeout: 30000 });
   await N.waitForFunction(() => document.querySelectorAll(".bubble.err").length >= 5, null, { timeout: 30000 }); // a lista carrega em sequência
   await B.waitForTimeout(3000); await enviar(B, "depois de refazer a sessão");
@@ -173,7 +173,7 @@ t("layout: a página nunca cresce; só a lista de mensagens rola", async () => {
   assert.equal(await A.evaluate(() => Math.round(document.getElementById("chat").getBoundingClientRect().height)), 500);
 });
 t("sair e apagar chaves limpa o aparelho", async () => {
-  await B.click("#logout"); await B.waitForSelector("#choice[open]"); await B.click("#choice button[value=wipe]"); await B.waitForSelector("#auth:not([hidden])", { timeout: 15000 });
+  await menuConta(B, "#logout"); await B.waitForSelector("#choice[open]"); await B.click("#choice button[value=wipe]"); await B.waitForSelector("#auth:not([hidden])", { timeout: 15000 });
   const n = await B.evaluate(() => new Promise((r) => { const q = indexedDB.open("chat-seguro"); q.onsuccess = () => { const g = q.result.transaction("keys").objectStore("keys").count(); g.onsuccess = () => r(g.result); }; }));
   assert.equal(n, 0);
 });

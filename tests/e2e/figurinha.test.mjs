@@ -6,7 +6,7 @@ import { deflateSync } from "node:zlib";
 import { writeFileSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
-import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY } from "./env.mjs";
+import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY, menuConta, chamar } from "./env.mjs";
 import { hasFfmpeg, tmp } from "../helpers/fixtures.mjs";
 
 let skip = configurado ? false : motivoSemConfig, browser, srv, A, B, nomeA, nomeB, dir; const erros = [], enviados = [];
@@ -53,7 +53,7 @@ before(async () => {
   const [ca, cb] = [await browser.newContext({ viewport: { width: 1100, height: 800 } }), await browser.newContext({ viewport: { width: 1100, height: 800 } })];
   A = await ca.newPage(); B = await cb.newPage(); vigiar("A", A); vigiar("B", B);
   nomeA = novoUsuario("a"); nomeB = novoUsuario("b"); await cadastrar(A, nomeA); await cadastrar(B, nomeB);
-  await A.fill("#add-user", nomeB); await A.click("#add-form button"); await A.waitForSelector(`#conv-title:has-text("@${nomeB}")`);
+  await chamar(A, nomeB); await A.waitForSelector(`#conv-title:has-text("@${nomeB}")`);
   await A.fill("#text", "oi"); await A.click("#send-form .primary"); await B.waitForSelector("#contacts button .unread", { timeout: 30000 }); await B.click("#contacts button");
 });
 after(async () => {

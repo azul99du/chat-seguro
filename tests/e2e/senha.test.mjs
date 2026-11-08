@@ -3,7 +3,7 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
 import { createClient } from "../../vendor/supabase.js";
-import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY } from "./env.mjs";
+import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY, menuConta, chamar } from "./env.mjs";
 import { totp } from "../helpers/totp.mjs";
 
 let skip = configurado ? false : motivoSemConfig, browser, srv, P, email, outra; const NOVA = "uma-senha-nova-bem-longa";
@@ -26,7 +26,7 @@ t("cadastro e outro aparelho já conectado com a senha antiga", async () => {
   outra = cliente(); const r = await outra.auth.signInWithPassword({ email, password: SENHA }); assert.ok(r.data.session, "outro aparelho entrou");
 });
 t("senha atual errada: recusa e não pede a nova", async () => {
-  await P.click("#sec-btn"); await P.waitForSelector("#mfa[open]"); await abrir(P); await digitar(P, "senha-errada-qualquer");
+  await menuConta(P, "#sec-btn"); await P.waitForSelector("#mfa[open]"); await abrir(P); await digitar(P, "senha-errada-qualquer");
   await msg(P, "atual está errada"); assert.equal(await P.locator("#ask[open]").count(), 0);
 });
 t("nova senha curta, igual à atual ou repetitiva é recusada; confirmação diferente não altera nada", async () => {

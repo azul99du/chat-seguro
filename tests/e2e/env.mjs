@@ -54,3 +54,12 @@ export async function cadastroFunciona() {
   if (error || !data.session) return { ok: false, motivo: error?.message || "o projeto exige confirmação de e-mail (desligue 'Confirm email' em Authentication → Providers → Email)" };
   return { ok: true };
 }
+
+// Tela inicial: a conta fica no menu da foto (topo) e "Chamar" é um botão flutuante que abre uma folha.
+export async function menuConta(p, item) { // abre o menu (se preciso) e toca num item: "#sec-btn", "#logout", "#notif-btn", "#menu-foto", "#copiar-nome"
+  if (!(await p.locator("#menu-conta").isVisible())) { await p.click("#eu-foto"); await p.waitForSelector("#menu-conta:not([hidden])"); }
+  if (item) await p.click(item);
+}
+export async function chamar(p, nome) { // botão "Chamar" → digita o nome → abre a conversa
+  await p.click("#chamar-fab"); await p.waitForSelector("#chamar[open]"); await p.fill("#add-user", nome); await p.click("#add-form button");
+}

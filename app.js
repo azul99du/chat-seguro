@@ -131,7 +131,7 @@ async function start() {
   // com verificação em dois passos, nada abre antes do código (a tela de abertura fica por trás do pedido)
   if (await precisaDoisPassos() && !(await pedirCodigoLogin())) { await sb.auth.signOut(); return location.reload(); }
   // já estava logado: vai direto para a lista de contatos (sem piscar a tela de login)
-  try { const n = localStorage.getItem("lacre:eu:" + session.user.id); if (n) { $("me").textContent = n; $("nome-txt").textContent = n; } } catch {}
+  try { const n = localStorage.getItem("lacre:eu:" + session.user.id); if (n) { $("me").textContent = n; $("nome-txt").textContent = n; $("eu-foto").textContent = n.replace("@", "")[0] || ""; } } catch {}
   mostrarChat();
   // conferimos no servidor, em segundo plano, se a sessão ainda vale (ex.: a senha foi trocada em outro aparelho)
   sb.auth.getUser().then(({ error }) => { if (error && [401, 403].includes(error.status)) sb.auth.signOut({ scope: "local" }).finally(() => location.reload()); }).catch(() => {});
@@ -177,7 +177,7 @@ async function start() {
   const { data: hasBk } = await sb.from("key_backups").select("user_id").maybeSingle();
   if (!hasBk) await offerBackup(uid);
   $("me").textContent = "@" + me.username; $("nome-txt").textContent = "@" + me.username; try { localStorage.setItem("lacre:eu:" + uid, "@" + me.username); } catch {}
-  pintarAvatar($("eu-foto"), me); $("eu-foto").title = "@" + me.username;
+  pintarMeu();
   mostrarChat();
   ensureSpk();
   await loadContacts();
@@ -231,7 +231,7 @@ async function pedirCodigoLogin() {
 }
 let pendente2fa = null; // fator cadastrado mas ainda não confirmado
 async function ativo2fa() { return (await sb.auth.mfa.listFactors()).data?.totp?.[0] ?? null; }
-async function atualizarAviso2fa() { $("mfa-nudge").hidden = !!(await ativo2fa()); }
+async function atualizarAviso2fa() { const falta = !(await ativo2fa()); $("mfa-nudge").hidden = !falta; $("sec-aviso").hidden = !falta; }
 async function desenharSeguranca() {
   const ativo = await ativo2fa(), msg = $("mfa-msg"); msg.textContent = ""; msg.className = "";
   $("mfa-enroll").hidden = !pendente2fa; $("mfa-off").hidden = !ativo || !!pendente2fa;
@@ -389,6 +389,20 @@ async function offerBackup(uid) {
   }
 }
 
+// ---------- Menu da conta (toque na sua foto, no topo) ----------
+function abrirMenu() { $("menu-fundo").hidden = false; $("menu-conta").hidden = false; $("eu-foto").setAttribute("aria-expanded", "true"); $("menu-conta").querySelector("button")?.focus({ preventScroll: true }); }
+function fecharMenu(devolveFoco = true) {
+  if ($("menu-conta").hidden) return;
+  $("menu-conta").hidden = true; $("menu-fundo").hidden = true; $("eu-foto").setAttribute("aria-expanded", "false"); if (devolveFoco) $("eu-foto").focus({ preventScroll: true });
+}
+$("eu-foto").onclick = () => ($("menu-conta").hidden ? abrirMenu() : fecharMenu());
+$("menu-fundo").onclick = () => fecharMenu();
+$("menu-conta").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b && !b.matches("#notif-btn, #copiar-nome")) fecharMenu(false); }); // copiar e notificações mostram o resultado ali mesmo
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("menu-conta").hidden && !document.querySelector("dialog[open]")) fecharMenu(); });
+
+// ---------- Chamar um amigo (botão flutuante) ----------
+$("chamar-fab").onclick = () => { $("chamar").showModal(); $("add-user").focus(); };
+
 // ---------- Meu nome (o que os amigos digitam para me chamar) ----------
 let nomeTimer = 0;
 $("copiar-nome").onclick = async () => {
@@ -397,8 +411,8 @@ $("copiar-nome").onclick = async () => {
   try { await navigator.clipboard.writeText(nome); ok = true; } catch {
     try { const r = document.createRange(); r.selectNodeContents($("nome-txt")); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); ok = document.execCommand("copy"); sel.removeAllRanges(); } catch {}
   }
-  const t = $("nome-aviso"); t.textContent = ok ? "Copiado ✓" : "Não deu para copiar: toque e segure no nome"; t.hidden = false;
-  clearTimeout(nomeTimer); nomeTimer = setTimeout(() => { t.hidden = true; }, 2200);
+  const t = $("nome-aviso"); t.textContent = ok ? "Copiado ✓" : "Não deu para copiar: segure no nome"; t.hidden = false; $("nome-rot").hidden = true;
+  clearTimeout(nomeTimer); nomeTimer = setTimeout(() => { t.hidden = true; $("nome-rot").hidden = false; }, 2200);
 };
 
 // ---------- Foto de perfil ----------
@@ -453,6 +467,7 @@ async function fecharViewer() {
   await anim.finished.catch(() => {});
   d.close(); d.classList.remove("saindo"); anim.cancel(); fechandoViewer = false;
 }
+const pintarMeu = () => { pintarAvatar($("eu-foto"), me); pintarAvatar($("menu-av"), me); };
 async function abrirFoto(p, origem) {
   const url = await fotoUrl(p.avatar).catch(() => null); if (!url) return;
   abrirViewer(url, "Foto de perfil de @" + p.username, { perfil: true, origem });
@@ -476,7 +491,7 @@ async function mostraFotoAtualNoPerfil() {
   $("perfil-escolher").textContent = me.avatar ? "Trocar foto" : "Escolher foto";
 }
 function msgPerfil(t, ok) { const m = $("perfil-msg"); m.textContent = t; m.className = ok ? "ok" : ""; }
-$("eu-foto").onclick = async () => { msgPerfil(""); $("perfil").showModal(); await mostraFotoAtualNoPerfil(); };
+$("menu-foto").onclick = async () => { msgPerfil(""); $("perfil").showModal(); await mostraFotoAtualNoPerfil(); };
 $("perfil-escolher").onclick = () => $("perfil-file").click();
 $("perfil-file").onchange = async () => {
   const f = $("perfil-file").files[0]; $("perfil-file").value = ""; if (!f) return;
@@ -519,13 +534,13 @@ $("perfil-salvar").onclick = async () => {
     const blob = await codificar($("perfil-cv"));
     if (!blob) throw new Error("grande");
     await trocarAvatar(caminhoNovo(me.id, blob), blob);
-    pintarAvatar($("eu-foto"), me); await mostraFotoAtualNoPerfil(); msgPerfil("Foto atualizada ✓", true);
+    pintarMeu(); await mostraFotoAtualNoPerfil(); msgPerfil("Foto atualizada ✓", true);
   } catch (e) { msgPerfil(limitado(e) ? "Muitas tentativas seguidas. Espere um minuto." : "Não foi possível salvar a foto. Tente de novo."); }
   b.disabled = false;
 };
 $("perfil-remover").onclick = async () => {
   const b = $("perfil-remover"); b.disabled = true;
-  try { await trocarAvatar(null, null); pintarAvatar($("eu-foto"), me); await mostraFotoAtualNoPerfil(); msgPerfil("Foto removida.", true); }
+  try { await trocarAvatar(null, null); pintarMeu(); await mostraFotoAtualNoPerfil(); msgPerfil("Foto removida.", true); }
   catch { msgPerfil("Não foi possível remover agora. Tente de novo."); }
   b.disabled = false;
 };
@@ -540,9 +555,12 @@ async function loadContacts() {
   }
   renderContacts();
 }
+$("busca").oninput = () => renderContacts();
 function renderContacts() {
   $("inbox-empty").hidden = contacts.size > 0;
-  $("contacts").replaceChildren(...[...contacts.values()].map((p) => {
+  $("busca-box").hidden = contacts.size < 6; // a busca só aparece quando a lista já é grande
+  const q = $("busca-box").hidden ? "" : $("busca").value.trim().replace(/^@/, "").toLowerCase();
+  $("contacts").replaceChildren(...[...contacts.values()].filter((p) => !q || p.username.toLowerCase().includes(q)).map((p) => {
     const li = document.createElement("li"), b = document.createElement("button");
     const av = document.createElement("span"), nm = document.createElement("span");
     av.className = "avatar" + (online.has(p.id) ? " on" : ""); pintarAvatar(av, p, true);
@@ -563,7 +581,7 @@ $("add-form").onsubmit = async (e) => {
   const data = found?.[0];
   if (!data) return note(`Não encontramos @${name}. Confira se o nome está certinho com seu amigo.`);
   if (data.id === me.id) return note("Esse é você! Chame um amigo.");
-  contacts.set(data.id, data); $("add-user").value = ""; open(data);
+  contacts.set(data.id, data); $("add-user").value = ""; $("chamar").close(); open(data);
 };
 
 // ---------- Conversa ----------
@@ -1090,6 +1108,7 @@ const notifLigado = () => { try { return localStorage.getItem(flagNotif()) === "
 function desenharSino() {
   const on = notifLigado(), b = $("notif-btn"); b.setAttribute("aria-pressed", String(on));
   b.setAttribute("aria-label", on ? "Notificações: ligadas. Tocar para desligar" : "Notificações: desligadas. Tocar para ligar");
+  $("notif-estado").textContent = on ? "ligadas" : "desligadas";
 }
 async function ligarNotificacoes() {
   if (!suportaPush()) {

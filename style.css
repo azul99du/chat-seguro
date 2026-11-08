@@ -332,7 +332,6 @@ dialog#stkedit{width:min(94vw,900px);max-height:94dvh;overflow:auto}
 /* sino de notificações: riscado quando desligado */
 #notif-btn .sino-corte{transition:stroke-dashoffset .3s;stroke-dasharray:26;stroke-dashoffset:0}
 #notif-btn[aria-pressed=true] .sino-corte{stroke-dashoffset:26}
-#notif-btn[aria-pressed=true]{background:rgba(255,255,255,.16)}
 #notif-btn:active svg{transform:rotate(-14deg);transition:transform .15s}
 
 /* ===== foto de perfil ===== */
@@ -366,10 +365,47 @@ dialog#viewer[open]::backdrop{animation:fundo-entra .28s ease-out}
 dialog#viewer.saindo::backdrop{animation:fundo-sai .26s ease-in forwards}
 @media (prefers-reduced-motion:reduce){dialog#viewer[open]::backdrop,dialog#viewer.saindo::backdrop{animation:none}}
 
-/* seu nome (para copiar e passar aos amigos) */
-#meu-nome{display:flex;flex-direction:column;gap:2px;padding:10px 14px 0}
-#meu-nome .rot{font:400 .72rem var(--mono);color:var(--mut)}
-#copiar-nome{display:flex;align-items:center;gap:8px;align-self:flex-start;max-width:100%;min-height:36px;padding:0 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font-weight:700;user-select:text}
-#copiar-nome b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
-#copiar-nome svg{flex:none;color:var(--mut)}
-#copiar-nome small{font:600 .75rem var(--body);color:#137A3F;white-space:nowrap}
+/* ===== tela inicial limpa: topo só com a foto; conta no menu; "Chamar" flutuante ===== */
+#inbox{position:relative}
+#inbox .me-box{flex:0 0 auto;margin-left:auto;gap:0;overflow:visible}
+.eu-wrap{position:relative;display:inline-flex}
+#eu-foto{width:40px;height:40px;min-height:40px;padding:0;font-size:1rem;cursor:pointer;border:2px solid rgba(255,255,255,.55)}
+.ponto{position:absolute;top:-3px;right:-3px;width:13px;height:13px;border-radius:50%;background:var(--seal);border:2px solid var(--ink);pointer-events:none}
+#menu-fundo{position:absolute;inset:0;z-index:29;background:rgba(21,23,74,.35);animation:fundo-entra .18s ease-out}
+#menu-conta{position:absolute;top:58px;right:10px;z-index:30;width:min(300px,calc(100% - 20px));padding:8px;background:var(--card);border-radius:16px;box-shadow:0 14px 36px rgba(21,23,74,.32);transform-origin:top right;animation:menu-entra .2s cubic-bezier(.2,.8,.2,1)}
+@keyframes menu-entra{from{opacity:0;transform:scale(.9) translateY(-6px)}to{opacity:1;transform:none}}
+.mi{display:flex;align-items:center;gap:12px;width:100%;min-height:46px;padding:8px 10px;border-radius:10px;background:none;color:var(--ink);font-weight:600;text-align:left}
+.mi:hover,.mi:focus-visible{background:var(--paper)}
+.mi svg{flex:none;color:var(--mut)}
+.mi .est{margin-left:auto;font-size:.76rem;font-weight:600;color:var(--mut);text-align:right}
+.mi .est.aviso{color:var(--seal-dk)}
+.mi.sair,.mi.sair svg{color:var(--seal-dk)}
+.mi.nome{min-height:60px;margin-bottom:4px;border-bottom:1px solid var(--line);border-radius:10px 10px 0 0}
+.mi.nome .avatar{width:44px;height:44px}
+.mi.nome .tx{display:grid;min-width:0;flex:1}
+.mi.nome b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:1.02rem}
+.mi.nome small{font:400 .72rem var(--mono);color:var(--mut)}
+#nome-aviso{color:#137A3F!important;font-weight:600}
+#notif-btn .sino-corte{transition:stroke-dashoffset .3s;stroke-dasharray:26;stroke-dashoffset:0}
+#notif-btn[aria-pressed=true] .sino-corte{stroke-dashoffset:26}
+#notif-btn[aria-pressed=true] .est{color:#137A3F}
+#busca-box{padding:10px 14px 4px}
+#busca{width:100%;height:44px;border:1.5px solid var(--line);border-radius:22px;padding:0 16px;background:var(--card)}
+#contacts{padding-bottom:96px}
+.fab{position:absolute;right:16px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:20;height:54px;padding:0 22px 0 16px;border-radius:99px;background:var(--seal);color:#fff;font-weight:800;display:flex;align-items:center;gap:8px;box-shadow:0 8px 22px rgba(232,51,95,.45);transition:transform .15s,box-shadow .15s}
+.fab:hover{background:var(--seal-dk)}.fab:active{transform:scale(.95)}
+#inbox-empty{padding:24px 18px}
+/* "Chamar um amigo": folha que sobe de baixo no celular */
+dialog#chamar #add-form{display:flex;gap:8px;margin:0}
+dialog#chamar #add-user{flex:1;min-width:0;height:48px;border:1.5px solid var(--line);border-radius:12px;padding:0 12px}
+dialog#chamar form.fecha{margin-top:10px}dialog#chamar form.fecha button{width:100%}
+@media (max-width:600px){
+  dialog#chamar{width:100%;max-width:100%;margin:auto 0 0;border-radius:22px 22px 0 0;padding:22px 16px calc(16px + env(safe-area-inset-bottom));animation:folha-sobe .26s cubic-bezier(.2,.8,.2,1)}
+}
+@keyframes folha-sobe{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){#menu-conta,#menu-fundo,dialog#chamar{animation:none!important}}
+
+.mi .tx2{display:grid;min-width:0;line-height:1.25}.mi .tx2 small{font:600 .74rem var(--body);color:var(--seal-dk)}
+.mi{white-space:nowrap}.mi .tx2,.mi.nome .tx{white-space:normal}
+#contacts:empty{flex:0 0 auto}
+#contacts:empty{padding-bottom:0}

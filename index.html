@@ -57,29 +57,34 @@
     <aside id="inbox">
       <header class="bar">
         <div class="wordmark small">lacre<i class="seal" aria-hidden="true"></i></div>
-        <div class="me-box"><button id="eu-foto" class="avatar peq" aria-label="Minha foto de perfil" type="button"></button><span id="me"></span>
-          <button id="notif-btn" class="ghost icon" aria-pressed="false" aria-label="Notificações: desligadas. Tocar para ligar">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/><path class="sino-corte" d="M3 3l18 18"/></svg>
-          </button>
-          <button id="sec-btn" class="ghost icon" aria-label="Segurança da conta (verificação em dois passos)">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>
-          </button>
-          <button id="logout" class="ghost">Sair</button></div>
+        <div class="me-box">
+          <span id="me" hidden></span>
+          <span class="eu-wrap">
+            <button id="eu-foto" class="avatar peq" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-conta" aria-label="Minha conta: foto, nome e configurações"></button>
+            <span id="mfa-nudge" class="ponto" role="img" aria-label="Falta ativar a verificação em dois passos" hidden></span>
+          </span>
+        </div>
       </header>
-      <div id="meu-nome">
-        <span class="rot">Seu nome para os amigos te chamarem</span>
-        <button id="copiar-nome" type="button" aria-label="Copiar meu nome"><b id="nome-txt"></b>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
-          <small id="nome-aviso" role="status" hidden></small></button>
+      <div id="menu-fundo" hidden></div>
+      <div id="menu-conta" role="menu" aria-label="Minha conta" hidden>
+        <button id="copiar-nome" class="mi nome" type="button" role="menuitem" aria-label="Copiar meu nome">
+          <span id="menu-av" class="avatar" aria-hidden="true"></span>
+          <span class="tx"><b id="nome-txt"></b><small id="nome-rot">toque para copiar o seu nome</small><small id="nome-aviso" role="status" hidden></small></span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+        </button>
+        <button id="menu-foto" class="mi" type="button" role="menuitem"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/></svg>Trocar minha foto</button>
+        <button id="notif-btn" class="mi" type="button" role="menuitem" aria-pressed="false" aria-label="Notificações: desligadas. Tocar para ligar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/><path class="sino-corte" d="M3 3l18 18"/></svg>Notificações<span id="notif-estado" class="est">desligadas</span>
+        </button>
+        <button id="sec-btn" class="mi" type="button" role="menuitem" aria-label="Segurança da conta (verificação em dois passos)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg><span class="tx2">Segurança da conta<small id="sec-aviso" class="aviso" hidden>● ative a verificação em 2 passos</small></span>
+        </button>
+        <button id="logout" class="mi sair" type="button" role="menuitem"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Sair</button>
       </div>
-      <form id="add-form">
-        <label class="sr" for="add-user">Chamar um amigo</label>
-        <input id="add-user" placeholder="@usuário do amigo" autocapitalize="none" spellcheck="false" pattern="@?[a-zA-Z0-9_]{3,20}" required>
-        <button class="primary" aria-label="Abrir conversa">Chamar</button>
-      </form>
-      <button id="mfa-nudge" class="nudge" hidden>Proteja sua conta: ative a verificação em dois passos</button>
+      <div id="busca-box" hidden><input id="busca" type="search" placeholder="Buscar nas conversas" autocomplete="off" autocapitalize="none" spellcheck="false" aria-label="Buscar nas conversas"></div>
       <ul id="contacts"></ul>
-      <p id="inbox-empty" class="empty">Ninguém por aqui ainda. Digite o @usuário de um amigo acima para começar.</p>
+      <p id="inbox-empty" class="empty">Ninguém por aqui ainda. Toque em “Chamar” para falar com um amigo.</p>
+      <button id="chamar-fab" class="fab" type="button" aria-label="Chamar um amigo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Chamar</button>
     </aside>
 
     <section id="conv">
@@ -251,6 +256,17 @@
       </div>
       <small class="muted">Quem conversa com você vê a foto. Ela fica guardada no servidor sem a cifra das mensagens.</small>
     </form>
+  </dialog>
+
+  <dialog id="chamar">
+    <h2>Chamar um amigo</h2>
+    <p>Digite o @usuário do seu amigo, do jeito que ele te passou.</p>
+    <form id="add-form">
+      <label class="sr" for="add-user">Chamar um amigo</label>
+      <input id="add-user" placeholder="@usuário do amigo" autocapitalize="none" spellcheck="false" autocomplete="off" pattern="@?[a-zA-Z0-9_]{3,20}" required autofocus>
+      <button class="primary" aria-label="Abrir conversa">Chamar</button>
+    </form>
+    <form method="dialog" class="fecha"><button value="cancel" class="ghost" aria-label="Fechar">Cancelar</button></form>
   </dialog>
 
   <dialog id="choice"><form method="dialog"><h2 id="choice-title"></h2><p id="choice-text"></p><div class="dialog-actions col" id="choice-actions"></div></form></dialog>

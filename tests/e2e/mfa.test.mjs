@@ -3,7 +3,7 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
 import { createClient } from "../../vendor/supabase.js";
-import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY } from "./env.mjs";
+import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY, menuConta, chamar } from "./env.mjs";
 import { totp } from "../helpers/totp.mjs";
 
 let skip = configurado ? false : motivoSemConfig, browser, srv, ctx, P, email, usuario, segredo, ultimo = "";
@@ -29,7 +29,7 @@ t("cadastro e aviso: conta nova sem verificação mostra o convite para ativar",
   await P.waitForSelector("#mfa-nudge:not([hidden])", { timeout: 15000 });
 });
 t("ativar: QR e chave aparecem; código errado é recusado; código certo ativa e some o convite", async () => {
-  await P.click("#sec-btn"); await P.waitForSelector("#mfa[open]"); await P.click("#mfa-go");
+  await menuConta(P, "#sec-btn"); await P.waitForSelector("#mfa[open]"); await P.click("#mfa-go");
   await P.waitForSelector("#mfa-enroll:not([hidden])"); segredo = (await P.locator("#mfa-secret").innerText()).trim();
   assert.match(segredo, /^[A-Z2-7]{16,}$/, "chave em base32");
   assert.match(await P.locator("#mfa-qr").getAttribute("src"), /^data:image\/svg\+xml/);
@@ -45,7 +45,7 @@ t("recarregar mantém a sessão (já passou pelo 2º passo): não pede código d
   assert.equal(await P.locator("#ask[open]").count(), 0);
 });
 t("novo login: senha certa NÃO basta; código errado é recusado; código certo abre", async () => {
-  await P.click("#logout"); await P.waitForSelector("#choice[open]"); await P.click("#choice button[value=keep]"); await P.waitForSelector("#auth:not([hidden])", { timeout: 15000 });
+  await menuConta(P, "#logout"); await P.waitForSelector("#choice[open]"); await P.click("#choice button[value=keep]"); await P.waitForSelector("#auth:not([hidden])", { timeout: 15000 });
   await P.fill("#email", email); await P.fill("#password", SENHA); await P.click("#auth-submit");
   await P.waitForSelector("#ask[open]", { timeout: 30000 });
   assert.match(await P.locator("#ask-title").innerText(), /dois passos/i);
@@ -88,7 +88,7 @@ t("NO BANCO: sessão só com senha fica trancada (nem sem o site); com o código
   assert.ok(!(await c.rpc("find_user", { p_username: usuario })).error, "e a busca funciona");
 });
 t("desativar: pede confirmação, volta a abrir só com a senha, e o banco libera", async () => {
-  await P.click("#sec-btn"); await P.waitForSelector("#mfa[open]"); await P.click("#mfa-off");
+  await menuConta(P, "#sec-btn"); await P.waitForSelector("#mfa[open]"); await P.click("#mfa-off");
   await P.waitForSelector("#choice[open]"); await P.click("#choice button[value=sim]");
   await P.waitForFunction(() => /desativada/i.test(document.getElementById("mfa-status").textContent), null, { timeout: 20000 });
   await P.click("#mfa button[value=cancel]");

@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { chromium } from "playwright";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY } from "./env.mjs";
+import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY, menuConta, chamar } from "./env.mjs";
 import { hasFfmpeg, tmp, makeAudio, probe, decodes } from "../helpers/fixtures.mjs";
 
 let skip = configurado ? false : motivoSemConfig, browser, srv, A, B, dir, nomeB; const erros = [], enviados = [], guardados = [];
@@ -27,7 +27,7 @@ before(async () => {
   A = await ca.newPage(); B = await cb.newPage(); vigiar("A", A); vigiar("B", B);
   B.on("response", async (r) => { if (r.request().method() === "GET" && /\/storage\/v1\/object\/(authenticated\/)?media\//.test(r.url())) guardados.push(await r.body().catch(() => null)); });
   nomeB = novoUsuario("b"); await cadastrar(A, novoUsuario("a")); await cadastrar(B, nomeB);
-  await A.fill("#add-user", nomeB); await A.click("#add-form button"); await A.waitForSelector(`#conv-title:has-text("@${nomeB}")`);
+  await chamar(A, nomeB); await A.waitForSelector(`#conv-title:has-text("@${nomeB}")`);
 });
 after(async () => {
   if (!browser) return;

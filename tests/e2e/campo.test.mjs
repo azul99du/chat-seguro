@@ -2,7 +2,7 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
-import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE } from "./env.mjs";
+import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, menuConta, chamar } from "./env.mjs";
 
 let skip = configurado ? false : motivoSemConfig, browser, srv, A, B; const erros = [];
 const t = (nome, fn) => test(nome, { timeout: 120000 }, async (c) => (skip ? c.skip(skip) : fn(c)));
@@ -18,7 +18,7 @@ before(async () => {
   const [ca, cb] = [await browser.newContext({ viewport: { width: 400, height: 800 }, hasTouch: true, isMobile: true }), await browser.newContext({ viewport: { width: 1100, height: 760 } })];
   A = await ca.newPage(); B = await cb.newPage(); for (const [n, p] of [["A", A], ["B", B]]) p.on("pageerror", (e) => erros.push(`${n}: ${e.message}`));
   const nomeB = novoUsuario("b"); await cadastrar(A, novoUsuario("a")); await cadastrar(B, nomeB);
-  await A.fill("#add-user", nomeB); await A.click("#add-form button"); await A.waitForSelector("#send-form:not([hidden])");
+  await chamar(A, nomeB); await A.waitForSelector("#send-form:not([hidden])");
 });
 after(async () => { if (browser) { await browser.close(); await srv.close(); } });
 

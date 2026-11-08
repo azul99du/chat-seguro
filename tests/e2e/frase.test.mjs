@@ -2,7 +2,7 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
-import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE } from "./env.mjs";
+import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, menuConta, chamar } from "./env.mjs";
 
 let skip = configurado ? false : motivoSemConfig, browser, srv, P, email; const NOVA = "cinco-palavras-sorteadas-novas";
 const t = (nome, fn) => test(nome, { timeout: 120000 }, async (c) => (skip ? c.skip(skip) : fn(c)));
@@ -24,7 +24,7 @@ t("cadastro: frases de 12 caracteres, curtas ou repetitivas são recusadas; 16+ 
   await digitar(P, FRASE); await P.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 });
 });
 t("trocar a frase: valida o tamanho, exige confirmação igual e não altera nada se as duas forem diferentes", async () => {
-  await P.click("#sec-btn"); await P.waitForSelector("#mfa[open]"); assert.match(await P.locator("#mfa h2").innerText(), /Segurança da conta/);
+  await menuConta(P, "#sec-btn"); await P.waitForSelector("#mfa[open]"); assert.match(await P.locator("#mfa h2").innerText(), /Segurança da conta/);
   await P.click("#mfa-pass"); await P.waitForSelector("#ask[open]"); assert.match(await dica(P), /NOVA frase-senha/);
   await digitar(P, "curta"); await P.waitForFunction(() => /pelo menos 16/.test(document.getElementById("ask-text").textContent));
   await digitar(P, NOVA); await P.waitForFunction(() => /^Confirme/.test(document.getElementById("ask-title").textContent));

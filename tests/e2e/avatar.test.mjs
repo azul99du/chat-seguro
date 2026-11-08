@@ -3,7 +3,7 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
 import { createClient } from "../../vendor/supabase.js";
-import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY } from "./env.mjs";
+import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY, menuConta, chamar } from "./env.mjs";
 
 let skip = configurado ? false : motivoSemConfig, browser, srv, A, B, idA, nomeB; const erros = [];
 const t = (nome, fn) => test(nome, { timeout: 120000 }, async (c) => (skip ? c.skip(skip) : fn(c)));
@@ -19,7 +19,7 @@ before(async () => {
   A = await (await browser.newContext({ viewport: { width: 1100, height: 780 } })).newPage(); B = await (await browser.newContext({ viewport: { width: 1100, height: 780 } })).newPage();
   for (const [n, p] of [["A", A], ["B", B]]) p.on("pageerror", (e) => erros.push(`${n}: ${e.message}`));
   nomeB = novoUsuario("b"); await cadastrar(A, novoUsuario("a")); await cadastrar(B, nomeB);
-  await A.fill("#add-user", nomeB); await A.click("#add-form button"); await A.waitForSelector("#send-form:not([hidden])");
+  await chamar(A, nomeB); await A.waitForSelector("#send-form:not([hidden])");
   await A.fill("#text", "oi"); await A.click("#send-form .primary"); await B.waitForSelector("#contacts button .unread", { timeout: 30000 });
 });
 after(async () => { if (browser) { await browser.close(); await srv.close(); } });
@@ -27,13 +27,13 @@ after(async () => { if (browser) { await browser.close(); await srv.close(); } }
 t("meu nome: aparece sempre (mesmo com o @ do topo escondido) e o botão copia", async () => {
   await A.context().grantPermissions(["clipboard-read", "clipboard-write"]);
   const nome = await A.locator("#nome-txt").innerText(); assert.match(nome, /^@[a-z0-9_]{3,20}$/i);
-  await A.click("#copiar-nome"); await A.waitForFunction(() => /Copiado/.test(document.getElementById("nome-aviso").textContent));
+  await menuConta(A, "#copiar-nome"); await A.waitForFunction(() => /Copiado/.test(document.getElementById("nome-aviso").textContent));
   assert.equal(await A.evaluate(() => navigator.clipboard.readText()), nome);
   const add = await A.evaluate(() => { const i = document.getElementById("add-user"); i.value = ""; return i.pattern; }); assert.ok(new RegExp("^(?:" + add + ")$").test(nome), "o nome copiado é aceito no campo 'Chamar um amigo'");
 });
 t("sem foto: aparece a inicial; o diálogo abre", async () => {
   assert.equal(await A.locator("#eu-foto img").count(), 0); assert.match(await A.locator("#eu-foto").innerText(), /^[a-z0-9]$/i);
-  await A.click("#eu-foto"); await A.waitForSelector("#perfil[open]"); assert.equal(await A.locator("#perfil-remover").isVisible(), false);
+  await menuConta(A, "#menu-foto"); await A.waitForSelector("#perfil[open]"); assert.equal(await A.locator("#perfil-remover").isVisible(), false);
 });
 t("escolher imagem inválida é recusado; imagem boa mostra zoom e Salvar", async () => {
   await A.setInputFiles("#perfil-file", { name: "x.png", mimeType: "text/plain", buffer: Buffer.from("nao sou imagem") });

@@ -5,7 +5,7 @@ import { chromium } from "playwright";
 import { writeFileSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE } from "./env.mjs";
+import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, menuConta, chamar } from "./env.mjs";
 
 let skip = configurado ? false : motivoSemConfig, browser, srv, A, B, A2, emailA, nomeA, nomeB, arquivo, senhaArq; const erros = [];
 const t = (nome, fn) => test(nome, { timeout: 180000 }, async (c) => (skip ? c.skip(skip) : fn(c)));
@@ -15,14 +15,14 @@ async function cadastrar(page, usuario, email) {
   await page.waitForSelector("#ask[open]", { timeout: 30000 }); await page.fill("#ask-input", FRASE); await page.click("#ask button[value=ok]"); await page.waitForSelector(pronto, { timeout: 30000 });
 }
 const ver = (p, txt, { meu = false } = {}) => p.waitForSelector(`.msg${meu ? ".mine" : ":not(.mine)"} .vis:has-text("${txt}")`, { timeout: 30000 });
-const abrirSeg = async (p) => { await p.click("#sec-btn"); await p.waitForSelector("#mfa[open]"); };
+const abrirSeg = async (p) => { await menuConta(p, "#sec-btn"); await p.waitForSelector("#mfa[open]"); };
 before(async () => {
   if (skip) return; const s = await cadastroFunciona(); if (!s.ok) { skip = s.motivo; return; }
   srv = await servir(prepararSite()); browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
   const novo = async () => (await (await browser.newContext({ viewport: { width: 1100, height: 780 }, acceptDownloads: true })).newPage());
   A = await novo(); B = await novo(); for (const [n, p] of [["A", A], ["B", B]]) p.on("pageerror", (e) => erros.push(`${n}: ${e.message}`));
   emailA = novoEmail(); nomeA = novoUsuario("a"); nomeB = novoUsuario("b"); await cadastrar(A, nomeA, emailA); await cadastrar(B, nomeB, novoEmail());
-  await A.fill("#add-user", nomeB); await A.click("#add-form button"); await A.waitForSelector("#send-form:not([hidden])");
+  await chamar(A, nomeB); await A.waitForSelector("#send-form:not([hidden])");
   await A.fill("#text", "mensagem-antiga-1"); await A.click("#send-form .primary"); await ver(A, "mensagem-antiga-1", { meu: true });
   await B.waitForSelector("#contacts button .unread", { timeout: 30000 }); await B.click("#contacts button"); await ver(B, "mensagem-antiga-1");
   await B.fill("#text", "resposta-antiga-2"); await B.click("#send-form .primary"); await ver(A, "resposta-antiga-2");

@@ -4,7 +4,7 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
 import { createClient } from "../../vendor/supabase.js";
-import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY } from "./env.mjs";
+import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY, menuConta, chamar } from "./env.mjs";
 
 let skip = configurado ? false : motivoSemConfig, browser, srv, ctx, A, B, emailA, nomeB, endpointFalso; const erros = [];
 const t = (nome, fn) => test(nome, { timeout: 120000 }, async (c) => (skip ? c.skip(skip) : fn(c)));
@@ -42,7 +42,7 @@ after(async () => { if (browser) { await browser.close(); await srv.close(); } }
 
 t("o sino começa desligado; ligar pede permissão, registra o aparelho no banco e fica ligado", async () => {
   assert.equal(await A.locator("#notif-btn").getAttribute("aria-pressed"), "false"); assert.deepEqual(await linhas(A), []);
-  await A.click("#notif-btn"); await A.waitForFunction(() => document.getElementById("notif-btn").getAttribute("aria-pressed") === "true", null, { timeout: 30000 });
+  await menuConta(A, "#notif-btn"); await A.waitForFunction(() => document.getElementById("notif-btn").getAttribute("aria-pressed") === "true", null, { timeout: 30000 });
   const l = await linhas(A); assert.equal(l.length, 1); assert.match(l[0], /^https:\/\/push\.example\//); endpointFalso = l[0];
   assert.match(await A.locator("#notif-btn").getAttribute("aria-label"), /ligadas/);
 });
@@ -67,7 +67,7 @@ t("service worker: com o Lacre fechado mostra um aviso genérico, sem nome nem c
   await A.goto(srv.url); await A.waitForSelector(PRONTO, { timeout: 30000 });
 });
 t("mensagem normal pede aviso; apagar para todos e 'hello' NÃO pedem (o servidor não avisa de coisa invisível)", async () => {
-  await B.fill("#add-user", await A.evaluate(() => document.getElementById("me").textContent.replace("@", ""))); await B.click("#add-form button"); await B.waitForSelector("#send-form:not([hidden])");
+  await chamar(B, await A.evaluate(() => document.getElementById("nome-txt").textContent.replace("@", ""))); await B.waitForSelector("#send-form:not([hidden])");
   await B.fill("#text", "ping"); await B.click("#send-form .primary"); await B.waitForSelector('.msg.mine .vis:text-is("ping")'); await B.waitForTimeout(800);
   const [m] = await ultimas(B, 1); assert.equal(m.avisar, true);
   await B.locator('.msg:has(.vis:text-is("ping")) .bubble').first().click({ button: "right" }); await B.locator(".picker .apagar").click(); await B.click("#choice button[value=todos]"); await B.waitForSelector(".bubble.apagada"); await B.waitForTimeout(800);
@@ -79,12 +79,12 @@ t("a função do servidor responde com a chave pública (65 bytes) e recusa pedi
   const r2 = await fetch(`${SUPABASE_URL}/functions/v1/notificar`, { method: "POST", headers: { "content-type": "application/json" }, body: "lixo" }); assert.equal(r2.status, 400);
 });
 t("desligar o sino apaga o registro do aparelho", async () => {
-  await A.waitForFunction(() => document.getElementById("notif-btn").getAttribute("aria-pressed") === "true"); await A.click("#notif-btn");
+  await A.waitForFunction(() => document.getElementById("notif-btn").getAttribute("aria-pressed") === "true"); await menuConta(A, "#notif-btn");
   await A.waitForFunction(() => document.getElementById("notif-btn").getAttribute("aria-pressed") === "false", null, { timeout: 30000 }); assert.deepEqual(await linhas(A), []);
 });
 t("sair da conta tira o aparelho da lista (outra pessoa que entrar aqui não recebe os avisos desta)", async () => {
-  await A.click("#notif-btn"); await A.waitForFunction(() => document.getElementById("notif-btn").getAttribute("aria-pressed") === "true", null, { timeout: 30000 }); assert.equal((await linhas(A)).length, 1);
-  await A.click("#logout"); await A.waitForSelector("#choice[open]"); await A.click("#choice button[value=keep]"); await A.waitForSelector("#auth:not([hidden])", { timeout: 20000 });
+  await menuConta(A, "#notif-btn"); await A.waitForFunction(() => document.getElementById("notif-btn").getAttribute("aria-pressed") === "true", null, { timeout: 30000 }); assert.equal((await linhas(A)).length, 1);
+  await menuConta(A, "#logout"); await A.waitForSelector("#choice[open]"); await A.click("#choice button[value=keep]"); await A.waitForSelector("#auth:not([hidden])", { timeout: 20000 });
   const c = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false, autoRefreshToken: false } }); assert.ifError((await c.auth.signInWithPassword({ email: emailA, password: SENHA })).error);
   assert.equal((await c.from("push_subscriptions").select("endpoint")).data.length, 0);
   await A.fill("#email", emailA); await A.fill("#password", SENHA); await A.click("#auth-submit"); // (as chaves continuam neste aparelho: não pede a frase-senha)
@@ -94,7 +94,7 @@ t("sair da conta tira o aparelho da lista (outra pessoa que entrar aqui não rec
 t("iPhone sem o app instalado: explica como instalar em vez de falhar", async () => {
   const c = await browser.newContext({ userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1" });
   await c.addInitScript(() => { delete window.PushManager; }); const P = await c.newPage();
-  await cadastrar(P, novoUsuario("i"), novoEmail()); await P.click("#notif-btn"); await P.waitForSelector("#note[open]"); assert.match(await P.locator("#note-text").innerText(), /tela inicial/i); await c.close();
+  await cadastrar(P, novoUsuario("i"), novoEmail()); await menuConta(P, "#notif-btn"); await P.waitForSelector("#note[open]"); assert.match(await P.locator("#note-text").innerText(), /tela inicial/i); await c.close();
 });
 t("a página aponta o manifesto e o service worker é válido (escopo do site)", async () => {
   const m = await A.evaluate(async () => { const l = document.querySelector('link[rel=manifest]'); const r = await fetch(l.href); return { href: l.getAttribute("href"), j: await r.json() }; });

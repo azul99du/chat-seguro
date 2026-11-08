@@ -3,7 +3,7 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
 import { createClient } from "../../vendor/supabase.js";
-import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY } from "./env.mjs";
+import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY, menuConta, chamar } from "./env.mjs";
 
 let skip = configurado ? false : motivoSemConfig, browser, srv, ctx, A, B, emailA, nomeB; const erros = [];
 const t = (nome, fn) => test(nome, { timeout: 120000 }, async (c) => (skip ? c.skip(skip) : fn(c)));
@@ -19,7 +19,7 @@ before(async () => {
   await A.waitForSelector("#ask[open]", { timeout: 30000 }); await A.fill("#ask-input", FRASE); await A.click("#ask button[value=ok]"); await A.waitForSelector(PRONTO, { timeout: 30000 });
   await B.goto(srv.url); await B.click("#tab-signup"); await B.fill("#username", nomeB); await B.fill("#email", novoEmail()); await B.fill("#password", SENHA); await B.click("#auth-submit");
   await B.waitForSelector("#ask[open]", { timeout: 30000 }); await B.fill("#ask-input", FRASE); await B.click("#ask button[value=ok]"); await B.waitForSelector(PRONTO, { timeout: 30000 });
-  await A.fill("#add-user", nomeB); await A.click("#add-form button"); await A.waitForSelector("#send-form:not([hidden])");
+  await chamar(A, nomeB); await A.waitForSelector("#send-form:not([hidden])");
 });
 after(async () => { if (browser) { await browser.close(); await srv.close(); } });
 
@@ -34,7 +34,7 @@ t("enquanto abre: tela de abertura (sem login), e as conversas já aparecem ante
   assert.equal(await A.evaluate(() => window.__loginVisto), false); await A.waitForSelector(PRONTO, { timeout: 30000 }); // ...e só aceita toques quando está tudo pronto
 });
 t("nome do usuário aparece logo (guardado do último acesso)", async () => {
-  await A.reload(); await A.waitForSelector("#chat:not([hidden])"); assert.match(await A.locator("#me").innerText(), /^@a/);
+  await A.reload(); await A.waitForSelector("#chat:not([hidden])"); assert.match(await A.locator("#nome-txt").textContent(), /^@a/); assert.match(await A.locator("#eu-foto").innerText(), /^[A-Z0-9]$/i);
 });
 t("sessão derrubada em outro aparelho (ex.: senha trocada): ao abrir, cai no login", async () => {
   const c1 = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
