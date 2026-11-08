@@ -131,7 +131,7 @@ async function start() {
   // com verificação em dois passos, nada abre antes do código (a tela de abertura fica por trás do pedido)
   if (await precisaDoisPassos() && !(await pedirCodigoLogin())) { await sb.auth.signOut(); return location.reload(); }
   // já estava logado: vai direto para a lista de contatos (sem piscar a tela de login)
-  try { const n = localStorage.getItem("lacre:eu:" + session.user.id); if (n) $("me").textContent = n; } catch {}
+  try { const n = localStorage.getItem("lacre:eu:" + session.user.id); if (n) { $("me").textContent = n; $("nome-txt").textContent = n; } } catch {}
   mostrarChat();
   // conferimos no servidor, em segundo plano, se a sessão ainda vale (ex.: a senha foi trocada em outro aparelho)
   sb.auth.getUser().then(({ error }) => { if (error && [401, 403].includes(error.status)) sb.auth.signOut({ scope: "local" }).finally(() => location.reload()); }).catch(() => {});
@@ -176,7 +176,7 @@ async function start() {
   me = prof;
   const { data: hasBk } = await sb.from("key_backups").select("user_id").maybeSingle();
   if (!hasBk) await offerBackup(uid);
-  $("me").textContent = "@" + me.username; try { localStorage.setItem("lacre:eu:" + uid, "@" + me.username); } catch {}
+  $("me").textContent = "@" + me.username; $("nome-txt").textContent = "@" + me.username; try { localStorage.setItem("lacre:eu:" + uid, "@" + me.username); } catch {}
   pintarAvatar($("eu-foto"), me); $("eu-foto").title = "@" + me.username;
   mostrarChat();
   ensureSpk();
@@ -388,6 +388,18 @@ async function offerBackup(uid) {
     hint = "Não foi possível salvar. Tente de novo.";
   }
 }
+
+// ---------- Meu nome (o que os amigos digitam para me chamar) ----------
+let nomeTimer = 0;
+$("copiar-nome").onclick = async () => {
+  const nome = $("nome-txt").textContent; if (!nome) return;
+  let ok = false;
+  try { await navigator.clipboard.writeText(nome); ok = true; } catch {
+    try { const r = document.createRange(); r.selectNodeContents($("nome-txt")); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); ok = document.execCommand("copy"); sel.removeAllRanges(); } catch {}
+  }
+  const t = $("nome-aviso"); t.textContent = ok ? "Copiado ✓" : "Não deu para copiar: toque e segure no nome"; t.hidden = false;
+  clearTimeout(nomeTimer); nomeTimer = setTimeout(() => { t.hidden = true; }, 2200);
+};
 
 // ---------- Foto de perfil ----------
 const fotoCache = new Map(); // caminho -> blob: URL (o nome do arquivo muda a cada foto nova, então nunca fica velho)

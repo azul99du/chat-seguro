@@ -365,3 +365,11 @@ button.avatar.peq{min-height:34px;cursor:pointer}
 dialog#viewer[open]::backdrop{animation:fundo-entra .28s ease-out}
 dialog#viewer.saindo::backdrop{animation:fundo-sai .26s ease-in forwards}
 @media (prefers-reduced-motion:reduce){dialog#viewer[open]::backdrop,dialog#viewer.saindo::backdrop{animation:none}}
+
+/* seu nome (para copiar e passar aos amigos) */
+#meu-nome{display:flex;flex-direction:column;gap:2px;padding:10px 14px 0}
+#meu-nome .rot{font:400 .72rem var(--mono);color:var(--mut)}
+#copiar-nome{display:flex;align-items:center;gap:8px;align-self:flex-start;max-width:100%;min-height:36px;padding:0 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font-weight:700;user-select:text}
+#copiar-nome b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+#copiar-nome svg{flex:none;color:var(--mut)}
+#copiar-nome small{font:600 .75rem var(--body);color:#137A3F;white-space:nowrap}

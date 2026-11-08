@@ -24,6 +24,13 @@ before(async () => {
 });
 after(async () => { if (browser) { await browser.close(); await srv.close(); } });
 
+t("meu nome: aparece sempre (mesmo com o @ do topo escondido) e o botão copia", async () => {
+  await A.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  const nome = await A.locator("#nome-txt").innerText(); assert.match(nome, /^@[a-z0-9_]{3,20}$/i);
+  await A.click("#copiar-nome"); await A.waitForFunction(() => /Copiado/.test(document.getElementById("nome-aviso").textContent));
+  assert.equal(await A.evaluate(() => navigator.clipboard.readText()), nome);
+  const add = await A.evaluate(() => { const i = document.getElementById("add-user"); i.value = ""; return i.pattern; }); assert.ok(new RegExp("^(?:" + add + ")$").test(nome), "o nome copiado é aceito no campo 'Chamar um amigo'");
+});
 t("sem foto: aparece a inicial; o diálogo abre", async () => {
   assert.equal(await A.locator("#eu-foto img").count(), 0); assert.match(await A.locator("#eu-foto").innerText(), /^[a-z0-9]$/i);
   await A.click("#eu-foto"); await A.waitForSelector("#perfil[open]"); assert.equal(await A.locator("#perfil-remover").isVisible(), false);

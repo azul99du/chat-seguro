@@ -66,6 +66,12 @@
           </button>
           <button id="logout" class="ghost">Sair</button></div>
       </header>
+      <div id="meu-nome">
+        <span class="rot">Seu nome para os amigos te chamarem</span>
+        <button id="copiar-nome" type="button" aria-label="Copiar meu nome"><b id="nome-txt"></b>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          <small id="nome-aviso" role="status" hidden></small></button>
+      </div>
       <form id="add-form">
         <label class="sr" for="add-user">Chamar um amigo</label>
         <input id="add-user" placeholder="@usuário do amigo" autocapitalize="none" spellcheck="false" pattern="@?[a-zA-Z0-9_]{3,20}" required>
