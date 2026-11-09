@@ -3,7 +3,7 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
 import { createClient } from "../../vendor/supabase.js";
-import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY, menuConta, chamar } from "./env.mjs";
+import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY, menuConta, chamar, compartilhaCodigo } from "./env.mjs";
 import { totp } from "../helpers/totp.mjs";
 
 let skip = configurado ? false : motivoSemConfig, browser, srv, ctx, P, email, usuario, segredo, ultimo = "";
@@ -56,13 +56,13 @@ t("novo login: senha certa NÃO basta; código errado é recusado; código certo
   await P.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 });
 });
 t("cancelar o código volta para o login e não abre o chat", async () => {
-  const c2 = await browser.newContext(), Q = await c2.newPage();
+  const c2 = await browser.newContext(); await compartilhaCodigo(c2, P); const Q = await c2.newPage();
   await Q.goto(srv.url); await Q.fill("#email", email); await Q.fill("#password", SENHA); await Q.click("#auth-submit");
   await Q.waitForSelector("#ask[open]", { timeout: 30000 }); await Q.click("#ask button[value=cancel]");
   await Q.waitForSelector("#auth:not([hidden])", { timeout: 15000 }); assert.equal(await Q.locator("#chat").isHidden(), true); await c2.close();
 });
 t("aparelho novo: primeiro o código do 2º passo, depois a frase-senha da chave", async () => {
-  const c3 = await browser.newContext(), N = await c3.newPage();
+  const c3 = await browser.newContext(); await compartilhaCodigo(c3, P); const N = await c3.newPage();
   await N.goto(srv.url); await N.fill("#email", email); await N.fill("#password", SENHA); await N.click("#auth-submit");
   await N.waitForSelector("#ask[open]", { timeout: 30000 }); assert.match(await N.locator("#ask-title").innerText(), /dois passos/i);
   await N.fill("#ask-input", codigo()); await N.click("#ask button[value=ok]");

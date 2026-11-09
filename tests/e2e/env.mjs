@@ -24,7 +24,7 @@ export const apiKey = SUPABASE_KEY;
 
 // Cópia do site com a URL/chave (config.js e CSP do index.html) trocadas pelas do projeto de teste.
 export function prepararSite() {
-  const dir = tmp(), arquivos = ["index.html", "style.css", "guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "recorte.js", "recorte-config.js", "sam2.js", "figurinhas.js", "avatar.js", "historico.js", "video.js", "config.js", "favicon.svg", "favicon.ico", "apple-touch-icon.png", "sw.js", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-maskable-512.png"];
+  const dir = tmp(), arquivos = ["index.html", "style.css", "guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "recorte.js", "recorte-config.js", "sam2.js", "figurinhas.js", "avatar.js", "historico.js", "video.js", "aparelhos.js", "config.js", "favicon.svg", "favicon.ico", "apple-touch-icon.png", "sw.js", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-maskable-512.png"];
   for (const f of arquivos) cpSync(join(raiz, f), join(dir, f));
   symlinkSync(join(raiz, "vendor"), join(dir, "vendor"), "dir"); // (link em vez de cópia: são ~75 MB de modelos por teste)
   const host = (u) => new URL(u).host;
@@ -62,4 +62,10 @@ export async function menuConta(p, item) { // abre o menu (se preciso) e toca nu
 }
 export async function chamar(p, nome) { // botão "Chamar" → digita o nome → abre a conversa
   await p.click("#chamar-fab"); await p.waitForSelector("#chamar[open]"); await p.fill("#add-user", nome); await p.click("#add-form button");
+}
+
+// Dois "aparelhos" do teste que devem contar como O MESMO aparelho para o aviso (sem alarme): o 2º contexto recebe o mesmo código de aparelho do 1º.
+export async function compartilhaCodigo(contexto, paginaOriginal) {
+  const codigo = await paginaOriginal.evaluate(() => localStorage.getItem("lacre:disp"));
+  if (codigo) await contexto.addInitScript((c) => { try { localStorage.setItem("lacre:disp", c); } catch {} }, codigo);
 }

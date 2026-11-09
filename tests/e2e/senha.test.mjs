@@ -3,7 +3,7 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
 import { createClient } from "../../vendor/supabase.js";
-import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY, menuConta, chamar } from "./env.mjs";
+import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY, menuConta, chamar, compartilhaCodigo } from "./env.mjs";
 import { totp } from "../helpers/totp.mjs";
 
 let skip = configurado ? false : motivoSemConfig, browser, srv, P, email, outra; const NOVA = "uma-senha-nova-bem-longa";
@@ -50,7 +50,7 @@ t("troca concluída: nova senha entra, antiga é recusada e o outro aparelho é 
   await P.click("#mfa button[value=cancel]"); assert.equal(await P.locator("#chat").isVisible(), true, "este aparelho continua conectado");
 });
 t("aparelho novo entra com a senha nova (e a frase-senha de sempre)", async () => {
-  const c = await browser.newContext(), N = await c.newPage(); await N.goto(srv.url); await N.fill("#email", email); await N.fill("#password", NOVA); await N.click("#auth-submit");
+  const c = await browser.newContext(); await compartilhaCodigo(c, P); const N = await c.newPage(); await N.goto(srv.url); await N.fill("#email", email); await N.fill("#password", NOVA); await N.click("#auth-submit");
   await N.waitForSelector("#ask[open]", { timeout: 30000 }); await digitar(N, FRASE); await N.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 }); await c.close();
 });
 t("com 2 passos ativos: sessão só com senha não troca a senha; com o código troca", async () => {

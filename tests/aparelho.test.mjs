@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { descreverAparelho } from "../supabase/functions/aparelho/ua.js";
+import { riscoDeLocal } from "../aparelhos.js";
 
 const UA = {
   chromeAndroid: "Mozilla/5.0 (Linux; Android 14; SM-S911B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36",
@@ -27,10 +28,28 @@ test("texto vazio, estranho ou enorme não quebra e não vaza nada além dos ró
 });
 test("a função e o banco NÃO guardam o IP nem o texto bruto do navegador", () => {
   const fn = readFileSync(new URL("../supabase/functions/aparelho/index.ts", import.meta.url), "utf8").replace(/\/\/.*$/gm, "");
-  const insercao = fn.match(/\.insert\(\{[^}]*\}/)[0];
+  const insercao = fn.match(/\.insert\(\{[\s\S]*?\}\);/)[0];
   assert.doesNotMatch(insercao, /\bip\b|user_agent|ua\b/i, "o insert não leva IP nem user-agent");
   const sql = readFileSync(new URL("../supabase/schema.sql", import.meta.url), "utf8"), tabela = sql.match(/create table public\.aparelhos \([\s\S]*?\n\);/)[0];
   assert.doesNotMatch(tabela, /\bip\b|ip_|user_agent|inet/i, "a tabela não tem coluna de IP nem de user-agent");
   assert.match(sql, /revoke all on public\.aparelhos from anon, authenticated/); assert.match(sql, /alter table public\.aparelhos enable row level security/);
   assert.match(fn, /verify_jwt|role !== "authenticated"/, "a função confere que é uma sessão logada");
+});
+
+const conh = (pais, regiao, decisao = "reconhecido") => ({ pais_codigo: pais, regiao, decisao });
+test("risco do local: outro país é 'alto', outro estado é 'medio', mesmo estado ou sem dados não destaca", () => {
+  const lista = [conh("BR", "Goiás"), conh("BR", "São Paulo"), conh("BR", "Goiás", null)];
+  assert.equal(riscoDeLocal({ pais_codigo: "BR", regiao: "Goiás" }, lista), null);
+  assert.equal(riscoDeLocal({ pais_codigo: "BR", regiao: "São Paulo" }, lista), null);
+  assert.equal(riscoDeLocal({ pais_codigo: "BR", regiao: "Bahia" }, lista).nivel, "medio");
+  const alto = riscoDeLocal({ pais_codigo: "RU", regiao: "Moscow" }, lista, (c) => ({ RU: "Rússia" })[c]); assert.equal(alto.nivel, "alto"); assert.match(alto.texto, /Rússia/);
+  assert.equal(riscoDeLocal({ pais_codigo: null, regiao: null }, lista), null, "sem local do aparelho novo: nada a destacar");
+  assert.equal(riscoDeLocal({ pais_codigo: "RU" }, []), null, "sem aparelhos reconhecidos para comparar");
+  assert.equal(riscoDeLocal({ pais_codigo: "RU" }, [conh("BR", "Goiás", null), conh("BR", "Goiás", "recusado")]), null, "só conta o que a pessoa reconheceu");
+});
+test("o código do aparelho só vai ao banco embaralhado (hash), nunca bruto", () => {
+  const fn = readFileSync(new URL("../supabase/functions/aparelho/index.ts", import.meta.url), "utf8").replace(/\/\/.*$/gm, "");
+  const insercao = fn.match(/\.insert\(\{[\s\S]*?\}\);/)[0];
+  assert.match(insercao, /disp_hash: hash/); assert.doesNotMatch(insercao, /\bdisp\b\s*[:,}]/, "o código bruto não entra no insert");
+  assert.match(fn, /crypto\.subtle\.digest\("SHA-256"/); assert.match(fn, /\$\{c\.sub\}:\$\{disp\}/, "o hash é amarrado à conta (não dá para ligar contas diferentes)");
 });

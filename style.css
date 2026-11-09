@@ -557,3 +557,8 @@ dialog.folha-seg .btn-limpa{margin:0;width:100%}
 .ap-acoes button{min-height:44px;padding:0 14px;border-radius:10px;font:600 .9rem var(--body);cursor:pointer}
 .ap-acoes .perigo{color:var(--seal-dk);border-color:var(--seal)}
 .mi .tx2 small.aviso+small.aviso{margin-top:0}
+
+/* pista de risco do local (aviso de aparelho novo) */
+.risco-caixa{margin:0 0 12px;padding:10px 12px;border-radius:12px;border:1.5px solid var(--seal);background:var(--rosa-claro);color:var(--texto);font-weight:600;font-size:.9rem}
+.risco-caixa.alto{border-width:2px;background:var(--seal);color:#fff}
+small.risco{color:var(--seal-dk)!important;font-weight:700}

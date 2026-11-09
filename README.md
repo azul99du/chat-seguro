@@ -149,3 +149,7 @@ Quando OUTRO aparelho entra na conta, os aparelhos que já estavam conectados mo
 - Quem acabou de entrar não é avisado de si mesmo. O PRIMEIRO aparelho da conta, e quem volta com o mesmo navegador + sistema + tipo + estado de um aparelho já reconhecido, entram como reconhecidos (sem aviso). Se o local de um dos dois não deu para saber, isso não conta como diferença.
 - A decisão é guardada em `public.aparelhos.decisao` (`reconhecido` / `recusado`); só a função `decidir_aparelho()` altera, só para sessões da própria pessoa e nunca para a sessão que está decidindo.
 - Limite: o aviso só aparece quando o Lacre está aberto (não manda e-mail). Testes: `tests/e2e/aparelhos.test.mjs`.
+
+### Código do aparelho (como o Lacre sabe "quem é quem")
+Cada navegador cria um **código aleatório** (`lacre:disp` no armazenamento do site) na primeira vez. O servidor guarda só `SHA-256(id_da_conta:código)`, nunca o código. Quem volta com um código **já reconhecido** (mesmo em outro navegador ou depois de sair e entrar) não gera aviso; um código novo, mesmo no mesmo tipo de navegador e sistema, gera. Limpar os dados do site ou usar aba anônima cria um aparelho novo (pede conferência uma vez). Sessões antigas ganham o código na próxima vez que abrem o app.
+- O **IP não identifica aparelho** (vários aparelhos na mesma rede dividem o IP; o mesmo aparelho troca de IP). Ele só vira **pista de risco** pelo local aproximado: o aviso destaca "Local muito diferente do seu uso normal" (outro país) ou "Em outro estado" em relação aos aparelhos já reconhecidos (`aparelhos.js`).

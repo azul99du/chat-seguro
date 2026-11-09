@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { chromium } from "playwright";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY, menuConta, chamar } from "./env.mjs";
+import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY, menuConta, chamar, compartilhaCodigo } from "./env.mjs";
 import { hasFfmpeg, tmp, makeVideo, makeJpegWithExif } from "../helpers/fixtures.mjs";
 
 let skip = configurado ? false : motivoSemConfig;
@@ -143,7 +143,7 @@ t("chave do amigo diferente da fixada: alerta e a conversa NÃO abre", async () 
   await A.evaluate((key) => localStorage.removeItem(key), k); // restaura (será fixada de novo)
 });
 t("aparelho novo: mensagens antigas com sigilo futuro ficam indisponíveis; a sessão é refeita sozinha e as próximas chegam", async () => {
-  const cn = await browser.newContext({ viewport: { width: 1100, height: 780 } }); N = await cn.newPage(); vigiar("N", N);
+  const cn = await browser.newContext({ viewport: { width: 1100, height: 780 } }); await compartilhaCodigo(cn, A); N = await cn.newPage(); vigiar("N", N);
   await N.goto(srv.url); await N.fill("#email", emailA); await N.fill("#password", SENHA); await N.click("#auth-submit");
   await N.waitForSelector("#ask[open]", { timeout: 30000 });
   await N.fill("#ask-input", "frase-errada-qualquer"); await N.click("#ask button[value=ok]"); await N.waitForSelector("#ask-text:has-text('incorreta')");

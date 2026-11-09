@@ -567,3 +567,8 @@ begin
 end $$;
 revoke all on function public.decidir_aparelho(uuid, text) from public, anon, authenticated;
 grant execute on function public.decidir_aparelho(uuid, text) to authenticated;
+
+-- ===== Código do aparelho (migração codigo_do_aparelho) =====
+-- Cada navegador cria um código aleatório e o guarda só nele; o servidor recebe apenas SHA-256(id_da_conta:codigo). Quem volta com um código já reconhecido não gera aviso.
+alter table public.aparelhos add column disp_hash text check (disp_hash ~ '^[0-9a-f]{64}$');
+create index aparelhos_disp on public.aparelhos (user_id, disp_hash);

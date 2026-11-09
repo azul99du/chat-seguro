@@ -2,7 +2,7 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
-import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, menuConta, chamar } from "./env.mjs";
+import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, menuConta, chamar, compartilhaCodigo } from "./env.mjs";
 
 let skip = configurado ? false : motivoSemConfig, browser, srv, P, email; const NOVA = "cinco-palavras-sorteadas-novas";
 const t = (nome, fn) => test(nome, { timeout: 120000 }, async (c) => (skip ? c.skip(skip) : fn(c)));
@@ -32,13 +32,13 @@ t("trocar a frase: valida o tamanho, exige confirmação igual e não altera nad
   assert.equal(await P.locator("#ask[open]").count(), 0);
 });
 t("a frase antiga continua valendo depois da tentativa que não bateu", async () => {
-  const c = await browser.newContext(), N = await c.newPage(); await N.goto(srv.url); await N.fill("#email", email); await N.fill("#password", SENHA); await N.click("#auth-submit");
+  const c = await browser.newContext(); await compartilhaCodigo(c, P); const N = await c.newPage(); await N.goto(srv.url); await N.fill("#email", email); await N.fill("#password", SENHA); await N.click("#auth-submit");
   await N.waitForSelector("#ask[open]", { timeout: 30000 }); await digitar(N, FRASE); await N.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 }); await c.close();
 });
 t("troca concluída: a frase NOVA abre num aparelho novo e a ANTIGA deixa de funcionar", async () => {
   await P.click("#mfa-pass"); await P.waitForSelector("#ask[open]"); await digitar(P, NOVA); await P.waitForFunction(() => /^Confirme/.test(document.getElementById("ask-title").textContent));
   await digitar(P, NOVA); await P.waitForFunction(() => /Frase-senha trocada/.test(document.getElementById("mfa-msg").textContent), null, { timeout: 20000 });
-  const c = await browser.newContext(), N = await c.newPage(); await N.goto(srv.url); await N.fill("#email", email); await N.fill("#password", SENHA); await N.click("#auth-submit");
+  const c = await browser.newContext(); await compartilhaCodigo(c, P); const N = await c.newPage(); await N.goto(srv.url); await N.fill("#email", email); await N.fill("#password", SENHA); await N.click("#auth-submit");
   await N.waitForSelector("#ask[open]", { timeout: 30000 });
   await digitar(N, FRASE); await N.waitForFunction(() => /incorreta/.test(document.getElementById("ask-text").textContent), null, { timeout: 20000 }); // a antiga não abre mais
   await digitar(N, NOVA); await N.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 }); await c.close();

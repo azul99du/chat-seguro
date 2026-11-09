@@ -1,15 +1,16 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=d834ae08a9";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=d834ae08a9";
-import { montarFigurinhas } from "./figurinhas.js?v=d834ae08a9";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=d834ae08a9";
-import { usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=d834ae08a9";
-import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js?v=d834ae08a9";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=d834ae08a9";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=d834ae08a9";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=d834ae08a9";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=d834ae08a9";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js?v=d834ae08a9";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=17bb8361ec";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=17bb8361ec";
+import { montarFigurinhas } from "./figurinhas.js?v=17bb8361ec";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=17bb8361ec";
+import { usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=17bb8361ec";
+import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js?v=17bb8361ec";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=17bb8361ec";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=17bb8361ec";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=17bb8361ec";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=17bb8361ec";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=17bb8361ec";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js?v=17bb8361ec";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -407,14 +408,20 @@ document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("menu
 
 // ---------- Aparelhos conectados: onde e quando a conta entrou ----------
 let ultimoRegistro = 0;
+// Código deste navegador: aleatório, criado na 1ª vez e guardado só aqui (apagar os dados do site cria um novo). O servidor recebe apenas uma versão embaralhada dele.
+function codigoAparelho() {
+  try { let c = localStorage.getItem("lacre:disp"); if (!/^[0-9a-f]{32}$/.test(c || "")) { c = [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, "0")).join(""); localStorage.setItem("lacre:disp", c); } return c; } catch { return null; }
+}
 async function registrarAparelho(forca = false) { // avisa o servidor que ESTA sessão está em uso (ele guarda navegador, sistema e local aproximado; o IP não é guardado)
   if (!forca && Date.now() - ultimoRegistro < 300000) return; ultimoRegistro = Date.now();
-  try { const t = (await sb.auth.getSession()).data.session?.access_token; if (t) await fetch(FN_APARELHO, { method: "POST", headers: { authorization: "Bearer " + t, apikey: SUPABASE_KEY, "content-type": "application/json" }, body: "{}" }); } catch {}
+  try { const t = (await sb.auth.getSession()).data.session?.access_token; if (t) await fetch(FN_APARELHO, { method: "POST", headers: { authorization: "Bearer " + t, apikey: SUPABASE_KEY, "content-type": "application/json" }, body: JSON.stringify({ disp: codigoAparelho() }) }); } catch {}
 }
 const ICONES_APARELHO = { celular: ["M7 2h10a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z", "M11 18h2"], tablet: ["M5 2h14a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z", "M11 18h2"], computador: ["M4 5h16v11H4z", "M2 19h20"], outro: ["M4 5h16v11H4z", "M2 19h20"] };
 function svgAparelho(tipo) { const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg"); for (const [k, v] of Object.entries({ viewBox: "0 0 24 24", width: "22", height: "22", fill: "none", stroke: "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true" })) svg.setAttribute(k, v);
   for (const d of ICONES_APARELHO[tipo] || ICONES_APARELHO.outro) { const p = document.createElementNS(ns, "path"); p.setAttribute("d", d); svg.append(p); } return svg; }
 const quando = (iso) => new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).replace(",", " às");
+const nomePaisPt = (c) => { try { return new Intl.DisplayNames(["pt-BR"], { type: "region" }).of(c); } catch { return c; } };
+const riscoDeLocal = (a, lista) => riscoDe(a, lista, nomePaisPt);
 function localDe(a) {
   let pais = ""; try { pais = a.pais_codigo ? new Intl.DisplayNames(["pt-BR"], { type: "region" }).of(a.pais_codigo) : ""; } catch { pais = a.pais_codigo || ""; }
   const partes = [a.cidade, a.regiao, pais].filter(Boolean); return partes.length ? partes.join(", ") + " (aproximado)" : "Local indisponível";
@@ -433,6 +440,7 @@ async function desenharAparelhos() {
     if (!a.atual && a.decisao === null) linhaTit.append(el("span", "selo-novo", "Novo"));
     if (a.decisao === "recusado") linhaTit.append(el("span", "selo-novo recusado", "Não reconhecido"));
     tx.append(linhaTit, el("small", null, localDe(a)), el("small", null, `Entrou em ${quando(a.entrou_em)}`), el("small", null, `Último acesso em ${quando(a.ultimo_acesso)}`));
+    const risco = !a.atual && a.decisao === null ? riscoDeLocal(a, data) : null; if (risco) tx.append(el("small", "risco " + risco.nivel, "Atenção: " + risco.texto));
     if (!a.atual && a.decisao === null) { // ainda não conferido: dá para decidir aqui também
       const ac = el("span", "ap-acoes"), sim = el("button", "ghost", "Reconheço"), nao = el("button", "ghost perigo", "Não reconheço"); sim.type = nao.type = "button";
       sim.onclick = async () => { await decidirAparelho(a.session_id, "reconhecido"); desenharAparelhos(); };
@@ -457,14 +465,15 @@ async function conferirAparelhos(mostrar = true, forcaRegistro = false) {
     $("ap-ponto").hidden = !pend.length; $("sec-aviso-ap").hidden = !pend.length;
     const t = $("mfa-ap-txt"); t.textContent = pend.length ? `● ${pend.length === 1 ? "1 aparelho para conferir" : pend.length + " aparelhos para conferir"}` : "Veja onde e quando sua conta entrou"; t.classList.toggle("aviso", pend.length > 0);
     const alvo = novos.find((a) => !dispensados.has(a.session_id));
-    if (mostrar && alvo && !document.querySelector("dialog[open]")) mostrarAparelhoNovo(alvo, novos);
-  } catch {} finally { conferindoAparelhos = false; if (conferirDepois) { const p = conferirDepois; conferirDepois = null; conferirAparelhos(p.mostrar, p.forcaRegistro); } }
+    if (mostrar && alvo && !document.querySelector("dialog[open]")) mostrarAparelhoNovo(alvo, novos, data);
+  } catch (e) { console.warn("conferir aparelhos:", e?.message || e); } finally { conferindoAparelhos = false; if (conferirDepois) { const p = conferirDepois; conferirDepois = null; conferirAparelhos(p.mostrar, p.forcaRegistro); } }
 }
-function mostrarAparelhoNovo(a, novos) {
+function mostrarAparelhoNovo(a, novos, lista = []) {
   const d = $("novo-aparelho"); d.dataset.sessao = a.session_id;
   $("na-aparelho").textContent = `${a.navegador} no ${a.sistema}`;
   const local = localDe(a); $("na-local").textContent = local.replace(" (aproximado)", ""); $("na-local-nota").textContent = local.includes("aproximado") ? "aproximado, pelo endereço de internet" : "";
   $("na-quando").textContent = quando(a.entrou_em);
+  const risco = riscoDeLocal(a, lista); $("na-risco").hidden = !risco; $("na-risco").className = "risco-caixa " + (risco?.nivel || ""); $("na-risco").textContent = risco ? "Atenção: " + risco.texto : "";
   const mais = novos.length - 1; $("na-mais").hidden = mais < 1; $("na-mais").textContent = mais === 1 ? "Há mais 1 aparelho novo para conferir (em Aparelhos conectados)." : `Há mais ${mais} aparelhos novos para conferir (em Aparelhos conectados).`;
   d.showModal(); $("novo-nao").focus({ preventScroll: true });
 }
