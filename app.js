@@ -1,14 +1,14 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=1ffd578d3e";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=1ffd578d3e";
-import { montarFigurinhas } from "./figurinhas.js?v=1ffd578d3e";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=1ffd578d3e";
-import { exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=1ffd578d3e";
-import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js?v=1ffd578d3e";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=1ffd578d3e";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=1ffd578d3e";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=1ffd578d3e";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js?v=1ffd578d3e";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=70aacf289a";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=70aacf289a";
+import { montarFigurinhas } from "./figurinhas.js?v=70aacf289a";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=70aacf289a";
+import { exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=70aacf289a";
+import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js?v=70aacf289a";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=70aacf289a";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=70aacf289a";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=70aacf289a";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js?v=70aacf289a";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -659,17 +659,50 @@ let tocando = null;
 const mmss = (n) => { n = Math.max(0, Math.round(Number(n) || 0)); return `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`; };
 function playerAudio(url, dur, { auto = false } = {}) {
   const box = el("div", "player"), btn = el("button", "play"), barra = el("div", "barra"), prog = el("i"), tempo = el("span", "tempo", `0:00 / ${mmss(dur)}`);
-  btn.type = "button"; btn.setAttribute("aria-label", "Tocar áudio"); barra.append(prog); box.append(btn, barra, tempo);
+  btn.type = "button"; btn.setAttribute("aria-label", "Tocar áudio");
+  barra.append(prog); box.append(btn, barra, tempo);
+  barra.tabIndex = 0; barra.setAttribute("role", "slider"); barra.setAttribute("aria-label", "Posição do áudio"); barra.setAttribute("aria-valuemin", "0");
   const a = new Audio(url); a.preload = "metadata";
   const total = () => (Number.isFinite(a.duration) && a.duration > 0 ? a.duration : dur) || 0;
-  const pinta = () => { const t = total(); prog.style.width = t ? Math.min(100, (a.currentTime / t) * 100) + "%" : "0%"; tempo.textContent = `${mmss(a.currentTime)} / ${mmss(t)}`; };
-  a.ontimeupdate = pinta;
+  let arrasta = null; // posição (em segundos) enquanto o dedo está arrastando a barra
+  const pinta = () => {
+    const t = total(), atual = arrasta ?? a.currentTime;
+    prog.style.width = t ? Math.min(100, (atual / t) * 100) + "%" : "0%"; tempo.textContent = `${mmss(atual)} / ${mmss(t)}`;
+    barra.setAttribute("aria-valuemax", String(Math.round(t))); barra.setAttribute("aria-valuenow", String(Math.round(atual))); barra.setAttribute("aria-valuetext", `${mmss(atual)} de ${mmss(t)}`);
+  };
+  a.ontimeupdate = () => { if (arrasta === null) pinta(); };
   a.onplay = () => { btn.classList.add("on"); btn.setAttribute("aria-label", "Pausar áudio"); };
   a.onpause = () => { btn.classList.remove("on"); btn.setAttribute("aria-label", "Tocar áudio"); };
   a.onended = () => { a.currentTime = 0; pinta(); if (tocando === a) tocando = null; };
   a.onerror = () => { tempo.textContent = "Este aparelho não toca este formato"; };
   const toca = () => { if (tocando && tocando !== a) tocando.pause(); tocando = a; return a.play().catch(() => { tempo.textContent = "Toque de novo para ouvir"; }); };
   btn.onclick = () => (a.paused ? toca() : a.pause());
+  // Gravações do navegador (WebM) chegam sem duração: o primeiro pulo "pergunta" a duração real ao navegador, antes de buscar.
+  const prepara = () => new Promise((ok) => {
+    if (Number.isFinite(a.duration)) return ok();
+    const volta = a.currentTime, fim = () => { a.removeEventListener("durationchange", fim); a.currentTime = volta; ok(); };
+    a.addEventListener("durationchange", fim); a.currentTime = 1e101; setTimeout(fim, 1500);
+  });
+  async function vaiPara(seg) { await prepara(); a.currentTime = Math.min(Math.max(0, seg), Math.max(0, total() - 0.05)); pinta(); }
+  const secDoPonto = (e) => { const r = barra.getBoundingClientRect(); return total() * Math.min(1, Math.max(0, (e.clientX - r.left) / (r.width || 1))); };
+  barra.addEventListener("pointerdown", (e) => {
+    e.stopPropagation(); // arrastar a barra não é "responder" nem "segurar a mensagem"
+    if (e.button > 0 || !total()) return;
+    barra.setPointerCapture(e.pointerId); barra.classList.add("arrastando"); arrasta = secDoPonto(e); pinta();
+  });
+  barra.addEventListener("pointermove", (e) => { if (arrasta !== null) { arrasta = secDoPonto(e); pinta(); } });
+  const solta = async (e) => {
+    if (arrasta === null) return; const alvo = e.type === "pointercancel" ? null : secDoPonto(e);
+    arrasta = null; barra.classList.remove("arrastando"); if (alvo !== null) await vaiPara(alvo); else pinta();
+  };
+  barra.addEventListener("pointerup", solta); barra.addEventListener("pointercancel", solta);
+  barra.addEventListener("click", (e) => e.stopPropagation());
+  barra.addEventListener("keydown", (e) => {
+    const passo = { ArrowLeft: -5, ArrowDown: -5, ArrowRight: 5, ArrowUp: 5, PageDown: -15, PageUp: 15 }[e.key];
+    if (passo !== undefined) { e.preventDefault(); vaiPara(a.currentTime + passo); }
+    else if (e.key === "Home") { e.preventDefault(); vaiPara(0); } else if (e.key === "End") { e.preventDefault(); vaiPara(total()); }
+  });
+  pinta();
   if (auto) toca();
   return box;
 }

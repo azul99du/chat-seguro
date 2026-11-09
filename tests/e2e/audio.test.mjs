@@ -80,6 +80,22 @@ t("áudios ficam guardados no aparelho: depois de recarregar já aparecem pronto
   const tempo = await B.locator(".msg:not(.mine) .media.audio .player .tempo").first().innerText(); assert.match(tempo, /^0:00 \/ 0:0\d/);
   await B.locator(".msg:not(.mine) .media.audio .player .play").first().click(); await B.waitForFunction(() => { const x = document.querySelector(".msg:not(.mine) .player .tempo"); return x && !/^0:00 \//.test(x.textContent) && !/não toca/.test(x.textContent); }, null, { timeout: 15000 });
 });
+t("avançar e voltar: tocar na barra pula para o ponto; arrastar mostra o tempo ao vivo; setas do teclado andam; a mensagem não é respondida por engano", async () => {
+  const barra = B.locator(".msg:not(.mine) .player .barra").first(), larg = () => B.locator(".msg:not(.mine) .player .barra i").first().evaluate((i) => parseFloat(i.style.width) || 0);
+  assert.equal(await barra.getAttribute("role"), "slider"); const box = await barra.boundingBox(), y = box.y + box.height / 2, em = (f) => box.x + box.width * f;
+  await B.locator(".msg:not(.mine) .player .play").first().click(); await B.waitForTimeout(150); await B.locator(".msg:not(.mine) .player .play").first().click(); // toca um instante e pausa
+  await B.mouse.click(em(0.8), y); await B.waitForFunction(() => parseFloat(document.querySelector(".msg:not(.mine) .player .barra i").style.width) > 60, null, { timeout: 8000 });
+  assert.ok((await larg()) > 60, "tocar perto do fim pula para a frente");
+  await B.mouse.click(em(0.1), y); await B.waitForFunction(() => parseFloat(document.querySelector(".msg:not(.mine) .player .barra i").style.width) < 30, null, { timeout: 8000 });
+  assert.ok((await larg()) < 30, "tocar perto do começo volta");
+  await B.mouse.move(em(0.2), y); await B.mouse.down(); await B.mouse.move(em(0.55), y, { steps: 6 });
+  assert.ok(Math.abs((await larg()) - 55) < 12, "ao arrastar, a barra acompanha o dedo antes de soltar"); const durante = await B.locator(".msg:not(.mine) .player .tempo").first().innerText();
+  await B.mouse.up(); await B.waitForTimeout(250); assert.equal(await B.locator(".msg:not(.mine) .player .barra").first().evaluate((e) => e.classList.contains("arrastando")), false);
+  assert.match(durante, /^\d+:\d\d \/ \d+:\d\d$/);
+  await barra.focus(); await B.keyboard.press("End"); await B.waitForFunction(() => parseFloat(document.querySelector(".msg:not(.mine) .player .barra i").style.width) > 90, null, { timeout: 8000 });
+  await B.keyboard.press("Home"); await B.waitForFunction(() => parseFloat(document.querySelector(".msg:not(.mine) .player .barra i").style.width) < 5, null, { timeout: 8000 });
+  assert.equal(await B.locator("#replybar").isHidden(), true, "arrastar a barra não responde a mensagem");
+});
 t("toque curto no microfone não envia nada e explica como usar", async () => {
   const antes = enviados.length, n = await audios(A); await alvo(A); await A.mouse.down(); await A.waitForSelector("#send-form[data-rec]"); await A.waitForTimeout(60); await A.mouse.up();
   await A.waitForSelector("#rec-toast", { state: "visible" }); assert.match(await A.locator("#rec-toast").innerText(), /Segure o botão/);

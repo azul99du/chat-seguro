@@ -167,8 +167,12 @@ dialog#viewer::backdrop{background:rgba(10,12,40,.85)}
 .bubble.mine .player .play{background:#fff;color:#15174A}
 .player .play::before{content:"";position:absolute;left:17px;top:13px;border-left:15px solid currentColor;border-top:9px solid transparent;border-bottom:9px solid transparent}
 .player .play.on::before{left:14px;top:14px;width:5px;height:16px;border:0;background:currentColor;box-shadow:11px 0 0 currentColor}
-.player .barra{flex:1;min-width:40px;height:6px;border-radius:3px;background:rgba(127,127,160,.3);overflow:hidden}
-.player .barra i{display:block;height:100%;width:0;background:var(--seal)}
+.player .barra{position:relative;flex:1;min-width:40px;height:32px;cursor:pointer;touch-action:none;border-radius:8px}
+.player .barra::before{content:"";position:absolute;left:0;right:0;top:50%;height:6px;margin-top:-3px;border-radius:3px;background:rgba(127,127,160,.3)}
+.player .barra i{position:absolute;left:0;top:50%;height:6px;margin-top:-3px;width:0;border-radius:3px;background:var(--seal)}
+.player .barra i::after{content:"";position:absolute;right:-7px;top:50%;width:14px;height:14px;margin-top:-7px;border-radius:50%;background:var(--seal);box-shadow:0 0 0 3px rgba(232,51,95,.0);transition:box-shadow .15s,transform .15s}
+.player .barra.arrastando i::after,.player .barra:focus-visible i::after{box-shadow:0 0 0 6px rgba(232,51,95,.28);transform:scale(1.15)}
+.player .barra:focus-visible{outline:2px solid var(--seal);outline-offset:1px}
 .player .tempo{flex:none;font:400 .75rem var(--mono);opacity:.8}
 .media .ph.audio-ph{aspect-ratio:auto;min-height:44px;padding:10px 12px;justify-content:start}
 @media(prefers-reduced-motion:reduce){#mic.rec,#pending-thumb.gravando svg{animation:none}}
