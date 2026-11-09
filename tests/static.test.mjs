@@ -89,6 +89,20 @@ describe("avisos push (supabase/schema.sql)", () => {
   });
 });
 
+describe("fontes", () => {
+  const html = ler("index.html"), css = ler("style.css");
+  const link = html.match(/fonts\.googleapis\.com\/css2\?([^"]+)"/)[1].replace(/&amp;/g, "&");
+  const carregados = {};
+  for (const m of link.matchAll(/family=([^:&]+)(?::wght@([\d;]+))?/g)) carregados[m[1].replace(/\+/g, " ")] = (m[2] || "400").split(";").map(Number);
+  const familia = { "--body": "Instrument Sans", "--display": "Syne", "--mono": "DM Mono" };
+  test("todo peso pedido no CSS (font: <peso> ... var(--fonte)) é um peso realmente carregado (senão o navegador engrossa à força)", () => {
+    for (const m of css.matchAll(/font:\s*(\d{3})\s[^;}]*var\((--body|--display|--mono)/g)) assert.ok(carregados[familia[m[2]]]?.includes(Number(m[1])), `${familia[m[2]]} ${m[1]} não está no link de fontes`);
+  });
+  test("títulos das páginas de configuração usam a mesma fonte dos diálogos (Syne)", () => {
+    assert.match(css, /dialog\.pagina \.pg-bar h2\{[^}]*var\(--display\)/);
+  });
+});
+
 describe("cache do navegador", () => {
   test("as URLs de CSS/JS levam a versão do conteúdo (rode `npm run versionar` depois de mexer no site)", async () => {
     const { emDia } = await import("../scripts/versionar.mjs"); const r = emDia();
