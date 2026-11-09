@@ -1,15 +1,15 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=0ee69cb6d9";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=0ee69cb6d9";
-import { montarFigurinhas } from "./figurinhas.js?v=0ee69cb6d9";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=0ee69cb6d9";
-import { usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=0ee69cb6d9";
-import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js?v=0ee69cb6d9";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=0ee69cb6d9";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=0ee69cb6d9";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=0ee69cb6d9";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=0ee69cb6d9";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js?v=0ee69cb6d9";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=7d171bb597";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=7d171bb597";
+import { montarFigurinhas } from "./figurinhas.js?v=7d171bb597";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=7d171bb597";
+import { usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=7d171bb597";
+import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js?v=7d171bb597";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=7d171bb597";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=7d171bb597";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=7d171bb597";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=7d171bb597";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js?v=7d171bb597";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);

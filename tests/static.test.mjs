@@ -96,6 +96,10 @@ describe("armazenamento (supabase/schema.sql)", () => {
   });
 });
 
+describe("política de segurança: nada de estilo escrito direto no HTML", () => {
+  test("index.html não tem atributo style (a política só aceita o style.css; o navegador reclamaria em toda abertura)", () => assert.doesNotMatch(ler("index.html"), /\sstyle\s*=\s*["']/));
+});
+
 describe("fontes", () => {
   const html = ler("index.html"), css = ler("style.css");
   const link = html.match(/fonts\.googleapis\.com\/css2\?([^"]+)"/)[1].replace(/&amp;/g, "&");

@@ -530,3 +530,4 @@ dialog.pagina[open]{animation:pagina-entra .26s cubic-bezier(.2,.8,.2,1)}
 .linha.info.atual .ic{color:var(--seal)}
 #aparelhos-lista .linha.info{align-items:flex-start;padding-top:2px}
 #aparelhos-lista .linha .ic{margin-top:18px}
+.pg-dica.sem-recuo.topo{margin-top:14px}
