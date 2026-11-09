@@ -89,6 +89,13 @@ describe("avisos push (supabase/schema.sql)", () => {
   });
 });
 
+describe("armazenamento (supabase/schema.sql)", () => {
+  test("meu_uso_arquivos só soma os arquivos da própria pessoa e exige o 2º passo", () => {
+    const f = ler("supabase/schema.sql").match(/create or replace function public\.meu_uso_arquivos\(\)[\s\S]*?\$\$;/)[0];
+    assert.match(f, /owner_id = \(select auth\.uid\(\)\)::text/); assert.match(f, /public\.mfa_ok\(\)/); assert.match(f, /bucket_id = 'media'/);
+  });
+});
+
 describe("fontes", () => {
   const html = ler("index.html"), css = ler("style.css");
   const link = html.match(/fonts\.googleapis\.com\/css2\?([^"]+)"/)[1].replace(/&amp;/g, "&");

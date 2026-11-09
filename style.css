@@ -508,3 +508,17 @@ dialog.pagina[open]{animation:pagina-entra .26s cubic-bezier(.2,.8,.2,1)}
   .msg-opcoes:hover{background:var(--paper);color:var(--texto)}
 }
 @media (prefers-reduced-motion:reduce){.msg-opcoes{transition:none}}
+
+/* ===== Armazenamento ===== */
+.uso{display:block;height:8px;margin:8px 0 2px;border-radius:99px;background:var(--line);overflow:hidden}
+.uso i{display:block;height:100%;width:0;border-radius:99px;background:var(--ink-2);transition:width .4s cubic-bezier(.2,.8,.2,1)}
+:root[data-tema="escuro"] .uso i{background:#8E94F0}
+@media (prefers-color-scheme:dark){:root:not([data-tema="claro"]) .uso i{background:#8E94F0}}
+.uso i.cheio{background:var(--seal)!important}
+.linha .tam{flex:none;font:500 .85rem var(--mono);color:var(--mut);white-space:nowrap}
+.linha.sem-linha .tx{border-bottom:0;padding-bottom:4px}
+.btn-limpa{margin:16px 16px 0;width:calc(100% - 32px);min-height:48px;border-radius:12px;border:1.5px solid var(--line);background:none;color:var(--texto);font:600 1rem var(--body);cursor:pointer}
+.btn-limpa:hover{background:var(--paper)}
+.pg-dica.sem-recuo{margin:8px 28px 2px}
+#arm-msg{min-height:1.2em;margin:10px 28px 0;font-size:.9rem;color:var(--verde);text-align:center}
+#arm-resumo{color:var(--mut)!important}

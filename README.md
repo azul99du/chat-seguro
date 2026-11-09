@@ -126,3 +126,6 @@ Por causa do sigilo futuro, um aparelho novo não consegue ler as mensagens anti
 - No **Perfil**: foto com botão de câmera em rosa lacre, nome com botão de copiar (e a explicação de que é o nome que os amigos digitam), e "Remover foto".
 - **Aparência** (menu da sua foto): automática (segue o aparelho), clara ou escura. A escolha fica salva neste aparelho (`lacre:tema`) e é aplicada pelo `guarda.js` antes de desenhar a tela. As cores vêm de variáveis em `style.css` (`--paper`, `--card`, `--texto`, `--mine`...) trocadas em `:root[data-tema="escuro"]` e em `prefers-color-scheme: dark`.
 - Testes: `tests/e2e/tela.test.mjs` (menu, Chamar, Aparência, página de Segurança e Perfil).
+
+## Armazenamento
+Menu da foto → **Armazenamento**: mostra o que este aparelho guarda (arquivos baixados, com a barra do limite de 150 MB; histórico; figurinhas) e quanto você já enviou ao servidor (limite de 400 MB por pessoa, via a função `meu_uso_arquivos`, que só soma os arquivos da própria pessoa). **Liberar espaço** apaga SÓ as cópias de fotos/áudios/figurinhas baixados neste aparelho: nenhuma mensagem, chave, figurinha salva ou arquivo do servidor é tocado, e os arquivos baixam de novo quando abertos. Testes: `tests/e2e/armazenamento.test.mjs`.

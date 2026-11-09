@@ -133,6 +133,21 @@ export async function wipeLocal(uid) {
 // Duas abas abertas não podem avançar a mesma sessão ao mesmo tempo
 export const withLock = (name, fn) => (navigator.locks ? navigator.locks.request(name, fn) : fn());
 
+// ---------- Armazenamento: quanto este aparelho guarda, e como liberar o cache de arquivos ----------
+const bytesDe = (r) => Math.round(((r?.ct?.length || 0) + (r?.iv?.length || 0)) * 0.75);
+export async function usoLocal(uid) {
+  const [h, st] = await Promise.all([
+    req((await tx(["history"], "readonly")).objectStore("history").getAll(range(uid + "|"))),
+    req((await tx(["stickers"], "readonly")).objectStore("stickers").getAll(range(uid + "|")))]);
+  return { mensagens: h.length, historicoBytes: h.reduce((a, r) => a + bytesDe(r), 0), figurinhas: st.length, figurinhasBytes: st.reduce((a, r) => a + bytesDe(r), 0), cache: await blobsUsados(uid) };
+}
+// Apaga SÓ as cópias de fotos/áudios/figurinhas baixados (cache). Histórico, chaves, figurinhas salvas e o servidor não são tocados.
+export async function limparBlobs(uid) {
+  const t = await tx(["blobs", "blobmeta"], "readwrite"), rng = range(uid + "|");
+  for (const n of ["blobs", "blobmeta"]) { const st = t.objectStore(n), keys = await req(st.getAllKeys(rng)); keys.forEach((k) => st.delete(k)); }
+  await done(t);
+}
+
 // ---------- Exportar / importar o histórico (para trocar de aparelho) ----------
 // Lê tudo já decifrado (só nesta memória); quem chama é que cifra de novo com a senha do arquivo.
 export async function exportarHistorico(uid) {

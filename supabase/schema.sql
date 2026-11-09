@@ -500,3 +500,14 @@ create policy "le a propria foto e a de quem conversa com voce" on storage.objec
                where (m.sender_id = (select auth.uid()) and m.recipient_id::text = (storage.foldername(name))[1])
                   or (m.recipient_id = (select auth.uid()) and m.sender_id::text = (storage.foldername(name))[1]))));
 -- (a política restritiva "exige dois passos" de storage.objects já vale para este bucket também)
+
+-- ===== Armazenamento: quanto a pessoa já enviou (migração armazenamento) =====
+-- Só conta os arquivos DA PRÓPRIA pessoa (a política "exige dois passos" também vale: sem o 2º passo devolve vazio).
+create or replace function public.meu_uso_arquivos() returns table (arquivos bigint, bytes bigint)
+language sql stable security definer set search_path = public, storage as $$
+  select count(*)::bigint, coalesce(sum((o.metadata->>'size')::bigint), 0)::bigint
+    from storage.objects o
+   where o.bucket_id = 'media' and o.owner_id = (select auth.uid())::text and (select public.mfa_ok())
+$$;
+revoke all on function public.meu_uso_arquivos() from public, anon, authenticated;
+grant execute on function public.meu_uso_arquivos() to authenticated;

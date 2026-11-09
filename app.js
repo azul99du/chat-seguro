@@ -1,14 +1,14 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=88c752f468";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=88c752f468";
-import { montarFigurinhas } from "./figurinhas.js?v=88c752f468";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=88c752f468";
-import { exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=88c752f468";
-import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js?v=88c752f468";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=88c752f468";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=88c752f468";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=88c752f468";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js?v=88c752f468";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=0e757e45bd";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=0e757e45bd";
+import { montarFigurinhas } from "./figurinhas.js?v=0e757e45bd";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=0e757e45bd";
+import { usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=0e757e45bd";
+import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js?v=0e757e45bd";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=0e757e45bd";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=0e757e45bd";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=0e757e45bd";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js?v=0e757e45bd";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -392,7 +392,8 @@ async function offerBackup(uid) {
 }
 
 // ---------- Menu da conta (toque na sua foto, no topo) ----------
-function abrirMenu() { $("menu-fundo").hidden = false; $("menu-conta").hidden = false; $("eu-foto").setAttribute("aria-expanded", "true"); $("menu-conta").querySelector("button")?.focus({ preventScroll: true }); }
+function abrirMenu() {
+  blobsUsados(me.id).then((u) => { $("arm-resumo").textContent = `${fmtBytes(u.bytes)} neste aparelho`; }).catch(() => {}); $("menu-fundo").hidden = false; $("menu-conta").hidden = false; $("eu-foto").setAttribute("aria-expanded", "true"); $("menu-conta").querySelector("button")?.focus({ preventScroll: true }); }
 function fecharMenu(devolveFoco = true) {
   if ($("menu-conta").hidden) return;
   $("menu-conta").hidden = true; $("menu-fundo").hidden = true; $("eu-foto").setAttribute("aria-expanded", "false"); if (devolveFoco) $("eu-foto").focus({ preventScroll: true });
@@ -401,6 +402,34 @@ $("eu-foto").onclick = () => ($("menu-conta").hidden ? abrirMenu() : fecharMenu(
 $("menu-fundo").onclick = () => fecharMenu();
 $("menu-conta").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b && !b.matches("#notif-btn, #copiar-nome, #tema-btn")) fecharMenu(false); }); // copiar e notificações mostram o resultado ali mesmo
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("menu-conta").hidden && !document.querySelector("dialog[open]")) fecharMenu(); });
+
+// ---------- Armazenamento: o que este aparelho guarda e o que você já enviou ao servidor ----------
+const MB = 1048576, LIMITE_SERVIDOR = 400 * MB; // (o mesmo limite por pessoa que o servidor aplica)
+const fmtBytes = (n) => (n >= MB ? (n / MB).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " MB" : n > 0 && n < 1024 ? "< 1 KB" : Math.round(n / 1024) + " KB");
+function pintaUso(id, bytes, limite) { const i = $(id); i.style.width = Math.min(100, Math.max(bytes > 0 ? 2 : 0, (bytes / limite) * 100)) + "%"; i.classList.toggle("cheio", bytes / limite >= 0.8); }
+async function desenharArmazenamento() {
+  try {
+    const u = await usoLocal(me.id), c = u.cache;
+    $("arm-cache-txt").textContent = `${fmtBytes(c.bytes)} de no máximo ${fmtBytes(BLOB_MAX)} · ${c.arquivos} ${c.arquivos === 1 ? "arquivo" : "arquivos"}`; pintaUso("arm-cache-bar", c.bytes, BLOB_MAX);
+    $("arm-hist-txt").textContent = `${u.mensagens} ${u.mensagens === 1 ? "mensagem guardada" : "mensagens guardadas"}, só o texto e os dados, cifrados`; $("arm-hist-tam").textContent = fmtBytes(u.historicoBytes);
+    $("arm-stk-txt").textContent = `${u.figurinhas} ${u.figurinhas === 1 ? "figurinha" : "figurinhas"}`; $("arm-stk-tam").textContent = fmtBytes(u.figurinhasBytes);
+    $("arm-limpar").disabled = c.arquivos === 0; $("arm-resumo").textContent = `${fmtBytes(c.bytes)} neste aparelho`;
+  } catch { $("arm-cache-txt").textContent = "Não foi possível ler agora."; }
+  $("arm-srv-txt").textContent = "Calculando…"; pintaUso("arm-srv-bar", 0, 1);
+  const { data, error } = await sb.rpc("meu_uso_arquivos");
+  if (error || !data?.[0]) { $("arm-srv-txt").textContent = "Não foi possível ver agora. Tente de novo mais tarde."; return; }
+  const n = Number(data[0].arquivos) || 0, bytes = Number(data[0].bytes) || 0;
+  $("arm-srv-txt").textContent = `${fmtBytes(bytes)} de ${fmtBytes(LIMITE_SERVIDOR)} · ${n} ${n === 1 ? "arquivo" : "arquivos"}`; pintaUso("arm-srv-bar", bytes, LIMITE_SERVIDOR);
+}
+$("arm-btn").onclick = async () => { $("arm-msg").textContent = ""; $("armaz").showModal(); await desenharArmazenamento(); };
+$("arm-limpar").onclick = async () => {
+  const r = await choose("Liberar espaço?", "Apaga só as fotos, áudios e figurinhas baixados neste aparelho. Nenhuma mensagem será apagada. Quando você abrir um arquivo de novo, ele baixa outra vez.", [
+    { label: "Liberar espaço", value: "sim", cls: "primary" }, { label: "Cancelar", value: "", cls: "ghost" }]);
+  if (r !== "sim") return;
+  try { const antes = (await blobsUsados(me.id)).bytes; await limparBlobs(me.id); $("arm-msg").textContent = `Pronto: ${fmtBytes(antes)} liberados.`; }
+  catch { $("arm-msg").textContent = ""; await note("Não foi possível liberar o espaço agora. Tente de novo."); }
+  await desenharArmazenamento();
+};
 
 // ---------- Aparência: automática (segue o aparelho), clara ou escura ----------
 const TEMAS = ["auto", "claro", "escuro"], NOME_TEMA = { auto: "automática", claro: "clara", escuro: "escura" };

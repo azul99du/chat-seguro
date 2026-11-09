@@ -1,11 +1,11 @@
 // Figurinhas: biblioteca pessoal (só neste aparelho), criação com recorte por cliques e envio.
 // Figurinha parada passa pelo canvas (descarta qualquer metadado) e sai como PNG com fundo transparente.
 // Figurinha animada (GIF, WebP, APNG) é limpa sem recodificar. O envio em si é feito pelo app (cifrado como qualquer mídia).
-import { listStickers, putSticker, delSticker } from "./store.js?v=88c752f468";
-import { detectar, limparAnimada } from "./sticker.js?v=88c752f468";
-import { carregarSAM, definirImagem, segmentar } from "./sam2.js?v=88c752f468";
-import { escolherMascara, ampliarLogits, rampa, montarFigurinha } from "./recorte.js?v=88c752f468";
-import * as CFG from "./recorte-config.js?v=88c752f468";
+import { listStickers, putSticker, delSticker } from "./store.js?v=0e757e45bd";
+import { detectar, limparAnimada } from "./sticker.js?v=0e757e45bd";
+import { carregarSAM, definirImagem, segmentar } from "./sam2.js?v=0e757e45bd";
+import { escolherMascara, ampliarLogits, rampa, montarFigurinha } from "./recorte.js?v=0e757e45bd";
+import * as CFG from "./recorte-config.js?v=0e757e45bd";
 const { TAMANHO, KB_MAXIMO, LADO_PROCESSO, LARGURA_TELA } = CFG;
 
 const MAX_BIBLIOTECA = 80, LADO = 512, TRABALHO = LADO_PROCESSO, MAX_ARQUIVO = 20 * 1048576, MAX_ESTATICA = 500_000;
