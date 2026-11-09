@@ -34,7 +34,7 @@ export async function lerMp4(file) {
   const topo = await lerTopo(file), moov = topo.find((x) => x.t === "moov");
   if (!moov || topo.some((x) => x.t === "moof") || moov.tam > MAX_ENTRADA_MOOV) return null; // fragmentado (ou enorme): não mexemos
   const b = new Uint8Array(await file.slice(moov.o, moov.o + moov.tam).arrayBuffer()), faixas = [];
-  const raiz = caixas(b)[0];
+  const raiz = caixas(b)[0], mvhdOrigem = filho(b, raiz, "mvhd"), escMov = mvhdOrigem ? u32(b, mvhdOrigem.ini + (b[mvhdOrigem.ini] === 1 ? 20 : 12)) : 1000;
   for (const trak of caixas(b, raiz.ini, raiz.fim).filter((x) => x.t === "trak")) {
     const mdia = filho(b, trak, "mdia"), tkhd = filho(b, trak, "tkhd"); if (!mdia || !tkhd) continue;
     const hdlr = filho(b, mdia, "hdlr"), mdhd = filho(b, mdia, "mdhd"), minf = filho(b, mdia, "minf"), stbl = minf && filho(b, minf, "stbl"); if (!hdlr || !mdhd || !stbl) continue;
@@ -60,7 +60,10 @@ export async function lerMp4(file) {
     if (ctts) { const v2 = b[ctts.ini], nC = u32(b, ctts.ini + 4); let q = 0; for (let r = 0; r < nC; r++) { const cont = u32(b, ctts.ini + 8 + 8 * r); let off = u32(b, ctts.ini + 12 + 8 * r); if (v2 === 1 && off > 0x7fffffff) off -= 4294967296; for (let j = 0; j < cont && q < n; j++, q++) amostras[q].cts += off; } }
     if (stss) { for (const a of amostras) a.sync = false; const nS = u32(b, stss.ini + 4); for (let r = 0; r < nS; r++) { const idx = u32(b, stss.ini + 8 + 4 * r) - 1; if (amostras[idx]) amostras[idx].sync = true; } }
     const dados = (x) => b.slice(x.o, x.fim); // cópia (a caixa inteira, com cabeçalho)
-    const f = { tipo, id: u32(b, tkhd.ini + (b[tkhd.ini] === 1 ? 20 : 12)), escala, duracao: dts, entrada: b.slice(entrada.o, entrada.fim), codec: quatro(b, entrada.o + 4), amostras, sttsBruto: dados(stts) };
+    let elst = null; // lista de edição simples (1 trecho): é ela que descarta os ~46 ms iniciais do AAC (atraso do codificador)
+    { const edts = filho(b, trak, "edts"), el = edts && filho(b, edts, "elst");
+      if (el && u32(b, el.ini + 4) === 1) { const v1 = b[el.ini] === 1, seg = v1 ? u32(b, el.ini + 12) : u32(b, el.ini + 8), mt = v1 ? u32(b, el.ini + 20) : u32(b, el.ini + 12), neg = (v1 ? b[el.ini + 16] : b[el.ini + 12]) & 0x80; if (!neg) elst = { segundos: seg / escMov, mediaTime: mt }; } }
+    const f = { tipo, elst, id: u32(b, tkhd.ini + (b[tkhd.ini] === 1 ? 20 : 12)), escala, duracao: dts, entrada: b.slice(entrada.o, entrada.fim), codec: quatro(b, entrada.o + 4), amostras, sttsBruto: dados(stts) };
     if (tipo === "vide") {
       f.largura = u16(b, entrada.o + 8 + 24); f.altura = u16(b, entrada.o + 8 + 26);
       f.matriz = b.slice(tkhd.ini + (b[tkhd.ini] === 1 ? 52 : 40), tkhd.ini + (b[tkhd.ini] === 1 ? 88 : 76));
@@ -123,7 +126,8 @@ function montaTrak(f, id, duracaoMovMs) {
   const hdlr = completa("hdlr", 0, 0, new Bytes().u32(0).s(video ? "vide" : "soun").zeros(12).s(video ? "VideoHandler" : "SoundHandler").u8(0).fim());
   const midia = completa(video ? "vmhd" : "smhd", 0, video ? 1 : 0, new Bytes().zeros(video ? 8 : 4).fim());
   const dinf = caixa("dinf", completa("dref", 0, 0, new Bytes().u32(1).raw(completa("url ", 0, 1)).fim()));
-  return caixa("trak", tkhd, caixa("mdia", mdhd, hdlr, caixa("minf", midia, dinf, caixa("stbl", ...stbl))));
+  const edts = !video && f.elst ? [caixa("edts", completa("elst", 0, 0, new Bytes().u32(1).u32(Math.round(f.elst.segundos * 1000)).u32(f.elst.mediaTime).u16(1).u16(0).fim()))] : [];
+  return caixa("trak", tkhd, ...edts, caixa("mdia", mdhd, hdlr, caixa("minf", midia, dinf, caixa("stbl", ...stbl))));
 }
 function montaMoov(faixas, duracaoMovMs) {
   const mvhd = completa("mvhd", 0, 0, new Bytes().u32(0).u32(0).u32(1000).u32(duracaoMovMs).u32(0x00010000).u16(0x0100).zeros(10).raw(Uint8Array.from(ident)).zeros(24).u32(faixas.length + 1).fim());
@@ -144,7 +148,7 @@ export function montaMp4({ largura, altura, matriz, avcC, amostrasVideo, audio, 
   let faixaA = null, amA = [];
   if (audio) {
     amA = audio.amostras; const dur = audio.duracao;
-    faixaA = { tipo: "soun", escala: audio.escala, duracao: dur, amostras: amA.map((a) => ({ t: a.t })), stsd: completa("stsd", 0, 0, new Bytes().u32(1).raw(audio.entrada).fim()), sttsBruto: audio.sttsBruto, chunks: [] };
+    faixaA = { tipo: "soun", escala: audio.escala, duracao: dur, amostras: amA.map((a) => ({ t: a.t })), stsd: completa("stsd", 0, 0, new Bytes().u32(1).raw(audio.entrada).fim()), sttsBruto: audio.sttsBruto, elst: audio.elst, chunks: [] };
   }
   // intercalação por janelas de 1 s
   const partes = [], ordem = []; // ordem: [{faixa, ini, n}]

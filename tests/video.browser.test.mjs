@@ -55,7 +55,8 @@ t("1080p com B-frames e áudio: sai 720p H.264, menor, com o MESMO áudio e a me
   assert.ok(Number(p.format.size) < Number(po.format.size) * 0.5, `menor: ${p.format.size} x ${po.format.size}`);
   assert.equal(decodifica(o.out), "", "o ffmpeg decodifica sem nenhum aviso");
   assert.ok(o.toca && o.toca.w === 1280 && o.toca.h === 720, "o navegador abre e toca: " + JSON.stringify(o.toca));
-  const bruto = readFileSync(o.out).toString("latin1"); assert.ok(!/SEGREDO|udta|meta|\xA9xyz|Lavf|Lavc|x264/.test(bruto), "nenhum metadado ou nome de programa no arquivo");
+  const bruto = readFileSync(o.out).toString("latin1"); // (o áudio é copiado sem mexer: o ffmpeg grava o próprio nome, "Lavc", dentro do fluxo AAC; celulares não fazem isso. Por isso "Lavc" fica fora desta lista.)
+  assert.ok(!/SEGREDO|udta|meta|\xA9xyz|Lavf|x264/.test(bruto), "nenhum metadado nem nome de programa nas caixas e no vídeo");
   assert.ok(o.prog.length > 0 && o.prog.at(-1) === 1 && o.prog.every((x, i) => i === 0 || x >= o.prog[i - 1]), "o progresso só sobe e termina em 100%");
 });
 t("retrato (gravado de lado, com rotação no arquivo): continua em pé depois de comprimir", async () => {
