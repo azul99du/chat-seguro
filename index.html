@@ -76,6 +76,7 @@
         <button id="notif-btn" class="mi" type="button" role="menuitem" aria-pressed="false" aria-label="Notificações: desligadas. Tocar para ligar">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/><path class="sino-corte" d="M3 3l18 18"/></svg>Notificações<span id="notif-estado" class="est">desligadas</span>
         </button>
+        <button id="tema-btn" class="mi" type="button" role="menuitem" aria-label="Aparência: automática. Tocar para trocar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Aparência<span id="tema-estado" class="est">automática</span></button>
         <button id="sec-btn" class="mi" type="button" role="menuitem" aria-label="Segurança da conta (verificação em dois passos)">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg><span class="tx2">Segurança da conta<small id="sec-aviso" class="aviso" hidden>● ative a verificação em 2 passos</small></span>
         </button>
@@ -209,52 +210,58 @@
 
   <dialog id="viewer"><img id="viewer-img" alt="Foto ampliada"></dialog>
 
-  <dialog id="mfa">
+  <dialog id="mfa" class="pagina">
     <form method="dialog">
-      <h2>Segurança da conta</h2>
-      <p id="mfa-status"></p>
-      <div id="mfa-enroll" hidden>
-        <ol class="steps">
-          <li>Abra um app autenticador (Google Authenticator, Authy, Microsoft Authenticator…).</li>
-          <li>Escaneie o QR code, ou digite a chave abaixo.</li>
-          <li>Digite aqui o código de 6 dígitos que o app mostrar.</li>
-        </ol>
-        <img id="mfa-qr" alt="QR code para o app autenticador" width="180" height="180">
-        <p class="muted">Chave manual: <code id="mfa-secret"></code></p>
-        <label class="sr" for="mfa-code">Código de 6 dígitos</label>
-        <input id="mfa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000">
-      </div>
-      <p id="mfa-msg" role="status"></p>
-      <div class="dialog-actions col">
-        <button type="button" id="mfa-go" class="primary">Ativar</button>
-        <button type="button" id="mfa-off" class="ghost" hidden>Desativar</button>
-        <button type="button" id="mfa-senha" class="ghost">Trocar senha de login</button>
-        <button type="button" id="mfa-exp" class="ghost" aria-describedby="mfa-hist-dica">Exportar histórico</button>
-        <button type="button" id="mfa-imp" class="ghost">Importar histórico</button>
+      <header class="pg-bar"><button value="cancel" class="pg-volta" aria-label="Voltar" formnovalidate><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><h2>Segurança da conta</h2></header>
+      <div class="pg-corpo">
+        <section id="mfa-destaque" class="destaque" data-estado="off">
+          <div class="dst-topo"><span class="dst-ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg></span><div class="dst-tit"><b>Verificação em duas etapas</b><span id="mfa-chip" class="selo-estado">Desativada</span></div></div>
+          <p id="mfa-status"></p>
+          <div id="mfa-enroll" hidden>
+            <ol class="steps">
+              <li>Abra um app autenticador (Google Authenticator, Authy, Microsoft Authenticator…).</li>
+              <li>Escaneie o QR code, ou digite a chave abaixo.</li>
+              <li>Digite aqui o código de 6 dígitos que o app mostrar.</li>
+            </ol>
+            <img id="mfa-qr" alt="QR code para o app autenticador" width="180" height="180">
+            <p class="muted">Chave manual: <code id="mfa-secret"></code></p>
+            <label class="sr" for="mfa-code">Código de 6 dígitos</label>
+            <input id="mfa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000">
+          </div>
+          <button type="button" id="mfa-go" class="primary">Ativar</button>
+          <button type="button" id="mfa-off" class="ghost" hidden>Desativar</button>
+        </section>
+        <p id="mfa-msg" role="status"></p>
+        <h3 class="pg-grupo">Senhas</h3>
+        <button type="button" id="mfa-senha" class="linha"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3"/></svg></span><span class="tx"><b>Trocar senha de login</b><small>Mínimo de 12 caracteres</small></span></button>
+        <button type="button" id="mfa-pass" class="linha"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><span class="tx"><b>Trocar frase-senha</b><small>Protege o backup da sua chave (16+ caracteres)</small></span></button>
+        <h3 class="pg-grupo">Outro aparelho</h3>
+        <button type="button" id="mfa-exp" class="linha"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg></span><span class="tx"><b>Exportar histórico</b><small>Gera um arquivo trancado por senha</small></span></button>
+        <button type="button" id="mfa-imp" class="linha"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg></span><span class="tx"><b>Importar histórico</b><small>Traz mensagens antigas para este aparelho</small></span></button>
         <input type="file" id="mfa-file" hidden>
-        <small id="mfa-hist-dica" class="muted">Para ler suas mensagens antigas em outro aparelho: exporte aqui, importe lá. O arquivo é trancado por uma senha e não passa pelo servidor.</small>
-        <button type="button" id="mfa-pass" class="ghost" aria-describedby="mfa-pass-dica">Trocar frase-senha</button>
-        <small id="mfa-pass-dica" class="muted">A frase-senha protege o backup da sua chave. Use 16+ caracteres (cinco palavras sorteadas).</small>
-        <button value="cancel" class="ghost" formnovalidate>Fechar</button>
+        <p class="pg-nota"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span>Suas mensagens são protegidas de ponta a ponta. Nem o servidor consegue ler.</span></p>
       </div>
     </form>
   </dialog>
 
-  <dialog id="perfil">
+  <dialog id="perfil" class="pagina">
     <form method="dialog">
-      <h2>Minha foto</h2>
-      <div class="foto-area"><canvas id="perfil-cv" width="256" height="256" aria-label="Pré-visualização da foto de perfil"></canvas></div>
-      <label class="sr" for="perfil-zoom">Zoom da foto</label>
-      <input id="perfil-zoom" type="range" min="1" max="4" step="0.01" value="1" hidden>
-      <p id="perfil-msg" role="status"></p>
-      <input id="perfil-file" type="file" accept="image/*" hidden>
-      <div class="dialog-actions col">
-        <button type="button" id="perfil-escolher" class="primary">Escolher foto</button>
-        <button type="button" id="perfil-salvar" class="primary" hidden>Salvar</button>
-        <button type="button" id="perfil-remover" class="ghost" hidden>Remover foto</button>
-        <button value="cancel" class="ghost" formnovalidate>Fechar</button>
+      <header class="pg-bar"><button value="cancel" class="pg-volta" aria-label="Voltar" formnovalidate><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><h2>Perfil</h2></header>
+      <div class="pg-corpo">
+        <div class="foto-area">
+          <div class="foto-moldura"><canvas id="perfil-cv" width="256" height="256" aria-label="Pré-visualização da foto de perfil"></canvas>
+            <button type="button" id="perfil-escolher" class="cam" aria-label="Escolher foto"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button></div>
+        </div>
+        <label class="sr" for="perfil-zoom">Zoom da foto</label>
+        <input id="perfil-zoom" type="range" min="1" max="4" step="0.01" value="1" hidden>
+        <p id="perfil-msg" role="status"></p>
+        <input id="perfil-file" type="file" accept="image/*" hidden>
+        <button type="button" id="perfil-salvar" class="primary" hidden>Salvar foto</button>
+        <div class="linha info"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></span><span class="tx"><small>Nome</small><b id="perfil-nome"></b></span><button type="button" id="perfil-copiar" class="so-icone" aria-label="Copiar meu nome"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></div>
+        <p class="pg-dica">Este é o nome que seus amigos digitam para te chamar.</p>
+        <button type="button" id="perfil-remover" class="linha perigo" hidden><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></span><span class="tx"><b>Remover foto</b></span></button>
+        <p class="pg-nota"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span>Quem conversa com você vê sua foto. Ela fica no servidor sem a cifra das mensagens.</span></p>
       </div>
-      <small class="muted">Quem conversa com você vê a foto. Ela fica guardada no servidor sem a cifra das mensagens.</small>
     </form>
   </dialog>
 

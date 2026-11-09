@@ -236,10 +236,12 @@ async function desenharSeguranca() {
   const ativo = await ativo2fa(), msg = $("mfa-msg"); msg.textContent = ""; msg.className = "";
   $("mfa-enroll").hidden = !pendente2fa; $("mfa-off").hidden = !ativo || !!pendente2fa;
   $("mfa-go").hidden = !!ativo && !pendente2fa;
-  $("mfa-go").textContent = pendente2fa ? "Confirmar código" : "Ativar";
+  $("mfa-go").textContent = pendente2fa ? "Confirmar código" : "Ativar verificação";
+  const est = pendente2fa ? "pendente" : ativo ? "on" : "off";
+  $("mfa-destaque").dataset.estado = est; $("mfa-chip").textContent = pendente2fa ? "Falta confirmar" : ativo ? "Ativada" : "Desativada";
   $("mfa-status").textContent = pendente2fa ? "Falta só confirmar: digite o código que o app mostra."
     : ativo ? "Ativada. Além da senha, o Lacre pede um código do seu app autenticador a cada novo login. Sem o código, ninguém abre a conta, mesmo sabendo a senha."
-    : "Desativada. Com ela, uma senha descoberta não basta para entrar na sua conta.";
+    : "Com ela, uma senha descoberta não basta para entrar na sua conta.";
 }
 async function limpar2faPendente() {
   if (!pendente2fa) return; const id = pendente2fa; pendente2fa = null;
@@ -397,23 +399,35 @@ function fecharMenu(devolveFoco = true) {
 }
 $("eu-foto").onclick = () => ($("menu-conta").hidden ? abrirMenu() : fecharMenu());
 $("menu-fundo").onclick = () => fecharMenu();
-$("menu-conta").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b && !b.matches("#notif-btn, #copiar-nome")) fecharMenu(false); }); // copiar e notificações mostram o resultado ali mesmo
+$("menu-conta").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b && !b.matches("#notif-btn, #copiar-nome, #tema-btn")) fecharMenu(false); }); // copiar e notificações mostram o resultado ali mesmo
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("menu-conta").hidden && !document.querySelector("dialog[open]")) fecharMenu(); });
+
+// ---------- Aparência: automática (segue o aparelho), clara ou escura ----------
+const TEMAS = ["auto", "claro", "escuro"], NOME_TEMA = { auto: "automática", claro: "clara", escuro: "escura" };
+let tema = "auto"; try { const t = localStorage.getItem("lacre:tema"); if (TEMAS.includes(t)) tema = t; } catch {}
+function aplicarTema() {
+  const r = document.documentElement; if (tema === "auto") delete r.dataset.tema; else r.dataset.tema = tema;
+  $("tema-estado").textContent = NOME_TEMA[tema]; $("tema-btn").setAttribute("aria-label", `Aparência: ${NOME_TEMA[tema]}. Tocar para trocar`);
+}
+$("tema-btn").onclick = () => { tema = TEMAS[(TEMAS.indexOf(tema) + 1) % TEMAS.length]; try { localStorage.setItem("lacre:tema", tema); } catch {} aplicarTema(); };
+aplicarTema();
 
 // ---------- Chamar um amigo (botão flutuante) ----------
 $("chamar-fab").onclick = () => { $("chamar").showModal(); $("add-user").focus(); };
 
 // ---------- Meu nome (o que os amigos digitam para me chamar) ----------
 let nomeTimer = 0;
+async function copiarTexto(txt, origem) { // área de transferência; se o navegador não deixar, seleciona o texto para copiar à mão
+  try { await navigator.clipboard.writeText(txt); return true; } catch {}
+  try { const r = document.createRange(); r.selectNodeContents(origem); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); const ok = document.execCommand("copy"); sel.removeAllRanges(); return ok; } catch { return false; }
+}
 $("copiar-nome").onclick = async () => {
   const nome = $("nome-txt").textContent; if (!nome) return;
-  let ok = false;
-  try { await navigator.clipboard.writeText(nome); ok = true; } catch {
-    try { const r = document.createRange(); r.selectNodeContents($("nome-txt")); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); ok = document.execCommand("copy"); sel.removeAllRanges(); } catch {}
-  }
+  const ok = await copiarTexto(nome, $("nome-txt"));
   const t = $("nome-aviso"); t.textContent = ok ? "Copiado ✓" : "Não deu para copiar: segure no nome"; t.hidden = false; $("nome-rot").hidden = true;
   clearTimeout(nomeTimer); nomeTimer = setTimeout(() => { t.hidden = true; $("nome-rot").hidden = false; }, 2200);
 };
+$("perfil-copiar").onclick = async () => msgPerfil(await copiarTexto($("perfil-nome").textContent, $("perfil-nome")) ? "Nome copiado ✓" : "Não deu para copiar: segure no nome", true);
 
 // ---------- Foto de perfil ----------
 const fotoCache = new Map(); // caminho -> blob: URL (o nome do arquivo muda a cada foto nova, então nunca fica velho)
@@ -488,7 +502,7 @@ async function mostraFotoAtualNoPerfil() {
   if (url) { const im = new Image(); im.src = url; await im.decode().catch(() => {}); ctx.drawImage(im, 0, 0, LADO, LADO); }
   else { ctx.fillStyle = "#3A3F9E"; ctx.fillRect(0, 0, LADO, LADO); ctx.fillStyle = "#fff"; ctx.font = "700 110px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(me.username[0].toUpperCase(), LADO / 2, LADO / 2 + 6); }
   $("perfil-zoom").hidden = true; $("perfil-salvar").hidden = true; $("perfil-remover").hidden = !me.avatar;
-  $("perfil-escolher").textContent = me.avatar ? "Trocar foto" : "Escolher foto";
+  $("perfil-escolher").setAttribute("aria-label", me.avatar ? "Trocar foto" : "Escolher foto"); $("perfil-nome").textContent = "@" + me.username;
 }
 function msgPerfil(t, ok) { const m = $("perfil-msg"); m.textContent = t; m.className = ok ? "ok" : ""; }
 $("menu-foto").onclick = async () => { msgPerfil(""); $("perfil").showModal(); await mostraFotoAtualNoPerfil(); };

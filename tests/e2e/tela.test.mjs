@@ -43,6 +43,28 @@ t("Chamar: botão flutuante abre a folha com o campo já focado; nome inválido 
   await A.click("#note button"); await A.waitForSelector("#note", { state: "hidden" }); assert.equal(await A.locator("#chamar").evaluate((d) => d.open), true, "a folha continua aberta para corrigir");
   await A.fill("#add-user", nomeB); await A.click("#add-form button"); await A.waitForSelector("#send-form:not([hidden])"); assert.equal(await A.locator("#chamar").evaluate((d) => d.open), false);
 });
+t("Aparência: o menu alterna automática → clara → escura, muda as cores e lembra a escolha", async () => {
+  await A.click("#back").catch(() => {}); // (a conversa do teste anterior está aberta: volta para a lista)
+  const cor = () => A.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  await menuConta(A); assert.equal(await A.locator("#tema-estado").innerText(), "automática");
+  await menuConta(A, "#tema-btn"); assert.equal(await A.evaluate(() => document.documentElement.dataset.tema), "claro"); const clara = await cor();
+  await menuConta(A, "#tema-btn"); assert.equal(await A.evaluate(() => document.documentElement.dataset.tema), "escuro"); const escura = await cor();
+  assert.notEqual(clara, escura, "as cores mudam"); const [r, g, b] = escura.match(/\d+/g).map(Number); assert.ok(r + g + b < 150, "fundo escuro: " + escura);
+  assert.equal(await A.evaluate(() => localStorage.getItem("lacre:tema")), "escuro");
+  await A.reload(); await A.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 }); assert.equal(await A.evaluate(() => document.documentElement.dataset.tema), "escuro", "continua escuro depois de recarregar");
+  await menuConta(A, "#tema-btn"); assert.equal(await A.evaluate(() => document.documentElement.dataset.tema ?? "auto"), "auto"); await A.keyboard.press("Escape");
+});
+t("Segurança é uma página com a linha do 2FA em destaque; Perfil mostra o nome e copia", async () => {
+  await menuConta(A, "#sec-btn"); await A.waitForSelector("#mfa[open]");
+  assert.equal(await A.locator("#mfa-destaque").getAttribute("data-estado"), "off"); assert.equal(await A.locator("#mfa-chip").innerText(), "Desativada");
+  const caixa = await A.locator("#mfa").boundingBox(); assert.ok(caixa.width >= 380 && caixa.height >= 700, "ocupa a tela toda no celular");
+  for (const id of ["#mfa-go", "#mfa-senha", "#mfa-pass", "#mfa-exp", "#mfa-imp"]) assert.equal(await A.locator(id).isVisible(), true, id);
+  await A.click("#mfa button[value=cancel]");
+  await A.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  await menuConta(A, "#menu-foto"); await A.waitForSelector("#perfil[open]"); assert.equal(await A.locator("#perfil-nome").innerText(), "@" + nomeA);
+  await A.click("#perfil-copiar"); await A.waitForFunction(() => /copiado/i.test(document.getElementById("perfil-msg").textContent)); assert.equal(await A.evaluate(() => navigator.clipboard.readText()), "@" + nomeA);
+  assert.equal(await A.locator("#perfil-escolher").isVisible(), true, "botão de câmera"); await A.click("#perfil button[value=cancel]");
+});
 t("com poucas conversas a busca não aparece; sem erros de JavaScript", async () => {
   await A.click("#back").catch(() => {}); assert.equal(await A.locator("#busca-box").isVisible(), false); assert.deepEqual(erros, []);
 });

@@ -4,6 +4,7 @@
 // 2) Dentro de moldura (iframe) de outro site: protege contra clique disfarçado (clickjacking).
 // Se bloquear, o app não chega a ser carregado: nenhuma chave é aberta e nenhum banco local é criado.
 (function () {
+  try { const t = localStorage.getItem("lacre:tema"); if (t === "claro" || t === "escuro") document.documentElement.dataset.tema = t; } catch {} // aparência escolhida: aplica já, antes de desenhar a tela
   const ua = navigator.userAgent || "";
   const embutido = /Instagram|FBAN|FBAV|FB_IAB|FBIOS|Messenger|musical_ly|TikTok|BytedanceWebview|Snapchat|MicroMessenger|\bGSA\/|Line\/|; wv\)/i.test(ua);
   let emMoldura = false;

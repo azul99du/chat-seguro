@@ -119,3 +119,10 @@ Por causa do sigilo futuro, um aparelho novo não consegue ler as mensagens anti
 - Inclui o texto e as chaves dos arquivos de mídia (que seguem no servidor, cifrados). Figurinhas salvas e o cache de arquivos não entram.
 - O arquivo é uma cópia legível do histórico para quem tiver arquivo + senha: guarde só onde você controla e apague depois de importar.
 - Testes: `tests/historico.test.mjs` e `tests/e2e/historico.test.mjs` (aparelho novo não lê → exporta → importa → lê).
+
+## Telas de configuração e modo escuro
+- **Segurança da conta** e **Perfil** são páginas inteiras no celular (painel centralizado no computador), no estilo lista do WhatsApp: ícone, título e explicação em cada linha, com grupos ("Senhas", "Outro aparelho").
+- A linha da **verificação em duas etapas** tem destaque: cartão rosa com selo "Desativada" e botão "Ativar verificação"; verde com "Ativada" quando ligada.
+- No **Perfil**: foto com botão de câmera em rosa lacre, nome com botão de copiar (e a explicação de que é o nome que os amigos digitam), e "Remover foto".
+- **Aparência** (menu da sua foto): automática (segue o aparelho), clara ou escura. A escolha fica salva neste aparelho (`lacre:tema`) e é aplicada pelo `guarda.js` antes de desenhar a tela. As cores vêm de variáveis em `style.css` (`--paper`, `--card`, `--texto`, `--mine`...) trocadas em `:root[data-tema="escuro"]` e em `prefers-color-scheme: dark`.
+- Testes: `tests/e2e/tela.test.mjs` (menu, Chamar, Aparência, página de Segurança e Perfil).
