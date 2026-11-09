@@ -155,6 +155,13 @@ t("aparelho novo: mensagens antigas com sigilo futuro ficam indisponíveis; a se
   await vista(N, "depois de refazer a sessão", 40000);
   await enviar(N, "respondendo do aparelho novo"); await vista(B, "respondendo do aparelho novo");
 });
+t("avisos automáticos de outro aparelho MEU não viram balão de erro: só a mensagem de verdade aparece (com o texto que ensina a importar o histórico)", async () => {
+  await A.reload(); await A.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 }); await A.click("#contacts button"); await A.waitForSelector(`#conv-title:has-text("@${nomeB}")`);
+  await A.waitForSelector(".bubble.err", { timeout: 20000 }); await A.waitForTimeout(800);
+  // (a resposta do amigo, feita já na sessão nova, também não abre neste aparelho: é a mesma limitação, mas é uma mensagem de verdade dele)
+  assert.equal(await A.locator(".msg.mine .bubble.err").count(), 1, "o 'hello' do outro aparelho some; só 'respondendo do aparelho novo' (uma mensagem real minha) aparece como indisponível");
+  assert.match(await A.locator(".msg.mine .bubble.err").first().innerText(), /exporte o histórico de lá e importe aqui/);
+});
 t("anônimo não entra no canal privado de presença", async () => {
   const r = await A.evaluate(async ({ url, key }) => {
     const { createClient } = await import("/vendor/supabase.js"); const c = createClient(url, key, { auth: { persistSession: false } });

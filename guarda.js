@@ -10,7 +10,7 @@
   let emMoldura = false;
   try { emMoldura = window.top !== window.self; } catch { emMoldura = true; } // acesso negado ao topo = estamos em moldura de outro site
   if (!embutido && !emMoldura) {
-    import("./app.js?v=eb7fa3ce5e").catch(() => bloquear("Não foi possível carregar o Lacre.", "Recarregue a página. Se continuar, tente de novo em alguns minutos.", false));
+    import("./app.js?v=587bba0d68").catch(() => bloquear("Não foi possível carregar o Lacre.", "Recarregue a página. Se continuar, tente de novo em alguns minutos.", false));
     return;
   }
   const android = /Android/i.test(ua);

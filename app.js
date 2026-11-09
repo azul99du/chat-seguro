@@ -1,15 +1,15 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=eb7fa3ce5e";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=eb7fa3ce5e";
-import { montarFigurinhas } from "./figurinhas.js?v=eb7fa3ce5e";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=eb7fa3ce5e";
-import { usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=eb7fa3ce5e";
-import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js?v=eb7fa3ce5e";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=eb7fa3ce5e";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=eb7fa3ce5e";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=eb7fa3ce5e";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=eb7fa3ce5e";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js?v=eb7fa3ce5e";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=587bba0d68";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=587bba0d68";
+import { montarFigurinhas } from "./figurinhas.js?v=587bba0d68";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=587bba0d68";
+import { usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=587bba0d68";
+import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js?v=587bba0d68";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=587bba0d68";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=587bba0d68";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=587bba0d68";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=587bba0d68";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js?v=587bba0d68";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -1079,7 +1079,10 @@ async function decryptV2(m, peer) {
 async function readV2(m, peer) {
   const cached = await getHistory(me.id, peer.id, m.id);
   if (cached) return cached.content;
-  if (m.sender_id === me.id) return gone("Enviada por você de outro aparelho: o histórico novo fica só no aparelho que enviou.");
+  if (m.sender_id === me.id) {
+    if (m.avisar === false) return { type: "hello" }; // aviso automático (refazer sessão, apagar…) enviado por outro aparelho seu: nunca é uma mensagem de verdade, então some em vez de virar um balão de erro
+    return gone("Enviada por você de outro navegador ou aparelho (como o computador). Para ver aqui: exporte o histórico de lá e importe aqui, em Segurança da conta.");
+  }
   if ((await pinStatus(peer)) === "changed") return gone("A chave desta pessoa mudou. Abra o código de segurança e confira com ela antes de continuar.");
   return withLock(lockName(peer), async () => {
     const again = await getHistory(me.id, peer.id, m.id); if (again) return again.content;
