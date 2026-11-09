@@ -1,11 +1,13 @@
 // Arquivos de teste gerados na hora (nada binário no repositório). Precisam do ffmpeg.
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 export const hasFfmpeg = () => spawnSync("ffmpeg", ["-version"], { stdio: "ignore" }).status === 0;
-export const tmp = () => mkdtempSync(join(tmpdir(), "lacre-"));
+export const tmp = () => { // pasta temporária que SOME quando o teste termina (senão os testes enchem o disco)
+  const d = mkdtempSync(join(tmpdir(), "lacre-")); process.on("exit", () => { try { rmSync(d, { recursive: true, force: true }); } catch {} }); return d;
+};
 const ff = (...a) => execFileSync("ffmpeg", ["-v", "error", "-y", ...a], { stdio: "pipe" });
 
 // Vídeo com metadados "secretos": título, GPS, comentário, data, nome do handler e uma faixa de timecode.

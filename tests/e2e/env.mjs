@@ -1,6 +1,6 @@
 // Ambiente dos testes de ponta a ponta: sobe uma cópia do site apontada para um projeto Supabase DE TESTE.
 import { createServer } from "node:http";
-import { cpSync, mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+import { cpSync, mkdirSync, readFileSync, writeFileSync, existsSync, symlinkSync } from "node:fs";
 import { join, extname, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmp } from "../helpers/fixtures.mjs";
@@ -26,7 +26,7 @@ export const apiKey = SUPABASE_KEY;
 export function prepararSite() {
   const dir = tmp(), arquivos = ["index.html", "style.css", "guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "recorte.js", "recorte-config.js", "sam2.js", "figurinhas.js", "avatar.js", "historico.js", "video.js", "config.js", "favicon.svg", "favicon.ico", "apple-touch-icon.png", "sw.js", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-maskable-512.png"];
   for (const f of arquivos) cpSync(join(raiz, f), join(dir, f));
-  cpSync(join(raiz, "vendor"), join(dir, "vendor"), { recursive: true });
+  symlinkSync(join(raiz, "vendor"), join(dir, "vendor"), "dir"); // (link em vez de cópia: são ~75 MB de modelos por teste)
   const host = (u) => new URL(u).host;
   for (const f of ["config.js", "index.html"]) {
     const p = join(dir, f); let t = readFileSync(p, "utf8");
