@@ -36,7 +36,7 @@ t("ativar: QR e chave aparecem; código errado é recusado; código certo ativa 
   await P.fill("#mfa-code", "000000"); await P.click("#mfa-go");
   await P.waitForFunction(() => /incorreto/i.test(document.getElementById("mfa-msg").textContent), null, { timeout: 15000 });
   await P.fill("#mfa-code", codigo()); await P.click("#mfa-go");
-  await P.waitForFunction(() => /ativada/i.test(document.getElementById("mfa-status").textContent), null, { timeout: 20000 });
+  await P.waitForFunction(() => /ativada/i.test(document.getElementById("mfa-chip").textContent), null, { timeout: 20000 });
   assert.equal(await P.locator("#mfa-off").isVisible(), true);
   await P.click("#mfa button[value=cancel]"); await P.waitForSelector("#mfa-nudge", { state: "hidden" });
 });
@@ -90,7 +90,7 @@ t("NO BANCO: sessão só com senha fica trancada (nem sem o site); com o código
 t("desativar: pede confirmação, volta a abrir só com a senha, e o banco libera", async () => {
   await menuConta(P, "#sec-btn"); await P.waitForSelector("#mfa[open]"); await P.click("#mfa-off");
   await P.waitForSelector("#choice[open]"); await P.click("#choice button[value=sim]");
-  await P.waitForFunction(() => /desativada/i.test(document.getElementById("mfa-status").textContent), null, { timeout: 20000 });
+  await P.waitForFunction(() => /desativada/i.test(document.getElementById("mfa-chip").textContent), null, { timeout: 20000 });
   await P.click("#mfa button[value=cancel]");
   const c = cliente(); await c.auth.signInWithPassword({ email, password: SENHA });
   assert.equal((await c.auth.mfa.getAuthenticatorAssuranceLevel()).data.nextLevel, "aal1");
