@@ -15,7 +15,7 @@ describe("código", () => {
   for (const f of APP) test(`${f}: sintaxe válida`, () => execFileSync("node", ["--check", join(raiz, f)]));
 
   test("todos os imports relativos existem", () => {
-    for (const f of APP) for (const m of ler(f).matchAll(/from\s+"(\.[^"]+)"/g)) assert.ok(existsSync(join(raiz, dirname(f), m[1])), `${f} importa ${m[1]}`);
+    for (const f of APP) for (const m of ler(f).matchAll(/from\s+"(\.[^"]+)"/g)) assert.ok(existsSync(join(raiz, dirname(f), m[1].split("?")[0])), `${f} importa ${m[1]}`);
   });
   test("nada que injete HTML ou execute texto como código", () => {
     for (const f of APP) {
@@ -25,8 +25,8 @@ describe("código", () => {
   });
   test("o app só é carregado pelo guarda.js (que bloqueia navegadores embutidos e molduras)", () => {
     const html = ler("index.html"), scripts = [...html.matchAll(/<script[^>]*>/g)].map((m) => m[0]);
-    assert.deepEqual(scripts, ['<script src="guarda.js">'], "index.html não pode carregar app.js diretamente");
-    assert.match(ler("guarda.js"), /import\("\.\/app\.js"\)/);
+    assert.equal(scripts.length, 1, "index.html carrega um único script"); assert.match(scripts[0], /^<script src="guarda\.js(\?v=[0-9a-f]+)?">$/, "index.html não pode carregar app.js diretamente");
+    assert.match(ler("guarda.js"), /import\("\.\/app\.js(\?v=[0-9a-f]+)?"\)/);
     assert.match(ler("guarda.js"), /Instagram/); assert.match(ler("guarda.js"), /window\.top !== window\.self/);
   });
   test("nenhuma biblioteca de terceiros carregada de CDN (tudo local)", () => {
@@ -86,6 +86,13 @@ describe("avisos push (supabase/schema.sql)", () => {
   });
   test("o cliente não escreve 'notificada' e o gatilho só dispara para mensagens que querem aviso", () => {
     assert.match(sql, /grant insert \(recipient_id, ciphertext, iv, v, header, avisar\) on public\.messages/); assert.match(sql, /when \(new\.avisar\)/);
+  });
+});
+
+describe("cache do navegador", () => {
+  test("as URLs de CSS/JS levam a versão do conteúdo (rode `npm run versionar` depois de mexer no site)", async () => {
+    const { emDia } = await import("../scripts/versionar.mjs"); const r = emDia();
+    assert.deepEqual(r.velhos, [], "versão desatualizada em: " + r.velhos.join(", "));
   });
 });
 
