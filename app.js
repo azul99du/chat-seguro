@@ -1,14 +1,14 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=70aacf289a";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=70aacf289a";
-import { montarFigurinhas } from "./figurinhas.js?v=70aacf289a";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=70aacf289a";
-import { exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=70aacf289a";
-import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js?v=70aacf289a";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=70aacf289a";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=70aacf289a";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=70aacf289a";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js?v=70aacf289a";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=88c752f468";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=88c752f468";
+import { montarFigurinhas } from "./figurinhas.js?v=88c752f468";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=88c752f468";
+import { exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=88c752f468";
+import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js?v=88c752f468";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=88c752f468";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=88c752f468";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=88c752f468";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js?v=88c752f468";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -778,6 +778,12 @@ function addMessage(m, content, { err = false, animate = false, em = null } = {}
   }
   if (media) b.append(mediaBlock(content, mine));
   b.append(sr, vis, meta); line.append(b);
+  if (!err) { // botão "⌄" ao passar o mouse (só em aparelhos com mouse); fica fora do balão e não ocupa espaço
+    const op = el("button", "msg-opcoes"); op.type = "button"; op.tabIndex = -1; op.setAttribute("aria-label", "Mais opções da mensagem");
+    { const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg"); for (const [k, v] of Object.entries({ viewBox: "0 0 24 24", width: "16", height: "16", fill: "none", stroke: "currentColor", "stroke-width": "2.2", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true" })) svg.setAttribute(k, v);
+      const pa = document.createElementNS(ns, "path"); pa.setAttribute("d", "M6 9l6 6 6-6"); svg.append(pa); op.append(svg); }
+    op.onclick = (ev) => { ev.stopPropagation(); abrirPicker(wrap, m.id); }; line.append(op);
+  }
   const rx = el("div", "rx");
   wrap.append(line, rx);
   if (!err) gestosMensagem(wrap, line, b, m.id);
@@ -815,23 +821,52 @@ function irPara(id) { // vai até a mensagem original e a destaca por um instant
 
 // Menu da mensagem (reagir, responder, copiar, apagar): abre ao SEGURAR a mensagem (celular) ou com o botão direito (computador).
 let aberturaPorToque = 0; // quando o menu foi aberto por segurar com o dedo (o navegador pode mandar um 'botão direito' logo em seguida: ignoramos)
+// Menu da mensagem: aparece SOBREPOSTO (fora da lista), então as mensagens não mudam de lugar. As reações ficam acima do balão e as ações abaixo.
+let aberturaMenu = 0;
+function fecharPicker() { document.querySelectorAll(".picker").forEach((p) => p.remove()); }
 function abrirPicker(wrap, id) {
-  document.querySelectorAll(".picker").forEach((p) => p.remove());
-  const p = el("div", "picker"), linha = el("div", "emojis"), e = msgs.get(id), apagada = e?.content?.type === "deleted";
+  fecharPicker();
+  const bubble = wrap.querySelector(".bubble"); if (!bubble) return;
+  const p = el("div", "picker"), fundo = el("div", "p-fundo"), foco = el("div", "p-foco"), linha = el("div", "emojis"), acoes = el("div", "acoes");
+  const e = msgs.get(id), apagada = e?.content?.type === "deleted";
   p.setAttribute("role", "group"); p.setAttribute("aria-label", apagada ? "Apagar" : "Reagir, responder, copiar ou apagar");
   for (const em of apagada ? [] : EMOJIS) {
     const b = el("button", null, em); b.type = "button"; b.setAttribute("aria-label", "Reagir com " + em);
-    b.onclick = () => { p.remove(); react(id, em); }; linha.append(b);
+    b.onclick = () => { fecharPicker(); react(id, em); }; linha.append(b);
   }
-  if (!apagada) p.append(linha);
-  if (citavel(id)) { const r = el("button", "responder", "Responder"); r.type = "button"; r.onclick = () => { p.remove(); responder(id); }; p.append(r); }
+  if (citavel(id)) { const r = el("button", "responder", "Responder"); r.type = "button"; r.onclick = () => { fecharPicker(); responder(id); }; acoes.append(r); }
   const texto = e?.content?.type === "text" ? e.content.text : e?.content?.type === "media" ? e.content.caption : "";
-  if (texto && navigator.clipboard?.writeText) { const c = el("button", "copiar", "Copiar"); c.type = "button"; c.onclick = () => { p.remove(); navigator.clipboard.writeText(String(texto)).catch(() => {}); }; p.append(c); }
-  const ap = el("button", "apagar", "Apagar…"); ap.type = "button"; ap.onclick = () => { p.remove(); perguntarApagar(id); }; p.append(ap);
-  wrap.append(p); p.querySelector("button").focus({ preventScroll: true });
+  if (texto && navigator.clipboard?.writeText) { const c = el("button", "copiar", "Copiar"); c.type = "button"; c.onclick = () => { fecharPicker(); navigator.clipboard.writeText(String(texto)).catch(() => {}); }; acoes.append(c); }
+  const ap = el("button", "apagar", "Apagar…"); ap.type = "button"; ap.onclick = () => { fecharPicker(); perguntarApagar(id); }; acoes.append(ap);
+  fundo.onclick = (ev) => { if (ev.pointerType === "mouse" || Date.now() - aberturaMenu > 700) fecharPicker(); }; // (o dedo que acabou de segurar a mensagem não fecha o menu ao levantar)
+  p.append(fundo, foco); if (!apagada) p.append(linha); p.append(acoes);
+  p.style.visibility = "hidden"; document.body.append(p); aberturaMenu = Date.now();
+  // posição: foco = o próprio balão (fica no lugar, o resto escurece); reações acima, ações abaixo; sempre dentro da tela
+  const posiciona = () => {
+    if (!bubble.isConnected) return fecharPicker();
+    const r = bubble.getBoundingClientRect(), vw = innerWidth, vh = innerHeight, M = 8, mine = wrap.classList.contains("mine");
+    const topoLista = $("messages").getBoundingClientRect().top + 4;
+    Object.assign(foco.style, { left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px" });
+    const x = (w) => Math.min(Math.max(M, mine ? r.right - w : r.left), Math.max(M, vw - w - M));
+    const eh = apagada ? 0 : linha.offsetHeight, ah = acoes.offsetHeight;
+    let yEmoji = r.top - eh - M, yAcoes = r.bottom + M;
+    if (!apagada && yEmoji < topoLista) { yEmoji = r.bottom + M; yAcoes = yEmoji + eh + M; } // sem espaço em cima: reações e ações ficam as duas abaixo
+    yAcoes = Math.min(yAcoes, vh - ah - M);
+    if (!apagada) Object.assign(linha.style, { left: x(linha.offsetWidth) + "px", top: Math.max(M, Math.min(yEmoji, vh - eh - M)) + "px" });
+    Object.assign(acoes.style, { left: x(acoes.offsetWidth) + "px", top: Math.max(M, yAcoes) + "px" });
+  };
+  p._posiciona = posiciona; posiciona();
+  p.style.visibility = ""; p.querySelector("button")?.focus({ preventScroll: true });
 }
-document.addEventListener("click", (ev) => { if (!ev.target.closest(".picker")) document.querySelectorAll(".picker").forEach((p) => p.remove()); });
-document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") document.querySelectorAll(".picker").forEach((p) => p.remove()); });
+document.addEventListener("click", (ev) => {
+  if (ev.target.closest(".picker, .msg-opcoes")) return;
+  if (ev.pointerType && ev.pointerType !== "mouse" && Date.now() - aberturaMenu < 700) return; // o dedo que acabou de segurar a mensagem não fecha o menu ao levantar
+  fecharPicker();
+});
+document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") fecharPicker(); });
+const reposiciona = () => requestAnimationFrame(() => document.querySelector(".picker")?._posiciona?.()); // a lista rolou (ou a janela mudou): o menu acompanha o balão
+addEventListener("resize", reposiciona);
+$("messages").addEventListener("scroll", reposiciona, { passive: true });
 // Gestos na mensagem: segurar = menu; arrastar para a direita = responder
 const LIM_RESPONDER = 60, SEGURAR_MS = 420;
 function gestosMensagem(wrap, line, bubble, id) {
@@ -1059,6 +1094,7 @@ const sendError = (e, peer) => limitado(e) ? "Você fez muitas coisas em pouco t
   : "Não foi possível enviar. Verifique a conexão e tente de novo.";
 
 async function show(m, peer, animate) {
+  if (msgs.has(m.id)) return; // já está na tela (uma mensagem que chegou enquanto a conversa abria não aparece duas vezes)
   const c = await readRow(m, peer);
   if (c.type === "reaction") return applyReaction(c, m);
   if (c.type === "hello" || c.type === "hidden") return;
@@ -1095,6 +1131,7 @@ async function open(peer) {
   $("bg-btn").hidden = false; $("safety-btn").hidden = false; clearPending(); setBg(bgCache.get(peer.id) ?? null); applyBackground(peer);
   $("messages").replaceChildren(); msgs.clear(); reactions.clear(); cancelarResposta();
   $("messages").classList.add("carregando"); // a lista só aparece pronta, já nas últimas mensagens (sem descer na frente da pessoa)
+  carregandoConversa = peer; filaChegando = [];
   try {
   const { data } = await sb.from("messages").select("*")
     .or(`and(sender_id.eq.${me.id},recipient_id.eq.${peer.id}),and(sender_id.eq.${peer.id},recipient_id.eq.${me.id})`)
@@ -1104,11 +1141,14 @@ async function open(peer) {
   await loadLegacyReactions(linhas, peer);
   for (const m of linhas) await show(m, peer, false);
   [...msgs.keys()].forEach(renderRx);
+  carregandoConversa = null; const fila = filaChegando; filaChegando = [];
+  for (const m of fila) await show(m, peer, false);
   if (!msgs.size) {
     const p = el("p", "empty", "Nenhuma mensagem ainda. Diga oi: só vocês dois vão ler."); p.id = "msgs-empty";
     $("messages").append(p);
   }
   } finally {
+    if (carregandoConversa === peer) carregandoConversa = null; // (falhou no meio: não deixa mensagens novas presas na fila)
     if (active === peer) { // (se a pessoa já abriu outra conversa, quem cuida da lista é a outra chamada)
       const L = $("messages"); L.scrollTop = L.scrollHeight; // já no fim, antes de aparecer
       requestAnimationFrame(() => { L.scrollTop = L.scrollHeight; L.classList.remove("carregando"); });
@@ -1120,6 +1160,7 @@ async function open(peer) {
 }
 $("back").onclick = () => { $("chat").classList.remove("in-conv"); active = null; renderContacts(); updateStatus(); };
 
+let carregandoConversa = null, filaChegando = []; // mensagens que chegam enquanto open() ainda carrega
 async function onIncoming(m) {
   if (!contacts.has(m.sender_id)) {
     const { data } = await sb.from("profiles").select("id,username,public_key,avatar").eq("id", m.sender_id).single();
@@ -1132,7 +1173,8 @@ async function onIncoming(m) {
     if (c.type === "hello") return;
     if (c.type === "delete") { await aplicarApagar(c, m); return; }
   }
-  if (active?.id === m.sender_id) { $("msgs-empty")?.remove(); await show(m, active, true); markRead(); }
+  if (active?.id === m.sender_id && carregandoConversa === active) filaChegando.push(m); // a conversa ainda está abrindo: entra na ordem certa quando terminar
+  else if (active?.id === m.sender_id) { $("msgs-empty")?.remove(); await show(m, active, true); markRead(); }
   else unread.add(m.sender_id);
   renderContacts();
 }

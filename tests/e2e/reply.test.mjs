@@ -45,6 +45,28 @@ t("o menu da mensagem tem os 6 emojis e o botão Responder", async () => {
   assert.equal(await B.locator(".picker .emojis button").count(), 6); assert.equal(await B.locator(".picker .responder").innerText(), "Responder");
   await B.keyboard.press("Escape"); await B.mouse.click(5, 5); await B.waitForSelector(".picker", { state: "detached" });
 });
+t("o menu aparece SOBREPOSTO: as mensagens não mudam de lugar, o balão fica em foco e o menu cabe na tela", async () => {
+  const pos = () => B.evaluate(() => [...document.querySelectorAll(".msg")].map((m) => Math.round(m.getBoundingClientRect().top)).join(",") + "|" + document.getElementById("messages").scrollTop + "|" + document.getElementById("messages").scrollHeight);
+  const antes = await pos(); await B.locator(msgCom("qual o horário do jantar?")).locator(".bubble").first().click({ button: "right" }); await B.waitForSelector(".picker .acoes");
+  assert.equal(await pos(), antes, "nada se desloca com o menu aberto");
+  assert.equal(await B.locator("#messages .picker").count(), 0, "o menu não está dentro da lista de mensagens");
+  const caixas = await B.evaluate(() => { const r = (s) => document.querySelector(s).getBoundingClientRect().toJSON(); return { e: r(".picker .emojis"), a: r(".picker .acoes"), f: r(".p-foco"), w: innerWidth, h: innerHeight }; });
+  for (const k of ["e", "a"]) assert.ok(caixas[k].left >= 0 && caixas[k].top >= 0 && caixas[k].right <= caixas.w && caixas[k].bottom <= caixas.h, k + " dentro da tela");
+  const emCima = caixas.e.bottom <= caixas.f.top + 1; // (a 1ª mensagem fica no topo da lista: sem espaço em cima, reações e ações ficam as duas abaixo)
+  assert.ok(emCima ? caixas.a.top >= caixas.f.bottom - 1 : caixas.e.top >= caixas.f.bottom - 1 && caixas.a.top >= caixas.e.bottom - 1, "o menu não cobre o balão");
+  await B.mouse.click(5, 5); await B.waitForSelector(".picker", { state: "detached" }); assert.equal(await pos(), antes);
+});
+t("botão ⌄ só aparece com o mouse em cima da mensagem; clicar abre o menu; no celular ele não existe", async () => {
+  const msg = B.locator(msgCom("qual o horário do jantar?")).first(), op = msg.locator(".msg-opcoes"), opac = () => op.evaluate((e) => getComputedStyle(e).opacity);
+  await B.mouse.move(5, 5); await B.waitForTimeout(250); assert.equal(await opac(), "0", "sem o mouse em cima: invisível");
+  await msg.locator(".bubble").hover(); for (let i = 0; i < 20 && (await opac()) !== "1"; i++) await B.waitForTimeout(100); assert.equal(await opac(), "1", "com o mouse em cima: aparece");
+  const rb = await msg.locator(".bubble").boundingBox(), ro = await op.boundingBox(); assert.ok(ro.x >= rb.x + rb.width, "fica ao lado do balão, não por cima do texto");
+  await op.click(); await B.waitForSelector(".picker .acoes"); assert.equal(await B.locator(".picker .responder").count(), 1);
+  await B.keyboard.press("Escape"); await B.waitForSelector(".picker", { state: "detached" });
+  const toque = await B.context().browser().newContext({ hasTouch: true, isMobile: true, viewport: { width: 400, height: 700 } }); const pg = await toque.newPage();
+  await pg.setContent('<style>.msg-opcoes{display:none}@media (hover:hover) and (pointer:fine){.msg-opcoes{display:grid}}</style><button class="msg-opcoes">x</button>');
+  assert.equal(await pg.locator(".msg-opcoes").isVisible(), false, "em aparelho de toque o botão não aparece"); await toque.close();
+});
 t("responder a um texto: aparece a barra 'Respondendo a…', e a citação chega nos dois lados", async () => {
   await responderA(B, msgCom("qual o horário do jantar?"));
   await B.waitForSelector("#replybar:not([hidden])");

@@ -68,7 +68,6 @@ label{display:grid;gap:6px;font-size:.85rem;font-weight:600;color:var(--mut)}
 .chip{position:relative;min-height:28px;padding:0 8px;border-radius:999px;background:var(--card);border:1.5px solid var(--line);font-size:.95rem}
 .chip::after{content:"";position:absolute;inset:-9px -4px}
 .chip.mine{border-color:var(--seal);background:var(--rosa-claro)}
-.picker{display:flex;flex-direction:column;margin-top:6px;padding:2px 4px;background:var(--card);border:1.5px solid var(--line);border-radius:24px;box-shadow:0 6px 20px rgba(21,23,74,.18)}.picker .emojis{display:flex}
 .picker button{min-width:44px;padding:0;background:none;font-size:1.35rem;border-radius:50%}.picker button:hover{background:var(--paper)}
 .title-box{flex:1;min-width:0}
 .status{display:flex;align-items:center;gap:6px;font:400 .75rem var(--mono);color:#7EE0A4}
@@ -485,3 +484,27 @@ dialog.pagina[open]{animation:pagina-entra .26s cubic-bezier(.2,.8,.2,1)}
 #menu-conta{border:1px solid var(--line)}
 :root[data-tema="escuro"] dialog{border:1px solid var(--line)}
 @media (prefers-color-scheme:dark){:root:not([data-tema="claro"]) dialog{border:1px solid var(--line)}}
+
+/* ===== menu da mensagem sobreposto (não mexe nas mensagens) ===== */
+.picker{position:fixed;inset:0;z-index:70}
+.p-fundo{position:absolute;inset:0;background:transparent}
+.p-foco{position:absolute;border-radius:18px;box-shadow:0 0 0 200vmax rgba(10,12,40,.5);pointer-events:none;animation:foco-entra .18s ease-out}
+.picker .emojis,.picker .acoes{position:absolute;background:var(--card);border:1.5px solid var(--line);box-shadow:0 10px 30px rgba(10,12,40,.35);animation:menu-msg-entra .18s cubic-bezier(.2,.8,.2,1)}
+.picker .emojis{display:flex;padding:4px 6px;border-radius:999px}
+.picker .acoes{display:flex;flex-direction:column;min-width:190px;border-radius:16px;overflow:hidden}
+.picker .acoes button{border-radius:0;text-align:left}
+.picker .acoes button:first-child{border-top:0}
+.picker .apagar{border-radius:0}
+@keyframes foco-entra{from{box-shadow:0 0 0 200vmax rgba(10,12,40,0)}to{box-shadow:0 0 0 200vmax rgba(10,12,40,.5)}}
+@keyframes menu-msg-entra{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.p-foco,.picker .emojis,.picker .acoes{animation:none}}
+/* botão ⌄ ao lado do balão: só com mouse, só ao passar por cima; não ocupa espaço (posição absoluta) */
+.msg-opcoes{display:none}
+@media (hover:hover) and (pointer:fine){
+  .msg-opcoes{display:grid;position:absolute;top:50%;left:100%;width:30px;height:30px;min-height:30px;margin:-15px 0 0 6px;padding:0;border:1.5px solid var(--line);border-radius:50%;background:var(--card);color:var(--mut);place-items:center;cursor:pointer;opacity:0;transform:scale(.85);pointer-events:none;transition:opacity .15s,transform .15s;box-shadow:0 2px 8px rgba(10,12,40,.12)}
+  .msg-opcoes::before{content:"";position:absolute;inset:-8px}
+  .msg.mine .msg-opcoes{left:auto;right:100%;margin:-15px 6px 0 0}
+  .line:hover .msg-opcoes,.msg-opcoes:focus-visible{opacity:1;transform:none;pointer-events:auto}
+  .msg-opcoes:hover{background:var(--paper);color:var(--texto)}
+}
+@media (prefers-reduced-motion:reduce){.msg-opcoes{transition:none}}
