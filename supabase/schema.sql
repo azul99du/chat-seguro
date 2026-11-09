@@ -537,3 +537,33 @@ language sql stable security definer set search_path = public, auth as $$
 $$;
 revoke all on function public.meus_aparelhos() from public, anon, authenticated;
 grant execute on function public.meus_aparelhos() to authenticated;
+
+-- ===== Aviso de aparelho novo (migração aviso_aparelho_novo) =====
+-- decisao: null = ainda não conferido; 'reconhecido' = "sou eu"; 'recusado' = "não fui eu". O primeiro aparelho de uma conta, e quem volta com o mesmo
+-- navegador+sistema+tipo+estado de um aparelho já reconhecido, entram como 'reconhecido' (feito pela função "aparelho"). Aparelhos antigos viram 'reconhecido'.
+alter table public.aparelhos add column decisao text check (decisao in ('reconhecido', 'recusado')), add column decidido_em timestamptz;
+update public.aparelhos set decisao = 'reconhecido', decidido_em = now() where decisao is null;
+drop function public.meus_aparelhos();
+create function public.meus_aparelhos() returns table (session_id uuid, navegador text, sistema text, tipo text, pais_codigo text, regiao text, cidade text, entrou_em timestamptz, ultimo_acesso timestamptz, conectado boolean, atual boolean, decisao text)
+language sql stable security definer set search_path = public, auth as $$
+  select a.session_id, a.navegador, a.sistema, a.tipo, a.pais_codigo, a.regiao, a.cidade, a.entrou_em, a.ultimo_acesso,
+         exists (select 1 from auth.sessions s where s.id = a.session_id) as conectado,
+         a.session_id = nullif((select auth.jwt() ->> 'session_id'), '')::uuid as atual, a.decisao
+    from public.aparelhos a
+   where a.user_id = (select auth.uid()) and (select public.mfa_ok())
+   order by a.ultimo_acesso desc limit 30
+$$;
+revoke all on function public.meus_aparelhos() from public, anon, authenticated;
+grant execute on function public.meus_aparelhos() to authenticated;
+-- "Sou eu" / "Não fui eu": só a própria pessoa, só para sessões dela, e nunca para a sessão que está decidindo
+create or replace function public.decidir_aparelho(p_sessao uuid, p_decisao text) returns boolean
+language plpgsql security definer set search_path = public, auth as $$
+begin
+  if p_decisao not in ('reconhecido', 'recusado') or not (select public.mfa_ok()) then return false; end if;
+  update public.aparelhos set decisao = p_decisao, decidido_em = now()
+   where session_id = p_sessao and user_id = (select auth.uid())
+     and session_id is distinct from nullif((select auth.jwt() ->> 'session_id'), '')::uuid;
+  return found;
+end $$;
+revoke all on function public.decidir_aparelho(uuid, text) from public, anon, authenticated;
+grant execute on function public.decidir_aparelho(uuid, text) to authenticated;

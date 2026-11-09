@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=7d171bb597">
+  <link rel="stylesheet" href="style.css?v=d834ae08a9">
 </head>
 <body>
 
@@ -61,6 +61,7 @@
           <span id="me" hidden></span>
           <span class="eu-wrap">
             <button id="eu-foto" class="avatar peq" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-conta" aria-label="Minha conta: foto, nome e configurações"></button>
+            <span id="ap-ponto" class="ponto" role="img" aria-label="Há um aparelho novo na sua conta para conferir" hidden></span>
             <span id="mfa-nudge" class="ponto" role="img" aria-label="Falta ativar a verificação em dois passos" hidden></span>
           </span>
         </div>
@@ -79,7 +80,7 @@
         <button id="tema-btn" class="mi" type="button" role="menuitem" aria-label="Aparência: automática. Tocar para trocar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Aparência<span id="tema-estado" class="est">automática</span></button>
         <button id="arm-btn" class="mi" type="button" role="menuitem"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg><span class="tx2">Armazenamento<small id="arm-resumo">neste aparelho</small></span></button>
         <button id="sec-btn" class="mi" type="button" role="menuitem" aria-label="Segurança da conta (verificação em dois passos)">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg><span class="tx2">Segurança da conta<small id="sec-aviso" class="aviso" hidden>● ative a verificação em 2 passos</small></span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg><span class="tx2">Segurança da conta<small id="sec-aviso" class="aviso" hidden>● ative a verificação em 2 passos</small><small id="sec-aviso-ap" class="aviso" hidden>● aparelho novo para conferir</small></span>
         </button>
         <button id="logout" class="mi sair" type="button" role="menuitem"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Sair</button>
       </div>
@@ -237,7 +238,7 @@
         <button type="button" id="mfa-senha" class="linha"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3"/></svg></span><span class="tx"><b>Trocar senha de login</b><small>Mínimo de 12 caracteres</small></span></button>
         <button type="button" id="mfa-pass" class="linha"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><span class="tx"><b>Trocar frase-senha</b><small>Protege o backup da sua chave (16+ caracteres)</small></span></button>
         <h3 class="pg-grupo">Aparelhos</h3>
-        <button type="button" id="mfa-aparelhos" class="linha"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19h20"/></svg></span><span class="tx"><b>Aparelhos conectados</b><small>Veja onde e quando sua conta entrou</small></span></button>
+        <button type="button" id="mfa-aparelhos" class="linha"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19h20"/></svg></span><span class="tx"><b>Aparelhos conectados</b><small id="mfa-ap-txt">Veja onde e quando sua conta entrou</small></span></button>
         <h3 class="pg-grupo">Outro aparelho</h3>
         <button type="button" id="mfa-exp" class="linha"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg></span><span class="tx"><b>Exportar histórico</b><small>Gera um arquivo trancado por senha</small></span></button>
         <button type="button" id="mfa-imp" class="linha"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg></span><span class="tx"><b>Importar histórico</b><small>Traz mensagens antigas para este aparelho</small></span></button>
@@ -311,6 +312,22 @@
     </form>
   </dialog>
 
+  <dialog id="novo-aparelho" class="folha-seg" aria-labelledby="na-titulo">
+    <div class="grab"></div>
+    <h2 id="na-titulo">Um aparelho novo entrou na sua conta</h2>
+    <p>Confira se foi você.</p>
+    <div class="det">
+      <div><span class="k">Aparelho</span><b id="na-aparelho"></b></div>
+      <div><span class="k">Local</span><b id="na-local"></b><em id="na-local-nota"></em></div>
+      <div><span class="k">Quando</span><b id="na-quando"></b><em>primeiro acesso deste aparelho</em></div>
+    </div>
+    <p id="na-mais" class="mais-novos" hidden></p>
+    <div class="btns">
+      <button type="button" id="novo-nao" class="btn-rosa">Não fui eu: trocar a senha</button>
+      <button type="button" id="novo-sim" class="btn-limpa">Sou eu, conheço este aparelho</button>
+    </div>
+  </dialog>
+
   <dialog id="choice"><form method="dialog"><h2 id="choice-title"></h2><p id="choice-text"></p><div class="dialog-actions col" id="choice-actions"></div></form></dialog>
 
   <dialog id="safety">
@@ -324,6 +341,6 @@
 
   <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
 
-  <script src="guarda.js?v=7d171bb597"></script>
+  <script src="guarda.js?v=d834ae08a9"></script>
 </body>
 </html>

@@ -1,15 +1,15 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=7d171bb597";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=7d171bb597";
-import { montarFigurinhas } from "./figurinhas.js?v=7d171bb597";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=7d171bb597";
-import { usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=7d171bb597";
-import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js?v=7d171bb597";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=7d171bb597";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=7d171bb597";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=7d171bb597";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=7d171bb597";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js?v=7d171bb597";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=d834ae08a9";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=d834ae08a9";
+import { montarFigurinhas } from "./figurinhas.js?v=d834ae08a9";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=d834ae08a9";
+import { usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=d834ae08a9";
+import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js?v=d834ae08a9";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=d834ae08a9";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=d834ae08a9";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=d834ae08a9";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=d834ae08a9";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js?v=d834ae08a9";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -197,10 +197,11 @@ async function start() {
     renderContacts(); updateStatus();
   }).subscribe(async (st) => { if (st === "SUBSCRIBED") await pres.track({ at: Date.now() }); });
 
-  document.addEventListener("visibilitychange", () => { markRead(); if (!document.hidden) { loadContacts().catch(() => {}); registrarAparelho(); } });
+  document.addEventListener("visibilitychange", () => { markRead(); if (!document.hidden) { loadContacts().catch(() => {}); conferirAparelhos(true); } });
   addEventListener("focus", markRead);
   $("chat").classList.remove("preparando"); document.body.dataset.pronto = "1";
-  sincronizarNotificacoes(); registrarAparelho();
+  sincronizarNotificacoes(); conferirAparelhos(true, true);
+  setInterval(() => { if (!document.hidden) conferirAparelhos(true); }, 60000);
 }
 
 // ---------- Verificação em dois passos (código de app autenticador, TOTP) ----------
@@ -429,10 +430,49 @@ async function desenharAparelhos() {
     ic.append(svgAparelho(a.tipo)); row.dataset.sessao = a.session_id;
     const selo = el("span", "selo-estado " + (a.atual ? "" : a.conectado ? "ativo" : "saiu"), a.atual ? "Este aparelho" : a.conectado ? "Sessão ativa" : "Saiu");
     const linhaTit = el("span", "ap-tit"); linhaTit.append(tit, selo);
+    if (!a.atual && a.decisao === null) linhaTit.append(el("span", "selo-novo", "Novo"));
+    if (a.decisao === "recusado") linhaTit.append(el("span", "selo-novo recusado", "Não reconhecido"));
     tx.append(linhaTit, el("small", null, localDe(a)), el("small", null, `Entrou em ${quando(a.entrou_em)}`), el("small", null, `Último acesso em ${quando(a.ultimo_acesso)}`));
+    if (!a.atual && a.decisao === null) { // ainda não conferido: dá para decidir aqui também
+      const ac = el("span", "ap-acoes"), sim = el("button", "ghost", "Reconheço"), nao = el("button", "ghost perigo", "Não reconheço"); sim.type = nao.type = "button";
+      sim.onclick = async () => { await decidirAparelho(a.session_id, "reconhecido"); desenharAparelhos(); };
+      nao.onclick = async () => { await decidirAparelho(a.session_id, "recusado"); desenharAparelhos(); };
+      ac.append(sim, nao); tx.append(ac);
+    }
     row.append(ic, tx); return row;
   }));
 }
+// ---------- Aviso de aparelho novo: folha ao abrir o Lacre + ponto rosa na foto enquanto houver algo para conferir ----------
+const dispensados = new Set(); let conferindoAparelhos = false, conferirDepois = null;
+const pendentesAparelhos = (l) => l.filter((a) => !a.atual && (a.decisao === null || (a.decisao === "recusado" && a.conectado))); // novo, ou "não fui eu" que ainda está conectado
+async function decidirAparelho(sessao, decisao) { try { await sb.rpc("decidir_aparelho", { p_sessao: sessao, p_decisao: decisao }); } catch {} conferirAparelhos(false); }
+async function conferirAparelhos(mostrar = true, forcaRegistro = false) {
+  if (!me) return;
+  if (conferindoAparelhos) { conferirDepois = { mostrar: mostrar || !!conferirDepois?.mostrar, forcaRegistro: forcaRegistro || !!conferirDepois?.forcaRegistro }; return; } // já conferindo: repete logo depois (para o ponto nunca ficar velho)
+  conferindoAparelhos = true;
+  try {
+    await registrarAparelho(forcaRegistro);
+    const { data } = await sb.rpc("meus_aparelhos"); if (!data) return;
+    const pend = pendentesAparelhos(data), novos = pend.filter((a) => a.decisao === null);
+    $("ap-ponto").hidden = !pend.length; $("sec-aviso-ap").hidden = !pend.length;
+    const t = $("mfa-ap-txt"); t.textContent = pend.length ? `● ${pend.length === 1 ? "1 aparelho para conferir" : pend.length + " aparelhos para conferir"}` : "Veja onde e quando sua conta entrou"; t.classList.toggle("aviso", pend.length > 0);
+    const alvo = novos.find((a) => !dispensados.has(a.session_id));
+    if (mostrar && alvo && !document.querySelector("dialog[open]")) mostrarAparelhoNovo(alvo, novos);
+  } catch {} finally { conferindoAparelhos = false; if (conferirDepois) { const p = conferirDepois; conferirDepois = null; conferirAparelhos(p.mostrar, p.forcaRegistro); } }
+}
+function mostrarAparelhoNovo(a, novos) {
+  const d = $("novo-aparelho"); d.dataset.sessao = a.session_id;
+  $("na-aparelho").textContent = `${a.navegador} no ${a.sistema}`;
+  const local = localDe(a); $("na-local").textContent = local.replace(" (aproximado)", ""); $("na-local-nota").textContent = local.includes("aproximado") ? "aproximado, pelo endereço de internet" : "";
+  $("na-quando").textContent = quando(a.entrou_em);
+  const mais = novos.length - 1; $("na-mais").hidden = mais < 1; $("na-mais").textContent = mais === 1 ? "Há mais 1 aparelho novo para conferir (em Aparelhos conectados)." : `Há mais ${mais} aparelhos novos para conferir (em Aparelhos conectados).`;
+  d.showModal(); $("novo-nao").focus({ preventScroll: true });
+}
+{ const d = $("novo-aparelho");
+  d.onclose = () => { if (d.dataset.sessao) dispensados.add(d.dataset.sessao); }; // fechou sem decidir: some por agora, e o ponto rosa continua lembrando
+  d.addEventListener("click", (e) => { const r = d.getBoundingClientRect(); if (e.clientY < r.top || e.clientY > r.bottom || e.clientX < r.left || e.clientX > r.right) d.close(); });
+  $("novo-sim").onclick = async () => { const id = d.dataset.sessao; d.close(); await decidirAparelho(id, "reconhecido"); conferirAparelhos(true); };
+  $("novo-nao").onclick = async () => { const id = d.dataset.sessao; d.close(); await decidirAparelho(id, "recusado"); await abrirSeguranca(); $("mfa-senha").click(); }; } // (abre a Segurança ANTES: senão a janela da senha ficaria escondida embaixo dela)
 $("mfa-aparelhos").onclick = () => { $("aparelhos").showModal(); desenharAparelhos(); };
 $("aparelhos-senha").onclick = () => { $("aparelhos").close(); $("mfa-senha").click(); };
 

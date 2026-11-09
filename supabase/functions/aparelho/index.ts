@@ -39,7 +39,10 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
     const info = descreverAparelho(req.headers.get("user-agent") ?? ""), l = await local(ipDe(req));
-    const { error } = await db.from("aparelhos").insert({ session_id: c.session_id, user_id: c.sub, ...info, ...(l ?? {}), local_em: l ? agora.toISOString() : null });
+    // aviso de aparelho novo: o PRIMEIRO aparelho da conta, e quem volta com o mesmo navegador+sistema+tipo+estado de um aparelho já reconhecido, entram como "reconhecido"; o resto fica para a pessoa conferir
+    const { data: outros } = await db.from("aparelhos").select("navegador,sistema,tipo,regiao,decisao").eq("user_id", c.sub);
+    const conhecido = !outros?.length || outros.some((o: { navegador: string; sistema: string; tipo: string; regiao: string | null; decisao: string | null }) => o.decisao === "reconhecido" && o.navegador === info.navegador && o.sistema === info.sistema && o.tipo === info.tipo && (!o.regiao || !l?.regiao || o.regiao === l.regiao)); // (se o local de um dos dois não deu para saber, não conta como diferença)
+    const { error } = await db.from("aparelhos").insert({ session_id: c.session_id, user_id: c.sub, ...info, ...(l ?? {}), local_em: l ? agora.toISOString() : null, decisao: conhecido ? "reconhecido" : null, decidido_em: conhecido ? agora.toISOString() : null });
     if (error && error.code !== "23505") return json({ erro: "gravar" }, 500);
     // guarda só os 30 mais recentes de cada pessoa
     const { data: todos } = await db.from("aparelhos").select("session_id").eq("user_id", c.sub).order("ultimo_acesso", { ascending: false }).range(30, 200);

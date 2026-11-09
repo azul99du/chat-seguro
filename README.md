@@ -143,3 +143,9 @@ Menu da foto → Segurança da conta → **Aparelhos conectados**: lista os aces
 - Tabela `public.aparelhos` (RLS ligada, sem acesso direto; só a função `meus_aparelhos()` lê, e só as linhas da própria pessoa, exigindo o 2º passo). Guarda no máximo os 30 acessos mais recentes de cada pessoa.
 - **"Sair" agora só desconecta o aparelho atual** (antes desconectava a conta em todos os aparelhos).
 - Testes: `tests/aparelho.test.mjs` e `tests/e2e/aparelhos.test.mjs`.
+
+## Aviso de aparelho novo
+Quando OUTRO aparelho entra na conta, os aparelhos que já estavam conectados mostram, ao abrir o Lacre (ou ao voltar para a aba, ou a cada minuto com a aba aberta), uma **folha** com o aparelho, o local aproximado e a data/hora do primeiro acesso, e duas saídas: **"Sou eu, conheço este aparelho"** (reconhece e some) e **"Não fui eu: trocar a senha"** (marca como não reconhecido e abre a troca de senha, que desconecta os outros aparelhos). Fechar a folha sem decidir deixa um **ponto rosa** na foto (e uma linha em Segurança da conta) até a pessoa conferir; em Aparelhos conectados o aparelho aparece com "Novo" e os botões "Reconheço / Não reconheço". Um "não reconhecido" que ainda está conectado mantém o ponto até sair.
+- Quem acabou de entrar não é avisado de si mesmo. O PRIMEIRO aparelho da conta, e quem volta com o mesmo navegador + sistema + tipo + estado de um aparelho já reconhecido, entram como reconhecidos (sem aviso). Se o local de um dos dois não deu para saber, isso não conta como diferença.
+- A decisão é guardada em `public.aparelhos.decisao` (`reconhecido` / `recusado`); só a função `decidir_aparelho()` altera, só para sessões da própria pessoa e nunca para a sessão que está decidindo.
+- Limite: o aviso só aparece quando o Lacre está aberto (não manda e-mail). Testes: `tests/e2e/aparelhos.test.mjs`.

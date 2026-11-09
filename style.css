@@ -531,3 +531,29 @@ dialog.pagina[open]{animation:pagina-entra .26s cubic-bezier(.2,.8,.2,1)}
 #aparelhos-lista .linha.info{align-items:flex-start;padding-top:2px}
 #aparelhos-lista .linha .ic{margin-top:18px}
 .pg-dica.sem-recuo.topo{margin-top:14px}
+
+/* aviso de aparelho novo: folha que sobe de baixo (celular) ou caixa no centro (computador) */
+dialog.folha-seg{width:min(94vw,430px);padding:12px 20px 22px}
+dialog.folha-seg h2{margin:0 0 4px;font:800 1.25rem var(--display)}
+dialog.folha-seg>p{margin:0;color:var(--mut)}
+dialog.folha-seg .grab{width:40px;height:4px;border-radius:4px;background:var(--line);margin:0 auto 14px}
+dialog.folha-seg .det{display:grid;gap:12px;margin:16px 0}
+.det .k{display:block;font:500 .68rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.det b{display:block;font-weight:600}.det em{display:block;font-style:normal;font-size:.8rem;color:var(--mut)}
+dialog.folha-seg .mais-novos{margin:0 0 12px;font-size:.85rem;color:var(--mut)}
+dialog.folha-seg .btns{display:grid;gap:8px}
+.btn-rosa{min-height:48px;border-radius:12px;border:0;background:var(--seal);color:#fff;font:700 1rem var(--body);cursor:pointer}.btn-rosa:hover{background:var(--seal-dk)}
+dialog.folha-seg .btn-limpa{margin:0;width:100%}
+@media (max-width:600px){
+  dialog.folha-seg{width:100%;max-width:100%;margin:auto 0 0;border-radius:24px 24px 0 0;padding:12px 20px calc(18px + env(safe-area-inset-bottom));animation:folha-sobe .26s cubic-bezier(.2,.8,.2,1)}
+}
+@media (prefers-reduced-motion:reduce){dialog.folha-seg{animation:none!important}}
+/* "Novo" e "Não reconhecido" na lista de aparelhos */
+.selo-novo{display:inline-flex;font:700 .72rem var(--body);padding:2px 9px;border-radius:99px;background:var(--seal);color:#fff}
+.selo-novo.recusado{background:var(--seal-dk)}
+:root[data-tema="escuro"] .selo-novo.recusado{background:#7a1431}
+@media (prefers-color-scheme:dark){:root:not([data-tema="claro"]) .selo-novo.recusado{background:#7a1431}}
+.ap-acoes{display:flex;gap:8px;margin-top:8px}
+.ap-acoes button{min-height:44px;padding:0 14px;border-radius:10px;font:600 .9rem var(--body);cursor:pointer}
+.ap-acoes .perigo{color:var(--seal-dk);border-color:var(--seal)}
+.mi .tx2 small.aviso+small.aviso{margin-top:0}
