@@ -1,15 +1,15 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=b02df95672";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=b02df95672";
-import { montarFigurinhas } from "./figurinhas.js?v=b02df95672";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=b02df95672";
-import { usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=b02df95672";
-import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js?v=b02df95672";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=b02df95672";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=b02df95672";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=b02df95672";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=b02df95672";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js?v=b02df95672";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=eb7fa3ce5e";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=eb7fa3ce5e";
+import { montarFigurinhas } from "./figurinhas.js?v=eb7fa3ce5e";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=eb7fa3ce5e";
+import { usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=eb7fa3ce5e";
+import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js?v=eb7fa3ce5e";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=eb7fa3ce5e";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=eb7fa3ce5e";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=eb7fa3ce5e";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=eb7fa3ce5e";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js?v=eb7fa3ce5e";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -771,15 +771,24 @@ function mediaBlock(c, mine) {
       if (typeof c.path === "string" && OK_PATH.test(c.path)) hasBlob(me.id, c.path).then(async (ok) => { if (ok && btn.isConnected) { try { const u = await loadMedia(c); if (btn.isConnected) box.replaceChildren(playerAudio(u, dur)); } catch {} } }).catch(() => {});
     }
   } else {
-    const btn = el("button", "ph", `Tocar para carregar o vídeo · ${sizeLabel(Number(c.size) || 0)}`); btn.type = "button";
-    btn.onclick = async () => {
+    const tam = sizeLabel(Number(c.size) || 0), btn = el("button", "ph", `Tocar para carregar o vídeo · ${tam}`); btn.type = "button";
+    const abre = async () => {
       btn.disabled = true; btn.textContent = "Carregando vídeo…";
       try {
         const v = document.createElement("video"); v.controls = true; v.playsInline = true; v.preload = "metadata";
         v.src = await loadMedia(c); btn.replaceWith(v);
       } catch { fail(); }
     };
-    box.append(btn);
+    btn.onclick = abre; box.append(btn);
+    // se o vídeo já está guardado neste aparelho, ele aparece pronto quando chega à tela (nada para baixar, nem para tocar)
+    if (typeof c.path === "string" && OK_PATH.test(c.path)) hasBlob(me.id, c.path).then((ok) => {
+      if (!ok || !btn.isConnected || btn.disabled) return;
+      btn.textContent = `Abrir o vídeo · ${tam}`;
+      if ("IntersectionObserver" in window) { // só abre os que aparecem na tela (decifrar um vídeo grande custa memória)
+        const io = new IntersectionObserver((es) => { if (es.some((x) => x.isIntersecting)) { io.disconnect(); if (btn.isConnected && !btn.disabled) abre(); } }, { rootMargin: "150px" });
+        io.observe(btn);
+      }
+    }).catch(() => {});
   }
   return box;
 }

@@ -40,10 +40,15 @@ t("enviar: mostra o progresso, termina como 'comprimido de X', e o amigo recebe,
   await B.waitForFunction(() => { const v = document.querySelector(".msg:not(.mine) .media video"); return v && v.videoWidth > 0; }, null, { timeout: 15000 });
   assert.deepEqual(await B.evaluate(() => { const v = document.querySelector(".msg:not(.mine) .media video"); return [v.videoWidth, v.videoHeight, Math.round(v.duration)]; }), [1280, 720, 6]);
 });
-t("o vídeo fica guardado no aparelho (cache): ao recarregar já aparece pronto (sem baixar de novo)", async () => {
+t("o vídeo fica guardado no aparelho: ao voltar para a conversa (recarregar) ele já aparece pronto, sem tocar e sem baixar de novo", async () => {
   const gets = []; B.on("request", (r) => { if (r.method() === "GET" && /\/storage\/v1\/object\/(authenticated\/)?media\//.test(r.url())) gets.push(r.url()); });
   await B.reload(); await B.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 }); await B.click("#contacts button");
-  const bloco = B.locator(".msg:not(.mine) .media button.ph"); await bloco.waitFor({ timeout: 30000 }); const antes = gets.length; await bloco.click();
-  await B.waitForSelector(".msg:not(.mine) .media video", { timeout: 30000 }); assert.equal(gets.length, antes, "nenhum download: veio do aparelho");
+  await B.waitForSelector(".msg:not(.mine) .media video", { timeout: 30000 }); // aparece sozinho, sem tocar em nada
+  await B.waitForFunction(() => { const v = document.querySelector(".msg:not(.mine) .media video"); return v && v.videoWidth > 0; }, null, { timeout: 15000 });
+  assert.equal(gets.length, 0, "nenhum download: veio do aparelho");
+});
+t("quem enviou também vê o próprio vídeo pronto ao voltar para a conversa", async () => {
+  await A.reload(); await A.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 }); await A.click("#contacts button");
+  await A.waitForSelector(".msg.mine .media video", { timeout: 30000 });
 });
 t("sem erros de JavaScript", () => assert.deepEqual(erros, []));
