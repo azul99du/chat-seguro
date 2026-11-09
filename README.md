@@ -129,3 +129,10 @@ Por causa do sigilo futuro, um aparelho novo não consegue ler as mensagens anti
 
 ## Armazenamento
 Menu da foto → **Armazenamento**: mostra o que este aparelho guarda (arquivos baixados, com a barra do limite de 150 MB; histórico; figurinhas) e quanto você já enviou ao servidor (limite de 400 MB por pessoa, via a função `meu_uso_arquivos`, que só soma os arquivos da própria pessoa). **Liberar espaço** apaga SÓ as cópias de fotos/áudios/figurinhas baixados neste aparelho: nenhuma mensagem, chave, figurinha salva ou arquivo do servidor é tocado, e os arquivos baixam de novo quando abertos. Testes: `tests/e2e/armazenamento.test.mjs`.
+
+## Vídeos comprimidos no envio
+Ao anexar um vídeo MP4/MOV, o app comprime no próprio aparelho (WebCodecs): **720p (lado menor), ~2 Mbps, até 30 fps, H.264**, mantendo o **áudio AAC original sem recomprimir**. Mostra "Comprimindo vídeo… X%" (dá para cancelar no ×) e depois "NN MB · comprimido de MM MB · metadados removidos". Entrada de até 300 MB; o resultado precisa ficar em até 45 MB.
+- **Sem bibliotecas de terceiros:** `video.js` lê o MP4 de origem e monta o novo MP4 do zero (só as caixas mínimas), então o arquivo não herda nenhum metadado (local, aparelho, datas). O código roda no mesmo contexto do app: por isso não há dependência externa para auditar.
+- **Quando não comprime (envia como antes):** navegador sem WebCodecs; vídeo já leve (≤ 720p e ≤ 3 Mbps); MP4 fragmentado; áudio que não é AAC; vídeo de 10 bits/HDR; HEVC que o navegador não decodifica; qualquer erro ou resultado que não fique ≥ 10% menor. Nesses casos vale o limite de 45 MB do original.
+- **Cache:** vídeos de até 8 MB agora também ficam guardados no aparelho (o limite por arquivo do cache).
+- Testes: `tests/video.browser.test.mjs` (ffprobe/ffmpeg conferem codec, tamanho, duração, rotação, áudio idêntico, ausência de metadados e decodificação sem erros) e `tests/e2e/video.test.mjs`.

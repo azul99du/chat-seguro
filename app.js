@@ -1,14 +1,15 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=0e757e45bd";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=0e757e45bd";
-import { montarFigurinhas } from "./figurinhas.js?v=0e757e45bd";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=0e757e45bd";
-import { usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=0e757e45bd";
-import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js?v=0e757e45bd";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=0e757e45bd";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=0e757e45bd";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=0e757e45bd";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js?v=0e757e45bd";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=c05aa2016c";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=c05aa2016c";
+import { montarFigurinhas } from "./figurinhas.js?v=c05aa2016c";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=c05aa2016c";
+import { usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=c05aa2016c";
+import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js?v=c05aa2016c";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=c05aa2016c";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=c05aa2016c";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=c05aa2016c";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=c05aa2016c";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js?v=c05aa2016c";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -421,9 +422,9 @@ async function desenharArmazenamento() {
   const n = Number(data[0].arquivos) || 0, bytes = Number(data[0].bytes) || 0;
   $("arm-srv-txt").textContent = `${fmtBytes(bytes)} de ${fmtBytes(LIMITE_SERVIDOR)} · ${n} ${n === 1 ? "arquivo" : "arquivos"}`; pintaUso("arm-srv-bar", bytes, LIMITE_SERVIDOR);
 }
-$("arm-btn").onclick = async () => { $("arm-msg").textContent = ""; $("armaz").showModal(); await desenharArmazenamento(); };
+$("arm-btn").onclick = async () => { $("arm-msg").textContent = ""; $("arm-srv-txt").textContent = "Calculando…"; $("armaz").showModal(); await desenharArmazenamento(); }; // (limpa antes de abrir: nunca aparece o valor da vez anterior)
 $("arm-limpar").onclick = async () => {
-  const r = await choose("Liberar espaço?", "Apaga só as fotos, áudios e figurinhas baixados neste aparelho. Nenhuma mensagem será apagada. Quando você abrir um arquivo de novo, ele baixa outra vez.", [
+  const r = await choose("Liberar espaço?", "Apaga só as fotos, áudios, vídeos e figurinhas baixados neste aparelho. Nenhuma mensagem será apagada. Quando você abrir um arquivo de novo, ele baixa outra vez.", [
     { label: "Liberar espaço", value: "sim", cls: "primary" }, { label: "Cancelar", value: "", cls: "ghost" }]);
   if (r !== "sim") return;
   try { const antes = (await blobsUsados(me.id)).bytes; await limparBlobs(me.id); $("arm-msg").textContent = `Pronto: ${fmtBytes(antes)} liberados.`; }
@@ -658,12 +659,12 @@ const safeMime = (c) => { const l = OK_MIME[c.kind === "video" ? "video" : c.kin
 async function loadMedia(c) {
   if (typeof c.path !== "string" || !OK_PATH.test(c.path) || typeof c.key !== "string" || typeof c.iv !== "string") throw new Error("midia invalida");
   if (mediaCache.has(c.path)) return mediaCache.get(c.path);
-  let enc = c.kind === "video" ? null : await getBlob(me.id, c.path).catch(() => null), bytes = null, doCache = false;
+  let enc = await getBlob(me.id, c.path).catch(() => null), bytes = null, doCache = false;
   if (enc) { try { bytes = await openBytes(enc, c.key, c.iv); } catch { delBlob(me.id, c.path).catch(() => {}); enc = null; } } // cópia local estragada: baixa de novo
   if (!bytes) {
     const { data, error } = await sb.storage.from("media").download(c.path);
     if (error) throw error;
-    enc = new Uint8Array(await data.arrayBuffer()); bytes = await openBytes(enc, c.key, c.iv); doCache = c.kind !== "video";
+    enc = new Uint8Array(await data.arrayBuffer()); bytes = await openBytes(enc, c.key, c.iv); doCache = true; // (vídeos só entram no cache se couberem no limite por arquivo, de 8 MB)
   }
   if (doCache) putBlob(me.id, c.path, enc).catch(() => {}); // fica no aparelho: da próxima vez não baixa
   const url = URL.createObjectURL(new Blob([bytes], { type: safeMime(c) }));
@@ -1264,7 +1265,7 @@ async function sincronizarNotificacoes() { // ao entrar: se estava ligado neste 
 }
 
 // ---------- Anexos: limpa os metadados ANTES de qualquer coisa sair do aparelho ----------
-const MAX_VIDEO = 45 * 1048576, MAX_AUDIO = 20 * 1048576, MAX_GRAVACAO = 300; // 300 s = 5 min
+const MAX_VIDEO_ENTRADA = 300 * 1048576, MAX_VIDEO = 45 * 1048576, MAX_AUDIO = 20 * 1048576, MAX_GRAVACAO = 300; // 300 s = 5 min
 let pending = null; // anexo pronto (ou {busy:true} enquanto limpa)
 let gravador = null; // gravação de áudio em andamento
 const niceErr = (e, fallback) => (/^(Não|Vídeo|Áudio|Formato)/.test(e?.message || "") ? e.message : fallback);
@@ -1325,9 +1326,22 @@ async function prepare(f) {
       if (f.size > MAX_AUDIO) throw new Error("Áudio grande demais. O limite é de 20 MB.");
       const c = cleanAudio(await f.arrayBuffer()); r = { kind: "audio", bytes: c.bytes, mime: c.mime };
     } else if (/\.(mp4|m4v|mov)$/i.test(f.name) || /^video\/(mp4|quicktime)$/.test(f.type)) {
-      if (f.size > MAX_VIDEO) throw new Error("Vídeo grande demais. O limite é de 45 MB.");
       const mov = f.type === "video/quicktime" || /\.mov$/i.test(f.name);
-      r = { kind: "video", bytes: cleanVideo(await f.arrayBuffer()), mime: mov ? "video/quicktime" : "video/mp4" };
+      let comp = null;
+      if (suportaCompressao()) { // comprime no aparelho (720p, ~2 Mbps) antes de cifrar; se der qualquer problema, segue com o original
+        if (f.size > MAX_VIDEO_ENTRADA) throw new Error("Vídeo grande demais. O limite é de 300 MB.");
+        showPending(f.name, "Comprimindo vídeo… 0%");
+        try { comp = await comprimirVideo(f, { cancelado: () => pending !== token, onProgresso: (p) => { if (pending === token) showPending(f.name, `Comprimindo vídeo… ${Math.round(p * 100)}%`); } }); }
+        catch (e) { if (e?.cancelado) return; comp = null; }
+        if (pending !== token) return;
+      }
+      if (comp) {
+        if (comp.bytes.length > MAX_VIDEO) throw new Error("Vídeo longo demais: mesmo comprimido passa de 45 MB. Envie um trecho menor.");
+        r = { kind: "video", bytes: comp.bytes, mime: "video/mp4", original: f.size };
+      } else {
+        if (f.size > MAX_VIDEO) throw new Error("Vídeo grande demais. O limite é de 45 MB.");
+        r = { kind: "video", bytes: cleanVideo(await f.arrayBuffer()), mime: mov ? "video/quicktime" : "video/mp4" };
+      }
     } else throw new Error("Formato não suportado. Envie foto (JPG, PNG, WebP) ou vídeo MP4/MOV.");
     if (pending !== token) return; // removido enquanto limpava
     r.url = URL.createObjectURL(new Blob([r.bytes], { type: r.mime })); pending = r;
@@ -1338,7 +1352,7 @@ async function prepare(f) {
       const t = r.kind === "image" ? el("img") : el("video"); t.src = r.url; if (r.kind === "video") { t.muted = true; t.preload = "metadata"; }
       $("pending-thumb").replaceChildren(t);
     }
-    showPending(f.name, `${r.kind === "audio" && r.dur ? mmss(r.dur) + " · " : ""}${sizeLabel(r.bytes.length)} · metadados removidos` + (f.type === "image/gif" ? " · GIF vira imagem parada" : ""), true);
+    showPending(f.name, `${r.kind === "audio" && r.dur ? mmss(r.dur) + " · " : ""}${sizeLabel(r.bytes.length)}${r.original ? ` · comprimido de ${sizeLabel(r.original)}` : ""} · metadados removidos` + (f.type === "image/gif" ? " · GIF vira imagem parada" : ""), true);
   } catch (e) {
     if (pending === token) clearPending();
     note(niceErr(e, "Não foi possível preparar este arquivo."));
