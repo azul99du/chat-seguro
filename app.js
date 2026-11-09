@@ -1,15 +1,15 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=587bba0d68";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=587bba0d68";
-import { montarFigurinhas } from "./figurinhas.js?v=587bba0d68";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=587bba0d68";
-import { usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=587bba0d68";
-import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js?v=587bba0d68";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=587bba0d68";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=587bba0d68";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=587bba0d68";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=587bba0d68";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js?v=587bba0d68";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=0ee69cb6d9";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=0ee69cb6d9";
+import { montarFigurinhas } from "./figurinhas.js?v=0ee69cb6d9";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=0ee69cb6d9";
+import { usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=0ee69cb6d9";
+import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js?v=0ee69cb6d9";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=0ee69cb6d9";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=0ee69cb6d9";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=0ee69cb6d9";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=0ee69cb6d9";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js?v=0ee69cb6d9";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -120,7 +120,7 @@ $("logout").onclick = async () => {
   if (!r) return;
   await removerRegistroPush(); // este aparelho deixa de receber avisos desta conta
   if (r === "wipe" && me) { await deleteLocalKeys(me.id); await wipeLocal(me.id); }
-  await sb.auth.signOut(); location.reload();
+  await sb.auth.signOut({ scope: "local" }); location.reload(); // só ESTE aparelho sai (antes o "Sair" desconectava a conta em todos os aparelhos)
 };
 
 // ---------- Início: perfil + chaves ----------
@@ -130,7 +130,7 @@ async function start() {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) return mostrarLogin();
   // com verificação em dois passos, nada abre antes do código (a tela de abertura fica por trás do pedido)
-  if (await precisaDoisPassos() && !(await pedirCodigoLogin())) { await sb.auth.signOut(); return location.reload(); }
+  if (await precisaDoisPassos() && !(await pedirCodigoLogin())) { await sb.auth.signOut({ scope: "local" }); return location.reload(); }
   // já estava logado: vai direto para a lista de contatos (sem piscar a tela de login)
   try { const n = localStorage.getItem("lacre:eu:" + session.user.id); if (n) { $("me").textContent = n; $("nome-txt").textContent = n; $("eu-foto").textContent = n.replace("@", "")[0] || ""; } } catch {}
   mostrarChat();
@@ -142,19 +142,19 @@ async function start() {
 
   if (!prof) { // primeiro acesso: gera chaves neste aparelho e publica só a chave pública
     const username = localStorage.getItem("pending-username");
-    if (!username) { await sb.auth.signOut(); mostrarLogin(); return note("Não achamos seu perfil. Crie a conta de novo na aba Criar conta."); }
+    if (!username) { await sb.auth.signOut({ scope: "local" }); mostrarLogin(); return note("Não achamos seu perfil. Crie a conta de novo na aba Criar conta."); }
     const publicKey = await createKeys(uid);
     myKeys = await getLocalKeys(uid);
     let pass, hint = "Ela recupera suas mensagens se você trocar de aparelho. Use algo diferente da senha de login (dica: cinco palavras sorteadas, como rio-lua-pedra-nuvem-cafe) e guarde bem: não dá para redefinir.";
     for (;;) {
       pass = await ask("Crie sua frase-senha", hint);
-      if (pass === null) { await sb.auth.signOut(); return location.reload(); }
+      if (pass === null) { await sb.auth.signOut({ scope: "local" }); return location.reload(); }
       const fraca = fraseFraca(pass); if (!fraca) break;
       hint = fraca;
     }
     const { error } = await sb.from("profiles").insert({ id: uid, username, public_key: publicKey });
     if (error) {
-      await sb.auth.signOut(); mostrarLogin();
+      await sb.auth.signOut({ scope: "local" }); mostrarLogin();
       return note(error.code === "23505" ? "Esse nome de usuário já existe. Crie a conta de novo com outro nome." : "Não foi possível criar seu perfil: " + error.message);
     }
     localStorage.removeItem("pending-username");
@@ -162,11 +162,11 @@ async function start() {
     if (await saveBackup(uid, pass)) note("Não consegui salvar o backup da sua chave agora. Vou pedir de novo na próxima vez que você entrar.");
   } else if (!myKeys) {
     const { data: bk } = await sb.from("key_backups").select("backup").maybeSingle();
-    if (!bk) { await sb.auth.signOut(); mostrarLogin(); return note("Este aparelho não tem sua chave e não existe backup, então as mensagens antigas não podem ser lidas."); }
+    if (!bk) { await sb.auth.signOut({ scope: "local" }); mostrarLogin(); return note("Este aparelho não tem sua chave e não existe backup, então as mensagens antigas não podem ser lidas."); }
     let hint = "Para ler suas mensagens neste aparelho, digite a frase-senha que você criou no cadastro.";
     for (;;) {
       const pass = await ask("Aparelho novo", hint);
-      if (pass === null) { await sb.auth.signOut(); return location.reload(); }
+      if (pass === null) { await sb.auth.signOut({ scope: "local" }); return location.reload(); }
       try { await restoreBackup(uid, pass, bk.backup, prof.public_key); break; }
       catch { hint = "Frase-senha incorreta. Tente de novo."; }
     }
@@ -197,10 +197,10 @@ async function start() {
     renderContacts(); updateStatus();
   }).subscribe(async (st) => { if (st === "SUBSCRIBED") await pres.track({ at: Date.now() }); });
 
-  document.addEventListener("visibilitychange", () => { markRead(); if (!document.hidden) loadContacts().catch(() => {}); });
+  document.addEventListener("visibilitychange", () => { markRead(); if (!document.hidden) { loadContacts().catch(() => {}); registrarAparelho(); } });
   addEventListener("focus", markRead);
   $("chat").classList.remove("preparando"); document.body.dataset.pronto = "1";
-  sincronizarNotificacoes();
+  sincronizarNotificacoes(); registrarAparelho();
 }
 
 // ---------- Verificação em dois passos (código de app autenticador, TOTP) ----------
@@ -403,6 +403,38 @@ $("eu-foto").onclick = () => ($("menu-conta").hidden ? abrirMenu() : fecharMenu(
 $("menu-fundo").onclick = () => fecharMenu();
 $("menu-conta").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b && !b.matches("#notif-btn, #copiar-nome, #tema-btn")) fecharMenu(false); }); // copiar e notificações mostram o resultado ali mesmo
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("menu-conta").hidden && !document.querySelector("dialog[open]")) fecharMenu(); });
+
+// ---------- Aparelhos conectados: onde e quando a conta entrou ----------
+let ultimoRegistro = 0;
+async function registrarAparelho(forca = false) { // avisa o servidor que ESTA sessão está em uso (ele guarda navegador, sistema e local aproximado; o IP não é guardado)
+  if (!forca && Date.now() - ultimoRegistro < 300000) return; ultimoRegistro = Date.now();
+  try { const t = (await sb.auth.getSession()).data.session?.access_token; if (t) await fetch(FN_APARELHO, { method: "POST", headers: { authorization: "Bearer " + t, apikey: SUPABASE_KEY, "content-type": "application/json" }, body: "{}" }); } catch {}
+}
+const ICONES_APARELHO = { celular: ["M7 2h10a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z", "M11 18h2"], tablet: ["M5 2h14a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z", "M11 18h2"], computador: ["M4 5h16v11H4z", "M2 19h20"], outro: ["M4 5h16v11H4z", "M2 19h20"] };
+function svgAparelho(tipo) { const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg"); for (const [k, v] of Object.entries({ viewBox: "0 0 24 24", width: "22", height: "22", fill: "none", stroke: "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true" })) svg.setAttribute(k, v);
+  for (const d of ICONES_APARELHO[tipo] || ICONES_APARELHO.outro) { const p = document.createElementNS(ns, "path"); p.setAttribute("d", d); svg.append(p); } return svg; }
+const quando = (iso) => new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).replace(",", " às");
+function localDe(a) {
+  let pais = ""; try { pais = a.pais_codigo ? new Intl.DisplayNames(["pt-BR"], { type: "region" }).of(a.pais_codigo) : ""; } catch { pais = a.pais_codigo || ""; }
+  const partes = [a.cidade, a.regiao, pais].filter(Boolean); return partes.length ? partes.join(", ") + " (aproximado)" : "Local indisponível";
+}
+async function desenharAparelhos() {
+  const lista = $("aparelhos-lista"); lista.replaceChildren(el("p", "pg-dica sem-recuo", "Carregando…"));
+  await registrarAparelho(true); // garante que ESTE aparelho já aparece na lista
+  const { data, error } = await sb.rpc("meus_aparelhos");
+  if (error) return lista.replaceChildren(el("p", "pg-dica sem-recuo", "Não foi possível ver agora. Tente de novo mais tarde."));
+  if (!data?.length) return lista.replaceChildren(el("p", "pg-dica sem-recuo", "Ainda não há acessos registrados."));
+  lista.replaceChildren(...data.map((a) => {
+    const row = el("div", "linha info" + (a.atual ? " atual" : "")), ic = el("span", "ic"), tx = el("span", "tx"), tit = el("b", null, `${a.navegador} no ${a.sistema}`);
+    ic.append(svgAparelho(a.tipo)); row.dataset.sessao = a.session_id;
+    const selo = el("span", "selo-estado " + (a.atual ? "" : a.conectado ? "ativo" : "saiu"), a.atual ? "Este aparelho" : a.conectado ? "Sessão ativa" : "Saiu");
+    const linhaTit = el("span", "ap-tit"); linhaTit.append(tit, selo);
+    tx.append(linhaTit, el("small", null, localDe(a)), el("small", null, `Entrou em ${quando(a.entrou_em)}`), el("small", null, `Último acesso em ${quando(a.ultimo_acesso)}`));
+    row.append(ic, tx); return row;
+  }));
+}
+$("mfa-aparelhos").onclick = () => { $("aparelhos").showModal(); desenharAparelhos(); };
+$("aparelhos-senha").onclick = () => { $("aparelhos").close(); $("mfa-senha").click(); };
 
 // ---------- Armazenamento: o que este aparelho guarda e o que você já enviou ao servidor ----------
 const MB = 1048576, LIMITE_SERVIDOR = 400 * MB; // (o mesmo limite por pessoa que o servidor aplica)
@@ -1223,7 +1255,7 @@ async function onIncoming(m) {
 
 // ---------- Notificações (push) ----------
 // O aviso é um toque sem texto: o servidor não vê nome nem conteúdo, e o navegador mostra "Você tem uma nova mensagem". Nada aparece com o Lacre aberto na tela.
-const FN_URL = SUPABASE_URL + "/functions/v1/notificar";
+const FN_URL = SUPABASE_URL + "/functions/v1/notificar", FN_APARELHO = SUPABASE_URL + "/functions/v1/aparelho";
 const suportaPush = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
 const b64uBytes = (t) => Uint8Array.from(atob(t.replaceAll("-", "+").replaceAll("_", "/").padEnd(Math.ceil(t.length / 4) * 4, "=")), (c) => c.charCodeAt(0));
 const bytesB64u = (b) => btoa(String.fromCharCode(...new Uint8Array(b))).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");

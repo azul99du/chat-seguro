@@ -136,3 +136,10 @@ Ao anexar um vídeo MP4/MOV, o app comprime no próprio aparelho (WebCodecs): **
 - **Quando não comprime (envia como antes):** navegador sem WebCodecs; vídeo já leve (≤ 720p e ≤ 3 Mbps); MP4 fragmentado; áudio que não é AAC; vídeo de 10 bits/HDR; HEVC que o navegador não decodifica; qualquer erro ou resultado que não fique ≥ 10% menor. Nesses casos vale o limite de 45 MB do original.
 - **Cache:** os vídeos também ficam guardados no aparelho (limite por arquivo: 50 MB; total do cache: 300 MB, com descarte dos menos usados).
 - Testes: `tests/video.browser.test.mjs` (ffprobe/ffmpeg conferem codec, tamanho, duração, rotação, áudio idêntico, ausência de metadados e decodificação sem erros) e `tests/e2e/video.test.mjs`.
+
+## Aparelhos conectados
+Menu da foto → Segurança da conta → **Aparelhos conectados**: lista os acessos à conta (mais novo primeiro): navegador e sistema ("Chrome no Android"), local aproximado, data/hora de entrada e do último acesso, "Este aparelho" para o atual e "Sessão ativa" / "Saiu" para os outros. Atalho "Não reconheço um aparelho: trocar a senha" (trocar a senha desconecta todos os outros aparelhos).
+- A Edge Function `aparelho` (exige login) registra a sessão atual: navegador/sistema/tipo (rótulos do User-Agent; o texto bruto NÃO é guardado), data e local. **O IP não é guardado.** O local vem de uma consulta server-a-server ao serviço público **ipwho.is** só com o IP (sem nome, conta ou mensagens), uma vez por sessão por dia. Se o serviço falhar, aparece "Local indisponível". Para desligar a região, basta remover a função `local()` de `supabase/functions/aparelho/index.ts`.
+- Tabela `public.aparelhos` (RLS ligada, sem acesso direto; só a função `meus_aparelhos()` lê, e só as linhas da própria pessoa, exigindo o 2º passo). Guarda no máximo os 30 acessos mais recentes de cada pessoa.
+- **"Sair" agora só desconecta o aparelho atual** (antes desconectava a conta em todos os aparelhos).
+- Testes: `tests/aparelho.test.mjs` e `tests/e2e/aparelhos.test.mjs`.

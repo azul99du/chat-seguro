@@ -522,3 +522,11 @@ dialog.pagina[open]{animation:pagina-entra .26s cubic-bezier(.2,.8,.2,1)}
 .pg-dica.sem-recuo{margin:8px 28px 2px}
 #arm-msg{min-height:1.2em;margin:10px 28px 0;font-size:.9rem;color:var(--verde);text-align:center}
 #arm-resumo{color:var(--mut)!important}
+
+/* aparelhos conectados */
+.ap-tit{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.selo-estado.ativo{background:var(--verde);color:#0b2a17}
+.selo-estado.saiu{background:var(--mut);color:#fff}
+.linha.info.atual .ic{color:var(--seal)}
+#aparelhos-lista .linha.info{align-items:flex-start;padding-top:2px}
+#aparelhos-lista .linha .ic{margin-top:18px}

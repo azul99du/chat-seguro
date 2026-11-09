@@ -511,3 +511,29 @@ language sql stable security definer set search_path = public, storage as $$
 $$;
 revoke all on function public.meu_uso_arquivos() from public, anon, authenticated;
 grant execute on function public.meu_uso_arquivos() to authenticated;
+
+-- ===== Aparelhos conectados (migração aparelhos_conectados) =====
+-- Quem escreve é a Edge Function "aparelho" (service role). Nenhum IP nem texto bruto de navegador é guardado, só rótulos e local aproximado.
+create table public.aparelhos (
+  session_id uuid primary key,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  navegador text not null, sistema text not null,
+  tipo text not null check (tipo in ('celular', 'tablet', 'computador', 'outro')),
+  pais_codigo text check (pais_codigo ~ '^[A-Z]{2}$'), regiao text, cidade text,
+  entrou_em timestamptz not null default now(), ultimo_acesso timestamptz not null default now(), local_em timestamptz
+);
+create index aparelhos_por_pessoa on public.aparelhos (user_id, ultimo_acesso desc);
+alter table public.aparelhos enable row level security;
+revoke all on public.aparelhos from anon, authenticated;   -- ninguém logado lê nem escreve direto: só pela função meus_aparelhos()
+create policy "exige dois passos" on public.aparelhos as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+create or replace function public.meus_aparelhos() returns table (session_id uuid, navegador text, sistema text, tipo text, pais_codigo text, regiao text, cidade text, entrou_em timestamptz, ultimo_acesso timestamptz, conectado boolean, atual boolean)
+language sql stable security definer set search_path = public, auth as $$
+  select a.session_id, a.navegador, a.sistema, a.tipo, a.pais_codigo, a.regiao, a.cidade, a.entrou_em, a.ultimo_acesso,
+         exists (select 1 from auth.sessions s where s.id = a.session_id) as conectado,
+         a.session_id = nullif((select auth.jwt() ->> 'session_id'), '')::uuid as atual
+    from public.aparelhos a
+   where a.user_id = (select auth.uid()) and (select public.mfa_ok())
+   order by a.ultimo_acesso desc limit 30
+$$;
+revoke all on function public.meus_aparelhos() from public, anon, authenticated;
+grant execute on function public.meus_aparelhos() to authenticated;
