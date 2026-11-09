@@ -94,7 +94,7 @@ export async function delSticker(uid, id) { const t = await tx(["stickers"], "re
 // ---------- Cache de arquivos baixados (áudio, foto, figurinha) ----------
 // Guarda o arquivo CIFRADO do jeito que está no servidor (a chave de cada arquivo fica só dentro das mensagens, que já são guardadas cifradas aqui).
 // Assim ouvir/ver de novo não baixa nada. Limite total com descarte dos menos usados.
-export const BLOB_MAX = 150 * 1048576, BLOB_ARQUIVO_MAX = 8 * 1048576;
+export const BLOB_MAX = 300 * 1048576, BLOB_ARQUIVO_MAX = 50 * 1048576; // 50 MB por arquivo cobre qualquer vídeo (o limite de envio é 45 MB); o total é 300 MB, e os menos usados saem primeiro
 const bKey = (uid, path) => `${uid}|${path}`;
 export async function getBlob(uid, path) {
   const r = await req((await tx(["blobs"], "readonly")).objectStore("blobs").get(bKey(uid, path)));

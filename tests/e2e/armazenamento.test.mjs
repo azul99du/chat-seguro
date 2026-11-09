@@ -25,7 +25,7 @@ after(async () => { if (browser) { await browser.close(); await srv.close(); } }
 
 t("conta nova: tudo zerado, 'liberar espaço' desligado, e o resumo aparece no menu", async () => {
   await abrirArm(A);
-  assert.match(await A.locator("#arm-cache-txt").innerText(), /^0 KB de no máximo 150 MB · 0 arquivos$/); assert.match(await A.locator("#arm-srv-txt").innerText(), /^0 KB de 400 MB · 0 arquivos$/);
+  assert.match(await A.locator("#arm-cache-txt").innerText(), /^0 KB de no máximo 300 MB · 0 arquivos$/); assert.match(await A.locator("#arm-srv-txt").innerText(), /^0 KB de 400 MB · 0 arquivos$/);
   assert.equal(await A.locator("#arm-limpar").isDisabled(), true); assert.match(await A.locator("#arm-hist-txt").innerText(), /mensage/);
   await A.click("#armaz button[value=cancel]"); await menuConta(A); assert.match(await A.locator("#arm-resumo").innerText(), /neste aparelho/); await A.keyboard.press("Escape");
 });
@@ -52,5 +52,14 @@ t("depois de liberar: recarregar mantém a mensagem e a foto baixa de novo (serv
   await B.reload(); await B.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 }); await B.click("#contacts button");
   await B.waitForSelector(".msg:not(.mine) .vis:has-text('foto de teste')", { timeout: 20000 }); await B.waitForSelector(".msg:not(.mine) .media img", { timeout: 30000 });
   await abrirArm(B); assert.match(await B.locator("#arm-cache-txt").innerText(), /· 1 arquivo$/, "baixou e guardou de novo");
+});
+t("o cache aceita arquivo grande (vídeo de até 50 MB) e recusa o que passa disso", async () => {
+  const r = await A.evaluate(async () => {
+    const m = await import(location.origin + "/store.js"), u = "teste-cache";
+    await m.putBlob(u, "grande", new Uint8Array(30 * 1048576)); await m.putBlob(u, "enorme", new Uint8Array(60 * 1048576));
+    const out = { grande: (await m.getBlob(u, "grande"))?.byteLength ?? null, enorme: (await m.getBlob(u, "enorme"))?.byteLength ?? null, max: m.BLOB_ARQUIVO_MAX / 1048576, total: m.BLOB_MAX / 1048576 };
+    await m.limparBlobs(u); return out;
+  });
+  assert.equal(r.grande, 30 * 1048576, "um vídeo de 30 MB fica guardado"); assert.equal(r.enorme, null, "acima do limite por arquivo não entra"); assert.deepEqual([r.max, r.total], [50, 300]);
 });
 t("sem erros de JavaScript", () => assert.deepEqual(erros, []));
