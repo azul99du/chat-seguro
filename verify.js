@@ -10,3 +10,5 @@ export async function safetyCode(a, b) {
   const h = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(fa + fb)));
   return Array.from({ length: 12 }, (_, i) => String(((h[2 * i] << 8) | h[2 * i + 1]) % 100000).padStart(5, "0"));
 }
+// compara duas chaves públicas JWK (P-256) pelas coordenadas
+export const mesmaChavePublica = (a, b) => !!a && !!b && a.x === b.x && a.y === b.y;

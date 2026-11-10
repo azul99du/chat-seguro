@@ -1,16 +1,16 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=17bb8361ec";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=17bb8361ec";
-import { montarFigurinhas } from "./figurinhas.js?v=17bb8361ec";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=17bb8361ec";
-import { usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=17bb8361ec";
-import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js?v=17bb8361ec";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=17bb8361ec";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=17bb8361ec";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=17bb8361ec";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=17bb8361ec";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=17bb8361ec";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, fingerprint, deleteLocalKeys } from "./crypto.js?v=17bb8361ec";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=339e4d4713";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=339e4d4713";
+import { montarFigurinhas } from "./figurinhas.js?v=339e4d4713";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=339e4d4713";
+import { usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=339e4d4713";
+import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js?v=339e4d4713";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=339e4d4713";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=339e4d4713";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=339e4d4713";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=339e4d4713";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=339e4d4713";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=339e4d4713";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -104,7 +104,7 @@ $("auth-form").onsubmit = async (e) => {
     if (mode === "signup") {
       localStorage.setItem("pending-username", $("username").value.trim().toLowerCase());
       const { data, error } = await sb.auth.signUp({ email, password });
-      if (error) return msg(friendly(error.message));
+      if (error) { localStorage.removeItem("pending-username"); return msg(friendly(error.message)); }
       if (!data.session) return msg("Conta criada! Confirme o e-mail que enviamos e depois entre.");
     } else {
       const { error } = await sb.auth.signInWithPassword({ email, password });
@@ -138,13 +138,16 @@ async function start() {
   // conferimos no servidor, em segundo plano, se a sessão ainda vale (ex.: a senha foi trocada em outro aparelho)
   sb.auth.getUser().then(({ error }) => { if (error && [401, 403].includes(error.status)) sb.auth.signOut({ scope: "local" }).finally(() => location.reload()); }).catch(() => {});
   const uid = session.user.id;
-  let { data: prof } = await sb.from("profiles").select("id,username,public_key,avatar").eq("id", uid).maybeSingle();
+  let { data: prof, error: perr } = await sb.from("profiles").select("id,username,public_key,avatar").eq("id", uid).maybeSingle();
+  // falha de leitura NÃO é "primeiro acesso": nunca gera chave nova nem mexe na identidade local por causa de um erro de rede
+  if (perr) { mostrarLogin(); return note("Não consegui carregar seu perfil agora. Verifique a conexão e tente entrar de novo."); }
   myKeys = await getLocalKeys(uid);
 
   if (!prof) { // primeiro acesso: gera chaves neste aparelho e publica só a chave pública
     const username = localStorage.getItem("pending-username");
     if (!username) { await sb.auth.signOut({ scope: "local" }); mostrarLogin(); return note("Não achamos seu perfil. Crie a conta de novo na aba Criar conta."); }
-    const publicKey = await createKeys(uid);
+    // se já existe uma chave neste aparelho para esta conta, reaproveita (nunca sobrescreve)
+    const publicKey = myKeys ? await crypto.subtle.exportKey("jwk", myKeys.publicKey) : await createKeys(uid);
     myKeys = await getLocalKeys(uid);
     let pass, hint = "Ela recupera suas mensagens se você trocar de aparelho. Use algo diferente da senha de login (dica: cinco palavras sorteadas, como rio-lua-pedra-nuvem-cafe) e guarde bem: não dá para redefinir.";
     for (;;) {
@@ -174,8 +177,17 @@ async function start() {
     myKeys = await getLocalKeys(uid);
   }
 
+  // a chave pública do servidor precisa ser a MESMA deste aparelho; senão um servidor malicioso poderia forjar o código de segurança
+  const minhaPub = await crypto.subtle.exportKey("jwk", myKeys.publicKey);
+  if (!mesmaChavePublica(minhaPub, prof.public_key)) {
+    const r = await choose("Chave não confere", "A chave guardada neste aparelho é diferente da chave publicada na sua conta. Por segurança, não vou abrir as conversas. Você pode sair, ou restaurar a chave certa com a frase-senha (isso apaga a chave local divergente).", [
+      { label: "Restaurar com a frase-senha", value: "restore", cls: "primary" },
+      { label: "Sair", value: "", cls: "ghost" }]);
+    if (r === "restore") await deleteLocalKeys(uid);
+    await sb.auth.signOut({ scope: "local" }); return location.reload();
+  }
   ikJwk = await crypto.subtle.exportKey("jwk", myKeys.privateKey); // usada só em memória, para o acordo de chaves
-  me = prof;
+  me = { ...prof, public_key: minhaPub };
   const { data: hasBk } = await sb.from("key_backups").select("user_id").maybeSingle();
   if (!hasBk) await offerBackup(uid);
   $("me").textContent = "@" + me.username; $("nome-txt").textContent = "@" + me.username; try { localStorage.setItem("lacre:eu:" + uid, "@" + me.username); } catch {}

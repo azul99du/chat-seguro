@@ -23,3 +23,11 @@ test("fingerprint ignora campos extras do JWK e distingue chaves", async () => {
   assert.notEqual(f1, await fingerprint({ kty: "EC", crv: "P-256", ...q }));
   assert.match(f1, /^[0-9a-f]{64}$/);
 });
+import { mesmaChavePublica } from "../verify.js";
+test("mesmaChavePublica: compara só x/y e recusa vazio ou chave diferente", async () => {
+  const p = (await genDH()).pub, q = (await genDH()).pub;
+  assert.ok(mesmaChavePublica({ kty: "EC", ...p }, { crv: "P-256", ...p }));
+  assert.ok(!mesmaChavePublica(p, q));
+  assert.ok(!mesmaChavePublica(p, null));
+  assert.ok(!mesmaChavePublica(undefined, p));
+});
