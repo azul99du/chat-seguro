@@ -1,18 +1,19 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=93562b6bed";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=93562b6bed";
-import { montarFigurinhas } from "./figurinhas.js?v=93562b6bed";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=93562b6bed";
-import { acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=93562b6bed";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=93562b6bed";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=93562b6bed";
-import { acharVideoLink } from "./videolink.js?v=93562b6bed";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=93562b6bed";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=93562b6bed";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=93562b6bed";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=93562b6bed";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=93562b6bed";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=93562b6bed";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=7edbc21bc1";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=7edbc21bc1";
+import { montarFigurinhas } from "./figurinhas.js?v=7edbc21bc1";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=7edbc21bc1";
+import { acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=7edbc21bc1";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=7edbc21bc1";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=7edbc21bc1";
+import { acharVideoLink } from "./videolink.js?v=7edbc21bc1";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=7edbc21bc1";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=7edbc21bc1";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=7edbc21bc1";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=7edbc21bc1";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=7edbc21bc1";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=7edbc21bc1";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=7edbc21bc1";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -29,7 +30,29 @@ const grupos = new Map(); // id -> grupo: { id, grupo: true, nome, membros: Map(
 const perfis = new Map(); // id -> perfil de qualquer pessoa conhecida (inclui quem só está num grupo comigo)
 const ativ = new Map(); // id da conversa (pessoa ou grupo) -> hora da última atividade: a lista mostra as mais recentes primeiro
 const midParaId = new Map(); // grupo aberto: identificador da mensagem (igual para todos) -> id dela neste aparelho
-const unread = new Set();
+// Lista de conversas: mensagens novas (guardadas neste aparelho, com o id de cada uma para nunca contar duas vezes) e horário da última mensagem
+const naoLidas = new Map(); // conversa (pessoa ou grupo) -> ids das mensagens novas
+const ultima = new Map(), ultimaCerta = new Set(); // conversa -> hora da última mensagem; "certa" = vista aqui (a do servidor pode ser uma reação, que não dá para distinguir sem decifrar)
+const chaveLS = (n) => `lacre:${n}:${me.id}`;
+function lerLS(n) { try { return JSON.parse(localStorage.getItem(chaveLS(n)) || "null"); } catch { return null; } }
+function gravarLS(n, v) { try { localStorage.setItem(chaveLS(n), JSON.stringify(v)); } catch {} }
+const salvaNL = () => gravarLS("nl", Object.fromEntries(naoLidas));
+let salvaUltT = 0;
+const agendaUlt = () => { clearTimeout(salvaUltT); salvaUltT = setTimeout(() => gravarLS("ult", Object.fromEntries([...ultimaCerta].map((k) => [k, ultima.get(k)]))), 300); };
+function carregarLista() {
+  const nl = lerLS("nl"); if (nl && typeof nl === "object") for (const [k, v] of Object.entries(nl)) if (Array.isArray(v)) { const ids = v.filter(Number.isSafeInteger).slice(-100); if (ids.length) naoLidas.set(k, ids); }
+  const u = lerLS("ult"); if (u && typeof u === "object") for (const [k, v] of Object.entries(u)) if (Number.isFinite(v)) { ultima.set(k, v); ultimaCerta.add(k); }
+}
+function contarNova(conv, msgId) { const l = naoLidas.get(conv) || []; if (l.includes(msgId)) return; l.push(msgId); naoLidas.set(conv, l.slice(-100)); salvaNL(); }
+function limparNaoLidas(conv) { if (naoLidas.delete(conv)) salvaNL(); }
+function marcaUltima(conv, quando) { // uma mensagem que de fato apareceu (ou chegou) aqui
+  const t = typeof quando === "number" ? quando : Date.parse(quando); if (!(t > 0)) return;
+  if (!ultimaCerta.has(conv)) { ultimaCerta.add(conv); ultima.set(conv, t); } else if (t > ultima.get(conv)) ultima.set(conv, t); else return;
+  agendaUlt();
+}
+function ultimaDoServidor(conv, quando) { const t = Date.parse(quando); if (!ultimaCerta.has(conv) && t > (ultima.get(conv) || 0)) ultima.set(conv, t); }
+// o teclado só sobe quando a pessoa toca no campo (celular); no computador, com mouse, o foco continua indo direto para o campo
+const focoSeMouse = () => { try { if (matchMedia("(pointer: fine)").matches) $("text").focus({ preventScroll: true }); } catch {} };
 let online = new Set(); // ids de quem está online agora
 const msgs = new Map(), reactions = new Map(); // mensagens/reações da conversa aberta
 
@@ -197,6 +220,7 @@ async function start() {
   const { data: hasBk } = await sb.from("key_backups").select("user_id").maybeSingle();
   if (!hasBk) await offerBackup(uid);
   $("me").textContent = "@" + me.username; $("nome-txt").textContent = "@" + me.username; try { localStorage.setItem("lacre:eu:" + uid, "@" + me.username); } catch {}
+  carregarLista();
   pintarMeu();
   mostrarChat();
   ensureSpk();
@@ -721,9 +745,9 @@ async function loadContacts() {
   // conversas a dois (as mensagens de grupo ficam de fora: estar num grupo com alguém não cria uma conversa com essa pessoa)
   const [{ data }, { data: doGrupo }] = await Promise.all([
     sb.from("messages").select("sender_id,recipient_id,created_at").is("grupo_id", null).eq("avisar", true).order("created_at", { ascending: false }).limit(200), // (avisar=false são toques automáticos, não conversa)
-    sb.from("messages").select("grupo_id,created_at").eq("recipient_id", me.id).not("grupo_id", "is", null).order("id", { ascending: false }).limit(200)]);
-  for (const m of data || []) tocaAtiv(m.sender_id === me.id ? m.recipient_id : m.sender_id, m.created_at);
-  for (const m of doGrupo || []) tocaAtiv(m.grupo_id, m.created_at);
+    sb.from("messages").select("grupo_id,created_at").not("grupo_id", "is", null).order("id", { ascending: false }).limit(200)]); // (as minhas e as dos outros)
+  for (const m of data || []) { const c = m.sender_id === me.id ? m.recipient_id : m.sender_id; tocaAtiv(c, m.created_at); ultimaDoServidor(c, m.created_at); }
+  for (const m of doGrupo || []) { tocaAtiv(m.grupo_id, m.created_at); ultimaDoServidor(m.grupo_id, m.created_at); }
   const ids = [...new Set((data || []).flatMap((m) => [m.sender_id, m.recipient_id]))].filter((i) => i !== me.id);
   if (ids.length) {
     const { data: ps } = await sb.from("profiles").select("id,username,public_key,avatar").in("id", ids);
@@ -746,14 +770,19 @@ function renderContacts() {
     nm.className = "who";
     if (p.grupo) { // grupo: inicial do nome num quadrado + quantas pessoas
       av.className = "avatar"; pintarAvatarGrupo(av, p); nm.textContent = p.nome; b.dataset.grupo = p.id;
-      const st = document.createElement("small"); st.className = "sub"; st.textContent = "grupo · " + contagem(p.membros.size); nm.append(st);
+      const st = document.createElement("small"); st.className = "sub"; st.textContent = "grupo · " + contagem(p.membros.size);
+      const on = contaOnline([...p.membros.keys()], me.id, online); if (on) st.append(el("span", "on", ` · ${on} online`)); // quantos do grupo estão online agora
+      nm.append(st);
     } else {
       av.className = "avatar" + (online.has(p.id) ? " on" : ""); pintarAvatar(av, p, true);
       nm.textContent = "@" + p.username;
       if (online.has(p.id)) { const st = document.createElement("small"); st.textContent = "online"; nm.append(st); }
     }
     b.append(av, nm);
-    if (unread.has(p.id)) { const u = document.createElement("i"); u.className = "unread"; u.title = "Mensagem nova"; b.append(u); }
+    const t = ultima.get(p.id), n = naoLidas.get(p.id)?.length || 0, lado = el("span", "lado"); // à direita: horário da última mensagem e quantas são novas
+    if (t) { const h = el("time", "hora", rotuloHora(t)); h.dateTime = new Date(t).toISOString(); h.title = dataCompleta(t); lado.append(h); }
+    if (n) { const u = el("i", "unread num", rotuloNovas(n)); u.title = textoNovas(n); u.setAttribute("aria-label", textoNovas(n)); lado.append(u); b.classList.add("tem-novas"); }
+    if (lado.childNodes.length) b.append(lado);
     if (active?.id === p.id) b.setAttribute("aria-current", "true");
     b.onclick = () => open(p);
     li.append(b); return li;
@@ -985,6 +1014,7 @@ function addMessage(m, content, { err = false, animate = false, em = null } = {}
   const media = content.type === "media" && !err;
   const text = apagada ? "Mensagem apagada" : String(content.type === "media" ? content.caption ?? "" : content.text ?? "");
   const mine = m.sender_id === me.id, at = new Date(m.created_at), emGrupo = !!active?.grupo;
+  if (active) marcaUltima(active.id, m.created_at); // (a lista mostra a hora da última mensagem que aparece aqui)
   const wrap = el("div", "msg" + (mine ? " mine" : "")), line = el("div", "line"); wrap.dataset.de = m.sender_id;
   if (emGrupo && ehMid(content.mid) && !midParaId.has(content.mid)) midParaId.set(content.mid, m.id);
   const b = el("div", "bubble" + (mine ? " mine" : "") + (err ? " err" : "") + (media ? " has-media" : "") + (media && content.kind === "sticker" ? " sticker" : "") + (apagada ? " apagada" : ""));
@@ -1042,10 +1072,10 @@ function mostrarResposta() {
 function responder(id) {
   if (!msgs.get(id) || !active) return;
   const c = refCitacao(id); if (!c) return;
-  replyTo = c; mostrarResposta(); $("text").focus();
+  replyTo = c; mostrarResposta(); focoSeMouse();
 }
 function cancelarResposta() { replyTo = null; mostrarResposta(); }
-$("reply-x").onclick = () => { cancelarResposta(); $("text").focus(); };
+$("reply-x").onclick = () => { cancelarResposta(); focoSeMouse(); };
 $("text").addEventListener("keydown", (e) => { if (e.key === "Escape" && replyTo) { e.preventDefault(); cancelarResposta(); } });
 function irPara(id) { // vai até a mensagem original e a destaca por um instante
   const e = msgs.get(id);
@@ -1441,7 +1471,7 @@ async function open(peer) {
   if (peer.grupo) return abrirGrupo(peer);
   bandeja(false); fecharMencoes();
   if (!(await checkPin(peer))) return;
-  active = peer; unread.delete(peer.id); renderContacts(); updateStatus();
+  active = peer; limparNaoLidas(peer.id); renderContacts(); updateStatus();
   pintarAvatar($("conv-av"), peer, true); $("conv-av").setAttribute("aria-label", "Ver foto de perfil"); atualizaFotoDe(peer).catch(() => {});
   $("chat").classList.add("in-conv");
   $("conv-title").textContent = "@" + peer.username;
@@ -1474,7 +1504,7 @@ async function open(peer) {
     }
   }
   if (active !== peer) return;
-  $("text").focus({ preventScroll: true });
+  focoSeMouse(); // (no celular o teclado só sobe se a pessoa tocar no campo)
   markRead();
 }
 const voltarDaConversa = () => { fecharMencoes(); $("chat").classList.remove("in-conv"); active = null; renderContacts(); updateStatus(); };
@@ -1504,10 +1534,10 @@ async function onIncoming(m, aoVivo = true) {
     if (c.type === "delete") { await aplicarApagar(c, m); return; }
   }
   if (!contacts.has(peer.id)) contacts.set(peer.id, peer);
-  tocaAtiv(peer.id, m.created_at);
+  tocaAtiv(peer.id, m.created_at); marcaUltima(peer.id, m.created_at);
   if (active?.id === m.sender_id && carregandoConversa === active) filaChegando.push(m); // a conversa ainda está abrindo: entra na ordem certa quando terminar
   else if (active?.id === m.sender_id) { if (aoVivo || maisNovaQueATela(m)) { $("msgs-empty")?.remove(); await show(m, active, aoVivo); markRead(); } }
-  else if (aoVivo || !m.read_at) unread.add(m.sender_id);
+  else if (aoVivo || !m.read_at) contarNova(m.sender_id, m.id);
   renderContacts();
 }
 async function chegouDoGrupo(m, peer, aoVivo) {
@@ -1518,10 +1548,10 @@ async function chegouDoGrupo(m, peer, aoVivo) {
   if (c.type === "reaction") { if (active === g) applyReaction(c, m); return; }
   if (c.type === "hello") return;
   if (c.type === "delete") { await aplicarApagar(c, m); return; }
-  tocaAtiv(g.id, m.created_at);
+  tocaAtiv(g.id, m.created_at); marcaUltima(g.id, m.created_at);
   if (active === g && carregandoConversa === g) filaChegando.push(m);
   else if (active === g) { if (aoVivo || maisNovaQueATela(m)) { $("msgs-empty")?.remove(); await mostrar(m, c, aoVivo); markRead(); } }
-  else if (aoVivo || !m.read_at) unread.add(g.id);
+  else if (aoVivo || !m.read_at) contarNova(g.id, m.id);
   renderContacts();
 }
 // O que chegou com o Lacre fechado: decifra tudo, em ordem, logo ao abrir (sem isso, uma mensagem de grupo só seria lida quando eu abrisse a conversa a dois com quem a mandou).
@@ -1607,7 +1637,7 @@ function atualizarGrupos(fresco = false) {
         await anotarMudancas(g, n);
       }
       for (const [id, g] of [...grupos]) if (!vistos.has(id)) { // saí, fui removido, ou o grupo acabou
-        grupos.delete(id); unread.delete(id); chavesGrupo.delete(id);
+        grupos.delete(id); limparNaoLidas(id); ultima.delete(id); ultimaCerta.delete(id); agendaUlt(); chavesGrupo.delete(id);
         if (active === g) sairDaConversa(g.saindo ? "" : `Você não participa mais do grupo “${g.nome}”.`);
       }
       for (const [id, g] of grupos) if (!g.pintado || g.pintado !== g.nome + "|" + (g.foto?.p || "")) { g.pintado = g.nome + "|" + (g.foto?.p || ""); if (active === g) pintarAvatarGrupo($("conv-av"), g, true); }
@@ -1626,7 +1656,7 @@ async function mostrarMeuLote(g, l) { // uma mensagem MINHA no grupo (no servido
 }
 async function abrirGrupo(g) {
   bandeja(false); fecharMencoes();
-  active = g; unread.delete(g.id); renderContacts(); updateStatus();
+  active = g; limparNaoLidas(g.id); renderContacts(); updateStatus();
   pintarAvatarGrupo($("conv-av"), g, true); $("conv-av").setAttribute("aria-label", "Dados do grupo");
   $("chat").classList.add("in-conv");
   $("conv-title").textContent = g.nome;
@@ -1667,7 +1697,7 @@ async function abrirGrupo(g) {
     }
   }
   if (active !== g) return;
-  $("text").focus({ preventScroll: true });
+  focoSeMouse(); // (no celular o teclado só sobe se a pessoa tocar no campo)
   markRead();
 }
 
@@ -2178,7 +2208,7 @@ $("send-form").onsubmit = async (e) => {
   const text = lerTexto().trim(), peer = active;
   if (!peer || (!text && !pending)) return;
   if (pending?.busy) return note("Aguarde um instante: ainda estou limpando os metadados do arquivo.");
-  const btn = e.submitter ?? e.target.querySelector(".primary"); btn.disabled = true;
+  const btn = e.submitter ?? e.target.querySelector(".primary"); btn.disabled = true; const tinhaFoco = document.activeElement === $("text"); // (se o teclado estava fechado — áudio, figurinha — ele não sobe ao enviar)
   // o campo e a citação são liberados já no início: dá para digitar a próxima mensagem enquanto esta ainda está indo (se falhar, o texto volta)
   const resp = replyTo; limparTexto(); cancelarResposta();
   try {
@@ -2200,7 +2230,7 @@ $("send-form").onsubmit = async (e) => {
     if (!lerTexto()) { $("text").textContent = text; atualizaBotao(); } // devolve o que a pessoa tinha digitado
     if (resp && !replyTo) { replyTo = resp; mostrarResposta(); }
     note(sendError(e, peer));
-  } finally { btn.disabled = false; if (document.activeElement !== $("text")) $("text").focus(); }
+  } finally { btn.disabled = false; if (tinhaFoco && document.activeElement !== $("text")) $("text").focus(); }
 };
 
 // ---------- Fundo da conversa (pessoal, limpo de metadados e cifrado) ----------
