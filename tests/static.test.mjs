@@ -209,3 +209,17 @@ describe("vídeos curtos: política de segurança", () => {
   });
   test("o vídeo só é carregado depois de um toque (nenhuma moldura no HTML)", () => assert.doesNotMatch(ler("index.html"), /<iframe/));
 });
+
+describe("fluxo de publicação (CI em duas etapas)", () => {
+  const ci = ler(".github/workflows/ci.yml"), sh = ler("scripts/publicar.sh");
+  test("na main os testes só são pulados se ESTE hash já passou, por completo, em OUTRA branch", () => {
+    assert.match(ci, /refs\/heads\/main/); assert.match(ci, /status=success/); assert.match(ci, /head_branch!="main"/); assert.match(ci, /head_sha=="\$\{\{ github\.sha \}\}"/); assert.match(ci, /event=="push"/);
+    assert.match(ci, /actions: read/); assert.doesNotMatch(ci, /contents: write|id-token: write|pull-requests: write/, "o CI continua só com permissão de leitura de conteúdo");
+    assert.equal((ci.match(/needs\.ja-testado\.outputs\.pular != 'true'/g) || []).length, 2, "os dois grupos de testes dependem da conferência");
+  });
+  test("um envio direto à main (sem ter passado antes) roda tudo: pular começa falso", () => assert.match(ci, /pular=false\n/));
+  test("o script só leva à main um hash com CI bem-sucedido e nunca força a main", () => {
+    assert.match(sh, /ci_passou\)" -gt 0/); assert.match(sh, /refs\/heads\/main"/); assert.doesNotMatch(sh, /--force[^\n]*main|\+\$sha:refs\/heads\/main/, "sem push forçado na main");
+    assert.match(sh, /--force origin "\$sha:refs\/heads\/ci\/teste"/, "só a branch de teste é forçada"); assert.match(sh, /versionar\.mjs --check/);
+  });
+});

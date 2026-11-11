@@ -1,21 +1,46 @@
 name: CI
 
+# Fluxo de publicação (scripts/publicar.sh): o commit é enviado primeiro a uma branch de teste ("ci/teste"), onde esta suíte roda INTEIRA uma vez.
+# Quando passa, o MESMO commit (mesmo hash) vai para a main, que publica o site. Na main este fluxo só confere que aquele hash já passou
+# e pula os testes (não repete 12 minutos); um envio direto à main, sem ter passado antes, roda tudo normalmente.
 on:
   push:
-    branches: [main]
+    branches: ["**"]
   pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  ja-testado:
+    name: Este commit já passou nos testes?
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      pular: ${{ steps.v.outputs.pular }}
+    steps:
+      - id: v
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pular=false
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            # só vale uma execução COMPLETA e bem-sucedida deste mesmo hash numa outra branch (o hash identifica o conteúdo exato)
+            n=$(gh api "repos/${{ github.repository }}/actions/workflows/ci.yml/runs?head_sha=${{ github.sha }}&status=success&per_page=10" --jq '[.workflow_runs[] | select(.event=="push" and .head_branch!="main" and .head_sha=="${{ github.sha }}")] | length')
+            if [ "${n:-0}" -gt 0 ]; then pular=true; echo "Este commit (${{ github.sha }}) já passou em outra branch: testes pulados." >> "$GITHUB_STEP_SUMMARY"; fi
+          fi
+          echo "pular=$pular" >> "$GITHUB_OUTPUT"
+
   testes:
     name: Testes rápidos (protocolo, mídia, código, schema)
+    needs: ja-testado
+    if: needs.ja-testado.outputs.pular != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -25,13 +50,14 @@ jobs:
           node-version: 22
           cache: npm
       - name: Instalar ffmpeg (gera os vídeos de teste)
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+        run: sudo apt-get install -y --no-install-recommends ffmpeg || (sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg)
       - run: npm ci
       - run: npm run test:unit
 
   e2e:
     name: Ponta a ponta (navegador + projeto Supabase de teste)
-    needs: testes
+    needs: ja-testado
+    if: needs.ja-testado.outputs.pular != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     # um de cada vez: todos usam o mesmo projeto de teste
@@ -49,7 +75,7 @@ jobs:
           node-version: 22
           cache: npm
       - name: Instalar ffmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+        run: sudo apt-get install -y --no-install-recommends ffmpeg || (sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg)
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
