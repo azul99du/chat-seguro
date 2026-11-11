@@ -1,17 +1,17 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=40cd1b4f2e";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=40cd1b4f2e";
-import { montarFigurinhas } from "./figurinhas.js?v=40cd1b4f2e";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=40cd1b4f2e";
-import { acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=40cd1b4f2e";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=40cd1b4f2e";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=40cd1b4f2e";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=40cd1b4f2e";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=40cd1b4f2e";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=40cd1b4f2e";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=40cd1b4f2e";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=40cd1b4f2e";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=40cd1b4f2e";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=920f8cac9b";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=920f8cac9b";
+import { montarFigurinhas } from "./figurinhas.js?v=920f8cac9b";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=920f8cac9b";
+import { acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=920f8cac9b";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=920f8cac9b";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=920f8cac9b";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=920f8cac9b";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=920f8cac9b";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=920f8cac9b";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=920f8cac9b";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=920f8cac9b";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=920f8cac9b";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -1443,7 +1443,8 @@ async function open(peer) {
   $("text").focus({ preventScroll: true });
   markRead();
 }
-$("back").onclick = () => { fecharMencoes(); $("chat").classList.remove("in-conv"); active = null; renderContacts(); updateStatus(); };
+const voltarDaConversa = () => { fecharMencoes(); $("chat").classList.remove("in-conv"); active = null; renderContacts(); updateStatus(); };
+$("back").onclick = voltarDaConversa;
 
 let carregandoConversa = null, filaChegando = []; // mensagens que chegam enquanto open() ainda carrega
 async function perfilDe(id) { // perfil de alguém que me escreveu (contato, participante de grupo, ou busca no servidor)
@@ -2214,5 +2215,32 @@ $("bg-clear").onclick = async () => {
 };
 $("viewer").onclick = fecharViewer;
 $("viewer").oncancel = (e) => { e.preventDefault(); fecharViewer(); }; // Esc também anima
+
+// ---------- Botão "voltar" do celular (e do navegador) ----------
+// Cada tela que se abre por cima (conversa, página de configurações, janela de pergunta, foto ampliada, menus) ganha uma entrada no histórico do navegador:
+// "voltar" fecha a tela de cima em vez de sair do site. Se a tela é fechada pelo próprio app (setinha, Cancelar), a entrada é desfeita junto: nunca sobra "voltar" à toa.
+const pilhaVoltar = []; let popsIgnorados = 0, marcasAdiadas = 0;
+const marca = () => (popsIgnorados > 0 ? marcasAdiadas++ : history.pushState({ lacre: 1 }, "")); // (se um history.back() ainda está andando, a entrada nova espera ele terminar: senão o voltar desfaria a entrada nova)
+function abrirEntrada(fechar) { marca(); const e = { fechar, ativo: true }; pilhaVoltar.push(e); return e; }
+function fecharEntrada(e) { // a tela foi fechada pelo app
+  if (!e.ativo) return; e.ativo = false;
+  if (pilhaVoltar[pilhaVoltar.length - 1] === e) { pilhaVoltar.pop(); if (marcasAdiadas > 0) marcasAdiadas--; else { popsIgnorados++; history.back(); } } // (o popstate que isto causa não fecha mais nada)
+  // se havia outra tela por cima, a entrada fica "morta" na pilha e é consumida no próximo voltar
+}
+addEventListener("popstate", (ev) => {
+  if (popsIgnorados > 0) { popsIgnorados--; if (!popsIgnorados) for (; marcasAdiadas > 0; marcasAdiadas--) history.pushState({ lacre: 1 }, ""); return; }
+  const e = pilhaVoltar.pop();
+  if (e) { if (e.ativo) { e.ativo = false; e.fechar(); } return; } // (entrada "morta": a tela já tinha sido fechada pelo app; este voltar só a consome)
+  if (ev.state?.lacre) history.back(); // entrada velha de antes de recarregar a página: pula até chegar no começo
+});
+function ligarVoltar(node, filtro, aberto, fechar) {
+  let e = null;
+  new MutationObserver(() => { const a = aberto(); if (a && !e) e = abrirEntrada(fechar); else if (!a && e) { const x = e; e = null; fecharEntrada(x); } }).observe(node, filtro);
+}
+for (const d of document.querySelectorAll("dialog")) ligarVoltar(d, { attributes: true, attributeFilter: ["open"] }, () => d.open, () => d.close()); // toda janela (páginas de configuração, perguntas, avisos, foto ampliada)
+ligarVoltar($("chat"), { attributes: true, attributeFilter: ["class"] }, () => $("chat").classList.contains("in-conv"), voltarDaConversa); // a conversa aberta (no celular a lista some atrás dela)
+ligarVoltar($("menu-conta"), { attributes: true, attributeFilter: ["hidden"] }, () => !$("menu-conta").hidden, () => fecharMenu(false));
+ligarVoltar($("tray"), { attributes: true, attributeFilter: ["class"] }, () => $("tray").classList.contains("on"), () => bandeja(false));
+ligarVoltar(document.body, { childList: true }, () => !!document.querySelector(".picker"), fecharPicker); // menu da mensagem (reagir, responder, apagar…)
 
 start();
