@@ -66,7 +66,7 @@ t("servidor: formato do arquivo, dono da pasta e leitura por terceiros", async (
   const emA = novoEmail(); const sa = await ca.auth.signUp({ email: emA, password: SENHA }); assert.ok(sa.data.session);
   idA = sa.data.user.id; const arq = new Blob([PNG], { type: "image/webp" });
   const ruim = await ca.storage.from("avatars").upload(`${idA}/abc.webp`, arq, { contentType: "image/webp" }); assert.ok(ruim.error, "nome fora do formato é recusado");
-  const alheia = await ca.storage.from("avatars").upload(`${sa.data.user.id.replace(/./, "0")}/1700000000000.webp`, arq, { contentType: "image/webp" }); assert.ok(alheia.error, "pasta de outra pessoa é recusada");
+  const alheia = await ca.storage.from("avatars").upload(`${sa.data.user.id.replace(/./, (c) => (c === "0" ? "1" : "0"))}/1700000000000.webp`, arq, { contentType: "image/webp" }); assert.ok(alheia.error, "pasta de outra pessoa é recusada");
   const tipo = await ca.storage.from("avatars").upload(`${idA}/1700000000001.webp`, new Blob(["x"], { type: "text/html" }), { contentType: "text/html" }); assert.ok(tipo.error, "tipo não permitido é recusado");
   const grande = await ca.storage.from("avatars").upload(`${idA}/1700000000002.webp`, new Blob([new Uint8Array(200 * 1024)], { type: "image/webp" }), { contentType: "image/webp" }); assert.ok(grande.error, "acima de 150 KB é recusado");
   const ok = await ca.storage.from("avatars").upload(`${idA}/1700000000003.webp`, arq, { contentType: "image/webp" }); assert.ifError(ok.error);
