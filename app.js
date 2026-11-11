@@ -1,16 +1,17 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=339e4d4713";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=339e4d4713";
-import { montarFigurinhas } from "./figurinhas.js?v=339e4d4713";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=339e4d4713";
-import { usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=339e4d4713";
-import { citacao, limpaCitacao, exibir, rotulo } from "./reply.js?v=339e4d4713";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=339e4d4713";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=339e4d4713";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=339e4d4713";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=339e4d4713";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=339e4d4713";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=339e4d4713";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=d8f86e84d5";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=d8f86e84d5";
+import { montarFigurinhas } from "./figurinhas.js?v=d8f86e84d5";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=d8f86e84d5";
+import { acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=d8f86e84d5";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=d8f86e84d5";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=d8f86e84d5";
+import { MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=d8f86e84d5";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=d8f86e84d5";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=d8f86e84d5";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=d8f86e84d5";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=d8f86e84d5";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=d8f86e84d5";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -22,18 +23,22 @@ const MIN_FRASE = 16;
 const fraseFraca = (p) => p.length < MIN_FRASE ? `Use pelo menos ${MIN_FRASE} caracteres.`
   : new Set(p).size < 8 ? "Evite repetir os mesmos caracteres: misture palavras diferentes." : "";
 let replyTo = null; // mensagem que estou respondendo: { id, from, kind, text, dur }
-const contacts = new Map(); // id -> perfil
+const contacts = new Map(); // id -> perfil (conversas a dois)
+const grupos = new Map(); // id -> grupo: { id, grupo: true, nome, membros: Map(id -> perfil), admin, gk }
+const perfis = new Map(); // id -> perfil de qualquer pessoa conhecida (inclui quem só está num grupo comigo)
+const ativ = new Map(); // id da conversa (pessoa ou grupo) -> hora da última atividade: a lista mostra as mais recentes primeiro
+const midParaId = new Map(); // grupo aberto: identificador da mensagem (igual para todos) -> id dela neste aparelho
 const unread = new Set();
 let online = new Set(); // ids de quem está online agora
 const msgs = new Map(), reactions = new Map(); // mensagens/reações da conversa aberta
 
 // ---------- Diálogos ----------
-function ask(title, text, { codigo = false } = {}) {
+function ask(title, text, { codigo = false, texto = false, valor = "", max = 0 } = {}) { // texto: campo comum, visível (ex.: nome de grupo); o padrão é campo de senha
   const d = $("ask"), i = $("ask-input");
   $("ask-title").textContent = title; $("ask-text").textContent = text;
-  i.type = codigo ? "text" : "password"; i.inputMode = codigo ? "numeric" : "text"; i.autocomplete = codigo ? "one-time-code" : "off";
-  codigo ? (i.maxLength = 6) : i.removeAttribute("maxlength");
-  i.value = ""; d.returnValue = ""; d.showModal(); i.focus();
+  i.type = codigo || texto ? "text" : "password"; i.inputMode = codigo ? "numeric" : "text"; i.autocomplete = codigo ? "one-time-code" : "off";
+  codigo ? (i.maxLength = 6) : max ? (i.maxLength = max) : i.removeAttribute("maxlength");
+  i.value = valor; d.returnValue = ""; d.showModal(); i.focus();
   return new Promise((res) => { d.onclose = () => res(d.returnValue === "ok" ? i.value : null); });
 }
 function choose(title, text, options) {
@@ -197,11 +202,13 @@ async function start() {
   await loadContacts();
   atualizarAviso2fa();
   sb.channel("msgs", { config: { private: true } })
-    .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `recipient_id=eq.${uid}` }, (p) => onIncoming(p.new))
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `recipient_id=eq.${uid}` }, (p) => naFila(() => onIncoming(p.new)))
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `sender_id=eq.${uid}` }, (p) => {
+      if (p.new.grupo_id) return; // em grupo não há "vista" (cada pessoa recebe a sua cópia)
       const e = msgs.get(p.new.id); if (e) { e.m.read_at = p.new.read_at; setReceipt(e); }
     })
     .subscribe();
+  sincronizar();
 
   // quem está online: presença em tempo real (some sozinha ao fechar o site)
   const pres = sb.channel("online", { config: { private: true, presence: { key: uid } } });
@@ -210,8 +217,9 @@ async function start() {
     renderContacts(); updateStatus();
   }).subscribe(async (st) => { if (st === "SUBSCRIBED") await pres.track({ at: Date.now() }); });
 
-  document.addEventListener("visibilitychange", () => { markRead(); if (!document.hidden) { loadContacts().catch(() => {}); conferirAparelhos(true); } });
+  document.addEventListener("visibilitychange", () => { markRead(); if (!document.hidden) { loadContacts().catch(() => {}).then(sincronizar); conferirAparelhos(true); } });
   addEventListener("focus", markRead);
+  addEventListener("online", () => { loadContacts().catch(() => {}).then(sincronizar); }); // a internet voltou: busca o que chegou nesse meio-tempo
   $("chat").classList.remove("preparando"); document.body.dataset.pronto = "1";
   sincronizarNotificacoes(); conferirAparelhos(true, true);
   setInterval(() => { if (!document.hidden) conferirAparelhos(true); }, 60000);
@@ -568,6 +576,7 @@ async function fotoUrl(path) {
 }
 // mostra a foto (ou a inicial do nome enquanto não há foto / carrega)
 function pintarAvatar(node, p, abrivel = false) {
+  node.classList.remove("grupo");
   node.replaceChildren(); node.textContent = p.username[0]; node.dataset.foto = p.avatar || "";
   if (abrivel) { node.onclick = null; node.classList.remove("abre"); node.removeAttribute("title"); if (node.tagName === "BUTTON") node.disabled = true; }
   if (!p.avatar) return;
@@ -603,6 +612,18 @@ async function fecharViewer() {
     : im.animate([{ transform: "none", opacity: 1 }, { transform: "scale(.92)", opacity: 0 }], { duration: 180, easing: "ease-in", fill: "forwards" });
   await anim.finished.catch(() => {});
   d.close(); d.classList.remove("saindo"); anim.cancel(); fechandoViewer = false;
+}
+// grupo: quadrado de cantos redondos com a inicial do nome (pessoas são círculos)
+function pintarAvatarGrupo(node, g, abreDados = false) {
+  node.replaceChildren(); node.dataset.foto = ""; node.classList.add("grupo"); node.classList.remove("abre"); node.removeAttribute("title");
+  node.textContent = [...(g.nome || "G")][0];
+  if (node.tagName === "BUTTON") { node.disabled = !abreDados; node.onclick = abreDados ? () => abrirInfoGrupo(g) : null; }
+}
+function svgIcone(caminhos, tam = 22) {
+  const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg");
+  for (const [k, v] of Object.entries({ viewBox: "0 0 24 24", width: tam, height: tam, fill: "none", stroke: "currentColor", "stroke-width": "1.8", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true" })) svg.setAttribute(k, v);
+  for (const d of caminhos) { const pa = document.createElementNS(ns, "path"); pa.setAttribute("d", d); svg.append(pa); }
+  return svg;
 }
 const pintarMeu = () => { pintarAvatar($("eu-foto"), me); pintarAvatar($("menu-av"), me); };
 async function abrirFoto(p, origem) {
@@ -683,26 +704,42 @@ $("perfil-remover").onclick = async () => {
 };
 
 // ---------- Contatos ----------
+function tocaAtiv(id, quando) { const t = typeof quando === "number" ? quando : Date.parse(quando); if (t > (ativ.get(id) || 0)) ativ.set(id, t); }
 async function loadContacts() {
-  const { data } = await sb.from("messages").select("sender_id,recipient_id").order("created_at", { ascending: false }).limit(200);
+  // conversas a dois (as mensagens de grupo ficam de fora: estar num grupo com alguém não cria uma conversa com essa pessoa)
+  const [{ data }, { data: doGrupo }] = await Promise.all([
+    sb.from("messages").select("sender_id,recipient_id,created_at").is("grupo_id", null).eq("avisar", true).order("created_at", { ascending: false }).limit(200), // (avisar=false são toques automáticos, não conversa)
+    sb.from("messages").select("grupo_id,created_at").eq("recipient_id", me.id).not("grupo_id", "is", null).order("id", { ascending: false }).limit(200)]);
+  for (const m of data || []) tocaAtiv(m.sender_id === me.id ? m.recipient_id : m.sender_id, m.created_at);
+  for (const m of doGrupo || []) tocaAtiv(m.grupo_id, m.created_at);
   const ids = [...new Set((data || []).flatMap((m) => [m.sender_id, m.recipient_id]))].filter((i) => i !== me.id);
   if (ids.length) {
     const { data: ps } = await sb.from("profiles").select("id,username,public_key,avatar").in("id", ids);
-    ps.forEach((p) => contacts.set(p.id, p));
+    (ps || []).forEach((p) => { contacts.set(p.id, p); perfis.set(p.id, p); });
   }
+  await atualizarGrupos().catch(() => {});
   renderContacts();
 }
 $("busca").oninput = () => renderContacts();
+const nomeConv = (c) => (c.grupo ? c.nome : c.username);
+const listaConversas = () => [...contacts.values(), ...grupos.values()].map((c, i) => ({ c, i, t: ativ.get(c.id) || 0 })).sort((a, b) => b.t - a.t || a.i - b.i).map((x) => x.c); // a mais recente primeiro
 function renderContacts() {
-  $("inbox-empty").hidden = contacts.size > 0;
-  $("busca-box").hidden = contacts.size < 6; // a busca só aparece quando a lista já é grande
+  const total = contacts.size + grupos.size;
+  $("inbox-empty").hidden = total > 0;
+  $("busca-box").hidden = total < 6; // a busca só aparece quando a lista já é grande
   const q = $("busca-box").hidden ? "" : $("busca").value.trim().replace(/^@/, "").toLowerCase();
-  $("contacts").replaceChildren(...[...contacts.values()].filter((p) => !q || p.username.toLowerCase().includes(q)).map((p) => {
+  $("contacts").replaceChildren(...listaConversas().filter((p) => !q || nomeConv(p).toLowerCase().includes(q)).map((p) => {
     const li = document.createElement("li"), b = document.createElement("button");
     const av = document.createElement("span"), nm = document.createElement("span");
-    av.className = "avatar" + (online.has(p.id) ? " on" : ""); pintarAvatar(av, p, true);
-    nm.className = "who"; nm.textContent = "@" + p.username;
-    if (online.has(p.id)) { const st = document.createElement("small"); st.textContent = "online"; nm.append(st); }
+    nm.className = "who";
+    if (p.grupo) { // grupo: inicial do nome num quadrado + quantas pessoas
+      av.className = "avatar"; pintarAvatarGrupo(av, p); nm.textContent = p.nome; b.dataset.grupo = p.id;
+      const st = document.createElement("small"); st.className = "sub"; st.textContent = "grupo · " + contagem(p.membros.size); nm.append(st);
+    } else {
+      av.className = "avatar" + (online.has(p.id) ? " on" : ""); pintarAvatar(av, p, true);
+      nm.textContent = "@" + p.username;
+      if (online.has(p.id)) { const st = document.createElement("small"); st.textContent = "online"; nm.append(st); }
+    }
     b.append(av, nm);
     if (unread.has(p.id)) { const u = document.createElement("i"); u.className = "unread"; u.title = "Mensagem nova"; b.append(u); }
     if (active?.id === p.id) b.setAttribute("aria-current", "true");
@@ -718,20 +755,27 @@ $("add-form").onsubmit = async (e) => {
   const data = found?.[0];
   if (!data) return note(`Não encontramos @${name}. Confira se o nome está certinho com seu amigo.`);
   if (data.id === me.id) return note("Esse é você! Chame um amigo.");
-  contacts.set(data.id, data); $("add-user").value = ""; $("chamar").close(); open(data);
+  if (!contacts.has(data.id)) contacts.set(data.id, data); perfis.set(data.id, data); tocaAtiv(data.id, Date.now()); $("add-user").value = ""; $("chamar").close(); open(contacts.get(data.id));
 };
 
 // ---------- Conversa ----------
 const EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
 const hhmm = (d) => d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
-function updateStatus() { $("conv-status").hidden = !(active && online.has(active.id)); }
+function updateStatus() {
+  const g = active?.grupo ? active : null;
+  $("conv-status").hidden = !!g || !(active && online.has(active.id));
+  $("conv-sub").hidden = !g; if (g) $("conv-sub").textContent = resumoMembros([...g.membros.values()], me.id); // grupo: quem participa
+}
+const nomeDe = (id) => (id === me.id ? me.username : (active?.grupo && active.membros.get(id)?.username) || perfis.get(id)?.username || contacts.get(id)?.username || "alguém");
+const idDaRef = (re) => (re?.mid ? midParaId.get(re.mid) : re?.id); // a que mensagem DESTA tela uma citação/reação aponta
 
 // "enviada" -> "vista 21:45" (só nas minhas mensagens)
 function setReceipt(e) {
   if (!e.mine) return;
-  e.rcpt.textContent = e.m.read_at ? "vista " + hhmm(new Date(e.m.read_at)) : "enviada";
-  e.rcpt.classList.toggle("read", !!e.m.read_at);
+  const lida = !active?.grupo && !!e.m.read_at; // em grupo não há "vista"
+  e.rcpt.textContent = lida ? "vista " + hhmm(new Date(e.m.read_at)) : "enviada";
+  e.rcpt.classList.toggle("read", lida);
 }
 
 // Mensagens novas viajam como texto simples; só viram JSON quando precisam (mídia, ou texto que começa com "{")
@@ -891,13 +935,17 @@ function addMessage(m, content, { err = false, animate = false, em = null } = {}
   const apagada = content.type === "deleted";
   const media = content.type === "media" && !err;
   const text = apagada ? "Mensagem apagada" : String(content.type === "media" ? content.caption ?? "" : content.text ?? "");
-  const mine = m.sender_id === me.id, at = new Date(m.created_at);
-  const wrap = el("div", "msg" + (mine ? " mine" : "")), line = el("div", "line");
+  const mine = m.sender_id === me.id, at = new Date(m.created_at), emGrupo = !!active?.grupo;
+  const wrap = el("div", "msg" + (mine ? " mine" : "")), line = el("div", "line"); wrap.dataset.de = m.sender_id;
+  if (emGrupo && ehMid(content.mid) && !midParaId.has(content.mid)) midParaId.set(content.mid, m.id);
   const b = el("div", "bubble" + (mine ? " mine" : "") + (err ? " err" : "") + (media ? " has-media" : "") + (media && content.kind === "sticker" ? " sticker" : "") + (apagada ? " apagada" : ""));
   const label = media ? (content.kind === "sticker" ? "Figurinha enviada. " : content.kind === "video" ? "Vídeo enviado. " : content.kind === "audio" ? "Áudio enviado. " : "Foto enviada. ") : "";
-  const re = limpaCitacao(content.re), citado = re ? exibir(re, msgs.get(re.id), { me: me.id, peer: active?.id }) : null;
-  const quemCitado = citado?.autor === "mine" ? "Você" : citado?.autor === "theirs" ? "@" + active.username : "Mensagem";
-  const sr = el("span", "sr", (citado ? `Em resposta a ${quemCitado}: ${citado.rotulo}. ` : "") + label + text), vis = el("span", "vis", text), meta = el("div", "meta");
+  const re = limpaCitacao(content.re), alvo = re ? idDaRef(re) : undefined, original = alvo != null ? msgs.get(alvo) : undefined;
+  const citado = re ? exibir(re, original, { me: me.id, peer: emGrupo ? (re.from && re.from !== me.id ? re.from : undefined) : active?.id }) : null;
+  const quemCitado = citado?.autor === "mine" ? "Você" : citado?.autor === "theirs" ? "@" + (emGrupo ? nomeDe(original?.m.sender_id ?? re.from) : active.username) : "Mensagem";
+  let autor = null; // em grupo: quem escreveu (só na primeira de uma sequência da mesma pessoa)
+  if (emGrupo && !mine) { const ant = em ? em.previousElementSibling : $("messages").lastElementChild; if (!(ant?.classList.contains("msg") && ant.dataset.de === m.sender_id)) autor = el("span", "autor c" + corDoAutor(m.sender_id), "@" + nomeDe(m.sender_id)); }
+  const sr = el("span", "sr", (emGrupo && !mine ? `@${nomeDe(m.sender_id)}: ` : "") + (citado ? `Em resposta a ${quemCitado}: ${citado.rotulo}. ` : "") + label + text), vis = el("span", "vis", text), meta = el("div", "meta");
   vis.setAttribute("aria-hidden", "true");
   const tm = el("time", null, hhmm(at)); tm.dateTime = at.toISOString();
   const rcpt = el("span", "rcpt"); meta.append(tm, rcpt);
@@ -905,9 +953,10 @@ function addMessage(m, content, { err = false, animate = false, em = null } = {}
     const q = el("button", "quote" + (citado.original ? "" : " sem-original")); q.type = "button";
     q.append(el("span", "q-who", quemCitado), el("span", "q-text", citado.rotulo));
     q.setAttribute("aria-label", `Mensagem citada de ${quemCitado}: ${citado.rotulo}. Ir para a mensagem`);
-    q.onclick = () => irPara(re.id); q.dataset.re = String(re.id);
+    q.onclick = () => irPara(alvo); q.dataset.re = String(alvo ?? "");
     b.append(q);
   }
+  if (autor) { autor.setAttribute("aria-hidden", "true"); b.prepend(autor); }
   if (media) b.append(mediaBlock(content, mine));
   b.append(sr, vis, meta); line.append(b);
   if (!err) { // botão "⌄" ao passar o mouse (só em aparelhos com mouse); fica fora do balão e não ocupa espaço
@@ -928,17 +977,19 @@ function addMessage(m, content, { err = false, animate = false, em = null } = {}
 
 // ---------- Reações (emoji cifrado com a chave da conversa) ----------
 // ---------- Responder (citação) ----------
-const citavel = (id) => !!msgs.get(id)?.content && !!citacao(id, msgs.get(id).m.sender_id, msgs.get(id).content);
-const nomeAutor = (a) => (a === "mine" ? "você" : a === "theirs" ? "@" + active.username : "mensagem");
+// citação de uma mensagem desta tela: a dois aponta para o id da linha; em grupo, para o identificador da mensagem (cada pessoa tem uma linha diferente)
+const refCitacao = (id) => { const e = msgs.get(id); if (!e?.content) return null; return active?.grupo ? citacaoGrupo(e.content.mid, e.m.sender_id, e.content) : citacao(id, e.m.sender_id, e.content); };
+const citavel = (id) => !!refCitacao(id);
 function mostrarResposta() {
   $("replybar").hidden = !replyTo;
   if (!replyTo) return;
-  const v = exibir(replyTo, msgs.get(replyTo.id), { me: me.id, peer: active?.id });
-  $("reply-who").textContent = "Respondendo a " + nomeAutor(v.autor); $("reply-text").textContent = v.rotulo;
+  const alvo = idDaRef(replyTo), original = alvo != null ? msgs.get(alvo) : undefined, v = exibir(replyTo, original, { me: me.id, peer: active?.grupo ? replyTo.from : active?.id });
+  const quem = v.autor === "mine" ? "você" : v.autor === "theirs" ? "@" + (active?.grupo ? nomeDe(original?.m.sender_id ?? replyTo.from) : active.username) : "mensagem";
+  $("reply-who").textContent = "Respondendo a " + quem; $("reply-text").textContent = v.rotulo;
 }
 function responder(id) {
-  const e = msgs.get(id); if (!e || !active) return;
-  const c = citacao(id, e.m.sender_id, e.content); if (!c) return;
+  if (!msgs.get(id) || !active) return;
+  const c = refCitacao(id); if (!c) return;
   replyTo = c; mostrarResposta(); $("text").focus();
 }
 function cancelarResposta() { replyTo = null; mostrarResposta(); }
@@ -1041,6 +1092,16 @@ function gestosMensagem(wrap, line, bubble, id) {
 function renderRx(id) {
   const e = msgs.get(id); if (!e) return;
   e.rx.replaceChildren(); if (e.content?.type === "deleted") return;
+  if (active?.grupo) { // em grupo: um botão por emoji, com a contagem de quem reagiu
+    const porEmoji = new Map(); for (const [uid, emoji] of reactions.get(id) || []) porEmoji.set(emoji, [...(porEmoji.get(emoji) || []), uid]);
+    for (const [emoji, quem] of porEmoji) {
+      const meu = quem.includes(me.id), c = el("button", "chip" + (meu ? " mine" : ""), quem.length > 1 ? `${emoji} ${quem.length}` : emoji); c.type = "button";
+      const nomes = quem.map((u) => (u === me.id ? "você" : "@" + nomeDe(u))).join(", "); c.title = nomes;
+      c.setAttribute("aria-label", `${emoji}: ${nomes}. Toque para ${meu ? "remover a sua" : "reagir igual"}`);
+      c.onclick = () => react(id, emoji); e.rx.append(c);
+    }
+    return;
+  }
   for (const [uid, emoji] of reactions.get(id) || []) {
     const mineChip = uid === me.id, c = el("button", "chip" + (mineChip ? " mine" : ""), emoji); c.type = "button";
     c.setAttribute("aria-label", mineChip ? `Sua reação ${emoji}. Toque para remover` : `Reação de @${active.username}: ${emoji}`);
@@ -1049,14 +1110,15 @@ function renderRx(id) {
   }
 }
 async function react(id, emoji) {
-  const peer = active, map = reactions.get(id) || new Map(); reactions.set(id, map);
+  const peer = active, alvo = peer.grupo ? msgs.get(id)?.content?.mid : id; if (peer.grupo && !ehMid(alvo)) return;
+  const map = reactions.get(id) || new Map(); reactions.set(id, map);
   const prev = map.get(me.id), remove = emoji === prev;
   remove ? map.delete(me.id) : map.set(me.id, emoji); renderRx(id); // atualiza na hora
-  try { await sendContent(peer, { type: "reaction", to: id, emoji: remove ? "" : emoji }); }
+  try { await enviar(peer, { type: "reaction", to: alvo, emoji: remove ? "" : emoji }); }
   catch (e) { prev ? map.set(me.id, prev) : map.delete(me.id); renderRx(id); note(sendError(e, peer)); }
 }
 function applyReaction(c, m) { // reação nova = mensagem cifrada (com sigilo futuro) com conteúdo "reaction"
-  const id = Number(c.to); if (!Number.isFinite(id)) return;
+  const id = c.g ? midParaId.get(c.to) : Number(c.to); if (!Number.isFinite(id)) return; // (em grupo a reação aponta para o identificador da mensagem)
   const map = reactions.get(id) || new Map(); reactions.set(id, map);
   const em = typeof c.emoji === "string" ? c.emoji.slice(0, 16) : "";
   em ? map.set(m.sender_id, em) : map.delete(m.sender_id); renderRx(id);
@@ -1066,9 +1128,26 @@ function applyReaction(c, m) { // reação nova = mensagem cifrada (com sigilo f
 // Só para mim: o aparelho guarda que aquela mensagem ficou escondida. O aviso "Mensagem apagada" também pode ser apagado, só para mim.
 function trocaPorApagada(id) {
   for (const q of document.querySelectorAll(`.quote[data-re="${Number(id)}"]`)) { const t = q.querySelector(".q-text"); if (t) t.textContent = "Mensagem apagada"; q.setAttribute("aria-label", "Mensagem citada apagada"); } // citações já na tela não guardam o texto antigo
-  const e = msgs.get(id); if (!e) return; reactions.delete(id); addMessage(e.m, { type: "deleted" }, { em: e.wrap });
+  const e = msgs.get(id); if (!e) return; reactions.delete(id);
+  const novo = { type: "deleted" }; if (e.content?.mid) novo.mid = e.content.mid; // (em grupo o identificador fica: respostas antigas continuam achando a mensagem)
+  addMessage(e.m, novo, { em: e.wrap });
+}
+// Em grupo: acha a mensagem pelo identificador (na tela ou no que está guardado) e só aceita o pedido de quem a escreveu.
+async function aplicarApagarGrupo(c, m) {
+  if (!ehMid(c.to)) return;
+  const aberto = active?.id === c.g;
+  let id = aberto ? midParaId.get(c.to) : undefined, cur = id != null ? await getHistory(me.id, c.g, id) : null;
+  if (cur && cur.content?.mid !== c.to) cur = null;
+  if (!cur) { const r = await acharNoHistorico(me.id, c.g, (e) => e.content?.mid === c.to); if (!r) return; id = r.id; cur = r.entry; }
+  if (cur.content?.type === "hidden") return; // já apaguei só para mim
+  if (cur.content?.type === "deleted") { if (aberto && msgs.get(id)?.content?.type !== "deleted") trocaPorApagada(id); return; }
+  const autor = cur.mine ? me.id : cur.from;
+  if (!autor || autor !== m.sender_id) return; // só quem escreveu a mensagem pode apagá-la para todos
+  await commit(me.id, c.g, { entryId: id, entry: { content: { type: "deleted", by: autor, mid: c.to }, at: cur.at || m.created_at, mine: autor === me.id, from: autor } });
+  if (aberto) trocaPorApagada(id);
 }
 async function aplicarApagar(c, m) {
+  if (c.g) return aplicarApagarGrupo(c, m);
   const id = Number(c.to); if (!Number.isSafeInteger(id) || id <= 0) return;
   const peerId = m.sender_id === me.id ? m.recipient_id : m.sender_id, cur = await getHistory(me.id, peerId, id);
   if (cur?.content?.type === "deleted") { if (msgs.get(id)?.content?.type !== "deleted") trocaPorApagada(id); return; }
@@ -1087,17 +1166,18 @@ async function apagarParaMim(id) {
 }
 async function apagarParaTodos(id) {
   const e = msgs.get(id), peer = active; if (!e || !peer || !e.mine || e.content?.type === "deleted") return;
-  try { await sendContent(peer, { type: "delete", to: id }); } catch (err) { return note(sendError(err, peer)); }
+  const alvo = peer.grupo ? e.content?.mid : id; if (peer.grupo && !ehMid(alvo)) return;
+  try { await enviar(peer, { type: "delete", to: alvo }); } catch (err) { return note(sendError(err, peer)); }
   const c = e.content; // o arquivo cifrado de foto/vídeo/áudio sai do servidor (figurinha não: o mesmo arquivo é reaproveitado em outras mensagens)
   if (c?.type === "media" && c.kind !== "sticker" && typeof c.path === "string") { await sb.storage.from("media").remove([c.path]).catch(() => {}); delBlob(me.id, c.path).catch(() => {}); const u = mediaCache.get(c.path); if (u) { URL.revokeObjectURL(u); mediaCache.delete(c.path); } }
-  await commit(me.id, peer.id, { entryId: id, entry: { content: { type: "deleted", by: me.id }, at: e.m.created_at, mine: true } });
+  await commit(me.id, peer.id, { entryId: id, entry: peer.grupo ? { content: { type: "deleted", by: me.id, mid: alvo }, at: e.m.created_at, mine: true, from: me.id } : { content: { type: "deleted", by: me.id }, at: e.m.created_at, mine: true } });
   trocaPorApagada(id);
 }
 async function perguntarApagar(id) {
   const e = msgs.get(id); if (!e || !active) return;
-  const aviso = e.content?.type === "deleted", todos = e.mine && !aviso, nome = "@" + active.username;
+  const aviso = e.content?.type === "deleted", todos = e.mine && !aviso, emGrupo = !!active.grupo, nome = emGrupo ? "todo o grupo" : "@" + active.username;
   const r = await choose("Apagar mensagem?",
-    aviso ? "O aviso some só da sua tela." : todos ? `Para todos: some também para ${nome}, e fica o aviso "Mensagem apagada". Só para mim: some só desta tela e ${nome} continua vendo.` : `Some só da sua tela. ${nome} não é avisado e continua com a mensagem.`,
+    aviso ? "O aviso some só da sua tela." : todos ? `Para todos: some também para ${nome}, e fica o aviso "Mensagem apagada". Só para mim: some só desta tela e ${emGrupo ? "o grupo" : nome} continua vendo.` : emGrupo ? "Some só da sua tela. O grupo não é avisado e continua com a mensagem." : `Some só da sua tela. ${nome} não é avisado e continua com a mensagem.`,
     [...(todos ? [{ label: "Apagar para todos", value: "todos", cls: "primary" }] : []), { label: "Apagar só para mim", value: "mim", cls: todos ? "ghost" : "primary" }, { label: "Cancelar", value: "nao", cls: "ghost" }]);
   if (r === "todos") await apagarParaTodos(id); else if (r === "mim") await apagarParaMim(id);
 }
@@ -1152,7 +1232,7 @@ async function pinStatus(peer) {
 }
 function parseContent(s) {
   const o = JSON.parse(s);
-  if (o && ["text", "media", "reaction", "hello", "delete"].includes(o.type)) { if (o.re !== undefined) o.re = limpaCitacao(o.re); return o; }
+  if (o && typeof o === "object" && ["text", "media", "reaction", "hello", "delete"].includes(o.type)) { if (o.re !== undefined) o.re = limpaCitacao(o.re); return o; }
   throw new Error("conteudo invalido");
 }
 async function decryptV2(m, peer) {
@@ -1165,12 +1245,15 @@ async function decryptV2(m, peer) {
   }
   const { state, plaintext } = await ratchetDecrypt(st, m.sender_id, m.recipient_id, h, m.ciphertext);
   const content = parseContent(toText(plaintext));
+  // o grupo marcado na linha do servidor tem de ser o mesmo que está DENTRO da mensagem cifrada (o servidor não consegue mudar uma mensagem de lugar)
+  if (!conteudoBate(content, m.grupo_id)) throw new Error("grupo nao confere");
   // sessão nova + mensagem lida na mesma transação: a chave já foi gasta, então não pode haver perda
-  await commit(me.id, peer.id, { session: state, active: h.sid, entryId: m.id, entry: { content, at: m.created_at } });
+  await commit(me.id, peer.id, { session: state, active: h.sid, entryId: m.id, entry: m.grupo_id ? { content, at: m.created_at, from: m.sender_id } : { content, at: m.created_at }, hist: m.grupo_id || undefined });
   return content;
 }
+const histDe = (m, peer) => m.grupo_id || peer.id; // onde a mensagem fica guardada: na conversa com a pessoa, ou no grupo
 async function readV2(m, peer) {
-  const cached = await getHistory(me.id, peer.id, m.id);
+  const cached = (await getHistory(me.id, histDe(m, peer), m.id)) ?? (m.grupo_id ? await getHistory(me.id, peer.id, m.id) : null); // (2ª busca: uma versão antiga do app, sem grupos, guardou na conversa a dois)
   if (cached) return cached.content;
   if (m.sender_id === me.id) {
     if (m.avisar === false) return { type: "hello" }; // aviso automático (refazer sessão, apagar…) enviado por outro aparelho seu: nunca é uma mensagem de verdade, então some em vez de virar um balão de erro
@@ -1178,7 +1261,7 @@ async function readV2(m, peer) {
   }
   if ((await pinStatus(peer)) === "changed") return gone("A chave desta pessoa mudou. Abra o código de segurança e confira com ela antes de continuar.");
   return withLock(lockName(peer), async () => {
-    const again = await getHistory(me.id, peer.id, m.id); if (again) return again.content;
+    const again = await getHistory(me.id, histDe(m, peer), m.id); if (again) return again.content;
     try { return await decryptV2(m, peer); }
     catch (e) {
       if (e.code === "NO_SESSION") { sayHello(peer); return gone("Esta mensagem é de uma sessão que este aparelho não tem (por exemplo, você entrou neste aparelho depois). Pedi para refazer: as próximas chegam normais."); }
@@ -1188,7 +1271,7 @@ async function readV2(m, peer) {
 }
 async function readRow(m, peer) {
   try {
-    const ov = await getHistory(me.id, peer.id, m.id); // mensagem apagada (para todos ou só para mim): vale o que está guardado aqui, mesmo nas antigas
+    const ov = await getHistory(me.id, histDe(m, peer), m.id); // mensagem apagada (para todos ou só para mim): vale o que está guardado aqui, mesmo nas antigas
     if (ov?.content?.type === "deleted" || ov?.content?.type === "hidden") return ov.content;
     return m.v === 2 ? await readV2(m, peer) : unpack(await decrypt(myKeys.privateKey, peer.public_key, m)); }
   catch { return gone("Não foi possível decifrar esta mensagem."); }
@@ -1222,20 +1305,65 @@ async function sendContent(peer, content) {
     return data;
   });
 }
+// Cifra o MESMO conteúdo separadamente para cada pessoa (cada uma pela sua sessão, com sigilo futuro) e grava tudo num pedido só: ou chega para todos, ou para ninguém.
+async function enviarVarios(pessoas, content, { grupoId = null, avisar = true } = {}) {
+  for (const p of pessoas) if ((await pinStatus(p)) === "changed") throw Object.assign(new Error("chave mudou"), { code: "PIN", peer: p });
+  const texto = toBytes(JSON.stringify(content));
+  const linhas = await Promise.all(pessoas.map((p) => withLock(lockName(p), async () => {
+    let st; try { st = await sendSession(p); } catch (e) { throw Object.assign(e, { peer: p }); }
+    const r = await ratchetEncrypt(st, me.id, p.id, texto);
+    await commit(me.id, p.id, { session: r.state, active: r.state.sid }); // grava ANTES de enviar: uma chave nunca é usada duas vezes
+    return { recipient_id: p.id, ciphertext: r.ciphertext, iv: r.iv, v: 2, header: r.header, avisar, grupo_id: grupoId };
+  })));
+  const { data, error } = await sb.from("messages").insert(linhas).select("id,created_at,recipient_id");
+  if (error) throw error;
+  return data;
+}
+// Mensagem para o grupo: uma cópia cifrada por pessoa. Aqui fica guardada UMA vez (sob o id do grupo), com o menor id da leva.
+const enviarAoGrupo = (g, content) => withLock(`lacre:g:${me.id}:${g.id}`, () => enviarAoGrupoJa(g, content)); // um envio por vez em cada grupo: as mensagens chegam na ordem em que foram escritas
+async function enviarAoGrupoJa(g, content) {
+  content.g = g.id; if (content.type === "text" || content.type === "media") content.mid = randomHex(16);
+  const outros = () => [...g.membros.values()].filter((p) => p.id !== me.id), opts = { grupoId: g.id, avisar: content.type !== "delete" };
+  let linhas;
+  if (!outros().length) throw Object.assign(new Error("grupo vazio"), { code: "SOZINHO" });
+  try { linhas = await enviarVarios(outros(), content, opts); }
+  catch (e) {
+    if (e?.code !== "42501") throw e;
+    await atualizarGrupos(true).catch(() => {}); // o servidor recusou: a lista de participantes mudou (alguém saiu, ou eu saí). Atualiza e tenta mais uma vez.
+    if (!grupos.has(g.id)) throw Object.assign(e, { code: "FORA" });
+    if (!outros().length) throw Object.assign(new Error("grupo vazio"), { code: "SOZINHO" });
+    linhas = await enviarVarios(outros(), content, opts);
+  }
+  const id = Math.min(...linhas.map((l) => l.id)), at = linhas[0].created_at;
+  await commit(me.id, g.id, { entryId: id, entry: { content, at, mine: true, from: me.id } });
+  return { id, created_at: at, sender_id: me.id, recipient_id: null, grupo_id: g.id, read_at: null };
+}
+// Envia para a conversa aberta, seja uma pessoa ou um grupo. Devolve a "linha" para pôr na tela.
+async function enviar(conv, content) {
+  const row = conv.grupo ? await enviarAoGrupo(conv, content) : await sendContent(conv, content);
+  if (content.type === "text" || content.type === "media") { const topo = listaConversas()[0]; tocaAtiv(conv.id, row.created_at); if (listaConversas()[0] !== topo) renderContacts(); } // a conversa sobe para o topo da lista
+  return row;
+}
 const limitado = (e) => e?.code === "PT429" || e?.status === 429 || /limite de/i.test(e?.message || "");
-const sendError = (e, peer) => limitado(e) ? "Você fez muitas coisas em pouco tempo. Espere cerca de um minuto e tente de novo."
-  : e?.code === "NO_PREKEY" ? `@${peer.username} ainda não abriu a versão nova do Lacre, então não dá para enviar com sigilo futuro. Peça para essa pessoa recarregar o site.`
-  : e?.code === "PIN" ? `A chave de @${peer.username} mudou. Abra o código de segurança, confira com ela e reabra a conversa.`
-  : "Não foi possível enviar. Verifique a conexão e tente de novo.";
+const sendError = (e, conv) => { const quem = "@" + ((e?.peer || conv)?.username ?? "alguém");
+  return limitado(e) ? "Você fez muitas coisas em pouco tempo. Espere cerca de um minuto e tente de novo."
+  : e?.code === "NO_PREKEY" ? `${quem} ainda não abriu a versão nova do Lacre, então não dá para enviar com sigilo futuro. Peça para essa pessoa recarregar o site.`
+  : e?.code === "PIN" ? (conv?.grupo ? `A chave de ${quem} mudou. Abra a conversa com ${quem}, confira o código de segurança e envie de novo.` : `A chave de ${quem} mudou. Abra o código de segurança, confira com ela e reabra a conversa.`)
+  : e?.code === "SOZINHO" ? "Não há mais ninguém neste grupo."
+  : e?.code === "FORA" ? "Você não participa mais deste grupo."
+  : "Não foi possível enviar. Verifique a conexão e tente de novo."; };
 
-async function show(m, peer, animate) {
+function mostrar(m, c, animate) { // põe na tela um conteúdo já decifrado
   if (msgs.has(m.id)) return; // já está na tela (uma mensagem que chegou enquanto a conversa abria não aparece duas vezes)
-  const c = await readRow(m, peer);
   if (c.type === "reaction") return applyReaction(c, m);
   if (c.type === "hello" || c.type === "hidden") return;
   if (c.type === "delete") return aplicarApagar(c, m);
   if (c.type === "unreadable") return addMessage(m, c.text, { err: true });
   addMessage(m, c, { animate });
+}
+async function show(m, peer, animate) {
+  if (msgs.has(m.id)) return;
+  return mostrar(m, await readRow(m, peer), animate);
 }
 async function checkPin(peer) {
   const k = `pin:${me.id}:${peer.id}`, fp = await fingerprint(peer.public_key);
@@ -1250,26 +1378,28 @@ async function checkPin(peer) {
   return true;
 }
 $("safety-btn").onclick = async () => {
-  if (!active) return;
+  if (!active || active.grupo) return;
   $("safety-who").textContent = "@" + active.username;
   $("safety-code").replaceChildren(...(await safetyCode(me.public_key, active.public_key)).map((g) => el("span", null, g)));
   $("safety").showModal();
 };
 async function open(peer) {
+  if (peer.grupo) return abrirGrupo(peer);
   bandeja(false);
   if (!(await checkPin(peer))) return;
   active = peer; unread.delete(peer.id); renderContacts(); updateStatus();
-  pintarAvatar($("conv-av"), peer, true); atualizaFotoDe(peer).catch(() => {});
+  pintarAvatar($("conv-av"), peer, true); $("conv-av").setAttribute("aria-label", "Ver foto de perfil"); atualizaFotoDe(peer).catch(() => {});
   $("chat").classList.add("in-conv");
   $("conv-title").textContent = "@" + peer.username;
   $("badge").hidden = false; $("conv-empty").hidden = true; $("send-form").hidden = false;
-  $("bg-btn").hidden = false; $("safety-btn").hidden = false; clearPending(); setBg(bgCache.get(peer.id) ?? null); applyBackground(peer);
-  $("messages").replaceChildren(); msgs.clear(); reactions.clear(); cancelarResposta();
+  $("bg-btn").hidden = false; $("safety-btn").hidden = false; $("grupo-btn").hidden = true; clearPending(); setBg(bgCache.get(peer.id) ?? null); applyBackground(peer);
+  $("messages").replaceChildren(); msgs.clear(); reactions.clear(); midParaId.clear(); cancelarResposta();
   $("messages").classList.add("carregando"); // a lista só aparece pronta, já nas últimas mensagens (sem descer na frente da pessoa)
   carregandoConversa = peer; filaChegando = [];
   try {
   const { data } = await sb.from("messages").select("*")
     .or(`and(sender_id.eq.${me.id},recipient_id.eq.${peer.id}),and(sender_id.eq.${peer.id},recipient_id.eq.${me.id})`)
+    .is("grupo_id", null) // (o que essa pessoa manda num grupo aparece no grupo, não aqui)
     .order("id", { ascending: false }).limit(200); // as 200 mais NOVAS (e depois ficam em ordem de envio)
   if (active !== peer) return;
   const linhas = (data || []).reverse();
@@ -1277,7 +1407,7 @@ async function open(peer) {
   for (const m of linhas) await show(m, peer, false);
   [...msgs.keys()].forEach(renderRx);
   carregandoConversa = null; const fila = filaChegando; filaChegando = [];
-  for (const m of fila) await show(m, peer, false);
+  for (const m of fila) if (maisNovaQueATela(m)) await show(m, peer, false);
   if (!msgs.size) {
     const p = el("p", "empty", "Nenhuma mensagem ainda. Diga oi: só vocês dois vão ler."); p.id = "msgs-empty";
     $("messages").append(p);
@@ -1296,23 +1426,319 @@ async function open(peer) {
 $("back").onclick = () => { $("chat").classList.remove("in-conv"); active = null; renderContacts(); updateStatus(); };
 
 let carregandoConversa = null, filaChegando = []; // mensagens que chegam enquanto open() ainda carrega
-async function onIncoming(m) {
-  if (!contacts.has(m.sender_id)) {
-    const { data } = await sb.from("profiles").select("id,username,public_key,avatar").eq("id", m.sender_id).single();
-    contacts.set(data.id, data);
-  }
-  const peer = contacts.get(m.sender_id);
+async function perfilDe(id) { // perfil de alguém que me escreveu (contato, participante de grupo, ou busca no servidor)
+  const p = contacts.get(id) || perfis.get(id); if (p) return p;
+  const { data } = await sb.from("profiles").select("id,username,public_key,avatar").eq("id", id).maybeSingle();
+  if (data) perfis.set(id, data);
+  return data || null;
+}
+// Tudo o que chega (ao vivo ou na sincronização) passa por UMA fila: as mensagens de cada pessoa são decifradas na ordem em que foram enviadas.
+let filaEntrada = Promise.resolve();
+const naFila = (fn) => (filaEntrada = filaEntrada.then(fn).catch((e) => console.warn("entrada:", e?.message || e)));
+// Uma linha que não veio "ao vivo" só entra na tela se for mais nova do que tudo o que já está nela: a conversa aberta mostra as mensagens mais recentes,
+// e uma mensagem mais antiga que essas (fora da janela) não pode aparecer no fim da lista.
+const maisNovaQueATela = (m) => { for (const id of msgs.keys()) if (id >= m.id) return false; return true; };
+// aoVivo = chegou agora pelo tempo real; false = veio da sincronização (chegou com o Lacre fechado)
+async function onIncoming(m, aoVivo = true) {
+  const peer = await perfilDe(m.sender_id); if (!peer) return;
+  if (m.grupo_id) return chegouDoGrupo(m, peer, aoVivo);
   if (m.v === 2) { // decifra já (para andar a cadeia de chaves), mesmo com a conversa fechada
     const c = await readRow(m, peer);
     if (c.type === "reaction") { if (active?.id === peer.id) applyReaction(c, m); return; }
-    if (c.type === "hello") return;
+    if (c.type === "hello") { if (c.gr) atualizarGrupos(true).catch(() => {}); return; } // (gr: algo mudou num grupo em que estamos os dois)
     if (c.type === "delete") { await aplicarApagar(c, m); return; }
   }
+  if (!contacts.has(peer.id)) contacts.set(peer.id, peer);
+  tocaAtiv(peer.id, m.created_at);
   if (active?.id === m.sender_id && carregandoConversa === active) filaChegando.push(m); // a conversa ainda está abrindo: entra na ordem certa quando terminar
-  else if (active?.id === m.sender_id) { $("msgs-empty")?.remove(); await show(m, active, true); markRead(); }
-  else unread.add(m.sender_id);
+  else if (active?.id === m.sender_id) { if (aoVivo || maisNovaQueATela(m)) { $("msgs-empty")?.remove(); await show(m, active, aoVivo); markRead(); } }
+  else if (aoVivo || !m.read_at) unread.add(m.sender_id);
   renderContacts();
 }
+async function chegouDoGrupo(m, peer, aoVivo) {
+  let g = grupos.get(m.grupo_id);
+  if (!g || !g.membros.has(m.sender_id)) { await atualizarGrupos(true).catch(() => {}); g = grupos.get(m.grupo_id); } // grupo novo para este aparelho, ou pessoa que acabou de entrar
+  const c = await readRow(m, peer); // decifra sempre (anda a cadeia de chaves com essa pessoa), mesmo que eu já tenha saído do grupo
+  if (!g) return;
+  if (c.type === "reaction") { if (active === g) applyReaction(c, m); return; }
+  if (c.type === "hello") return;
+  if (c.type === "delete") { await aplicarApagar(c, m); return; }
+  tocaAtiv(g.id, m.created_at);
+  if (active === g && carregandoConversa === g) filaChegando.push(m);
+  else if (active === g) { if (aoVivo || maisNovaQueATela(m)) { $("msgs-empty")?.remove(); await mostrar(m, c, aoVivo); markRead(); } }
+  else if (aoVivo || !m.read_at) unread.add(g.id);
+  renderContacts();
+}
+// O que chegou com o Lacre fechado: decifra tudo, em ordem, logo ao abrir (sem isso, uma mensagem de grupo só seria lida quando eu abrisse a conversa a dois com quem a mandou).
+function sincronizar() {
+  return naFila(async () => {
+    const k = "lacre:sync:" + me.id; let desde = 0; try { desde = Number(localStorage.getItem(k)) || 0; } catch {}
+    if (!desde) { // primeira vez neste aparelho: começa de agora (o que veio antes é lido quando a conversa for aberta, como sempre foi)
+      const { data, error } = await sb.from("messages").select("id").eq("recipient_id", me.id).order("id", { ascending: false }).limit(1);
+      if (!error) { try { localStorage.setItem(k, String(data?.[0]?.id || 1)); } catch {} }
+      return;
+    }
+    for (let pagina = 0; pagina < 20; pagina++) {
+      const { data, error } = await sb.from("messages").select("*").eq("recipient_id", me.id).gt("id", desde).order("id").limit(500);
+      if (error || !data?.length) return;
+      for (const m of data) { try { await onIncoming(m, false); } catch (e) { console.warn("sincronizar:", e?.message || e); } desde = m.id; }
+      try { localStorage.setItem(k, String(desde)); } catch {}
+      if (data.length < 500) return;
+    }
+  });
+}
+
+// ---------- Grupos ----------
+// Aviso no meio da conversa ("@ana entrou no grupo")
+function addAviso(texto) { if (!texto) return; const d = el("div", "aviso-linha"); d.append(el("span", null, texto)); $("messages").append(d); $("messages").scrollTop = 1e9; }
+function sairDaConversa(aviso) { // fecha a conversa aberta e volta para a tela inicial
+  $("chat").classList.remove("in-conv"); active = null; carregandoConversa = null; filaChegando = [];
+  $("messages").replaceChildren(); msgs.clear(); reactions.clear(); midParaId.clear(); cancelarResposta(); clearPending(); setBg(null);
+  $("conv-title").textContent = "Escolha um amigo"; $("conv-av").replaceChildren(); $("conv-av").disabled = true; $("conv-av").classList.remove("grupo");
+  $("send-form").hidden = true; $("conv-empty").hidden = false; for (const id of ["badge", "bg-btn", "safety-btn", "grupo-btn"]) $(id).hidden = true;
+  if ($("grupo-info").open) $("grupo-info").close();
+  renderContacts(); updateStatus(); if (aviso) note(aviso);
+}
+// A chave do grupo (que abre só o NOME) chega embrulhada por quem me adicionou
+const chavesGrupo = new Map(); // id do grupo -> { ref, gk }
+async function chaveDoGrupo(n) {
+  const ref = JSON.stringify(n.eu.chave), c = chavesGrupo.get(n.id); if (c?.ref === ref) return c.gk;
+  const proprio = n.eu.por === me.id, pub = proprio ? me.public_key : n.eu.porChave; if (!pub) throw new Error("sem a chave de quem adicionou");
+  if (!proprio && (await pinStatus({ id: n.eu.por, public_key: pub })) === "changed") throw new Error("a chave de quem adicionou mudou"); // não aceito um nome vindo de uma chave que não é a que eu conhecia
+  const gk = abrirEmbrulho(await decrypt(myKeys.privateKey, pub, n.eu.chave), n.id);
+  chavesGrupo.set(n.id, { ref, gk }); return gk;
+}
+// Este aparelho anota quem estava em cada grupo: se a lista mudar, aparece um aviso na conversa (ninguém entra num grupo sem os outros verem).
+async function anotarMudancas(g, n) {
+  const k = "g:" + g.id, agora = Object.fromEntries(n.membros.map((p) => [p.id, p.username])), avisos = [];
+  let est = await metaGet(me.id, k).catch(() => null), t = Date.now();
+  if (!est) { // primeira vez que este aparelho vê o grupo
+    avisos.push(n.eu.por === me.id ? { tipo: "criou" } : { tipo: "adicionado", nome: n.membros.find((p) => p.id === n.eu.por)?.username || "alguém" });
+    est = { membros: agora, nome: g.semNome ? null : g.nome, avisos: [] }; t = Date.parse(n.eu.entrouEm) || t;
+  } else {
+    const d = diferencaMembros(est.membros || {}, agora, me.id);
+    for (const p of d.entraram) avisos.push({ tipo: "entrou", id: p.id, nome: p.nome });
+    for (const p of d.sairam) avisos.push({ tipo: "saiu", id: p.id, nome: p.nome });
+    if (!g.semNome && est.nome && est.nome !== g.nome) avisos.push({ tipo: "nome", nome: g.nome });
+    if (!avisos.length && (g.semNome || est.nome === g.nome)) return;
+    est.membros = agora; if (!g.semNome) est.nome = g.nome;
+  }
+  for (const a of avisos) a.t = t;
+  est.avisos = [...(est.avisos || []), ...avisos].slice(-60);
+  await metaPut(me.id, k, est).catch(() => {});
+  if (active === g && carregandoConversa !== g) { $("msgs-empty")?.remove(); for (const a of avisos) addAviso(textoAviso(a)); }
+}
+let carregandoGrupos = null;
+// Busca no servidor os meus grupos e quem está em cada um. fresco = precisa refletir uma mudança que acabou de acontecer.
+function atualizarGrupos(fresco = false) {
+  if (carregandoGrupos) return fresco ? carregandoGrupos.then(() => atualizarGrupos()) : carregandoGrupos;
+  return (carregandoGrupos = (async () => {
+    try {
+      const { data, error } = await sb.rpc("meus_grupos"); if (error) return;
+      const vistos = new Set();
+      for (const n of montarGrupos(data, me.id)) {
+        vistos.add(n.id);
+        const g = grupos.get(n.id) || { id: n.id, grupo: true, nome: "Grupo", membros: new Map() };
+        g.membros = new Map(n.membros.map((p) => [p.id, p])); g.admin = n.eu.admin; g.entrouEm = n.eu.entrouEm;
+        for (const p of n.membros) if (p.id !== me.id) perfis.set(p.id, p);
+        g.gk = await chaveDoGrupo(n).catch(() => null);
+        const nome = g.gk ? await abrirNome(g.gk, n.id, n.nomeCifrado).catch(() => null) : null;
+        g.nome = nome || "Grupo"; g.semNome = !nome;
+        grupos.set(n.id, g); tocaAtiv(n.id, n.eu.entrouEm);
+        await anotarMudancas(g, n);
+      }
+      for (const [id, g] of [...grupos]) if (!vistos.has(id)) { // saí, fui removido, ou o grupo acabou
+        grupos.delete(id); unread.delete(id); chavesGrupo.delete(id);
+        if (active === g) sairDaConversa(g.saindo ? "" : `Você não participa mais do grupo “${g.nome}”.`);
+      }
+      if (active?.grupo) { $("conv-title").textContent = active.nome; pintarAvatarGrupo($("conv-av"), active, true); updateStatus(); }
+      if ($("grupo-info").open) desenharInfoGrupo();
+      renderContacts();
+    } finally { carregandoGrupos = null; }
+  })());
+}
+async function mostrarMeuLote(g, l) { // uma mensagem MINHA no grupo (no servidor ela é uma linha por pessoa)
+  const m = { id: l.id, sender_id: me.id, recipient_id: null, grupo_id: g.id, created_at: l.created_at, read_at: null };
+  const e = await getHistory(me.id, g.id, l.id).catch(() => null);
+  if (e) return mostrar(m, e.content, false);
+  if (!l.avisar) return; // aviso automático (apagar…) enviado por outro aparelho meu
+  addMessage(m, "Enviada por você de outro navegador ou aparelho (como o computador). Para ver aqui: exporte o histórico de lá e importe aqui, em Segurança da conta.", { err: true });
+}
+async function abrirGrupo(g) {
+  bandeja(false);
+  active = g; unread.delete(g.id); renderContacts(); updateStatus();
+  pintarAvatarGrupo($("conv-av"), g, true); $("conv-av").setAttribute("aria-label", "Dados do grupo");
+  $("chat").classList.add("in-conv");
+  $("conv-title").textContent = g.nome;
+  $("badge").hidden = false; $("conv-empty").hidden = true; $("send-form").hidden = false;
+  $("bg-btn").hidden = true; $("safety-btn").hidden = true; $("grupo-btn").hidden = false; clearPending(); setBg(null);
+  $("messages").replaceChildren(); msgs.clear(); reactions.clear(); midParaId.clear(); cancelarResposta();
+  $("messages").classList.add("carregando");
+  carregandoConversa = g; filaChegando = [];
+  atualizarGrupos().catch(() => {}); // confere quem está no grupo agora
+  try {
+    const [rec, meus, est] = await Promise.all([
+      sb.from("messages").select("*").eq("grupo_id", g.id).eq("recipient_id", me.id).order("id", { ascending: false }).limit(200), // o que os outros mandaram (as 200 mais novas)
+      sb.from("messages").select("id,created_at,avisar").eq("grupo_id", g.id).eq("sender_id", me.id).order("id", { ascending: false }).limit(1000), // o que eu mandei (uma linha por pessoa)
+      metaGet(me.id, "g:" + g.id).catch(() => null)]);
+    if (active !== g) return;
+    const recebidas = (rec.data || []).reverse(), cheio = recebidas.length === 200, corte = cheio ? recebidas[0].id : 0, corteT = cheio ? Date.parse(recebidas[0].created_at) : 0;
+    const itens = [
+      ...recebidas.map((m) => ({ t: Date.parse(m.created_at), id: m.id, m })),
+      ...lotes(meus.data, (meus.data || []).length === 1000).filter((l) => l.id >= corte).map((l) => ({ t: Date.parse(l.created_at), id: l.id, lote: l })),
+      ...(est?.avisos || []).filter((a) => a.t >= corteT).map((a) => ({ t: a.t, id: 0, aviso: a }))].sort((a, b) => a.t - b.t || a.id - b.id);
+    for (const it of itens) {
+      if (it.aviso) addAviso(textoAviso(it.aviso));
+      else if (it.lote) await mostrarMeuLote(g, it.lote);
+      else { const p = await perfilDe(it.m.sender_id); if (p) await show(it.m, p, false); }
+    }
+    [...msgs.keys()].forEach(renderRx);
+    carregandoConversa = null; const fila = filaChegando; filaChegando = [];
+    for (const m of fila) { const p = await perfilDe(m.sender_id); if (p && maisNovaQueATela(m)) await show(m, p, false); }
+    if (!$("messages").childElementCount) {
+      const p = el("p", "empty", "Nenhuma mensagem ainda. Diga oi: só quem está no grupo vai ler."); p.id = "msgs-empty";
+      $("messages").append(p);
+    }
+  } finally {
+    if (carregandoConversa === g) carregandoConversa = null;
+    if (active === g) {
+      const L = $("messages"); L.scrollTop = L.scrollHeight;
+      requestAnimationFrame(() => { L.scrollTop = L.scrollHeight; L.classList.remove("carregando"); });
+    }
+  }
+  if (active !== g) return;
+  $("text").focus({ preventScroll: true });
+  markRead();
+}
+
+// ----- criar, adicionar, remover, sair, mudar o nome -----
+const embrulharPara = (gk, grupoId, p) => encrypt(myKeys.privateKey, p.public_key, embrulho(gk, grupoId)); // só essa pessoa (e eu) abrimos
+const erroGrupo = (e) => { const m = e?.message || "", quem = (id) => "@" + (perfis.get(id)?.username || contacts.get(id)?.username || "essa pessoa");
+  return /nao_conversou/.test(m) ? `${quem(e.details)} ainda não trocou mensagens com você. Só entra num grupo seu quem já conversou com você (e respondeu).`
+    : /grupos_demais_dela/.test(m) ? `${quem(e.details)} já está em grupos demais.`
+    : /grupos_demais/.test(m) ? "Você já está em 50 grupos. Saia de algum para criar outro."
+    : /grupo_cheio|tamanho_do_grupo/.test(m) ? `Um grupo tem no máximo ${MAX_MEMBROS} pessoas.`
+    : /so_admin/.test(m) ? "Só quem é admin do grupo pode fazer isso."
+    : e?.code === "PIN" ? `A chave de @${e.peer?.username} mudou. Abra a conversa com essa pessoa e confira o código de segurança antes.`
+    : limitado(e) ? "Muitas mudanças em pouco tempo. Espere um minuto e tente de novo."
+    : "Não foi possível agora. Verifique a conexão e tente de novo."; };
+// "Algo mudou no grupo": um toque cifrado (sem conteúdo) para o Lacre de cada pessoa atualizar a lista na hora
+async function avisarMudanca(pessoas) {
+  const l = [...new Map(pessoas.filter((p) => p.id !== me.id).map((p) => [p.id, p])).values()]; if (!l.length) return;
+  try { await enviarVarios(l, { type: "hello", gr: 1 }, { avisar: false }); } catch {}
+}
+async function criarGrupo(nome, pessoas) {
+  for (const p of pessoas) if ((await pinStatus(p)) === "changed") throw Object.assign(new Error("chave mudou"), { code: "PIN", peer: p });
+  const id = crypto.randomUUID(), gk = novaChave();
+  const [nomeCifrado, minha, membros] = await Promise.all([cifrarNome(gk, id, nome), embrulharPara(gk, id, me), Promise.all(pessoas.map(async (p) => ({ id: p.id, chave: await embrulharPara(gk, id, p) })))]);
+  const { error } = await sb.rpc("criar_grupo", { p_id: id, p_nome: nomeCifrado, p_chave: minha, p_membros: membros });
+  if (error) throw error;
+  await atualizarGrupos(true); avisarMudanca(pessoas);
+  return grupos.get(id);
+}
+async function adicionarAoGrupo(g, pessoas) {
+  if (!g.gk) throw new Error("sem a chave do grupo");
+  const antes = [...g.membros.values()];
+  for (const p of pessoas) {
+    if ((await pinStatus(p)) === "changed") throw Object.assign(new Error("chave mudou"), { code: "PIN", peer: p });
+    const { error } = await sb.rpc("grupo_adicionar", { p_grupo: g.id, p_user: p.id, p_chave: await embrulharPara(g.gk, g.id, p) });
+    if (error) { await atualizarGrupos(true).catch(() => {}); throw error; }
+  }
+  await atualizarGrupos(true); avisarMudanca([...antes, ...pessoas]);
+}
+async function removerDoGrupo(g, p) {
+  const r = await choose(`Remover @${p.username}?`, `@${p.username} deixa de receber as mensagens de “${g.nome}”. O que essa pessoa já recebeu continua no aparelho dela.`, [
+    { label: "Remover do grupo", value: "sim", cls: "primary" }, { label: "Cancelar", value: "", cls: "ghost" }]);
+  if (r !== "sim") return;
+  const todos = [...g.membros.values()];
+  const { error } = await sb.rpc("grupo_remover", { p_grupo: g.id, p_user: p.id });
+  if (error) { msgGrupo(erroGrupo(error)); return; }
+  await atualizarGrupos(true); avisarMudanca(todos);
+}
+// ----- tela "Dados do grupo" -----
+let giGrupo = null;
+const msgGrupo = (t, ok) => { const m = $("gi-msg"); m.textContent = t; m.className = "pg-msg" + (ok ? " ok" : ""); };
+function abrirInfoGrupo(g) { giGrupo = g; msgGrupo(""); desenharInfoGrupo(); $("grupo-info").showModal(); atualizarGrupos().catch(() => {}); }
+function desenharInfoGrupo() {
+  const g = giGrupo && grupos.get(giGrupo.id); if (!g) { if ($("grupo-info").open) $("grupo-info").close(); return; }
+  pintarAvatarGrupo($("gi-av"), g); $("gi-nome").textContent = g.nome; $("gi-sub").textContent = "Grupo · " + contagem(g.membros.size);
+  $("gi-renomear").hidden = !g.admin || !g.gk; $("gi-add").hidden = !g.admin || !g.gk || g.membros.size >= MAX_MEMBROS;
+  $("gi-cont").textContent = `Participantes · ${g.membros.size} de ${MAX_MEMBROS}`;
+  const ordem = [...g.membros.values()].sort((a, b) => (b.id === me.id) - (a.id === me.id) || b.admin - a.admin || a.username.localeCompare(b.username));
+  $("gi-lista").replaceChildren(...ordem.map((p) => {
+    const row = el("div", "linha info pessoa"), av = el("span", "avatar"), tx = el("span", "tx"), tit = el("span", "ap-tit"), eu = p.id === me.id;
+    row.dataset.uid = p.id; pintarAvatar(av, p, true);
+    tit.append(el("b", null, "@" + p.username + (eu ? " (você)" : ""))); if (p.admin) tit.append(el("span", "selo-estado", "admin"));
+    tx.append(tit); row.append(av, tx);
+    if (!eu) { // conversar a dois com essa pessoa
+      const c = el("button", "so-icone conversar"); c.type = "button"; c.setAttribute("aria-label", "Conversar com @" + p.username); c.append(svgIcone(["M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-5.4A8 8 0 1 1 21 12z"]));
+      c.onclick = () => { $("grupo-info").close(); if (!contacts.has(p.id)) contacts.set(p.id, { id: p.id, username: p.username, public_key: p.public_key, avatar: p.avatar }); tocaAtiv(p.id, Date.now()); open(contacts.get(p.id)); };
+      row.append(c);
+    }
+    if (!eu && g.admin) {
+      const x = el("button", "so-icone perigo remover"); x.type = "button"; x.setAttribute("aria-label", "Remover @" + p.username + " do grupo"); x.append(svgIcone(["M6 6l12 12M18 6L6 18"]));
+      x.onclick = () => removerDoGrupo(g, p); row.append(x);
+    }
+    return row;
+  }));
+}
+$("grupo-btn").onclick = () => { if (active?.grupo) abrirInfoGrupo(active); };
+$("gi-add").onclick = () => { const g = giGrupo && grupos.get(giGrupo.id); if (g) abrirSeletor({ tipo: "add", g }); };
+$("gi-renomear").onclick = async () => {
+  const g = giGrupo && grupos.get(giGrupo.id); if (!g?.gk) return;
+  let dica = `Até ${MAX_NOME} caracteres. Só quem está no grupo vê o nome: ele fica cifrado no servidor.`, novo;
+  for (;;) { const v = await ask("Nome do grupo", dica, { texto: true, valor: g.nome, max: MAX_NOME }); if (v === null) return; novo = limpaNome(v); if (novo) break; dica = `Digite um nome de 1 a ${MAX_NOME} caracteres.`; }
+  if (novo === g.nome) return;
+  const { error } = await sb.rpc("grupo_renomear", { p_grupo: g.id, p_nome: await cifrarNome(g.gk, g.id, novo) });
+  if (error) return msgGrupo(erroGrupo(error));
+  await atualizarGrupos(true); avisarMudanca([...g.membros.values()]);
+};
+$("gi-sair").onclick = async () => {
+  const g = giGrupo && grupos.get(giGrupo.id); if (!g) return;
+  const unico = g.membros.size === 1, soEuAdmin = g.admin && [...g.membros.values()].filter((p) => p.admin).length === 1;
+  const r = await choose("Sair do grupo?", `Você deixa de receber as mensagens de “${g.nome}”.` + (unico ? " Você é a última pessoa: o grupo será apagado." : soEuAdmin ? " Você é admin: quem está há mais tempo no grupo assume." : ""), [
+    { label: "Sair do grupo", value: "sim", cls: "primary" }, { label: "Cancelar", value: "", cls: "ghost" }]);
+  if (r !== "sim") return;
+  const outros = [...g.membros.values()];
+  const { error } = await sb.rpc("grupo_remover", { p_grupo: g.id, p_user: me.id });
+  if (error) return msgGrupo(erroGrupo(error));
+  g.saindo = true; if ($("grupo-info").open) $("grupo-info").close();
+  avisarMudanca(outros); await atualizarGrupos(true);
+};
+// ----- escolher pessoas: para um grupo novo, ou para entrar num grupo que já existe -----
+let gnModo = null; // { tipo: "novo" } | { tipo: "add", g }
+const marcados = () => [...$("gn-lista").querySelectorAll(".marca:checked")].map((c) => contacts.get(c.value)).filter(Boolean);
+function estadoSeletor() {
+  const n = marcados().length, add = gnModo?.tipo === "add", vagas = add ? MAX_MEMBROS - gnModo.g.membros.size : MAX_MEMBROS - 1, demais = n > vagas;
+  $("gn-criar").disabled = n < 1 || demais || (!add && !limpaNome($("gn-nome").value));
+  $("gn-quem").textContent = (add ? "Quem entra" : "Quem participa") + (n ? ` · ${n} ${n === 1 ? "pessoa escolhida" : "pessoas escolhidas"}` : "");
+  const m = $("gn-msg"); if (demais) { m.className = "pg-msg"; m.textContent = `Um grupo tem no máximo ${MAX_MEMBROS} pessoas.`; } else if (/no máximo/.test(m.textContent)) m.textContent = "";
+}
+function abrirSeletor(modo) {
+  gnModo = modo; const add = modo.tipo === "add";
+  $("gn-titulo").textContent = add ? "Adicionar pessoas" : "Novo grupo"; $("gn-nome-box").hidden = add; $("gn-nome").value = ""; $("gn-msg").textContent = "";
+  $("gn-criar").textContent = add ? "Adicionar ao grupo" : "Criar grupo";
+  const cand = [...contacts.values()].filter((p) => !add || !modo.g.membros.has(p.id)).sort((a, b) => a.username.localeCompare(b.username));
+  $("gn-vazio").hidden = cand.length > 0; $("gn-quem").hidden = !cand.length; $("gn-criar").hidden = !cand.length;
+  $("gn-vazio").textContent = add ? "Todas as pessoas com quem você conversa já estão neste grupo." : "Você ainda não conversa com ninguém. Chame um amigo primeiro; depois dá para montar um grupo com ele.";
+  $("gn-lista").replaceChildren(...cand.map((p) => {
+    const row = el("label", "linha pessoa"), av = el("span", "avatar"), tx = el("span", "tx"), cb = el("input", "marca");
+    cb.type = "checkbox"; cb.value = p.id; cb.setAttribute("aria-label", "@" + p.username); cb.onchange = estadoSeletor;
+    pintarAvatar(av, p); tx.append(el("b", null, "@" + p.username)); row.append(av, tx, cb); return row;
+  }));
+  estadoSeletor(); $("grupo-novo").showModal(); if (!add && cand.length) $("gn-nome").focus();
+}
+$("gn-nome").oninput = estadoSeletor;
+$("gn-nome").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); if (!$("gn-criar").disabled) $("gn-criar").click(); } }); // (Enter não pode fechar a página)
+$("gn-criar").onclick = async () => {
+  const b = $("gn-criar"), pessoas = marcados(), modo = gnModo, m = $("gn-msg"); if (!pessoas.length || !modo) return;
+  b.disabled = true; m.className = "pg-msg ok"; m.textContent = modo.tipo === "add" ? "Adicionando…" : "Criando o grupo…";
+  try {
+    if (modo.tipo === "add") { await adicionarAoGrupo(modo.g, pessoas); $("grupo-novo").close(); }
+    else { const g = await criarGrupo(limpaNome($("gn-nome").value), pessoas); $("grupo-novo").close(); if (g) open(g); }
+  } catch (e) { m.className = "pg-msg"; m.textContent = erroGrupo(e); estadoSeletor(); }
+};
+$("novo-grupo").onclick = () => { $("chamar").close(); abrirSeletor({ tipo: "novo" }); };
 
 // ---------- Notificações (push) ----------
 // O aviso é um toque sem texto: o servidor não vê nome nem conteúdo, e o navegador mostra "Você tem uma nova mensagem". Nada aparece com o Lacre aberto na tela.
@@ -1593,7 +2019,7 @@ async function enviarFigurinha(st) {
     if (!up) { const path = `${me.id}/${peer.id}/${crypto.randomUUID()}`, sealed = await uploadSealed(st.bytes, path); up = { path, key: sealed.key, iv: sealed.iv }; subidas.set(k, up); }
     const content = { v: 1, type: "media", kind: "sticker", ...up, mime: st.mime, w: st.w, h: st.h, size: st.bytes.length, anim: !!st.anim };
     if (replyTo) content.re = replyTo;
-    const row = await sendContent(peer, content);
+    const row = await enviar(peer, content);
     if (!mediaCache.has(up.path)) mediaCache.set(up.path, URL.createObjectURL(new Blob([st.bytes], { type: st.mime })));
     if (active === peer) { $("msgs-empty")?.remove(); addMessage(row, content); }
     cancelarResposta();
@@ -1626,9 +2052,9 @@ $("send-form").onsubmit = async (e) => {
       const sealed = await uploadSealed(p.bytes, path);
       content = { v: 1, type: "media", kind: p.kind, path, key: sealed.key, iv: sealed.iv, mime: p.mime, w: p.w, h: p.h, dur: p.dur, size: p.bytes.length, caption: text };
       if (resp) content.re = resp;
-      row = await sendContent(peer, content);
+      row = await enviar(peer, content);
       mediaCache.set(path, p.url); clearPending(true); // reaproveita a prévia local, sem baixar de novo
-    } else { content = { type: "text", text }; if (resp) content.re = resp; row = await sendContent(peer, content); }
+    } else { content = { type: "text", text }; if (resp) content.re = resp; row = await enviar(peer, content); }
     if (active === peer) { $("msgs-empty")?.remove(); addMessage(row, content); }
     btn.classList.add("voou"); setTimeout(() => btn.classList.remove("voou"), 650);
   } catch (e) {
@@ -1658,7 +2084,7 @@ async function applyBackground(peer) {
   bgCache.set(peer.id, url);
   if (active === peer) setBg(url);
 }
-$("bg-btn").onclick = () => $("bgdlg").showModal();
+$("bg-btn").onclick = () => { if (active && !active.grupo) $("bgdlg").showModal(); };
 $("bg-pick").onclick = () => $("bg-file").click();
 $("bg-file").onchange = async () => {
   const f = $("bg-file").files[0], peer = active; $("bg-file").value = "";

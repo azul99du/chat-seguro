@@ -19,14 +19,22 @@ export function citacao(id, sender, content) {
   const r = resumo(content);
   return r && { id, from: sender, ...r };
 }
+// Em grupo, cada pessoa recebe a mensagem numa linha diferente do servidor: a citação aponta para o identificador da mensagem (mid), igual para todos.
+const MID = /^[0-9a-f]{32}$/;
+export function citacaoGrupo(mid, sender, content) {
+  const r = resumo(content);
+  return r && typeof mid === "string" && MID.test(mid) ? { mid, from: sender, ...r } : null;
+}
 
 // Tudo o que chega de outra pessoa é desconfiável: só aceitamos campos conhecidos, com tipo e tamanho certos.
 export function limpaCitacao(re) {
   if (!re || typeof re !== "object") return null;
-  const id = re.id;
-  if (typeof id !== "number" || !Number.isSafeInteger(id) || id <= 0) return null; // só número de verdade (Number(true) seria 1; Number("5") seria 5)
+  const id = re.id, mid = re.mid;
+  const temId = typeof id === "number" && Number.isSafeInteger(id) && id > 0; // só número de verdade (Number(true) seria 1; Number("5") seria 5)
+  const temMid = !temId && id === undefined && typeof mid === "string" && MID.test(mid); // citação de grupo
+  if (!temId && !temMid) return null;
   return {
-    id,
+    ...(temId ? { id } : { mid }),
     from: typeof re.from === "string" && UUID.test(re.from) ? re.from : null,
     kind: KINDS.includes(re.kind) ? re.kind : "text",
     text: typeof re.text === "string" ? corta(re.text) : "",

@@ -572,3 +572,204 @@ grant execute on function public.decidir_aparelho(uuid, text) to authenticated;
 -- Cada navegador cria um código aleatório e o guarda só nele; o servidor recebe apenas SHA-256(id_da_conta:codigo). Quem volta com um código já reconhecido não gera aviso.
 alter table public.aparelhos add column disp_hash text check (disp_hash ~ '^[0-9a-f]{64}$');
 create index aparelhos_disp on public.aparelhos (user_id, disp_hash);
+
+-- ===== Grupos (migração grupos) =====
+-- Mensagem de grupo NÃO tem formato novo: ela vai cifrada separadamente para cada pessoa, pela mesma sessão com sigilo futuro das conversas a dois
+-- (uma linha por pessoa em "messages", marcada com o grupo). O servidor sabe QUEM está em cada grupo (precisa, para recusar quem não é do grupo e
+-- liberar os arquivos), mas não lê as mensagens nem o NOME do grupo: o nome é cifrado com uma chave que só os participantes têm.
+create table public.grupos (
+  id uuid primary key,
+  criador uuid references public.profiles(id) on delete set null,
+  nome jsonb not null check (length(nome::text) < 600),          -- nome cifrado com a chave do grupo
+  created_at timestamptz not null default now()
+);
+create table public.grupo_membros (
+  grupo_id uuid not null references public.grupos(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  admin boolean not null default false,
+  chave jsonb not null check (length(chave::text) < 900),       -- chave do grupo cifrada PARA esta pessoa (só ela abre)
+  por uuid not null,                                            -- quem cifrou (diz com qual chave pública abrir)
+  entrou_em timestamptz not null default now(),
+  primary key (grupo_id, user_id)
+);
+create index grupo_membros_por_pessoa on public.grupo_membros (user_id);
+alter table public.grupos enable row level security;
+alter table public.grupo_membros enable row level security;
+revoke all on public.grupos from anon, authenticated;            -- ninguém logado lê nem escreve direto: só pelas funções abaixo
+revoke all on public.grupo_membros from anon, authenticated;
+create policy "exige dois passos" on public.grupos as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+create policy "exige dois passos" on public.grupo_membros as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+
+-- Mensagens: cada linha diz de qual grupo é (ou de nenhum)
+alter table public.messages add column grupo_id uuid references public.grupos(id) on delete cascade;
+create index messages_grupo_dest on public.messages (grupo_id, recipient_id, id) where grupo_id is not null;
+create index messages_grupo_rem on public.messages (grupo_id, sender_id, id) where grupo_id is not null;
+
+-- Perguntas que as políticas fazem (SECURITY DEFINER: as tabelas de grupo não são legíveis direto)
+create or replace function public.membro_de(p_grupo text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.grupo_membros gm where gm.user_id = (select auth.uid()) and gm.grupo_id::text = p_grupo)
+$$;
+revoke all on function public.membro_de(text) from public, anon, authenticated;
+grant execute on function public.membro_de(text) to authenticated;
+
+create or replace function public.mesmo_grupo(p_outro text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.grupo_membros a join public.grupo_membros b on b.grupo_id = a.grupo_id
+                  where a.user_id = (select auth.uid()) and b.user_id::text = p_outro)
+$$;
+revoke all on function public.mesmo_grupo(text) from public, anon, authenticated;
+grant execute on function public.mesmo_grupo(text) to authenticated;
+
+create or replace function public.pode_enviar_ao_grupo(p_grupo uuid, p_dest uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select p_dest <> (select auth.uid())
+     and exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = (select auth.uid()))
+     and exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = p_dest)
+$$;
+revoke all on function public.pode_enviar_ao_grupo(uuid, uuid) from public, anon, authenticated;
+grant execute on function public.pode_enviar_ao_grupo(uuid, uuid) to authenticated;
+
+-- "Já conversaram": cada um já mandou mensagem particular para o outro. Só assim alguém pode colocar você num grupo (um desconhecido não consegue).
+create or replace function public.ja_conversou(p_outro uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.messages m where m.grupo_id is null and m.sender_id = (select auth.uid()) and m.recipient_id = p_outro)
+     and exists (select 1 from public.messages m where m.grupo_id is null and m.sender_id = p_outro and m.recipient_id = (select auth.uid()))
+$$;
+revoke all on function public.ja_conversou(uuid) from public, anon, authenticated;
+grant execute on function public.ja_conversou(uuid) to authenticated;
+
+-- Só entra mensagem de grupo se quem envia E quem recebe estão no grupo (quem saiu não consegue mais mandar)
+revoke insert on public.messages from authenticated;
+grant insert (recipient_id, ciphertext, iv, v, header, avisar, grupo_id) on public.messages to authenticated;
+drop policy "envia como si mesmo" on public.messages;
+create policy "envia como si mesmo" on public.messages
+  for insert to authenticated with check (sender_id = (select auth.uid()) and v = 2
+    and (grupo_id is null or public.pode_enviar_ao_grupo(grupo_id, recipient_id)));
+
+-- Uma mensagem de grupo vira até 19 linhas (uma por pessoa): o limite por pessoa sobe de 60/min e 1000/h para 300/min e 5000/h
+create or replace function public.limita_mensagens() returns trigger
+language plpgsql set search_path = public as $$
+declare por_minuto int; por_hora int;
+begin
+  select count(*) filter (where created_at > now() - interval '1 minute'), count(*)
+    into por_minuto, por_hora
+  from public.messages where sender_id = new.sender_id and created_at > now() - interval '1 hour';
+  if por_minuto >= 300 or por_hora >= 5000 then
+    raise exception 'limite de mensagens atingido: espere um pouco' using errcode = 'PT429', hint = 'rate_limit';
+  end if;
+  return new;
+end $$;
+
+-- Quem está no mesmo grupo vê o perfil (nome, chave pública e foto) um do outro, mesmo sem nunca ter conversado a dois
+drop policy "ve o proprio perfil e o de quem conversa com voce" on public.profiles;
+create policy "ve o proprio perfil e o de quem conversa com voce" on public.profiles
+  for select to authenticated using (
+    id = (select auth.uid())
+    or exists (select 1 from public.messages m
+               where (m.sender_id = (select auth.uid()) and m.recipient_id = profiles.id)
+                  or (m.recipient_id = (select auth.uid()) and m.sender_id = profiles.id))
+    or public.mesmo_grupo(id::text));
+drop policy "le a propria foto e a de quem conversa com voce" on storage.objects;
+create policy "le a propria foto e a de quem conversa com voce" on storage.objects
+  for select to authenticated
+  using (bucket_id = 'avatars' and (
+    (storage.foldername(name))[1] = (select auth.uid())::text
+    or exists (select 1 from public.messages m
+               where (m.sender_id = (select auth.uid()) and m.recipient_id::text = (storage.foldername(name))[1])
+                  or (m.recipient_id = (select auth.uid()) and m.sender_id::text = (storage.foldername(name))[1]))
+    or public.mesmo_grupo((storage.foldername(name))[1])));
+-- Arquivos de grupo: {remetente}/{grupo}/{arquivo}, enviados UMA vez; quem está no grupo baixa (a chave de cada arquivo vai dentro das mensagens cifradas)
+drop policy "le midia das suas conversas" on storage.objects;
+create policy "le midia das suas conversas" on storage.objects
+  for select to authenticated
+  using (bucket_id = 'media' and (
+    (select auth.uid())::text in ((storage.foldername(name))[1], (storage.foldername(name))[2])
+    or public.membro_de((storage.foldername(name))[2])));
+
+-- Meus grupos e quem está em cada um (uma linha por grupo+pessoa). A chave embrulhada só vem na MINHA linha.
+create or replace function public.meus_grupos() returns table (grupo_id uuid, nome jsonb, criado_em timestamptz, user_id uuid, username text, public_key jsonb, avatar text, admin boolean, entrou_em timestamptz, chave jsonb, por uuid, por_chave jsonb)
+language sql stable security definer set search_path = public as $$
+  select g.id, g.nome, g.created_at, m.user_id, p.username, p.public_key, p.avatar, m.admin, m.entrou_em,
+         case when m.user_id = (select auth.uid()) then m.chave end,
+         case when m.user_id = (select auth.uid()) then m.por end,
+         case when m.user_id = (select auth.uid()) then (select q.public_key from public.profiles q where q.id = m.por) end
+    from public.grupo_membros eu
+    join public.grupos g on g.id = eu.grupo_id
+    join public.grupo_membros m on m.grupo_id = g.id
+    join public.profiles p on p.id = m.user_id
+   where eu.user_id = (select auth.uid()) and (select public.mfa_ok())
+   order by g.id, m.entrou_em, m.user_id
+$$;
+revoke all on function public.meus_grupos() from public, anon, authenticated;
+grant execute on function public.meus_grupos() to authenticated;
+
+-- Criar: quem cria vira admin. De 2 a 20 pessoas; no máximo 50 grupos por pessoa; só entra quem já conversou com quem está criando.
+create or replace function public.criar_grupo(p_id uuid, p_nome jsonb, p_chave jsonb, p_membros jsonb) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); m jsonb; alvo uuid; n int;
+begin
+  perform public.consome('criar_grupo', 5, 20);                 -- (também confere o login e o 2º passo)
+  if jsonb_typeof(p_membros) is distinct from 'array' then raise exception 'dados invalidos' using errcode = '22023'; end if;
+  n := jsonb_array_length(p_membros);
+  if n < 1 or n > 19 then raise exception 'tamanho_do_grupo' using errcode = '22023'; end if;
+  if (select count(*) from public.grupo_membros gm where gm.user_id = u) >= 50 then raise exception 'grupos_demais' using errcode = 'PT429', hint = 'rate_limit'; end if;
+  insert into public.grupos (id, criador, nome) values (p_id, u, p_nome);
+  insert into public.grupo_membros (grupo_id, user_id, admin, chave, por) values (p_id, u, true, p_chave, u);
+  for m in select * from jsonb_array_elements(p_membros) loop
+    alvo := (m ->> 'id')::uuid;
+    if alvo = u or not public.ja_conversou(alvo) then raise exception 'nao_conversou' using errcode = '42501', detail = alvo::text; end if;
+    if (select count(*) from public.grupo_membros gm where gm.user_id = alvo) >= 50 then raise exception 'grupos_demais_dela' using errcode = '42501', detail = alvo::text; end if;
+    insert into public.grupo_membros (grupo_id, user_id, chave, por) values (p_id, alvo, m -> 'chave', u);
+  end loop;
+end $$;
+revoke all on function public.criar_grupo(uuid, jsonb, jsonb, jsonb) from public, anon, authenticated;
+grant execute on function public.criar_grupo(uuid, jsonb, jsonb, jsonb) to authenticated;
+
+-- Adicionar: só admin, e só quem já conversou com ele
+create or replace function public.grupo_adicionar(p_grupo uuid, p_user uuid, p_chave jsonb) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid());
+begin
+  perform public.consome('grupo_mudar', 30, 200);
+  if not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = u and gm.admin) then raise exception 'so_admin' using errcode = '42501'; end if;
+  if p_user = u or not public.ja_conversou(p_user) then raise exception 'nao_conversou' using errcode = '42501', detail = p_user::text; end if;
+  if (select count(*) from public.grupo_membros gm where gm.grupo_id = p_grupo) >= 20 then raise exception 'grupo_cheio' using errcode = '22023'; end if;
+  if (select count(*) from public.grupo_membros gm where gm.user_id = p_user) >= 50 then raise exception 'grupos_demais_dela' using errcode = '42501', detail = p_user::text; end if;
+  insert into public.grupo_membros (grupo_id, user_id, chave, por) values (p_grupo, p_user, p_chave, u);
+end $$;
+revoke all on function public.grupo_adicionar(uuid, uuid, jsonb) from public, anon, authenticated;
+grant execute on function public.grupo_adicionar(uuid, uuid, jsonb) to authenticated;
+
+-- Remover alguém (só admin) ou sair (qualquer um). Sem admin, o mais antigo assume; sem ninguém, o grupo e as mensagens dele somem do servidor.
+create or replace function public.grupo_remover(p_grupo uuid, p_user uuid) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid());
+begin
+  perform public.consome('grupo_mudar', 30, 200);
+  if p_user is distinct from u and not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = u and gm.admin) then
+    raise exception 'so_admin' using errcode = '42501';
+  end if;
+  delete from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = p_user;
+  if not found then raise exception 'nao_esta_no_grupo' using errcode = '42501'; end if;
+  if not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo) then
+    delete from public.grupos g where g.id = p_grupo;
+  elsif not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.admin) then
+    update public.grupo_membros gm set admin = true
+     where gm.grupo_id = p_grupo and gm.user_id = (select x.user_id from public.grupo_membros x where x.grupo_id = p_grupo order by x.entrou_em, x.user_id limit 1);
+  end if;
+end $$;
+revoke all on function public.grupo_remover(uuid, uuid) from public, anon, authenticated;
+grant execute on function public.grupo_remover(uuid, uuid) to authenticated;
+
+-- Trocar o nome (cifrado): só admin
+create or replace function public.grupo_renomear(p_grupo uuid, p_nome jsonb) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid());
+begin
+  perform public.consome('grupo_mudar', 30, 200);
+  if not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = u and gm.admin) then raise exception 'so_admin' using errcode = '42501'; end if;
+  update public.grupos g set nome = p_nome where g.id = p_grupo;
+end $$;
+revoke all on function public.grupo_renomear(uuid, jsonb) from public, anon, authenticated;
+grant execute on function public.grupo_renomear(uuid, jsonb) to authenticated;

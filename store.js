@@ -33,12 +33,13 @@ const range = (prefix) => IDBKeyRange.bound(prefix, prefix + "￿");
 
 // Grava sessão + (opcionalmente) mensagem lida, tudo na MESMA transação: ou grava os dois ou nenhum.
 // Isso evita perder uma mensagem depois de a chave dela já ter sido consumida.
-export async function commit(uid, peer, { session, active, entryId, entry }) {
+// hist: onde a mensagem fica guardada, quando não é na conversa com "peer" (mensagens de grupo ficam sob o id do grupo).
+export async function commit(uid, peer, { session, active, entryId, entry, hist }) {
   const sealedS = session ? await seal(uid, session) : null, sealedH = entry ? await seal(uid, entry) : null;
   const t = await tx(["sessions", "history", "meta"], "readwrite");
   if (session) t.objectStore("sessions").put({ ...sealedS, t: Date.now() }, sKey(uid, peer, session.sid));
   if (active) t.objectStore("meta").put(active, `act:${uid}|${peer}`);
-  if (entry) t.objectStore("history").put(sealedH, hKey(uid, peer, entryId));
+  if (entry) t.objectStore("history").put(sealedH, hKey(uid, hist || peer, entryId));
   await done(t);
   if (session) await pruneSessions(uid, peer, active || session.sid);
 }
@@ -63,6 +64,21 @@ export async function getHistory(uid, peer, id) {
   const r = await req((await tx(["history"], "readonly")).objectStore("history").get(hKey(uid, peer, id)));
   return r ? unseal(uid, r) : null;
 }
+// Procura, da mais nova para a mais antiga, uma mensagem guardada que satisfaça "pred" (ex.: achar a mensagem de grupo com certo identificador).
+export async function acharNoHistorico(uid, peer, pred, max = 4000) {
+  const t = await tx(["history"], "readonly"), s = t.objectStore("history"), rng = range(`${uid}|${peer}|`);
+  const [keys, vals] = await Promise.all([req(s.getAllKeys(rng)), req(s.getAll(rng))]);
+  for (let i = keys.length - 1, n = 0; i >= 0 && n < max; i--, n++) {
+    try { const e = await unseal(uid, vals[i]); if (pred(e)) return { id: Number(String(keys[i]).split("|")[2]), entry: e }; } catch {}
+  }
+  return null;
+}
+// Anotações pequenas deste aparelho (cifradas como o resto): o que ele já sabe de cada grupo, por exemplo.
+export async function metaGet(uid, nome) {
+  const r = await req((await tx(["meta"], "readonly")).objectStore("meta").get(`x:${uid}|${nome}`));
+  if (!r) return null; try { return await unseal(uid, r); } catch { return null; }
+}
+export async function metaPut(uid, nome, obj) { const s = await seal(uid, obj); const t = await tx(["meta"], "readwrite"); t.objectStore("meta").put(s, `x:${uid}|${nome}`); await done(t); }
 
 // ---------- SPK (chave de médio prazo) ----------
 export async function getSpks(uid) {

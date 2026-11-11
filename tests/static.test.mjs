@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const raiz = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const ler = (f) => readFileSync(join(raiz, f), "utf8");
-const APP = ["guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "recorte.js", "recorte-config.js", "sam2.js", "figurinhas.js", "avatar.js", "historico.js", "video.js", "aparelhos.js", "sw.js", "supabase/functions/notificar/vapid.js"];
+const APP = ["guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "recorte.js", "recorte-config.js", "sam2.js", "figurinhas.js", "avatar.js", "historico.js", "video.js", "aparelhos.js", "grupo.js", "sw.js", "supabase/functions/notificar/vapid.js"];
 const rastreados = execFileSync("git", ["ls-files"], { cwd: raiz, encoding: "utf8" }).split("\n").filter(Boolean);
 
 describe("código", () => {
@@ -85,7 +85,8 @@ describe("avisos push (supabase/schema.sql)", () => {
     assert.match(sql, /alter table public\.push_config enable row level security/); assert.match(sql, /revoke all on public\.push_config from anon, authenticated/); assert.doesNotMatch(sql, /create policy "[^"]*" on public\.push_config\s+for (select|all)/);
   });
   test("o cliente não escreve 'notificada' e o gatilho só dispara para mensagens que querem aviso", () => {
-    assert.match(sql, /grant insert \(recipient_id, ciphertext, iv, v, header, avisar\) on public\.messages/); assert.match(sql, /when \(new\.avisar\)/);
+    const ultimo = [...sql.matchAll(/grant insert \(([^)]*)\) on public\.messages to authenticated/g)].pop()[1];
+    assert.equal(ultimo, "recipient_id, ciphertext, iv, v, header, avisar, grupo_id", "o cliente só escolhe destinatário, conteúdo cifrado, aviso e grupo"); assert.match(sql, /when \(new\.avisar\)/);
   });
 });
 
@@ -154,5 +155,31 @@ describe("banco (supabase/schema.sql)", () => {
   test("só mensagens com sigilo futuro (v=2) podem ser inseridas", () => {
     const ultima = [...sql.matchAll(/create policy "envia como si mesmo"[\s\S]*?;/g)].pop()[0];
     assert.match(ultima, /v = 2/);
+  });
+});
+
+describe("grupos (supabase/schema.sql)", () => {
+  const sql = ler("supabase/schema.sql");
+  test("as tabelas de grupo não são legíveis nem graváveis direto: só pelas funções", () => {
+    for (const t of ["grupos", "grupo_membros"]) { assert.match(sql, new RegExp(`revoke all on public\\.${t} from anon, authenticated`)); assert.doesNotMatch(sql, new RegExp(`grant [^;]* on public\\.${t} to authenticated`)); }
+  });
+  test("mensagem de grupo só entra se quem envia e quem recebe estão no grupo", () => {
+    const ultima = [...sql.matchAll(/create policy "envia como si mesmo"[\s\S]*?;/g)].pop()[0];
+    assert.match(ultima, /grupo_id is null or public\.pode_enviar_ao_grupo\(grupo_id, recipient_id\)/);
+    const f = sql.match(/create or replace function public\.pode_enviar_ao_grupo[\s\S]*?\$\$;/)[0];
+    assert.match(f, /gm\.user_id = \(select auth\.uid\(\)\)/); assert.match(f, /gm\.user_id = p_dest/);
+  });
+  test("criar, adicionar, remover e renomear: limite de uso, só admin muda, só entra quem já conversou com quem adiciona", () => {
+    const f = (n) => sql.match(new RegExp(`create or replace function public\\.${n}\\([\\s\\S]*?\\$\\$;`))[0];
+    for (const n of ["criar_grupo", "grupo_adicionar", "grupo_remover", "grupo_renomear"]) assert.match(f(n), /perform public\.consome\(/, n);
+    for (const n of ["grupo_adicionar", "grupo_renomear"]) assert.match(f(n), /gm\.admin\) then raise exception 'so_admin'/, n);
+    assert.match(f("grupo_remover"), /p_user is distinct from u and not exists[\s\S]*gm\.admin/, "remover outra pessoa: só admin; sair: qualquer um");
+    for (const n of ["criar_grupo", "grupo_adicionar"]) assert.match(f(n), /not public\.ja_conversou\(/, n);
+    assert.match(f("ja_conversou"), /m\.sender_id = \(select auth\.uid\(\)\) and m\.recipient_id = p_outro[\s\S]*m\.sender_id = p_outro and m\.recipient_id = \(select auth\.uid\(\)\)/, "os dois lados já escreveram");
+    assert.match(f("meus_grupos"), /public\.mfa_ok\(\)/);
+  });
+  test("arquivos de grupo: só quem está no grupo baixa", () => {
+    const ultima = [...sql.matchAll(/create policy "le midia das suas conversas"[\s\S]*?;/g)].pop()[0];
+    assert.match(ultima, /public\.membro_de\(\(storage\.foldername\(name\)\)\[2\]\)/);
   });
 });

@@ -58,7 +58,8 @@ No GitHub Actions (`.github/workflows/ci.yml`) isso roda a cada push, usando o p
 
 ## Limites de uso e monitoramento
 **Limites no banco** (todos devolvem HTTP 429 "espere um pouco"; o site mostra uma mensagem clara):
-- mensagens: 60 por minuto e 1000 por hora por pessoa; no máximo 20 por pedido em lote (reações e controle contam);
+- mensagens: 300 por minuto e 5000 por hora por pessoa (linhas no banco: uma mensagem de grupo vira uma linha por participante); no máximo 20 por pedido em lote (reações e controle contam);
+- grupos: criar 5 por minuto e 20 por hora; adicionar/remover/renomear 30 por minuto e 200 por hora; no máximo 20 pessoas por grupo e 50 grupos por pessoa;
 - busca de amigo (`find_user`): 15 por minuto e 100 por hora; busca de chave (`get_prekey`): 30 por minuto e 300 por hora;
 - chaves de médio prazo: no máximo 30 por pessoa e 5 por pedido;
 - arquivos: 200 por hora e 400 MB no total por pessoa.
@@ -153,3 +154,26 @@ Quando OUTRO aparelho entra na conta, os aparelhos que já estavam conectados mo
 ### Código do aparelho (como o Lacre sabe "quem é quem")
 Cada navegador cria um **código aleatório** (`lacre:disp` no armazenamento do site) na primeira vez. O servidor guarda só `SHA-256(id_da_conta:código)`, nunca o código. Quem volta com um código **já reconhecido** (mesmo em outro navegador ou depois de sair e entrar) não gera aviso; um código novo, mesmo no mesmo tipo de navegador e sistema, gera. Limpar os dados do site ou usar aba anônima cria um aparelho novo (pede conferência uma vez). Sessões antigas ganham o código na próxima vez que abrem o app.
 - O **IP não identifica aparelho** (vários aparelhos na mesma rede dividem o IP; o mesmo aparelho troca de IP). Ele só vira **pista de risco** pelo local aproximado: o aviso destaca "Local muito diferente do seu uso normal" (outro país) ou "Em outro estado" em relação aos aparelhos já reconhecidos (`aparelhos.js`).
+
+## Grupos
+Botão **Chamar → Criar um grupo**: dê um nome e marque as pessoas (só aparece quem já conversa com você). O grupo entra na lista de conversas (quadrado de cantos redondos, com a inicial do nome; pessoas são círculos). No topo da conversa, o botão de pessoas abre **Dados do grupo**: participantes, quem é admin, mudar o nome, adicionar, remover e sair.
+
+**Como a mensagem viaja.** Não existe uma "chave do grupo" que abra as mensagens. Cada mensagem é cifrada **separadamente para cada participante**, pela mesma sessão com sigilo futuro (Double Ratchet) das conversas a dois, e gravada num pedido só (uma linha por pessoa em `messages`, marcada com `grupo_id`): ou chega para todos, ou para ninguém. Quem sai ou é removido simplesmente deixa de receber cópias; quem entra só lê o que for enviado depois. Fotos, vídeos, áudios e figurinhas são cifrados e enviados **uma vez** (`{remetente}/{grupo}/{arquivo}`); a chave do arquivo vai dentro de cada cópia cifrada da mensagem.
+
+**O que o servidor sabe e o que não sabe.** Sabe quem participa de cada grupo (precisa, para recusar mensagem de quem não é do grupo e liberar os arquivos só para participantes). Não lê as mensagens nem o **nome** do grupo: o nome é cifrado (AES-GCM) com uma chave aleatória do grupo, que chega a cada participante embrulhada na cifra a dois de quem o adicionou. O nome fica preso ao id do grupo (dado autenticado), então não dá para trocar nomes entre grupos.
+
+**Regras (todas conferidas no banco, por funções `SECURITY DEFINER`; as tabelas `grupos` e `grupo_membros` não são legíveis nem graváveis direto):**
+- quem cria é admin; só admin adiciona, remove e muda o nome; qualquer um sai;
+- só entra num grupo quem **já conversou** com quem está adicionando, nos dois sentidos (um desconhecido não coloca você num grupo só por ter mandado uma mensagem);
+- se o admin sai, quem está há mais tempo assume; quando a última pessoa sai, o grupo e as mensagens dele são apagados do servidor;
+- mensagem com `grupo_id` só entra se quem envia **e** quem recebe estão no grupo.
+
+**Proteções do lado do aparelho.**
+- A linha do servidor diz de qual grupo a mensagem é, e o conteúdo cifrado diz a mesma coisa; se não baterem, a mensagem é recusada (`conteudoBate` em `grupo.js`). O servidor não consegue jogar uma mensagem particular dentro de um grupo, nem levar uma mensagem de um grupo para outro.
+- Cada aparelho anota quem estava em cada grupo. Quando a lista muda, aparece um aviso no meio da conversa ("@fulano entrou no grupo", "saiu", "o grupo agora se chama…"): ninguém entra num grupo sem os outros verem.
+- Responder, reagir e apagar apontam para um identificador da mensagem que viaja cifrado (cada pessoa recebe a mensagem numa linha diferente do servidor). "Apagar para todos" só vale se vier de quem escreveu.
+- A verificação por código de segurança continua sendo feita pessoa a pessoa, na conversa a dois (em Dados do grupo, o balão ao lado do nome abre essa conversa).
+
+**Sincronização.** Ao abrir o Lacre (e ao voltar para a aba), tudo o que chegou com ele fechado é decifrado em ordem, numa fila única. Sem isso, uma mensagem de grupo só seria lida quando a conversa a dois com quem a mandou fosse aberta. De quebra, as conversas com mensagem nova ganham a bolinha de não lida logo ao abrir, e a lista fica ordenada pela atividade mais recente.
+
+**Limites e custos.** Até 20 pessoas por grupo. Uma mensagem num grupo de N pessoas ocupa N−1 linhas no banco (é o preço de não ter uma chave compartilhada); por isso o limite de envio é contado em linhas. Em grupo não há "vista". Como nas conversas a dois, o que você envia de um aparelho não é legível em outro aparelho seu (aparece o aviso "Enviada por você de outro navegador ou aparelho").

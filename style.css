@@ -562,3 +562,42 @@ dialog.folha-seg .btn-limpa{margin:0;width:100%}
 .risco-caixa{margin:0 0 12px;padding:10px 12px;border-radius:12px;border:1.5px solid var(--seal);background:var(--rosa-claro);color:var(--texto);font-weight:600;font-size:.9rem}
 .risco-caixa.alto{border-width:2px;background:var(--seal);color:#fff}
 small.risco{color:var(--seal-dk)!important;font-weight:700}
+
+/* ===== grupos ===== */
+/* pessoa = círculo; grupo = quadrado de cantos redondos */
+.avatar.grupo{border-radius:13px;background:var(--ink);box-shadow:inset 0 -3px 0 var(--seal)}
+.avatar.peq.grupo{border-radius:11px}
+button.avatar.grupo{cursor:pointer}
+.who small.sub{color:var(--mut)}
+.sub-grupo{font:400 .75rem var(--mono);color:#C9CDF5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* quem escreveu (só na primeira mensagem de uma sequência da mesma pessoa) */
+:root{--a0:#B81E45;--a1:#2B2F7A;--a2:#0F7B4F;--a3:#8A4B00;--a4:#6A2FA0;--a5:#0B6E8C}
+:root[data-tema="escuro"]{--a0:#FF8AA6;--a1:#A9AFE6;--a2:#5FD38D;--a3:#F2B766;--a4:#C9A1F5;--a5:#6FD0EA}
+@media (prefers-color-scheme:dark){:root:not([data-tema="claro"]){--a0:#FF8AA6;--a1:#A9AFE6;--a2:#5FD38D;--a3:#F2B766;--a4:#C9A1F5;--a5:#6FD0EA}}
+.autor{display:block;margin-bottom:2px;font:600 .8rem var(--body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.autor.c0{color:var(--a0)}.autor.c1{color:var(--a1)}.autor.c2{color:var(--a2)}.autor.c3{color:var(--a3)}.autor.c4{color:var(--a4)}.autor.c5{color:var(--a5)}
+.bubble.has-media .autor{padding:3px 8px 0}
+.bubble.err .autor{font-style:normal}
+/* aviso no meio da conversa: "@ana entrou no grupo" */
+.aviso-linha{align-self:center;max-width:92%;text-align:center}
+.aviso-linha span{display:inline-block;padding:4px 12px;border-radius:99px;background:var(--card);border:1px solid var(--line);color:var(--mut);font:500 .78rem var(--body)}
+/* "Criar um grupo" na folha do Chamar */
+.btn-grupo{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-top:10px;min-height:48px;border-radius:12px;border:1.5px solid var(--line);background:none;color:var(--texto);font-weight:600}
+.btn-grupo:hover{background:var(--paper)}.btn-grupo svg{color:var(--seal)}
+/* páginas: novo grupo e dados do grupo */
+.campo-pg{display:grid;gap:6px;padding:18px 16px 2px}
+label.linha.pessoa{display:flex;gap:14px;font-size:1rem;font-weight:400;color:var(--texto)}
+.linha.pessoa{gap:14px;position:relative}
+.linha.pessoa .tx{border-bottom:0}
+.linha.pessoa::after{content:"";position:absolute;left:70px;right:16px;bottom:0;border-bottom:1px solid var(--line)} /* a linha vai do nome até a borda, passando por baixo dos botões */
+.linha.pessoa .tx b{font-weight:600}
+.linha.pessoa .so-icone+.so-icone{margin-left:-10px}
+.marca{flex:none;width:22px;height:22px;min-height:22px;padding:0;accent-color:var(--seal);cursor:pointer}
+.pg-msg{min-height:1.4em;margin:10px 16px 0;color:var(--seal-dk);font-weight:500;font-size:.92rem}.pg-msg.ok{color:var(--verde)}
+.btn-pg{margin:14px 16px 0;width:calc(100% - 32px)}
+.btn-rosa:disabled{opacity:.45;cursor:default}
+.gi-topo{display:grid;justify-items:center;gap:4px;padding:26px 16px 10px;text-align:center}
+.avatar.grande{width:84px;height:84px;font-size:2.3rem;border-radius:24px;margin-bottom:8px}
+#gi-nome{font:800 1.35rem var(--display);overflow-wrap:anywhere}
+#gi-sub{font:400 .78rem var(--mono);color:var(--mut)}
+.linha .so-icone.perigo{color:var(--seal-dk)}

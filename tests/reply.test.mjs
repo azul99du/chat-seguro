@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { resumo, citacao, limpaCitacao, rotulo, exibir, MAX_PREVIEW } from "../reply.js";
+import { resumo, citacao, citacaoGrupo, limpaCitacao, rotulo, exibir, MAX_PREVIEW } from "../reply.js";
 
 const ME = "11111111-1111-1111-1111-111111111111", PEER = "22222222-2222-2222-2222-222222222222";
 
@@ -82,4 +82,19 @@ test("citar mensagem apagada para todos mostra 'Mensagem apagada', não o texto 
   const e = exibir({ id: 5, from: "a", kind: "text", text: "segredo antigo", dur: 0 }, { mine: true, content: { type: "deleted", by: "a" } }, { me: "a", peer: "b" });
   assert.equal(e.rotulo, "Mensagem apagada"); assert.equal(e.autor, "mine"); assert.equal(e.original, true);
   assert.equal(resumo({ type: "deleted" }), null, "mensagem apagada não pode ser citada");
+});
+
+describe("citação em grupo (aponta para o identificador da mensagem, igual para todos)", () => {
+  const MID = "0123456789abcdef0123456789abcdef";
+  test("citacaoGrupo() junta identificador, autor e resumo; sem identificador válido não cita", () => {
+    assert.deepEqual(citacaoGrupo(MID, ME, { type: "text", text: "oi" }), { mid: MID, from: ME, kind: "text", text: "oi", dur: 0 });
+    assert.equal(citacaoGrupo("curto", ME, { type: "text", text: "oi" }), null); assert.equal(citacaoGrupo(undefined, ME, { type: "text", text: "oi" }), null);
+    assert.equal(citacaoGrupo(MID, ME, { type: "hello" }), null);
+  });
+  test("limpaCitacao aceita o identificador de grupo e só ele (nada de id e mid juntos, nem mid malformado)", () => {
+    assert.deepEqual(limpaCitacao({ mid: MID, from: PEER, kind: "image", text: "praia", dur: 0, lixo: 1 }), { mid: MID, from: PEER, kind: "image", text: "praia", dur: 0 });
+    for (const mid of ["", "xyz", MID.toUpperCase(), MID + "0", 5, null, {}, [MID]]) assert.equal(limpaCitacao({ mid, text: "x" }), null, String(mid));
+    assert.deepEqual(Object.keys(limpaCitacao({ id: 7, mid: MID, text: "x" })).sort(), ["dur", "from", "id", "kind", "text"], "com id válido, vale o id");
+    assert.equal(limpaCitacao({ id: "7", mid: MID, text: "x" }), null, "id inválido não é salvo pelo mid");
+  });
 });
