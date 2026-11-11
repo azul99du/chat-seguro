@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#15174A">
   <meta name="referrer" content="no-referrer">
   <!-- Só roda código deste próprio site; só conversa com o seu Supabase. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; manifest-src 'self'; worker-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob: data:; media-src blob:; connect-src 'self' https://okiurdcgbjaylihbycxn.supabase.co wss://okiurdcgbjaylihbycxn.supabase.co; base-uri 'none'; form-action 'self'; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; manifest-src 'self'; worker-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob: data:; media-src blob:; frame-src https://www.youtube-nocookie.com https://www.instagram.com https://www.tiktok.com; connect-src 'self' https://okiurdcgbjaylihbycxn.supabase.co wss://okiurdcgbjaylihbycxn.supabase.co; base-uri 'none'; form-action 'self'; object-src 'none'">
   <title>Lacre — conversa só entre vocês</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="icon" href="favicon.ico" sizes="48x48">
@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=920f8cac9b">
+  <link rel="stylesheet" href="style.css?v=93562b6bed">
 </head>
 <body>
 
@@ -217,6 +217,12 @@
 
   <dialog id="viewer"><img id="viewer-img" alt="Foto ampliada"></dialog>
 
+  <dialog id="video-view" aria-labelledby="vv-rede-txt">
+    <div class="vv-topo"><button type="button" id="vv-fechar" class="vv-x" aria-label="Fechar o vídeo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><span class="rede"><i aria-hidden="true"></i><span id="vv-rede-txt"></span></span></div>
+    <div id="vv-quadro" class="vv-quadro"></div>
+    <div class="vv-rod"><span id="vv-url" class="vv-s"></span><a id="vv-abrir" class="vv-abrir" target="_blank" rel="noopener noreferrer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"/></svg><span id="vv-abrir-txt"></span></a></div>
+  </dialog>
+
   <dialog id="mfa" class="pagina">
     <form method="dialog">
       <header class="pg-bar"><button value="cancel" class="pg-volta" aria-label="Voltar" formnovalidate><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><h2>Segurança da conta</h2></header>
@@ -381,6 +387,6 @@
 
   <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
 
-  <script src="guarda.js?v=920f8cac9b"></script>
+  <script src="guarda.js?v=93562b6bed"></script>
 </body>
 </html>

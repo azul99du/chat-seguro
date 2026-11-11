@@ -1,17 +1,18 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=920f8cac9b";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=920f8cac9b";
-import { montarFigurinhas } from "./figurinhas.js?v=920f8cac9b";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=920f8cac9b";
-import { acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=920f8cac9b";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=920f8cac9b";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=920f8cac9b";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=920f8cac9b";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=920f8cac9b";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=920f8cac9b";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=920f8cac9b";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=920f8cac9b";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=920f8cac9b";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=93562b6bed";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=93562b6bed";
+import { montarFigurinhas } from "./figurinhas.js?v=93562b6bed";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=93562b6bed";
+import { acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=93562b6bed";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=93562b6bed";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=93562b6bed";
+import { acharVideoLink } from "./videolink.js?v=93562b6bed";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=93562b6bed";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=93562b6bed";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=93562b6bed";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=93562b6bed";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=93562b6bed";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=93562b6bed";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -941,6 +942,38 @@ function mediaBlock(c, mine) {
   return box;
 }
 
+// ---------- Vídeos curtos (YouTube Shorts, Instagram Reels, TikTok) ----------
+// Nada é contatado enquanto a pessoa não tocar. Ao tocar, a rede vê o IP, o aparelho e qual vídeo foi aberto (nunca a conversa): por isso há um aviso na primeira vez de cada rede.
+// O player roda numa moldura isolada: sem os cookies de login (credentialless), sem dizer de que página veio (referrer), sem permissões e sem acesso ao Lacre.
+const lembrarVideo = (rede) => { try { return localStorage.getItem("lacre:video:" + rede) === "1"; } catch { return false; } };
+function cartaoVideo(vl) {
+  const b = el("button", "vcard " + vl.cor); b.type = "button"; b.setAttribute("aria-label", `Assistir o vídeo do ${vl.nome} aqui no Lacre`);
+  const r = el("span", "rede"); r.append(el("i"), document.createTextNode(vl.nome));
+  b.append(r, el("span", "vplay"), el("span", "vdica", "Toque para assistir aqui"));
+  b.onclick = async (ev) => { ev.stopPropagation(); await abrirVideo(vl); };
+  return b;
+}
+function quadroDoVideo(vl) {
+  const f = document.createElement("iframe");
+  f.setAttribute("credentialless", ""); f.setAttribute("sandbox", "allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox");
+  f.setAttribute("referrerpolicy", vl.rede === "yt" ? "strict-origin" : "no-referrer"); // (o YouTube recusa o player sem saber o site; os outros não precisam)
+  f.setAttribute("allow", "autoplay; fullscreen; picture-in-picture"); f.setAttribute("allowfullscreen", ""); f.setAttribute("title", "Vídeo do " + vl.nome); f.setAttribute("loading", "eager"); f.src = vl.embed;
+  return f;
+}
+async function abrirVideo(vl) {
+  if (!lembrarVideo(vl.rede)) {
+    const r = await choose(`Assistir aqui? O ${vl.site} vai ver`, `Ao assistir, o ${vl.site} vai ver o seu endereço de internet (IP), o seu aparelho e qual vídeo você abriu. Ele não vê a conversa, nem quem mandou o link, e não recebe o seu login. Se preferir, abra o link fora do Lacre.`, [
+      { label: "Assistir aqui", value: "uma", cls: "primary" }, { label: `Assistir e não perguntar de novo para o ${vl.site}`, value: "sempre", cls: "ghost" }, { label: "Cancelar", value: "", cls: "ghost" }]);
+    if (!r) return; if (r === "sempre") { try { localStorage.setItem("lacre:video:" + vl.rede, "1"); } catch {} }
+  }
+  const d = $("video-view"); $("vv-rede-txt").textContent = vl.nome; d.querySelector(".rede").className = "rede";
+  $("vv-url").textContent = vl.url.replace(/^https:\/\/(www\.)?/, ""); $("vv-abrir").href = vl.url; $("vv-abrir-txt").textContent = "Abrir no " + vl.site;
+  $("vv-quadro").replaceChildren(quadroDoVideo(vl)); d.showModal();
+}
+$("video-view").addEventListener("close", () => $("vv-quadro").replaceChildren()); // fechar para o vídeo (a moldura some)
+$("vv-fechar").onclick = () => $("video-view").close();
+$("video-view").addEventListener("click", (e) => { if (e.target === $("video-view")) $("video-view").close(); });
+
 function pintaMencoes(vis, text) {
   const pedacos = partirTexto(text, [...(active?.membros?.values() ?? [])]); if (!pedacos.some((x) => x.id)) return;
   vis.replaceChildren(...pedacos.map((x) => { if (!x.id) return document.createTextNode(x.t); const sp = el("span", "mencao" + (x.id === me.id ? " eu" : ""), x.t); return sp; }));
@@ -975,6 +1008,7 @@ function addMessage(m, content, { err = false, animate = false, em = null } = {}
   if (autor) { autor.setAttribute("aria-hidden", "true"); b.prepend(autor); }
   if (media) b.append(mediaBlock(content, mine));
   b.append(sr, vis, meta); line.append(b);
+  if (!err && !apagada && content.type === "text") { const vl = acharVideoLink(content.text); if (vl) { b.classList.add("has-video"); b.insertBefore(cartaoVideo(vl), meta); } } // link de Shorts/Reels/TikTok: cartão que abre o vídeo aqui
   if (!err) { // botão "⌄" ao passar o mouse (só em aparelhos com mouse); fica fora do balão e não ocupa espaço
     const op = el("button", "msg-opcoes"); op.type = "button"; op.tabIndex = -1; op.setAttribute("aria-label", "Mais opções da mensagem");
     { const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg"); for (const [k, v] of Object.entries({ viewBox: "0 0 24 24", width: "16", height: "16", fill: "none", stroke: "currentColor", "stroke-width": "2.2", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true" })) svg.setAttribute(k, v);

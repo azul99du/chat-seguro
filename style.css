@@ -620,3 +620,30 @@ label.linha.pessoa{display:flex;gap:14px;font-size:1rem;font-weight:400;color:va
 @media (prefers-reduced-motion:reduce){.mencoes{animation:none}}
 /* foto do grupo: preenche o quadrado de cantos arredondados (o avatar já recorta nos cantos); só foto de pessoa é redonda */
 .avatar.grupo img{border-radius:0;border-radius:inherit}
+
+/* ===== vídeos curtos (YouTube Shorts, Instagram Reels, TikTok): cartão no balão e tela cheia ao tocar ===== */
+.rede{display:inline-flex;align-items:center;gap:6px;font:700 .72rem var(--body);padding:3px 9px;border-radius:99px;background:rgba(21,23,74,.78);color:#fff}
+.rede i{width:8px;height:8px;border-radius:50%;background:var(--seal)}
+.bubble.has-video{padding:8px 8px 7px}.bubble.has-video .vis,.bubble.has-video .meta{padding:0 6px}
+.vcard{position:relative;display:block;width:min(64vw,250px);margin:8px 0 2px;padding:0;min-height:0;aspect-ratio:16/11;border-radius:12px;overflow:hidden;border:0;background:linear-gradient(160deg,#F2A65A,#E8335F 55%,#2B2F7A)}
+.vcard.yt{background:linear-gradient(160deg,#5BC0EB,#2B2F7A 70%)}.vcard.tt{background:linear-gradient(160deg,#25F4EE,#15174A 55%,#FE2C55)}
+.vcard::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.35),transparent 40%),repeating-linear-gradient(45deg,transparent 0 9px,rgba(255,255,255,.07) 9px 10px)}
+.vcard .rede{position:absolute;left:8px;top:8px}
+.vcard .vplay{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:rgba(21,23,74,.74);display:grid;place-items:center;box-shadow:0 6px 20px rgba(0,0,0,.3);transition:transform .15s}
+.vcard .vplay::after{content:"";margin-left:5px;border-left:17px solid #fff;border-top:10px solid transparent;border-bottom:10px solid transparent}
+.vcard:hover .vplay{transform:scale(1.08)}
+.vcard .vdica{position:absolute;left:0;right:0;bottom:0;padding:14px 10px 7px;background:linear-gradient(transparent,rgba(0,0,0,.55));color:#fff;font:600 .74rem var(--body);text-align:left}
+dialog#video-view{width:100%;max-width:none;height:100dvh;max-height:none;margin:0;padding:0;border-radius:0;background:#05061c;color:#fff;overflow:hidden}
+dialog#video-view[open]{display:flex;flex-direction:column;animation:pagina-entra .22s cubic-bezier(.2,.8,.2,1)}
+dialog#video-view::backdrop{background:rgba(5,6,28,.9)}
+.vv-topo{display:flex;align-items:center;gap:10px;padding:12px 14px;flex:none}
+.vv-x{width:42px;height:42px;min-height:42px;padding:0;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;display:grid;place-items:center}
+.vv-x:hover{background:rgba(255,255,255,.2)}
+.vv-quadro{flex:1;min-height:0;margin:0 10px;border-radius:16px;overflow:hidden;background:#000}
+.vv-quadro iframe{display:block;width:100%;height:100%;border:0}
+.vv-rod{flex:none;display:grid;gap:10px;padding:14px 16px calc(18px + env(safe-area-inset-bottom))}
+.vv-s{font:400 .75rem var(--mono);color:#A9AFE6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vv-abrir{display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;border-radius:12px;border:1.5px solid rgba(255,255,255,.35);color:#fff;font:600 .95rem var(--body);text-decoration:none}
+.vv-abrir:hover{background:rgba(255,255,255,.1)}
+@media(min-width:760px){dialog#video-view{width:min(460px,92vw);height:92dvh;margin:auto;border-radius:18px}}
+@media(prefers-reduced-motion:reduce){dialog#video-view[open]{animation:none}}

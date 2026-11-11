@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const raiz = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const ler = (f) => readFileSync(join(raiz, f), "utf8");
-const APP = ["guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "recorte.js", "recorte-config.js", "sam2.js", "figurinhas.js", "avatar.js", "historico.js", "video.js", "aparelhos.js", "grupo.js", "sw.js", "supabase/functions/notificar/vapid.js"];
+const APP = ["guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "recorte.js", "recorte-config.js", "sam2.js", "figurinhas.js", "avatar.js", "historico.js", "video.js", "aparelhos.js", "grupo.js", "videolink.js", "sw.js", "supabase/functions/notificar/vapid.js"];
 const rastreados = execFileSync("git", ["ls-files"], { cwd: raiz, encoding: "utf8" }).split("\n").filter(Boolean);
 
 describe("código", () => {
@@ -193,4 +193,19 @@ describe("citação e aviso de grupo (supabase/schema.sql)", () => {
     const gatilho = [...sql.matchAll(/create trigger notifica_mensagem[^;]*;/g)].pop()[0]; assert.match(gatilho, /when \(new\.avisar and \(new\.grupo_id is null or new\.citado\)\)/);
   });
   test("um admin nunca é sub-admin ao mesmo tempo", () => assert.match(sql, /check \(not \(admin and sub\)\)/));
+});
+
+describe("vídeos curtos: política de segurança", () => {
+  const html = ler("index.html"), csp = html.match(/Content-Security-Policy"\s+content="([^"]+)"/)[1], dir = (n) => csp.split(";").map((x) => x.trim()).find((x) => x.startsWith(n + " ")) ?? "";
+  test("só as três redes podem ser carregadas em moldura (nada mais, sem curinga) e a lista é a mesma de videolink.js", async () => {
+    const { HOSTS_PLAYER } = await import("../videolink.js");
+    assert.equal(dir("frame-src"), "frame-src " + HOSTS_PLAYER.join(" "));
+    assert.doesNotMatch(dir("frame-src"), /\*|http:/); assert.match(csp, /default-src 'none'/);
+  });
+  test("a moldura do player vai sem cookies de login, sem referência, sem permissões e isolada", () => {
+    const js = ler("app.js"), f = js.slice(js.indexOf("function quadroDoVideo"), js.indexOf("async function abrirVideo"));
+    assert.match(f, /credentialless/); assert.match(f, /sandbox/); assert.match(f, /referrerpolicy/); assert.match(f, /"allow", "autoplay; fullscreen; picture-in-picture"/);
+    assert.doesNotMatch(f, /allow-top-navigation|allow-forms|allow-modals|allow-downloads/, "o player não pode navegar a página nem baixar arquivos");
+  });
+  test("o vídeo só é carregado depois de um toque (nenhuma moldura no HTML)", () => assert.doesNotMatch(ler("index.html"), /<iframe/));
 });
