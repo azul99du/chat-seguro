@@ -618,3 +618,5 @@ label.linha.pessoa{display:flex;gap:14px;font-size:1rem;font-weight:400;color:va
 .mencoes .opcao:hover,.mencoes .opcao.sel{background:var(--paper)}
 .mencoes .avatar.peq{width:30px;height:30px;min-height:30px;border:0;font-size:.85rem}
 @media (prefers-reduced-motion:reduce){.mencoes{animation:none}}
+/* foto do grupo: preenche o quadrado de cantos arredondados (o avatar já recorta nos cantos); só foto de pessoa é redonda */
+.avatar.grupo img{border-radius:0;border-radius:inherit}
