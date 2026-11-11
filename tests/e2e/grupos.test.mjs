@@ -20,6 +20,8 @@ function vigiar(nome, page) {
 const enviar = async (p, txt) => { await p.fill("#text", txt); await p.click("#send-form .primary"); };
 const ver = (p, txt, { meu = false } = {}) => p.waitForSelector(`.msg${meu ? ".mine" : ":not(.mine)"} .vis:text-is("${txt}")`, { timeout: 30000 });
 const msg = (txt) => `.msg:has(.vis:text-is("${txt}"))`;
+const msgT = (txt) => `.msg:has(.vis:has-text("${txt}"))`; // (para mensagens com @citação: o texto fica dividido em trechos, e o text-is do Playwright só casa texto de um trecho só)
+const verT = (p, txt, { meu = false } = {}) => p.waitForSelector(`.msg${meu ? ".mine" : ":not(.mine)"} .vis:has-text("${txt}")`, { timeout: 30000 });
 const GRUPO = "#contacts button[data-grupo]";
 const abrirGrupo = async (p, nome = "Trio do teste") => { await p.click(`${GRUPO}:has-text("${nome}")`); await p.waitForSelector(`#conv-title:text-is("${nome}")`); await p.waitForSelector("#messages:not(.carregando)"); };
 const abrirPessoa = async (p, nome) => { await p.click(`#contacts button:not([data-grupo]):has-text("@${nome}")`); await p.waitForSelector(`#conv-title:text-is("@${nome}")`); await p.waitForSelector("#messages:not(.carregando)"); };
@@ -192,5 +194,75 @@ t("sair do grupo: some para quem saiu; se o admin sai, outra pessoa assume; quem
   await dadosDoGrupo(C); await C.click("#gi-sair"); await C.waitForSelector("#choice[open]"); await C.click('#choice-actions button[value="sim"]'); await C.waitForSelector(GRUPO, { state: "detached", timeout: 30000 });
   await B.waitForFunction((n) => [...document.querySelectorAll(".aviso-linha")].some((a) => a.textContent === `@${n} saiu do grupo`), nomeC, { timeout: 30000 });
   await enviar(B, "alguém aí?"); await B.waitForSelector("#note[open]", { timeout: 20000 }); assert.match(await B.locator("#note-text").innerText(), /Não há mais ninguém neste grupo/); await B.click("#note button");
+});
+// ---------- segundo grupo: citação (@), foto do grupo, sub-admin ----------
+const G2 = "Segundo grupo", idDoGrupo = (p) => p.locator(`${GRUPO}:has-text("${G2}")`).getAttribute("data-grupo");
+const textoCampo = (p) => p.evaluate(() => document.getElementById("text").textContent.replace(/\u00a0/g, " "));
+const linhasDe = (p, g) => p.evaluate(async ({ url, key, g }) => { const k = Object.keys(localStorage).find((x) => /^sb-.*-auth-token$/.test(x)), tk = JSON.parse(localStorage[k]);
+  const r = await fetch(`${url}/rest/v1/messages?select=recipient_id,citado,avisar&grupo_id=eq.${g}&sender_id=eq.${tk.user.id}`, { headers: { Authorization: "Bearer " + tk.access_token, apikey: key } }); return r.json(); }, { url: SUPABASE_URL, key: SUPABASE_KEY, g });
+t("segundo grupo: A cria com B e C (agora os três abrem)", async () => {
+  await abrirPessoa(A, nomeB).catch(async () => { await chamar(A, nomeB); }); // (A sai do grupo anterior sem conversa aberta)
+  await A.click("#chamar-fab"); await A.click("#novo-grupo"); await A.waitForSelector("#grupo-novo[open]");
+  await A.fill("#gn-nome", G2); await A.check(`#gn-lista label:has-text("@${nomeB}") .marca`); await A.check(`#gn-lista label:has-text("@${nomeC}") .marca`); await A.click("#gn-criar");
+  await A.waitForSelector(`#conv-title:text-is("${G2}")`, { timeout: 30000 }); await A.waitForSelector("#messages:not(.carregando)");
+  for (const p of [B, C]) { await p.waitForSelector(`${GRUPO}:has-text("${G2}")`, { timeout: 30000 }); await abrirGrupo(p, G2); }
+});
+t("citar: ao digitar @ aparece a lista (sem mim), filtra ao digitar, Enter escolhe, e a conversa a dois não mostra lista", async () => {
+  await B.fill("#text", ""); await B.click("#text"); await B.keyboard.type("oi @"); await B.waitForSelector("#mencoes:not([hidden]) .opcao");
+  assert.deepEqual((await B.locator("#mencoes .opcao b").allInnerTexts()).sort(), [`@${nomeA}`, `@${nomeC}`].sort(), "participantes, menos eu");
+  await B.keyboard.type(nomeC.slice(0, 3)); await B.waitForFunction((n) => document.querySelectorAll("#mencoes .opcao").length === 1 && document.querySelector("#mencoes .opcao b").textContent === "@" + n, nomeC);
+  await B.keyboard.press("Escape"); await B.waitForSelector("#mencoes", { state: "hidden" }); assert.equal(await textoCampo(B), "oi @" + nomeC.slice(0, 3), "Esc fecha a lista e não envia nem apaga");
+  await B.keyboard.type("x"); await B.waitForSelector("#mencoes", { state: "hidden", timeout: 3000 }).catch(() => {}); // (sem ninguém que combine, a lista some)
+  for (let i = 0; i < 4; i++) await B.keyboard.press("Backspace");
+  await B.keyboard.type(nomeC.slice(0, 3)); await B.waitForSelector("#mencoes:not([hidden]) .opcao"); await B.keyboard.press("Enter");
+  assert.equal(await textoCampo(B), `oi @${nomeC} `, "Enter escolhe o nome (não envia)"); assert.equal(await B.locator("#mencoes").isHidden(), true);
+  await B.keyboard.type("vem cá"); await B.keyboard.press("Enter"); await verT(B, `oi @${nomeC} vem cá`, { meu: true });
+  await verT(A, `oi @${nomeC} vem cá`); await verT(C, `oi @${nomeC} vem cá`);
+  await abrirPessoa(B, nomeA); await B.click("#text"); await B.keyboard.type("@"); await B.waitForTimeout(400); assert.equal(await B.locator("#mencoes").isHidden(), true, "a conversa a dois não tem lista de citação"); await B.fill("#text", "");
+  await abrirGrupo(B, G2);
+});
+t("citado: o nome aparece em destaque para todos (mais forte para quem foi citado) e só a linha de quem foi citado leva a marca do aviso", async () => {
+  assert.equal(await C.locator(`${msgT(`oi @${nomeC} vem cá`)} .mencao.eu`).count(), 1); assert.equal(await C.locator(`${msgT(`oi @${nomeC} vem cá`)} .bubble.cita-eu`).count(), 1);
+  assert.equal(await A.locator(`${msgT(`oi @${nomeC} vem cá`)} .mencao`).count(), 1); assert.equal(await A.locator(`${msgT(`oi @${nomeC} vem cá`)} .mencao.eu`).count(), 0, "para A é só um nome em destaque");
+  assert.equal(await A.locator(`${msgT(`oi @${nomeC} vem cá`)} .bubble.cita-eu`).count(), 0);
+  const g = await idDaConversa(B), l = await linhasDe(B, g); const citados = l.filter((x) => x.citado); assert.equal(citados.length, 1, "uma única linha marcada"); assert.equal(l.length, 2, "uma linha por participante");
+  await enviar(B, "sem citar ninguém"); await ver(A, "sem citar ninguém"); assert.equal((await linhasDe(B, g)).filter((x) => x.citado).length, 1, "mensagem comum não ganha marca nova");
+  await enviar(B, "falei de @naoexiste e de beto@email.com"); await verT(C, "falei de @naoexiste e de beto@email.com"); assert.equal((await linhasDe(B, g)).filter((x) => x.citado).length, 1, "nome que não é do grupo e e-mail não contam"); assert.equal(await C.locator(`${msgT("falei de @naoexiste e de beto@email.com")} .mencao`).count(), 0);
+});
+const idDaConversa = (p) => p.locator(`${GRUPO}[aria-current="true"]`).getAttribute("data-grupo");
+t("foto do grupo: só o admin vê o botão; troca, aparece para todos, vira aviso e some ao remover", async () => {
+  await dadosDoGrupo(B); assert.equal(await B.locator("#gi-foto-btn").isVisible(), false); assert.equal(await B.locator("#gi-foto-rm").isVisible(), false); await voltar(B, "grupo-info");
+  await dadosDoGrupo(A); assert.equal(await A.locator("#gi-foto-btn").isVisible(), true);
+  const antes = enviados.length; await A.setInputFiles("#gi-file", makeJpegWithExif(dir, "grupo.jpg"));
+  await A.waitForFunction(() => /atualizada/.test(document.getElementById("gi-msg").textContent), null, { timeout: 40000 });
+  await A.waitForSelector("#gi-av img", { timeout: 20000 }); assert.equal(enviados.length - antes, 1, "um arquivo cifrado enviado");
+  for (const p of [B, C]) { await p.waitForSelector(`${GRUPO}:has-text("${G2}") .avatar img`, { timeout: 40000 }); await p.waitForFunction(() => [...document.querySelectorAll(".aviso-linha")].some((a) => a.textContent === "A foto do grupo foi alterada"), null, { timeout: 30000 }); }
+  await B.waitForSelector("#conv-av img", { timeout: 20000 });
+  const cru = await A.evaluate(async ({ url, key }) => { const k = Object.keys(localStorage).find((x) => /^sb-.*-auth-token$/.test(x)); const r = await fetch(`${url}/rest/v1/rpc/meus_grupos`, { method: "POST", headers: { Authorization: "Bearer " + JSON.parse(localStorage[k]).access_token, apikey: key, "content-type": "application/json" }, body: "{}" }); return r.text(); }, { url: SUPABASE_URL, key: SUPABASE_KEY });
+  assert.match(cru, /"foto":\s*\{[^}]*"p":\s*"[0-9a-f-]{36}\/[0-9a-f-]{36}\/[0-9a-f-]{36}"/, "o servidor guarda só o caminho do arquivo cifrado e o IV");
+  await A.click("#gi-foto-rm"); await A.waitForFunction(() => /removida/.test(document.getElementById("gi-msg").textContent), null, { timeout: 20000 });
+  for (const p of [B, C]) await p.waitForSelector(`${GRUPO}:has-text("${G2}") .avatar img`, { state: "detached", timeout: 40000 });
+  await voltar(A, "grupo-info");
+}, { ffmpeg: true });
+t("sub-admin: o admin dá o cargo; o sub-admin só vê o botão de remover nos membros comuns e não vê rename, adicionar, foto nem cargo", async () => {
+  await dadosDoGrupo(A); await A.click(`#gi-lista .linha:has-text("@${nomeB}") .cargo`);
+  await A.waitForFunction((n) => [...document.querySelectorAll("#gi-lista .linha")].some((r) => r.innerText.includes("@" + n) && r.innerText.includes("sub-admin")), nomeB, { timeout: 30000 });
+  assert.match(await A.locator("#gi-msg").innerText(), /pode remover membros/); await voltar(A, "grupo-info");
+  for (const p of [B, C]) await p.waitForFunction((n) => [...document.querySelectorAll(".aviso-linha")].some((a) => a.textContent === `@${n} agora é sub-admin`), nomeB, { timeout: 30000 });
+  await dadosDoGrupo(B);
+  for (const s2 of ["#gi-renomear", "#gi-add", "#gi-foto-btn", "#gi-foto-rm"]) assert.equal(await B.locator(s2).isVisible(), false, s2);
+  assert.equal(await B.locator("#gi-lista .cargo").count(), 0, "sub-admin não dá cargo");
+  assert.equal(await B.locator(`#gi-lista .linha:has-text("@${nomeA}") .remover`).count(), 0, "não expulsa o admin"); assert.equal(await B.locator(`#gi-lista .linha:has-text("@${nomeC}") .remover`).count(), 1, "expulsa membro comum");
+  assert.match(await B.locator(`#gi-lista .linha:has-text("@${nomeB}")`).innerText(), /sub-admin/);
+  await B.click(`#gi-lista .linha:has-text("@${nomeC}") .remover`); await B.waitForSelector("#choice[open]"); await B.click('#choice-actions button[value="sim"]');
+  await B.waitForFunction(() => document.querySelectorAll("#gi-lista .linha").length === 2, null, { timeout: 30000 });
+  await C.waitForSelector("#note[open]", { timeout: 30000 }); await C.click("#note button"); assert.equal(await C.locator(`${GRUPO}:has-text("${G2}")`).count(), 0, "C foi removido pelo sub-admin");
+  await voltar(B, "grupo-info");
+});
+t("sub-admin: o admin tira o cargo e o botão de remover some para ele", async () => {
+  await dadosDoGrupo(A); await A.click(`#gi-lista .linha:has-text("@${nomeB}") .cargo`);
+  await A.waitForFunction(() => /deixou de ser sub-admin/.test(document.getElementById("gi-msg").textContent), null, { timeout: 30000 }); await voltar(A, "grupo-info");
+  await B.waitForFunction((n) => [...document.querySelectorAll(".aviso-linha")].some((a) => a.textContent === `@${n} deixou de ser sub-admin`), nomeB, { timeout: 30000 });
+  await dadosDoGrupo(B); assert.equal(await B.locator("#gi-lista .remover").count(), 0); await voltar(B, "grupo-info");
 });
 t("nenhum erro de página durante todo o roteiro", async () => { assert.deepEqual(erros, []); });

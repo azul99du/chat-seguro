@@ -85,9 +85,10 @@ export function montarGrupos(linhas, eu) {
   for (const l of linhas || []) {
     if (!ehGrupoId(l.grupo_id) || !ehGrupoId(l.user_id) || typeof l.username !== "string") continue;
     let g = m.get(l.grupo_id);
-    if (!g) m.set(l.grupo_id, (g = { id: l.grupo_id, nomeCifrado: l.nome, criadoEm: l.criado_em, membros: [], eu: null }));
-    g.membros.push({ id: l.user_id, username: l.username, public_key: l.public_key, avatar: l.avatar || null, admin: !!l.admin, entrou_em: l.entrou_em });
-    if (l.user_id === eu) g.eu = { admin: !!l.admin, entrouEm: l.entrou_em, chave: l.chave, por: l.por, porChave: l.por_chave };
+    if (!g) m.set(l.grupo_id, (g = { id: l.grupo_id, nomeCifrado: l.nome, criadoEm: l.criado_em, membros: [], eu: null, foto: null }));
+    g.membros.push({ id: l.user_id, username: l.username, public_key: l.public_key, avatar: l.avatar || null, admin: !!l.admin, sub: !!l.sub, entrou_em: l.entrou_em });
+    if (!g.foto && l.foto) g.foto = l.foto;
+    if (l.user_id === eu) g.eu = { admin: !!l.admin, sub: !!l.sub, entrouEm: l.entrou_em, chave: l.chave, por: l.por, porChave: l.por_chave };
   }
   return [...m.values()].filter((g) => g.eu); // (só grupos em que estou de verdade)
 }
@@ -101,7 +102,64 @@ export function diferencaMembros(antes, agora, eu) {
 export function textoAviso(a) {
   const n = "@" + (a.nome || "alguém");
   return a.tipo === "criou" ? "Você criou o grupo" : a.tipo === "adicionado" ? `${n} adicionou você ao grupo` : a.tipo === "entrou" ? `${n} entrou no grupo`
-    : a.tipo === "saiu" ? `${n} saiu do grupo` : a.tipo === "nome" ? `O grupo agora se chama “${a.nome}”` : "";
+    : a.tipo === "saiu" ? `${n} saiu do grupo` : a.tipo === "nome" ? `O grupo agora se chama “${a.nome}”`
+    : a.tipo === "sub" ? `${n} agora é sub-admin` : a.tipo === "semsub" ? `${n} deixou de ser sub-admin` : a.tipo === "admin" ? `${n} agora é admin`
+    : a.tipo === "foto" ? (a.removida ? "A foto do grupo foi removida" : "A foto do grupo foi alterada") : "";
+}
+
+// ---------- Cargos ----------
+// admin (tudo) > sub-admin (só expulsa membros comuns) > membro. O banco confere tudo de novo; estas funções só decidem o que a tela mostra.
+export const cargoDe = (p) => (p?.admin ? "admin" : p?.sub ? "sub" : "membro");
+export const podeRemover = (meu, alvo) => meu === "admin" || (meu === "sub" && alvo === "membro");
+export const podeDarCargo = (meu, alvo) => meu === "admin" && alvo !== "admin";
+// Quem mudou de cargo desde a última vez. antes/agora: { id: cargo }. Só conta quem está nos dois (entrar e sair têm avisos próprios).
+export function diferencaCargos(antes, agora) {
+  const out = [];
+  for (const [id, cargo] of Object.entries(agora)) if (id in antes && antes[id] !== cargo) out.push({ id, de: antes[id], para: cargo });
+  return out;
+}
+
+// ---------- Foto do grupo (cifrada com a chave do grupo) ----------
+const aadFoto = (grupoId) => enc.encode("lacre-grupo-foto|" + grupoId);
+export async function cifrarFoto(gk, grupoId, bytes) {
+  if (!ehGrupoId(grupoId)) throw new Error("grupo invalido");
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: aadFoto(grupoId) }, await chaveAes(gk, ["encrypt"]), bytes);
+  return { data: new Uint8Array(ct), iv: b64(iv) };
+}
+export async function abrirFoto(gk, grupoId, data, iv) { // lança erro se foi adulterada, é de outro grupo ou a chave não é a certa
+  return new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(iv), additionalData: aadFoto(grupoId) }, await chaveAes(gk, ["decrypt"]), data));
+}
+export const caminhoFotoOk = (p, grupoId) => ehGrupoId(grupoId) && typeof p === "string" && new RegExp(`^[0-9a-f-]{36}/${grupoId}/[0-9a-f-]{36}$`).test(p);
+export function limpaFoto(f, grupoId) { // o que vem do servidor é desconfiável
+  if (!f || typeof f !== "object" || !caminhoFotoOk(f.p, grupoId) || typeof f.iv !== "string" || f.iv.length > 40) return null;
+  return { p: f.p, iv: f.iv };
+}
+
+// ---------- Citação (@nome) ----------
+const RE_MENCAO = /(^|[^a-z0-9_])@([a-z0-9_]{3,20})(?![a-z0-9_])/gi;
+// Parte o texto em pedaços: { t } comum, ou { t, id } quando é "@nome" de alguém do grupo (nomes que não são do grupo ficam como texto).
+export function partirTexto(texto, membros) {
+  const por = new Map(membros.map((m) => [m.username.toLowerCase(), m.id])), out = []; let ult = 0;
+  for (const m of String(texto ?? "").matchAll(RE_MENCAO)) {
+    const id = por.get(m[2].toLowerCase()); if (!id) continue;
+    const ini = m.index + m[1].length, fim = ini + 1 + m[2].length;
+    if (ini > ult) out.push({ t: texto.slice(ult, ini) });
+    out.push({ t: texto.slice(ini, fim), id }); ult = fim;
+  }
+  if (ult < String(texto ?? "").length) out.push({ t: texto.slice(ult) });
+  return out;
+}
+export const mencionados = (texto, membros) => [...new Set(partirTexto(texto, membros).filter((x) => x.id).map((x) => x.id))];
+// O "@..." logo antes do cursor (o que a pessoa está digitando agora), ou null
+export function tokenMencao(antes) {
+  const m = /(^|[\s(])@([a-z0-9_]{0,20})$/i.exec(antes);
+  return m ? { inicio: antes.length - m[2].length - 1, prefixo: m[2] } : null;
+}
+// Lista que aparece depois do "@": quem começa com o que foi digitado vem primeiro; eu não apareço
+export function sugerirMembros(membros, prefixo, eu, max = 6) {
+  const p = String(prefixo || "").toLowerCase(), outros = membros.filter((m) => m.id !== eu).sort((a, b) => a.username.localeCompare(b.username));
+  return [...outros.filter((m) => m.username.toLowerCase().startsWith(p)), ...outros.filter((m) => !m.username.toLowerCase().startsWith(p) && m.username.toLowerCase().includes(p))].slice(0, max);
 }
 // "você, @ana, @beto e mais 2"
 export function resumoMembros(membros, eu, max = 3) {

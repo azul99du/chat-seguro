@@ -219,7 +219,7 @@ t("grupo: quem é de fora não vê o grupo, não lê as tabelas, não entra sozi
 });
 t("grupo: só o admin adiciona, remove e muda o nome; não dá para adicionar quem nunca conversou com você", async () => {
   assert.match((await b.c.rpc("grupo_renomear", { p_grupo: G, p_nome: nomeCif() })).error?.message || "", /so_admin/);
-  assert.match((await b.c.rpc("grupo_remover", { p_grupo: G, p_user: a.id })).error?.message || "", /so_admin/);
+  assert.match((await b.c.rpc("grupo_remover", { p_grupo: G, p_user: a.id })).error?.message || "", /sem_permissao/);
   assert.match((await b.c.rpc("grupo_adicionar", { p_grupo: G, p_user: x.id, p_chave: cif() })).error?.message || "", /so_admin/);
   assert.match((await a.c.rpc("grupo_adicionar", { p_grupo: G, p_user: x.id, p_chave: cif() })).error?.message || "", /nao_conversou/);
   assert.ok((await a.c.rpc("grupo_adicionar", { p_grupo: G, p_user: b.id, p_chave: cif() })).error, "quem já está no grupo");
@@ -254,4 +254,60 @@ t("grupo: sem o admin, a pessoa mais antiga assume; sem login, nenhuma função 
   for (const [f, args] of [["criar_grupo", { p_id: crypto.randomUUID(), p_nome: nomeCif(), p_chave: cif(), p_membros: [{ id: b.id, chave: cif() }] }], ["grupo_adicionar", { p_grupo: g2, p_user: a.id, p_chave: cif() }], ["grupo_remover", { p_grupo: g2, p_user: b.id }], ["grupo_renomear", { p_grupo: g2, p_nome: nomeCif() }], ["membro_de", { p_grupo: g2 }], ["mesmo_grupo", { p_outro: b.id }], ["ja_conversou", { p_outro: b.id }], ["pode_enviar_ao_grupo", { p_grupo: g2, p_dest: b.id }]])
     assert.ok((await anon.rpc(f, args)).error, f + " sem login");
   assert.ifError((await b.c.rpc("grupo_remover", { p_grupo: g2, p_user: b.id })).error); // limpeza
+});
+
+// ---------- grupos: sub-admin, foto e citação ----------
+t("sub-admin: só o admin dá e tira o cargo; o sub-admin não dá cargo a ninguém (nem a si); admin não vira sub-admin", async () => {
+  const g = crypto.randomUUID(), c = await usuario("s"), d = await usuario("t"), e = await usuario("u");
+  for (const [p, q] of [[a, c], [a, d], [a, e]]) { assert.ifError((await p.c.from("messages").insert({ ...base(q.id), v: 2, header: hdr() })).error); assert.ifError((await q.c.from("messages").insert({ ...base(p.id), v: 2, header: hdr() })).error); }
+  assert.ifError((await a.c.rpc("criar_grupo", { p_id: g, p_nome: nomeCif(), p_chave: cif(), p_membros: [{ id: c.id, chave: cif() }, { id: d.id, chave: cif() }, { id: e.id, chave: cif() }] })).error);
+  const cargos = async (quem) => Object.fromEntries((await quem.c.rpc("meus_grupos")).data.filter((l) => l.grupo_id === g).map((l) => [l.user_id, l.admin ? "admin" : l.sub ? "sub" : "membro"]));
+  assert.match((await c.c.rpc("grupo_cargo", { p_grupo: g, p_user: c.id, p_sub: true })).error?.message || "", /so_admin/, "membro dá a si mesmo");
+  assert.match((await c.c.rpc("grupo_cargo", { p_grupo: g, p_user: d.id, p_sub: true })).error?.message || "", /so_admin/, "membro dá a outro");
+  assert.match((await x.c.rpc("grupo_cargo", { p_grupo: g, p_user: c.id, p_sub: true })).error?.message || "", /so_admin/, "de fora");
+  assert.ok((await anon.rpc("grupo_cargo", { p_grupo: g, p_user: c.id, p_sub: true })).error, "sem login");
+  assert.match((await a.c.rpc("grupo_cargo", { p_grupo: g, p_user: a.id, p_sub: true })).error?.message || "", /alvo_invalido/, "admin não vira sub-admin");
+  assert.match((await a.c.rpc("grupo_cargo", { p_grupo: g, p_user: x.id, p_sub: true })).error?.message || "", /alvo_invalido/, "quem não está no grupo");
+  assert.ifError((await a.c.rpc("grupo_cargo", { p_grupo: g, p_user: c.id, p_sub: true })).error);
+  assert.deepEqual(await cargos(d), { [a.id]: "admin", [c.id]: "sub", [d.id]: "membro", [e.id]: "membro" });
+  assert.match((await c.c.rpc("grupo_cargo", { p_grupo: g, p_user: d.id, p_sub: true })).error?.message || "", /so_admin/, "agora c é sub-admin e continua sem poder dar cargo");
+  assert.match((await c.c.rpc("grupo_cargo", { p_grupo: g, p_user: c.id, p_sub: false })).error?.message || "", /so_admin/, "nem tirar o próprio cargo por aqui (sair é pelo grupo_remover)");
+  assert.ok((await c.c.rpc("grupo_renomear", { p_grupo: g, p_nome: nomeCif() })).error, "sub-admin não renomeia"); assert.ok((await c.c.rpc("grupo_adicionar", { p_grupo: g, p_user: x.id, p_chave: cif() })).error, "sub-admin não adiciona");
+  assert.ok((await c.c.rpc("grupo_foto", { p_grupo: g, p_foto: null })).error, "sub-admin não muda a foto");
+  globalThis.__sub = { g, c, d, e, cargos };
+});
+t("sub-admin: expulsa membro comum, mas não o admin nem outro sub-admin; membro comum não expulsa ninguém; todos podem sair", async () => {
+  const { g, c, d, e, cargos } = globalThis.__sub;
+  assert.ifError((await a.c.rpc("grupo_cargo", { p_grupo: g, p_user: d.id, p_sub: true })).error); // d também vira sub-admin
+  assert.match((await e.c.rpc("grupo_remover", { p_grupo: g, p_user: d.id })).error?.message || "", /sem_permissao/, "membro comum não expulsa");
+  assert.match((await c.c.rpc("grupo_remover", { p_grupo: g, p_user: a.id })).error?.message || "", /sem_permissao/, "sub-admin não expulsa o admin");
+  assert.match((await c.c.rpc("grupo_remover", { p_grupo: g, p_user: d.id })).error?.message || "", /sem_permissao/, "sub-admin não expulsa outro sub-admin");
+  assert.equal(Object.keys(await cargos(a)).length, 4, "ninguém saiu");
+  assert.ifError((await c.c.rpc("grupo_remover", { p_grupo: g, p_user: e.id })).error); assert.equal(Object.keys(await cargos(a)).length, 3, "(controle) sub-admin expulsou o membro comum");
+  assert.ok((await e.c.rpc("meus_grupos")).data.every((l) => l.grupo_id !== g), "quem foi expulso perde o grupo");
+  assert.ifError((await a.c.rpc("grupo_cargo", { p_grupo: g, p_user: d.id, p_sub: false })).error); assert.equal((await cargos(a))[d.id], "membro", "o admin tira o cargo");
+  assert.ifError((await a.c.rpc("grupo_remover", { p_grupo: g, p_user: d.id })).error); // o admin expulsa quem quiser
+  assert.ifError((await a.c.rpc("grupo_remover", { p_grupo: g, p_user: a.id })).error); // o admin sai: o sub-admin (c) assume
+  const l = (await c.c.rpc("meus_grupos")).data.filter((r) => r.grupo_id === g); assert.equal(l.length, 1); assert.equal(l[0].admin, true); assert.equal(l[0].sub, false, "quem assume vira admin, não sub-admin");
+  assert.ifError((await c.c.rpc("grupo_remover", { p_grupo: g, p_user: c.id })).error);
+});
+t("foto do grupo: só o admin; o caminho tem de estar na pasta do grupo; aparece para os participantes e some ao tirar", async () => {
+  const g = crypto.randomUUID(); assert.ifError((await a.c.rpc("criar_grupo", { p_id: g, p_nome: nomeCif(), p_chave: cif(), p_membros: [{ id: b.id, chave: cif() }] })).error);
+  const ok = { p: `${a.id}/${g}/${crypto.randomUUID()}`, iv: "aXZpdml2aXZpdg==" }, foto = async (quem) => (await quem.c.rpc("meus_grupos")).data.find((l) => l.grupo_id === g)?.foto;
+  assert.match((await b.c.rpc("grupo_foto", { p_grupo: g, p_foto: ok })).error?.message || "", /so_admin/, "membro"); assert.ok((await x.c.rpc("grupo_foto", { p_grupo: g, p_foto: ok })).error, "de fora"); assert.ok((await anon.rpc("grupo_foto", { p_grupo: g, p_foto: ok })).error, "sem login");
+  for (const [rotulo, f] of [["pasta de outro grupo", { ...ok, p: `${a.id}/${crypto.randomUUID()}/${crypto.randomUUID()}` }], ["sem iv", { p: ok.p }], ["iv que não é texto", { ...ok, iv: 5 }], ["caminho com ..", { ...ok, p: `${a.id}/${g}/../x` }], ["gigante", { ...ok, lixo: "A".repeat(500) }], ["não é objeto", "texto"], ["lista", [ok]]])
+    assert.match((await a.c.rpc("grupo_foto", { p_grupo: g, p_foto: f })).error?.message || "", /foto_invalida/, rotulo);
+  assert.ifError((await a.c.rpc("grupo_foto", { p_grupo: g, p_foto: ok })).error); assert.deepEqual(await foto(b), ok, "o participante vê onde está a foto");
+  const bin = new Blob([new Uint8Array([1, 2, 3])], { type: "application/octet-stream" });
+  assert.ifError((await a.c.storage.from("media").upload(ok.p, bin, { contentType: "application/octet-stream" })).error);
+  assert.ok(!(await b.c.storage.from("media").download(ok.p)).error, "o participante baixa o arquivo (cifrado)"); assert.ok((await x.c.storage.from("media").download(ok.p)).error, "de fora não baixa");
+  assert.ifError((await a.c.rpc("grupo_foto", { p_grupo: g, p_foto: null })).error); assert.equal(await foto(b), null, "foto tirada");
+  await a.c.storage.from("media").remove([ok.p]); assert.ifError((await a.c.rpc("grupo_remover", { p_grupo: g, p_user: b.id })).error); assert.ifError((await a.c.rpc("grupo_remover", { p_grupo: g, p_user: a.id })).error);
+});
+t("citado: só vale em mensagem de grupo; o aviso (push) de grupo só sai para quem foi citado; conversa a dois continua avisando", async () => {
+  const g = crypto.randomUUID(); assert.ifError((await a.c.rpc("criar_grupo", { p_id: g, p_nome: nomeCif(), p_chave: cif(), p_membros: [{ id: b.id, chave: cif() }] })).error);
+  assert.ok((await a.c.from("messages").insert({ ...base(b.id), v: 2, header: hdr(), citado: true })).error, "citado fora de grupo");
+  const r = await a.c.from("messages").insert({ ...gmsg(b.id, g), citado: true }).select("citado,grupo_id").single(); assert.ifError(r.error); assert.equal(r.data.citado, true);
+  assert.ok((await b.c.from("messages").update({ citado: true }).eq("id", mid)).error, "o destinatário não mexe na marca");
+  assert.ifError((await a.c.rpc("grupo_remover", { p_grupo: g, p_user: b.id })).error); assert.ifError((await a.c.rpc("grupo_remover", { p_grupo: g, p_user: a.id })).error);
 });

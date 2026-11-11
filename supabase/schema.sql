@@ -773,3 +773,88 @@ begin
 end $$;
 revoke all on function public.grupo_renomear(uuid, jsonb) from public, anon, authenticated;
 grant execute on function public.grupo_renomear(uuid, jsonb) to authenticated;
+
+-- ===== Grupos: sub-admin, foto do grupo e citação (migração grupos_cargos_foto_citacao) =====
+-- Cargos: admin (tudo) > sub-admin (só expulsa membros comuns) > membro. Só o admin dá ou tira o cargo de sub-admin e muda a foto/nome.
+alter table public.grupo_membros add column sub boolean not null default false;
+alter table public.grupo_membros add constraint grupo_cargo_unico check (not (admin and sub));
+-- Foto do grupo: o arquivo vai CIFRADO com a chave do grupo para o bucket 'media' ({quem enviou}/{grupo}/{arquivo}); aqui fica só onde está e o IV.
+alter table public.grupos add column foto jsonb check (foto is null or length(foto::text) < 400);
+
+-- Citação (@nome): só quem escreveu sabe quem foi citado; a linha de quem foi citado leva a marca, e só ela dispara o aviso (push). Mensagem comum de grupo não avisa mais.
+alter table public.messages add column citado boolean not null default false;
+alter table public.messages add constraint messages_citado_so_grupo check (not citado or grupo_id is not null);
+revoke insert on public.messages from authenticated;
+grant insert (recipient_id, ciphertext, iv, v, header, avisar, grupo_id, citado) on public.messages to authenticated;
+drop trigger notifica_mensagem on public.messages;
+create trigger notifica_mensagem after insert on public.messages for each row when (new.avisar and (new.grupo_id is null or new.citado)) execute function public.notificar_mensagem();
+
+drop function public.meus_grupos();
+create or replace function public.meus_grupos() returns table (grupo_id uuid, nome jsonb, criado_em timestamptz, user_id uuid, username text, public_key jsonb, avatar text, admin boolean, entrou_em timestamptz, chave jsonb, por uuid, por_chave jsonb, foto jsonb, sub boolean)
+language sql stable security definer set search_path = public as $$
+  select g.id, g.nome, g.created_at, m.user_id, p.username, p.public_key, p.avatar, m.admin, m.entrou_em,
+         case when m.user_id = (select auth.uid()) then m.chave end,
+         case when m.user_id = (select auth.uid()) then m.por end,
+         case when m.user_id = (select auth.uid()) then (select q.public_key from public.profiles q where q.id = m.por) end,
+         g.foto, m.sub
+    from public.grupo_membros eu
+    join public.grupos g on g.id = eu.grupo_id
+    join public.grupo_membros m on m.grupo_id = g.id
+    join public.profiles p on p.id = m.user_id
+   where eu.user_id = (select auth.uid()) and (select public.mfa_ok())
+   order by g.id, m.entrou_em, m.user_id
+$$;
+revoke all on function public.meus_grupos() from public, anon, authenticated;
+grant execute on function public.meus_grupos() to authenticated;
+
+-- Remover: o admin remove qualquer um; o sub-admin só remove membros comuns (nem admin, nem outro sub-admin); qualquer um sai. Sem admin, assume o sub-admin mais antigo (ou o membro mais antigo).
+create or replace function public.grupo_remover(p_grupo uuid, p_user uuid) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); eu public.grupo_membros; alvo public.grupo_membros;
+begin
+  perform public.consome('grupo_mudar', 30, 200);
+  select * into eu from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = u;
+  select * into alvo from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = p_user;
+  if p_user is distinct from u and not coalesce(eu.admin or (eu.sub and not alvo.admin and not alvo.sub), false) then
+    raise exception 'sem_permissao' using errcode = '42501';
+  end if;
+  delete from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = p_user;
+  if not found then raise exception 'nao_esta_no_grupo' using errcode = '42501'; end if;
+  if not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo) then
+    delete from public.grupos g where g.id = p_grupo;
+  elsif not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.admin) then
+    update public.grupo_membros gm set admin = true, sub = false
+     where gm.grupo_id = p_grupo and gm.user_id = (select x.user_id from public.grupo_membros x where x.grupo_id = p_grupo order by x.sub desc, x.entrou_em, x.user_id limit 1);
+  end if;
+end $$;
+revoke all on function public.grupo_remover(uuid, uuid) from public, anon, authenticated;
+grant execute on function public.grupo_remover(uuid, uuid) to authenticated;
+
+-- Dar ou tirar o cargo de sub-admin: SÓ o admin (o sub-admin não dá cargo a ninguém, nem a si mesmo)
+create or replace function public.grupo_cargo(p_grupo uuid, p_user uuid, p_sub boolean) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid());
+begin
+  perform public.consome('grupo_mudar', 30, 200);
+  if not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = u and gm.admin) then raise exception 'so_admin' using errcode = '42501'; end if;
+  update public.grupo_membros gm set sub = coalesce(p_sub, false) where gm.grupo_id = p_grupo and gm.user_id = p_user and not gm.admin;
+  if not found then raise exception 'alvo_invalido' using errcode = '42501'; end if;
+end $$;
+revoke all on function public.grupo_cargo(uuid, uuid, boolean) from public, anon, authenticated;
+grant execute on function public.grupo_cargo(uuid, uuid, boolean) to authenticated;
+
+-- Foto do grupo (ou null para tirar): só o admin; o arquivo tem de estar na pasta deste grupo
+create or replace function public.grupo_foto(p_grupo uuid, p_foto jsonb) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid());
+begin
+  perform public.consome('grupo_mudar', 30, 200);
+  if not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = u and gm.admin) then raise exception 'so_admin' using errcode = '42501'; end if;
+  if p_foto is not null and (jsonb_typeof(p_foto) <> 'object' or length(p_foto::text) >= 400 or jsonb_typeof(p_foto -> 'iv') is distinct from 'string'
+     or coalesce(p_foto ->> 'p', '') !~ ('^[0-9a-f-]{36}/' || p_grupo::text || '/[0-9a-f-]{36}$')) then
+    raise exception 'foto_invalida' using errcode = '22023';
+  end if;
+  update public.grupos g set foto = p_foto where g.id = p_grupo;
+end $$;
+revoke all on function public.grupo_foto(uuid, jsonb) from public, anon, authenticated;
+grant execute on function public.grupo_foto(uuid, jsonb) to authenticated;

@@ -59,7 +59,7 @@ No GitHub Actions (`.github/workflows/ci.yml`) isso roda a cada push, usando o p
 ## Limites de uso e monitoramento
 **Limites no banco** (todos devolvem HTTP 429 "espere um pouco"; o site mostra uma mensagem clara):
 - mensagens: 300 por minuto e 5000 por hora por pessoa (linhas no banco: uma mensagem de grupo vira uma linha por participante); no máximo 20 por pedido em lote (reações e controle contam);
-- grupos: criar 5 por minuto e 20 por hora; adicionar/remover/renomear 30 por minuto e 200 por hora; no máximo 20 pessoas por grupo e 50 grupos por pessoa;
+- grupos: criar 5 por minuto e 20 por hora; adicionar/remover/renomear/dar cargo/trocar foto 30 por minuto e 200 por hora; no máximo 20 pessoas por grupo e 50 grupos por pessoa;
 - busca de amigo (`find_user`): 15 por minuto e 100 por hora; busca de chave (`get_prekey`): 30 por minuto e 300 por hora;
 - chaves de médio prazo: no máximo 30 por pessoa e 5 por pedido;
 - arquivos: 200 por hora e 400 MB no total por pessoa.
@@ -161,6 +161,12 @@ Botão **Chamar → Criar um grupo**: dê um nome e marque as pessoas (só apare
 **Como a mensagem viaja.** Não existe uma "chave do grupo" que abra as mensagens. Cada mensagem é cifrada **separadamente para cada participante**, pela mesma sessão com sigilo futuro (Double Ratchet) das conversas a dois, e gravada num pedido só (uma linha por pessoa em `messages`, marcada com `grupo_id`): ou chega para todos, ou para ninguém. Quem sai ou é removido simplesmente deixa de receber cópias; quem entra só lê o que for enviado depois. Fotos, vídeos, áudios e figurinhas são cifrados e enviados **uma vez** (`{remetente}/{grupo}/{arquivo}`); a chave do arquivo vai dentro de cada cópia cifrada da mensagem.
 
 **O que o servidor sabe e o que não sabe.** Sabe quem participa de cada grupo (precisa, para recusar mensagem de quem não é do grupo e liberar os arquivos só para participantes). Não lê as mensagens nem o **nome** do grupo: o nome é cifrado (AES-GCM) com uma chave aleatória do grupo, que chega a cada participante embrulhada na cifra a dois de quem o adicionou. O nome fica preso ao id do grupo (dado autenticado), então não dá para trocar nomes entre grupos.
+
+**Cargos.** Três níveis: **admin** (quem cria o grupo): faz tudo; **sub-admin**: só **remove membros comuns** (não remove o admin nem outro sub-admin) e não dá cargo a ninguém; **membro**: conversa e pode sair. Só o admin dá ou tira o cargo de sub-admin (botão de escudo ao lado do nome, em "Dados do grupo"), muda o nome, adiciona pessoas e troca a foto. Se o admin sai, assume o sub-admin mais antigo (ou, sem sub-admin, o membro mais antigo). Entrada, saída e mudança de cargo viram avisos na conversa.
+
+**Foto do grupo.** Só o admin troca (botão da câmera em "Dados do grupo"; recorte quadrado no centro, 256 px). A foto é **cifrada com a chave do grupo** (a mesma que cifra o nome) antes de ir para o servidor, no bucket `media` (`{admin}/{grupo}/{arquivo}`), e a tabela `grupos` guarda só o caminho e o IV (`grupo_foto()` recusa caminho fora da pasta do grupo). Diferente da foto de perfil, o servidor não consegue ver a imagem.
+
+**Citar alguém (@).** Ao digitar `@` aparece uma lista com os participantes (sem você), que vai filtrando conforme se digita; toque, Enter ou Tab escolhe. O nome citado fica em destaque para todos, e mais forte (com uma barra rosa na mensagem) para quem foi citado. Só valem nomes de quem está no grupo; e-mails (`a@b.com`) e nomes de fora ficam como texto. **Aviso:** só a linha de quem foi citado leva a marca `citado` (`messages.citado`), e só ela dispara o push, se a pessoa estiver fora do site (com o Lacre aberto na tela nada aparece). **Mudança:** mensagem comum de grupo **não avisa mais** por push (antes avisava todo mundo); conversa a dois continua avisando. O servidor não vê o texto, mas fica sabendo **quem foi citado** (a marca é uma coluna): é o preço de o aviso funcionar com o site fechado. O texto do aviso é o mesmo de sempre ("Você tem uma nova mensagem").
 
 **Regras (todas conferidas no banco, por funções `SECURITY DEFINER`; as tabelas `grupos` e `grupo_membros` não são legíveis nem graváveis direto):**
 - quem cria é admin; só admin adiciona, remove e muda o nome; qualquer um sai;

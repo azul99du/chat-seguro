@@ -86,7 +86,7 @@ describe("avisos push (supabase/schema.sql)", () => {
   });
   test("o cliente não escreve 'notificada' e o gatilho só dispara para mensagens que querem aviso", () => {
     const ultimo = [...sql.matchAll(/grant insert \(([^)]*)\) on public\.messages to authenticated/g)].pop()[1];
-    assert.equal(ultimo, "recipient_id, ciphertext, iv, v, header, avisar, grupo_id", "o cliente só escolhe destinatário, conteúdo cifrado, aviso e grupo"); assert.match(sql, /when \(new\.avisar\)/);
+    assert.equal(ultimo, "recipient_id, ciphertext, iv, v, header, avisar, grupo_id, citado", "o cliente só escolhe destinatário, conteúdo cifrado, aviso, grupo e quem foi citado"); assert.match(sql, /when \(new\.avisar\)/);
   });
 });
 
@@ -170,10 +170,12 @@ describe("grupos (supabase/schema.sql)", () => {
     assert.match(f, /gm\.user_id = \(select auth\.uid\(\)\)/); assert.match(f, /gm\.user_id = p_dest/);
   });
   test("criar, adicionar, remover e renomear: limite de uso, só admin muda, só entra quem já conversou com quem adiciona", () => {
-    const f = (n) => sql.match(new RegExp(`create or replace function public\\.${n}\\([\\s\\S]*?\\$\\$;`))[0];
+    const f = (n) => [...sql.matchAll(new RegExp(`create or replace function public\\.${n}\\([\\s\\S]*?\\$\\$;`, "g"))].pop()[0]; // (a definição mais recente)
     for (const n of ["criar_grupo", "grupo_adicionar", "grupo_remover", "grupo_renomear"]) assert.match(f(n), /perform public\.consome\(/, n);
     for (const n of ["grupo_adicionar", "grupo_renomear"]) assert.match(f(n), /gm\.admin\) then raise exception 'so_admin'/, n);
-    assert.match(f("grupo_remover"), /p_user is distinct from u and not exists[\s\S]*gm\.admin/, "remover outra pessoa: só admin; sair: qualquer um");
+    const rem = f("grupo_remover"); assert.match(rem, /p_user is distinct from u and not coalesce\(eu\.admin or \(eu\.sub and not alvo\.admin and not alvo\.sub\), false\)/, "remover outra pessoa: admin qualquer um, sub-admin só membro comum; sair: qualquer um");
+    const cargo = f("grupo_cargo"); assert.match(cargo, /gm\.admin\) then raise exception 'so_admin'/, "só o admin dá cargo (sub-admin não dá)"); assert.match(cargo, /and not gm\.admin;/, "e nunca muda o cargo de um admin"); assert.match(f("grupo_foto"), /gm\.admin\) then raise exception 'so_admin'/, "só o admin muda a foto");
+    assert.match(f("grupo_foto"), /p_grupo::text \|\| '\/\[0-9a-f-\]\{36\}\$'/, "a foto tem de estar na pasta do grupo");
     for (const n of ["criar_grupo", "grupo_adicionar"]) assert.match(f(n), /not public\.ja_conversou\(/, n);
     assert.match(f("ja_conversou"), /m\.sender_id = \(select auth\.uid\(\)\) and m\.recipient_id = p_outro[\s\S]*m\.sender_id = p_outro and m\.recipient_id = \(select auth\.uid\(\)\)/, "os dois lados já escreveram");
     assert.match(f("meus_grupos"), /public\.mfa_ok\(\)/);
@@ -182,4 +184,13 @@ describe("grupos (supabase/schema.sql)", () => {
     const ultima = [...sql.matchAll(/create policy "le midia das suas conversas"[\s\S]*?;/g)].pop()[0];
     assert.match(ultima, /public\.membro_de\(\(storage\.foldername\(name\)\)\[2\]\)/);
   });
+});
+
+describe("citação e aviso de grupo (supabase/schema.sql)", () => {
+  const sql = ler("supabase/schema.sql");
+  test("só mensagem de grupo pode ter a marca de citado, e só ela (citada) dispara o push em grupo; conversa a dois continua avisando", () => {
+    assert.match(sql, /check \(not citado or grupo_id is not null\)/);
+    const gatilho = [...sql.matchAll(/create trigger notifica_mensagem[^;]*;/g)].pop()[0]; assert.match(gatilho, /when \(new\.avisar and \(new\.grupo_id is null or new\.citado\)\)/);
+  });
+  test("um admin nunca é sub-admin ao mesmo tempo", () => assert.match(sql, /check \(not \(admin and sub\)\)/));
 });

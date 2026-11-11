@@ -1,17 +1,17 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=d8f86e84d5";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=d8f86e84d5";
-import { montarFigurinhas } from "./figurinhas.js?v=d8f86e84d5";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=d8f86e84d5";
-import { acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=d8f86e84d5";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=d8f86e84d5";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=d8f86e84d5";
-import { MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=d8f86e84d5";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=d8f86e84d5";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=d8f86e84d5";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=d8f86e84d5";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=d8f86e84d5";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=d8f86e84d5";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=770b6d7eaa";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=770b6d7eaa";
+import { montarFigurinhas } from "./figurinhas.js?v=770b6d7eaa";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=770b6d7eaa";
+import { acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=770b6d7eaa";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=770b6d7eaa";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=770b6d7eaa";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=770b6d7eaa";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=770b6d7eaa";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=770b6d7eaa";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=770b6d7eaa";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=770b6d7eaa";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=770b6d7eaa";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -614,10 +614,21 @@ async function fecharViewer() {
   d.close(); d.classList.remove("saindo"); anim.cancel(); fechandoViewer = false;
 }
 // grupo: quadrado de cantos redondos com a inicial do nome (pessoas são círculos)
+const fotoGrupoCache = new Map(); // caminho do arquivo -> blob: URL (o caminho muda a cada foto nova, então nunca fica velho)
+async function fotoDoGrupo(g) { // baixa o arquivo cifrado, abre com a chave do grupo e devolve uma URL local
+  const f = g.foto; if (!f || !g.gk) return null;
+  if (fotoGrupoCache.has(f.p)) return fotoGrupoCache.get(f.p);
+  let enc = await getBlob(me.id, f.p).catch(() => null);
+  if (!enc) { const { data, error } = await sb.storage.from("media").download(f.p); if (error) return null; enc = new Uint8Array(await data.arrayBuffer()); if (enc.byteLength > 400 * 1024) return null; putBlob(me.id, f.p, enc).catch(() => {}); }
+  let bytes; try { bytes = await abrirFotoCifrada(g.gk, g.id, enc, f.iv); } catch { delBlob(me.id, f.p).catch(() => {}); return null; }
+  const tipo = bytes[8] === 0x57 ? "image/webp" : "image/jpeg"; // (WebP começa com "RIFF....WEBP")
+  const url = URL.createObjectURL(new Blob([bytes], { type: tipo })); fotoGrupoCache.set(f.p, url); return url;
+}
 function pintarAvatarGrupo(node, g, abreDados = false) {
-  node.replaceChildren(); node.dataset.foto = ""; node.classList.add("grupo"); node.classList.remove("abre"); node.removeAttribute("title");
+  node.replaceChildren(); node.dataset.foto = g.foto?.p || ""; node.classList.add("grupo"); node.classList.remove("abre"); node.removeAttribute("title");
   node.textContent = [...(g.nome || "G")][0];
   if (node.tagName === "BUTTON") { node.disabled = !abreDados; node.onclick = abreDados ? () => abrirInfoGrupo(g) : null; }
+  if (g.foto) fotoDoGrupo(g).then((url) => { if (!url || node.dataset.foto !== g.foto?.p) return; const im = el("img"); im.alt = ""; im.src = url; im.draggable = false; node.replaceChildren(im); }).catch(() => {});
 }
 function svgIcone(caminhos, tam = 22) {
   const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg");
@@ -930,6 +941,11 @@ function mediaBlock(c, mine) {
   return box;
 }
 
+function pintaMencoes(vis, text) {
+  const pedacos = partirTexto(text, [...(active?.membros?.values() ?? [])]); if (!pedacos.some((x) => x.id)) return;
+  vis.replaceChildren(...pedacos.map((x) => { if (!x.id) return document.createTextNode(x.t); const sp = el("span", "mencao" + (x.id === me.id ? " eu" : ""), x.t); return sp; }));
+  if (pedacos.some((x) => x.id === me.id)) vis.closest(".bubble")?.classList.add("cita-eu");
+}
 function addMessage(m, content, { err = false, animate = false, em = null } = {}) {
   if (typeof content === "string") content = { type: "text", text: content };
   const apagada = content.type === "deleted";
@@ -970,7 +986,9 @@ function addMessage(m, content, { err = false, animate = false, em = null } = {}
   if (!err) gestosMensagem(wrap, line, b, m.id);
   if (em) em.replaceWith(wrap); else $("messages").append(wrap);
   const e = { m, mine, rcpt, rx, wrap, content: err ? null : content }; msgs.set(m.id, e); if (!apagada) setReceipt(e);
-  if (animate && !err && text) { b.classList.add("deciphering"); reveal(vis, text, () => b.classList.remove("deciphering")); }
+  if (emGrupo && !err && !apagada && text) { // em grupo: "@nome" de quem está no grupo fica em destaque (o seu, mais forte)
+    if (animate) { b.classList.add("deciphering"); reveal(vis, text, () => { b.classList.remove("deciphering"); pintaMencoes(vis, text); }); } else pintaMencoes(vis, text);
+  } else if (animate && !err && text) { b.classList.add("deciphering"); reveal(vis, text, () => b.classList.remove("deciphering")); }
   if (!em) $("messages").scrollTop = 1e9; // trocar uma mensagem por "Mensagem apagada" não pode puxar a tela para o fim
   return e;
 }
@@ -1306,14 +1324,14 @@ async function sendContent(peer, content) {
   });
 }
 // Cifra o MESMO conteúdo separadamente para cada pessoa (cada uma pela sua sessão, com sigilo futuro) e grava tudo num pedido só: ou chega para todos, ou para ninguém.
-async function enviarVarios(pessoas, content, { grupoId = null, avisar = true } = {}) {
+async function enviarVarios(pessoas, content, { grupoId = null, avisar = true, citados = null } = {}) {
   for (const p of pessoas) if ((await pinStatus(p)) === "changed") throw Object.assign(new Error("chave mudou"), { code: "PIN", peer: p });
   const texto = toBytes(JSON.stringify(content));
   const linhas = await Promise.all(pessoas.map((p) => withLock(lockName(p), async () => {
     let st; try { st = await sendSession(p); } catch (e) { throw Object.assign(e, { peer: p }); }
     const r = await ratchetEncrypt(st, me.id, p.id, texto);
     await commit(me.id, p.id, { session: r.state, active: r.state.sid }); // grava ANTES de enviar: uma chave nunca é usada duas vezes
-    return { recipient_id: p.id, ciphertext: r.ciphertext, iv: r.iv, v: 2, header: r.header, avisar, grupo_id: grupoId };
+    return { recipient_id: p.id, ciphertext: r.ciphertext, iv: r.iv, v: 2, header: r.header, avisar, grupo_id: grupoId, citado: !!citados?.has(p.id) }; // (citado: só a linha de quem foi citado leva a marca, e só ela dá o aviso de push; sempre vai true ou false, senão um pedido em lote manda "nulo" nas outras linhas)
   })));
   const { data, error } = await sb.from("messages").insert(linhas).select("id,created_at,recipient_id");
   if (error) throw error;
@@ -1323,7 +1341,9 @@ async function enviarVarios(pessoas, content, { grupoId = null, avisar = true } 
 const enviarAoGrupo = (g, content) => withLock(`lacre:g:${me.id}:${g.id}`, () => enviarAoGrupoJa(g, content)); // um envio por vez em cada grupo: as mensagens chegam na ordem em que foram escritas
 async function enviarAoGrupoJa(g, content) {
   content.g = g.id; if (content.type === "text" || content.type === "media") content.mid = randomHex(16);
-  const outros = () => [...g.membros.values()].filter((p) => p.id !== me.id), opts = { grupoId: g.id, avisar: content.type !== "delete" };
+  const outros = () => [...g.membros.values()].filter((p) => p.id !== me.id);
+  const texto = content.type === "text" ? content.text : content.type === "media" ? content.caption : "";
+  const opts = { grupoId: g.id, avisar: content.type !== "delete", citados: new Set(mencionados(String(texto ?? ""), [...g.membros.values()].filter((p) => p.id !== me.id))) };
   let linhas;
   if (!outros().length) throw Object.assign(new Error("grupo vazio"), { code: "SOZINHO" });
   try { linhas = await enviarVarios(outros(), content, opts); }
@@ -1385,7 +1405,7 @@ $("safety-btn").onclick = async () => {
 };
 async function open(peer) {
   if (peer.grupo) return abrirGrupo(peer);
-  bandeja(false);
+  bandeja(false); fecharMencoes();
   if (!(await checkPin(peer))) return;
   active = peer; unread.delete(peer.id); renderContacts(); updateStatus();
   pintarAvatar($("conv-av"), peer, true); $("conv-av").setAttribute("aria-label", "Ver foto de perfil"); atualizaFotoDe(peer).catch(() => {});
@@ -1423,7 +1443,7 @@ async function open(peer) {
   $("text").focus({ preventScroll: true });
   markRead();
 }
-$("back").onclick = () => { $("chat").classList.remove("in-conv"); active = null; renderContacts(); updateStatus(); };
+$("back").onclick = () => { fecharMencoes(); $("chat").classList.remove("in-conv"); active = null; renderContacts(); updateStatus(); };
 
 let carregandoConversa = null, filaChegando = []; // mensagens que chegam enquanto open() ainda carrega
 async function perfilDe(id) { // perfil de alguém que me escreveu (contato, participante de grupo, ou busca no servidor)
@@ -1492,6 +1512,7 @@ function sincronizar() {
 // Aviso no meio da conversa ("@ana entrou no grupo")
 function addAviso(texto) { if (!texto) return; const d = el("div", "aviso-linha"); d.append(el("span", null, texto)); $("messages").append(d); $("messages").scrollTop = 1e9; }
 function sairDaConversa(aviso) { // fecha a conversa aberta e volta para a tela inicial
+  fecharMencoes();
   $("chat").classList.remove("in-conv"); active = null; carregandoConversa = null; filaChegando = [];
   $("messages").replaceChildren(); msgs.clear(); reactions.clear(); midParaId.clear(); cancelarResposta(); clearPending(); setBg(null);
   $("conv-title").textContent = "Escolha um amigo"; $("conv-av").replaceChildren(); $("conv-av").disabled = true; $("conv-av").classList.remove("grupo");
@@ -1510,18 +1531,21 @@ async function chaveDoGrupo(n) {
 }
 // Este aparelho anota quem estava em cada grupo: se a lista mudar, aparece um aviso na conversa (ninguém entra num grupo sem os outros verem).
 async function anotarMudancas(g, n) {
-  const k = "g:" + g.id, agora = Object.fromEntries(n.membros.map((p) => [p.id, p.username])), avisos = [];
+  const k = "g:" + g.id, agora = Object.fromEntries(n.membros.map((p) => [p.id, p.username])), cargos = Object.fromEntries(n.membros.map((p) => [p.id, cargoDe(p)])), foto = g.foto?.p || null, avisos = [];
   let est = await metaGet(me.id, k).catch(() => null), t = Date.now();
   if (!est) { // primeira vez que este aparelho vê o grupo
     avisos.push(n.eu.por === me.id ? { tipo: "criou" } : { tipo: "adicionado", nome: n.membros.find((p) => p.id === n.eu.por)?.username || "alguém" });
-    est = { membros: agora, nome: g.semNome ? null : g.nome, avisos: [] }; t = Date.parse(n.eu.entrouEm) || t;
+    est = { membros: agora, nome: g.semNome ? null : g.nome, cargos, foto, avisos: [] }; t = Date.parse(n.eu.entrouEm) || t;
   } else {
     const d = diferencaMembros(est.membros || {}, agora, me.id);
     for (const p of d.entraram) avisos.push({ tipo: "entrou", id: p.id, nome: p.nome });
     for (const p of d.sairam) avisos.push({ tipo: "saiu", id: p.id, nome: p.nome });
     if (!g.semNome && est.nome && est.nome !== g.nome) avisos.push({ tipo: "nome", nome: g.nome });
-    if (!avisos.length && (g.semNome || est.nome === g.nome)) return;
-    est.membros = agora; if (!g.semNome) est.nome = g.nome;
+    if (est.cargos) for (const c of diferencaCargos(est.cargos, cargos)) avisos.push({ tipo: c.para === "sub" ? "sub" : c.para === "admin" ? "admin" : "semsub", id: c.id, nome: agora[c.id] });
+    if ("foto" in est && est.foto !== foto) avisos.push({ tipo: "foto", removida: !foto });
+    const igual = JSON.stringify(est.cargos) === JSON.stringify(cargos) && est.foto === foto;
+    if (!avisos.length && igual && (g.semNome || est.nome === g.nome)) return;
+    est.membros = agora; est.cargos = cargos; est.foto = foto; if (!g.semNome) est.nome = g.nome;
   }
   for (const a of avisos) a.t = t;
   est.avisos = [...(est.avisos || []), ...avisos].slice(-60);
@@ -1539,7 +1563,7 @@ function atualizarGrupos(fresco = false) {
       for (const n of montarGrupos(data, me.id)) {
         vistos.add(n.id);
         const g = grupos.get(n.id) || { id: n.id, grupo: true, nome: "Grupo", membros: new Map() };
-        g.membros = new Map(n.membros.map((p) => [p.id, p])); g.admin = n.eu.admin; g.entrouEm = n.eu.entrouEm;
+        g.membros = new Map(n.membros.map((p) => [p.id, p])); g.admin = n.eu.admin; g.sub = n.eu.sub; g.entrouEm = n.eu.entrouEm; g.foto = limpaFoto(n.foto, n.id);
         for (const p of n.membros) if (p.id !== me.id) perfis.set(p.id, p);
         g.gk = await chaveDoGrupo(n).catch(() => null);
         const nome = g.gk ? await abrirNome(g.gk, n.id, n.nomeCifrado).catch(() => null) : null;
@@ -1551,7 +1575,8 @@ function atualizarGrupos(fresco = false) {
         grupos.delete(id); unread.delete(id); chavesGrupo.delete(id);
         if (active === g) sairDaConversa(g.saindo ? "" : `Você não participa mais do grupo “${g.nome}”.`);
       }
-      if (active?.grupo) { $("conv-title").textContent = active.nome; pintarAvatarGrupo($("conv-av"), active, true); updateStatus(); }
+      for (const [id, g] of grupos) if (!g.pintado || g.pintado !== g.nome + "|" + (g.foto?.p || "")) { g.pintado = g.nome + "|" + (g.foto?.p || ""); if (active === g) pintarAvatarGrupo($("conv-av"), g, true); }
+      if (active?.grupo) { $("conv-title").textContent = active.nome; updateStatus(); }
       if ($("grupo-info").open) desenharInfoGrupo();
       renderContacts();
     } finally { carregandoGrupos = null; }
@@ -1565,7 +1590,7 @@ async function mostrarMeuLote(g, l) { // uma mensagem MINHA no grupo (no servido
   addMessage(m, "Enviada por você de outro navegador ou aparelho (como o computador). Para ver aqui: exporte o histórico de lá e importe aqui, em Segurança da conta.", { err: true });
 }
 async function abrirGrupo(g) {
-  bandeja(false);
+  bandeja(false); fecharMencoes();
   active = g; unread.delete(g.id); renderContacts(); updateStatus();
   pintarAvatarGrupo($("conv-av"), g, true); $("conv-av").setAttribute("aria-label", "Dados do grupo");
   $("chat").classList.add("in-conv");
@@ -1619,6 +1644,9 @@ const erroGrupo = (e) => { const m = e?.message || "", quem = (id) => "@" + (per
     : /grupos_demais/.test(m) ? "Você já está em 50 grupos. Saia de algum para criar outro."
     : /grupo_cheio|tamanho_do_grupo/.test(m) ? `Um grupo tem no máximo ${MAX_MEMBROS} pessoas.`
     : /so_admin/.test(m) ? "Só quem é admin do grupo pode fazer isso."
+    : /sem_permissao/.test(m) ? "Você não tem permissão para fazer isso neste grupo."
+    : /alvo_invalido/.test(m) ? "Não dá para dar esse cargo a essa pessoa."
+    : /foto_invalida/.test(m) ? "Não foi possível usar essa foto. Tente outra."
     : e?.code === "PIN" ? `A chave de @${e.peer?.username} mudou. Abra a conversa com essa pessoa e confira o código de segurança antes.`
     : limitado(e) ? "Muitas mudanças em pouco tempo. Espere um minuto e tente de novo."
     : "Não foi possível agora. Verifique a conexão e tente de novo."; };
@@ -1661,27 +1689,60 @@ const msgGrupo = (t, ok) => { const m = $("gi-msg"); m.textContent = t; m.classN
 function abrirInfoGrupo(g) { giGrupo = g; msgGrupo(""); desenharInfoGrupo(); $("grupo-info").showModal(); atualizarGrupos().catch(() => {}); }
 function desenharInfoGrupo() {
   const g = giGrupo && grupos.get(giGrupo.id); if (!g) { if ($("grupo-info").open) $("grupo-info").close(); return; }
+  const meu = cargoDe({ admin: g.admin, sub: g.sub });
   pintarAvatarGrupo($("gi-av"), g); $("gi-nome").textContent = g.nome; $("gi-sub").textContent = "Grupo · " + contagem(g.membros.size);
+  $("gi-foto-btn").hidden = !g.admin || !g.gk; $("gi-foto-rm").hidden = !g.admin || !g.foto;
   $("gi-renomear").hidden = !g.admin || !g.gk; $("gi-add").hidden = !g.admin || !g.gk || g.membros.size >= MAX_MEMBROS;
   $("gi-cont").textContent = `Participantes · ${g.membros.size} de ${MAX_MEMBROS}`;
-  const ordem = [...g.membros.values()].sort((a, b) => (b.id === me.id) - (a.id === me.id) || b.admin - a.admin || a.username.localeCompare(b.username));
+  const ordem = [...g.membros.values()].sort((a, b) => (b.id === me.id) - (a.id === me.id) || b.admin - a.admin || b.sub - a.sub || a.username.localeCompare(b.username));
   $("gi-lista").replaceChildren(...ordem.map((p) => {
-    const row = el("div", "linha info pessoa"), av = el("span", "avatar"), tx = el("span", "tx"), tit = el("span", "ap-tit"), eu = p.id === me.id;
+    const row = el("div", "linha info pessoa"), av = el("span", "avatar"), tx = el("span", "tx"), tit = el("span", "ap-tit"), eu = p.id === me.id, cargo = cargoDe(p);
     row.dataset.uid = p.id; pintarAvatar(av, p, true);
-    tit.append(el("b", null, "@" + p.username + (eu ? " (você)" : ""))); if (p.admin) tit.append(el("span", "selo-estado", "admin"));
+    tit.append(el("b", null, "@" + p.username + (eu ? " (você)" : ""))); if (cargo === "admin") tit.append(el("span", "selo-estado", "admin")); if (cargo === "sub") tit.append(el("span", "selo-estado sub", "sub-admin"));
     tx.append(tit); row.append(av, tx);
-    if (!eu) { // conversar a dois com essa pessoa
-      const c = el("button", "so-icone conversar"); c.type = "button"; c.setAttribute("aria-label", "Conversar com @" + p.username); c.append(svgIcone(["M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-5.4A8 8 0 1 1 21 12z"]));
-      c.onclick = () => { $("grupo-info").close(); if (!contacts.has(p.id)) contacts.set(p.id, { id: p.id, username: p.username, public_key: p.public_key, avatar: p.avatar }); tocaAtiv(p.id, Date.now()); open(contacts.get(p.id)); };
-      row.append(c);
-    }
-    if (!eu && g.admin) {
-      const x = el("button", "so-icone perigo remover"); x.type = "button"; x.setAttribute("aria-label", "Remover @" + p.username + " do grupo"); x.append(svgIcone(["M6 6l12 12M18 6L6 18"]));
-      x.onclick = () => removerDoGrupo(g, p); row.append(x);
-    }
+    const botao = (cls, rotulo, caminhos, fn) => { const b = el("button", "so-icone " + cls); b.type = "button"; b.setAttribute("aria-label", rotulo); b.title = rotulo; b.append(svgIcone(caminhos)); b.onclick = fn; row.append(b); };
+    if (!eu) botao("conversar", "Conversar com @" + p.username, ["M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-5.4A8 8 0 1 1 21 12z"], () => { $("grupo-info").close(); if (!contacts.has(p.id)) contacts.set(p.id, { id: p.id, username: p.username, public_key: p.public_key, avatar: p.avatar }); tocaAtiv(p.id, Date.now()); open(contacts.get(p.id)); });
+    if (!eu && podeDarCargo(meu, cargo)) botao("cargo", cargo === "sub" ? "Tirar o cargo de sub-admin de @" + p.username : "Tornar @" + p.username + " sub-admin",
+      cargo === "sub" ? ["M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z", "M9 9l6 6M15 9l-6 6"] : ["M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z", "M9 12l2 2 4-4"], () => mudarCargo(g, p, cargo !== "sub"));
+    if (!eu && podeRemover(meu, cargo)) botao("perigo remover", "Remover @" + p.username + " do grupo", ["M6 6l12 12M18 6L6 18"], () => removerDoGrupo(g, p));
     return row;
   }));
 }
+async function mudarCargo(g, p, sub) {
+  msgGrupo("");
+  const { error } = await sb.rpc("grupo_cargo", { p_grupo: g.id, p_user: p.id, p_sub: sub });
+  if (error) { msgGrupo(erroGrupo(error)); atualizarGrupos(true).catch(() => {}); return; }
+  await atualizarGrupos(true); avisarMudanca([...g.membros.values()]);
+  msgGrupo(sub ? `@${p.username} agora é sub-admin: pode remover membros.` : `@${p.username} deixou de ser sub-admin.`, true);
+}
+// ----- foto do grupo (só o admin): recortada no centro, cifrada com a chave do grupo e enviada UMA vez -----
+async function trocarFotoGrupo(g, blob) {
+  const { data, iv } = await cifrarFoto(g.gk, g.id, new Uint8Array(await blob.arrayBuffer()));
+  const path = `${me.id}/${g.id}/${crypto.randomUUID()}`, velho = g.foto?.p;
+  const up = await sb.storage.from("media").upload(path, new Blob([data], { type: "application/octet-stream" }), { contentType: "application/octet-stream" }); if (up.error) throw up.error;
+  const { error } = await sb.rpc("grupo_foto", { p_grupo: g.id, p_foto: { p: path, iv } });
+  if (error) { sb.storage.from("media").remove([path]).catch(() => {}); throw error; }
+  if (velho?.startsWith(me.id + "/")) sb.storage.from("media").remove([velho]).catch(() => {}); // (a foto antiga sai do servidor, se fui eu que a enviei)
+}
+$("gi-foto-btn").onclick = () => $("gi-file").click();
+$("gi-file").onchange = async () => {
+  const f = $("gi-file").files[0]; $("gi-file").value = ""; const g = giGrupo && grupos.get(giGrupo.id); if (!f || !g?.gk || !g.admin) return;
+  if (!TIPOS_ENTRADA.test(f.type)) return msgGrupo("Escolha uma imagem (JPG, PNG ou WebP).");
+  if (f.size > 20 * 1048576) return msgGrupo("Essa foto é grande demais (máximo 20 MB).");
+  msgGrupo("Enviando a foto…", true);
+  try {
+    const bmp = await createImageBitmap(f), cv = el("canvas"); cv.width = cv.height = LADO; desenhar(cv.getContext("2d"), bmp, bmp.width, bmp.height, 1, 0.5, 0.5, LADO);
+    const blob = await codificar(cv); if (!blob) throw new Error("grande");
+    await trocarFotoGrupo(g, blob); await atualizarGrupos(true); avisarMudanca([...g.membros.values()]); msgGrupo("Foto do grupo atualizada ✓", true);
+  } catch (e) { msgGrupo(limitado(e) ? "Muitas tentativas seguidas. Espere um minuto." : /so_admin/.test(e?.message || "") ? erroGrupo(e) : "Não foi possível trocar a foto. Tente de novo."); }
+};
+$("gi-foto-rm").onclick = async () => {
+  const g = giGrupo && grupos.get(giGrupo.id); if (!g?.admin || !g.foto) return;
+  const velho = g.foto.p, { error } = await sb.rpc("grupo_foto", { p_grupo: g.id, p_foto: null });
+  if (error) return msgGrupo(erroGrupo(error));
+  if (velho.startsWith(me.id + "/")) sb.storage.from("media").remove([velho]).catch(() => {});
+  await atualizarGrupos(true); avisarMudanca([...g.membros.values()]); msgGrupo("Foto removida.", true);
+};
 $("grupo-btn").onclick = () => { if (active?.grupo) abrirInfoGrupo(active); };
 $("gi-add").onclick = () => { const g = giGrupo && grupos.get(giGrupo.id); if (g) abrirSeletor({ tipo: "add", g }); };
 $("gi-renomear").onclick = async () => {
@@ -1835,6 +1896,47 @@ const limparTexto = () => { $("text").replaceChildren(); atualizaBotao(); };
   for (const ev of ["pointerdown", "mousedown"]) enviar.addEventListener(ev, (e) => e.preventDefault());
 }
 $("pending-x").onclick = () => clearPending();
+// ----- citar alguém do grupo: ao digitar "@" aparece a lista de participantes; vai filtrando conforme se digita -----
+let mencSel = 0, mencItens = [];
+function tokenAtual() { // o "@..." logo antes do cursor, dentro do campo de mensagem
+  const sel = getSelection(); if (!sel?.isCollapsed || sel.anchorNode?.nodeType !== 3 || !$("text").contains(sel.anchorNode)) return null;
+  const tk = tokenMencao(sel.anchorNode.data.slice(0, sel.anchorOffset)); return tk && { ...tk, no: sel.anchorNode, fim: sel.anchorOffset };
+}
+function fecharMencoes() { $("mencoes").hidden = true; mencItens = []; $("text").removeAttribute("aria-activedescendant"); }
+function inserirMencao(nome) {
+  const tk = tokenAtual(); if (!tk) return fecharMencoes();
+  const r = document.createRange(); r.setStart(tk.no, tk.inicio); r.setEnd(tk.no, tk.fim); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+  document.execCommand("insertText", false, "@" + nome + " "); fecharMencoes(); $("text").focus();
+}
+function desenharMencoes() {
+  const caixa = $("mencoes");
+  caixa.replaceChildren(...mencItens.map((p, i) => {
+    const b = el("button", "opcao" + (i === mencSel ? " sel" : "")), av = el("span", "avatar peq"); b.type = "button"; b.id = "menc-" + i; b.setAttribute("role", "option"); b.setAttribute("aria-selected", String(i === mencSel)); b.tabIndex = -1;
+    pintarAvatar(av, p); b.append(av, el("b", null, "@" + p.username));
+    for (const ev of ["pointerdown", "mousedown"]) b.addEventListener(ev, (e) => e.preventDefault()); // não tira o foco do campo (o teclado do celular não some)
+    b.onclick = () => inserirMencao(p.username); return b;
+  }));
+  $("text").setAttribute("aria-activedescendant", "menc-" + mencSel);
+}
+function atualizarMencoes() {
+  const g = active?.grupo ? active : null, tk = g && tokenAtual();
+  if (!tk) return fecharMencoes();
+  const itens = sugerirMembros([...g.membros.values()], tk.prefixo, me.id); if (!itens.length) return fecharMencoes();
+  if (itens.map((p) => p.id).join() !== mencItens.map((p) => p.id).join()) mencSel = 0;
+  mencItens = itens; desenharMencoes();
+  const caixa = $("mencoes"); caixa.hidden = false; caixa.style.setProperty("--base", Math.max(0, innerHeight - $("send-form").getBoundingClientRect().top + 6) + "px"); // fica logo acima da barra de mensagem
+}
+{
+  const t = $("text");
+  t.addEventListener("input", atualizarMencoes); t.addEventListener("click", atualizarMencoes); t.addEventListener("blur", () => setTimeout(fecharMencoes, 120));
+  t.addEventListener("keydown", (e) => { // (em fase de captura, antes do Enter que envia a mensagem)
+    if ($("mencoes").hidden || !mencItens.length) return;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); e.stopImmediatePropagation(); mencSel = (mencSel + (e.key === "ArrowDown" ? 1 : -1) + mencItens.length) % mencItens.length; desenharMencoes(); }
+    else if ((e.key === "Enter" || e.key === "Tab") && !e.isComposing) { e.preventDefault(); e.stopImmediatePropagation(); inserirMencao(mencItens[mencSel].username); }
+    else if (e.key === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); fecharMencoes(); }
+  }, true);
+  t.addEventListener("beforeinput", (e) => { if (!$("mencoes").hidden && (e.inputType === "insertParagraph" || e.inputType === "insertLineBreak")) e.stopImmediatePropagation(); }, true);
+}
 // Bandeja do "+" (foto/vídeo e figurinha) e botão que alterna entre microfone e enviar
 const bandeja = (abrir) => { $("tray").classList.toggle("on", abrir); $("mais").setAttribute("aria-expanded", String(abrir)); for (const b of $("tray").querySelectorAll("button")) b.tabIndex = abrir ? 0 : -1; };
 $("mais").onclick = () => bandeja(!$("tray").classList.contains("on"));
@@ -2058,6 +2160,7 @@ $("send-form").onsubmit = async (e) => {
     if (active === peer) { $("msgs-empty")?.remove(); addMessage(row, content); }
     btn.classList.add("voou"); setTimeout(() => btn.classList.remove("voou"), 650);
   } catch (e) {
+    console.warn("envio:", e?.code, e?.message || e);
     if (pending) showPending($("pending-name").textContent, "Falhou. Toque em Enviar para tentar de novo.");
     if (!lerTexto()) { $("text").textContent = text; atualizaBotao(); } // devolve o que a pessoa tinha digitado
     if (resp && !replyTo) { replyTo = resp; mostrarResposta(); }

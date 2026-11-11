@@ -108,3 +108,72 @@ describe("participantes", () => {
     assert.equal(corDoAutor(ANA), corDoAutor(ANA)); for (const id of [EU, ANA, BETO, G, G2]) { const c = corDoAutor(id); assert.ok(Number.isInteger(c) && c >= 0 && c < 6); }
   });
 });
+
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, cifrarFoto, abrirFoto, caminhoFotoOk, limpaFoto, partirTexto, mencionados, tokenMencao, sugerirMembros } from "../grupo.js";
+describe("cargos", () => {
+  test("admin > sub-admin > membro; o admin conta mesmo que a marca de sub venha junto", () => {
+    assert.equal(cargoDe({ admin: true }), "admin"); assert.equal(cargoDe({ sub: true }), "sub"); assert.equal(cargoDe({}), "membro"); assert.equal(cargoDe(undefined), "membro"); assert.equal(cargoDe({ admin: true, sub: true }), "admin");
+  });
+  test("quem pode expulsar: admin qualquer um; sub-admin só membro comum; membro ninguém", () => {
+    for (const alvo of ["admin", "sub", "membro"]) assert.ok(podeRemover("admin", alvo), "admin x " + alvo);
+    assert.ok(podeRemover("sub", "membro")); assert.ok(!podeRemover("sub", "sub")); assert.ok(!podeRemover("sub", "admin"));
+    for (const alvo of ["admin", "sub", "membro"]) assert.ok(!podeRemover("membro", alvo), "membro x " + alvo);
+  });
+  test("quem pode dar cargo: só o admin, e nunca a outro admin; sub-admin e membro nunca", () => {
+    assert.ok(podeDarCargo("admin", "membro")); assert.ok(podeDarCargo("admin", "sub")); assert.ok(!podeDarCargo("admin", "admin"));
+    for (const meu of ["sub", "membro"]) for (const alvo of ["admin", "sub", "membro"]) assert.ok(!podeDarCargo(meu, alvo), meu + " x " + alvo);
+  });
+  test("mudança de cargo: só de quem está nos dois lados", () => {
+    assert.deepEqual(diferencaCargos({ [ANA]: "membro", [BETO]: "sub" }, { [ANA]: "sub", [BETO]: "sub", [EU]: "admin" }), [{ id: ANA, de: "membro", para: "sub" }]);
+    assert.deepEqual(diferencaCargos({ [ANA]: "sub" }, { [ANA]: "admin" }), [{ id: ANA, de: "sub", para: "admin" }]); assert.deepEqual(diferencaCargos({}, {}), []);
+  });
+  test("avisos de cargo e de foto", () => {
+    assert.equal(textoAviso({ tipo: "sub", nome: "ana" }), "@ana agora é sub-admin"); assert.equal(textoAviso({ tipo: "semsub", nome: "ana" }), "@ana deixou de ser sub-admin"); assert.equal(textoAviso({ tipo: "admin", nome: "ana" }), "@ana agora é admin");
+    assert.equal(textoAviso({ tipo: "foto" }), "A foto do grupo foi alterada"); assert.equal(textoAviso({ tipo: "foto", removida: true }), "A foto do grupo foi removida");
+  });
+  test("montarGrupos traz o cargo de sub-admin e a foto", () => {
+    const l = (u, nome, x = {}) => ({ grupo_id: G, nome: { c: "x", iv: "y" }, criado_em: "2026-11-10T00:00:00Z", user_id: u, username: nome, public_key: {}, avatar: null, admin: false, sub: false, entrou_em: "2026-11-10T00:00:00Z", chave: null, por: null, por_chave: null, foto: { p: "x", iv: "y" }, ...x });
+    const [g] = montarGrupos([l(EU, "eu", { sub: true, chave: { ciphertext: "c" }, por: ANA }), l(ANA, "ana", { admin: true })], EU);
+    assert.equal(g.eu.sub, true); assert.equal(g.eu.admin, false); assert.deepEqual(g.membros.map((p) => [p.username, p.admin, p.sub]), [["eu", false, true], ["ana", true, false]]); assert.deepEqual(g.foto, { p: "x", iv: "y" });
+  });
+});
+
+describe("foto do grupo", () => {
+  const FP = `${EU}/${G}/${ANA}`;
+  test("cifra e abre; o arquivo cifrado não deixa ver a imagem; só abre com a chave e o grupo certos", async () => {
+    const gk = novaChave(), img = new Uint8Array([...Buffer.from("RIFFxxxxWEBPimagem-secreta")]);
+    const c = await cifrarFoto(gk, G, img); assert.ok(!Buffer.from(c.data).includes("imagem-secreta")); assert.deepEqual(await abrirFoto(gk, G, c.data, c.iv), img);
+    await assert.rejects(abrirFoto(novaChave(), G, c.data, c.iv), "outra chave"); await assert.rejects(abrirFoto(gk, G2, c.data, c.iv), "foto de um grupo não serve em outro");
+    const mexido = c.data.slice(); mexido[3] ^= 1; await assert.rejects(abrirFoto(gk, G, mexido, c.iv), "adulterada");
+    await assert.rejects(cifrarFoto(gk, "nao-e-uuid", img));
+  });
+  test("o caminho tem de estar na pasta do grupo; o que vem do servidor é limpo", () => {
+    assert.ok(caminhoFotoOk(FP, G)); assert.ok(!caminhoFotoOk(FP, G2), "pasta de outro grupo"); for (const x of ["", "a/b/c", FP + "x", `${EU}/${G}/`, null, 5]) assert.ok(!caminhoFotoOk(x, G), String(x));
+    assert.deepEqual(limpaFoto({ p: FP, iv: "aXY=", lixo: 1 }, G), { p: FP, iv: "aXY=" });
+    for (const f of [null, "x", {}, { p: FP }, { p: FP, iv: 5 }, { p: FP, iv: "x".repeat(41) }, { p: "../../x", iv: "aXY=" }]) assert.equal(limpaFoto(f, G), null, JSON.stringify(f));
+  });
+});
+
+describe("citação (@nome)", () => {
+  const ms = [{ id: EU, username: "eu_mesmo" }, { id: ANA, username: "Ana_01" }, { id: BETO, username: "beto" }];
+  test("reconhece o nome de quem está no grupo, sem diferenciar maiúsculas; o resto fica como texto", () => {
+    assert.deepEqual(partirTexto("oi @ana_01, e @beto! @fulano?", ms), [{ t: "oi " }, { t: "@ana_01", id: ANA }, { t: ", e " }, { t: "@beto", id: BETO }, { t: "! @fulano?" }]);
+    assert.deepEqual(partirTexto("sem citar", ms), [{ t: "sem citar" }]); assert.deepEqual(partirTexto("", ms), []); assert.deepEqual(partirTexto(null, ms), []);
+    assert.deepEqual(partirTexto("@beto", ms), [{ t: "@beto", id: BETO }], "no começo do texto");
+  });
+  test("e-mail, nome grudado em letras e nome mais longo não contam", () => {
+    for (const t of ["beto@beto.com", "x@beto", "@betoo", "@bet", "@beto_", "@beto2"]) assert.deepEqual(mencionados(t, ms), [], t);
+    assert.deepEqual(mencionados("(@beto)", ms), [BETO]);
+  });
+  test("quem foi citado: sem repetir, na ordem do texto", () => { assert.deepEqual(mencionados("@beto @ana_01 @BETO", ms), [BETO, ANA]); assert.deepEqual(mencionados("nada", ms), []); });
+  test("o '@' que a pessoa está digitando agora", () => {
+    assert.deepEqual(tokenMencao("oi @"), { inicio: 3, prefixo: "" }); assert.deepEqual(tokenMencao("oi @be"), { inicio: 3, prefixo: "be" }); assert.deepEqual(tokenMencao("@"), { inicio: 0, prefixo: "" }); assert.deepEqual(tokenMencao("(@a"), { inicio: 1, prefixo: "a" });
+    for (const t of ["oi", "oi @beto ", "a@b", "oi @be-", "email@", ""]) assert.equal(tokenMencao(t), null, t);
+  });
+  test("lista de sugestões: eu não apareço, quem começa com o digitado vem primeiro, no máximo 6", () => {
+    assert.deepEqual(sugerirMembros(ms, "", EU).map((m) => m.username), ["Ana_01", "beto"]); assert.deepEqual(sugerirMembros(ms, "BE", EU).map((m) => m.username), ["beto"]);
+    assert.deepEqual(sugerirMembros(ms, "a", EU).map((m) => m.username), ["Ana_01"], "'beto' não tem a letra a"); assert.deepEqual(sugerirMembros(ms, "zzz", EU), []);
+    const muitos = Array.from({ length: 10 }, (_, i) => ({ id: "x" + i, username: "pessoa" + i })); assert.equal(sugerirMembros(muitos, "", EU).length, 6);
+    assert.deepEqual(sugerirMembros([{ id: "1", username: "xana" }, { id: "2", username: "ana" }], "an", EU).map((m) => m.username), ["ana", "xana"], "começar com vem antes de só conter");
+  });
+});
