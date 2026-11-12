@@ -759,3 +759,4 @@ button.sr-x{min-height:34px;padding:0;border-radius:10px}
 button.sr-add{min-height:40px;padding:0 10px}
 .sn-atalhos button{min-height:36px;padding:0 14px}
 button.sn-bt{padding:0}
+.sl-meu,.sl-lista,.sl-regras,.sl-editar,.sr-nota,.sr-card,.sr-previa,.sr-salvar{flex:none} /* (o corpo da página é uma coluna que rola: sem isto a lista encolhia em vez de rolar) */
