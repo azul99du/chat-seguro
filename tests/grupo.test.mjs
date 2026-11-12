@@ -129,6 +129,7 @@ describe("cargos", () => {
   });
   test("avisos de cargo e de foto", () => {
     assert.equal(textoAviso({ tipo: "sub", nome: "ana" }), "@ana agora é sub-admin"); assert.equal(textoAviso({ tipo: "semsub", nome: "ana" }), "@ana deixou de ser sub-admin"); assert.equal(textoAviso({ tipo: "admin", nome: "ana" }), "@ana agora é admin");
+    assert.equal(textoAviso({ tipo: "renomeou", de: "ana", nome: "ana2" }), "@ana agora é @ana2");
     assert.equal(textoAviso({ tipo: "foto" }), "A foto do grupo foi alterada"); assert.equal(textoAviso({ tipo: "foto", removida: true }), "A foto do grupo foi removida");
   });
   test("montarGrupos traz o cargo de sub-admin e a foto", () => {

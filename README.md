@@ -206,3 +206,11 @@ A suíte completa (unitários + ~250 testes de navegador, uns 12 minutos) roda *
 2. Se houve mudança de banco: aplicar no projeto de teste antes da etapa 1 e no banco real **depois** de o CI passar (banco primeiro, depois o código).
 3. `scripts/publicar.sh main`: leva o **mesmo commit** (mesmo hash) para a `main`. O script recusa se aquele hash não tem um CI completo e bem-sucedido em outra branch. Na `main`, o CI só confere isso e **pula os testes** (o hash identifica o conteúdo exato, então não há o que repetir). Um envio direto à `main` sem ter passado antes roda tudo normalmente.
 O CI continua só com permissão de leitura de conteúdo (mais `actions: read`, para conferir o hash). Sem mudança nos testes nem nas regras de segurança: só muda **onde e quando** eles rodam. O arquivo do ffmpeg deixou de rodar `apt-get update` antes de instalar quando não precisa (uns 15 s a menos por trabalho).
+
+## Trocar o nome de usuário
+Em **Perfil → Trocar nome de usuário**. Regras (todas conferidas no banco, na função `trocar_nome()`; o app só mostra as mensagens):
+- o nome novo segue o formato do cadastro (3 a 20 letras minúsculas sem acento, números ou `_`; maiúsculas e `@` são limpos);
+- **nunca um nome que já existe**, nem o nome antigo de outra pessoa que ainda esteja reservado (vale também para quem cria conta nova);
+- **uma troca a cada 30 dias**; o banco devolve a data em que libera e a tela mostra;
+- o **nome antigo fica reservado por 30 dias** (tabela `nomes_antigos`, que ninguém lê nem escreve direto): ninguém o pega para se passar pela pessoa, e ela mesma pode voltar a ele.
+A conversa não depende do nome (tudo é ligado ao id da conta), então mensagens, grupos, chaves e o código de segurança continuam. **Aviso aos contatos:** logo depois de trocar, o Lacre manda um toque cifrado (sem conteúdo) a cada contato e participante de grupo, que atualizam o nome na hora; quem estava com o Lacre fechado vê a troca ao abrir. Na conversa (a dois ou em grupo) aparece, no lugar certo da linha do tempo, "@antigo agora é @novo", e o aviso continua depois de recarregar. Citações antigas (`@antigo`) continuam como foram escritas, mas deixam de ficar em destaque (o destaque vale para os nomes de agora). `usuario.js` tem a validação e os prazos, com testes.

@@ -1,19 +1,20 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=7edbc21bc1";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=7edbc21bc1";
-import { montarFigurinhas } from "./figurinhas.js?v=7edbc21bc1";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=7edbc21bc1";
-import { acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=7edbc21bc1";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=7edbc21bc1";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=7edbc21bc1";
-import { acharVideoLink } from "./videolink.js?v=7edbc21bc1";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=7edbc21bc1";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=7edbc21bc1";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=7edbc21bc1";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=7edbc21bc1";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=7edbc21bc1";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=7edbc21bc1";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=7edbc21bc1";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=bfdb270dea";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=bfdb270dea";
+import { montarFigurinhas } from "./figurinhas.js?v=bfdb270dea";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=bfdb270dea";
+import { acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=bfdb270dea";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=bfdb270dea";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=bfdb270dea";
+import { acharVideoLink } from "./videolink.js?v=bfdb270dea";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=bfdb270dea";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=bfdb270dea";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=bfdb270dea";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=bfdb270dea";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=bfdb270dea";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=bfdb270dea";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=bfdb270dea";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=bfdb270dea";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -583,6 +584,33 @@ $("copiar-nome").onclick = async () => {
   const t = $("nome-aviso"); t.textContent = ok ? "Copiado ✓" : "Não deu para copiar: segure no nome"; t.hidden = false; $("nome-rot").hidden = true;
   clearTimeout(nomeTimer); nomeTimer = setTimeout(() => { t.hidden = true; $("nome-rot").hidden = false; }, 2200);
 };
+// ----- trocar o nome de usuário (o banco confere tudo: formato, nome já existente ou reservado, e o prazo entre trocas) -----
+const erroNome = (e) => { const m = e?.message || "";
+  if (/nome_em_uso/.test(m) || e?.code === "23505") return "Esse nome já existe (ou é o nome antigo de alguém e ainda está reservado). Escolha outro.";
+  if (/troca_cedo/.test(m)) { const d = dataLiberada(e.details); return d ? `Você já trocou o nome há pouco. Pode trocar de novo a partir de ${d.toLocaleDateString("pt-BR")}.` : "Você já trocou o nome há pouco. Tente de novo mais tarde."; }
+  if (/nome_invalido/.test(m)) return "Use de 3 a 20 letras minúsculas sem acento, números ou _."; if (/mesmo_nome/.test(m)) return "Esse já é o seu nome.";
+  return limitado(e) ? "Muitas tentativas seguidas. Espere um minuto." : "Não foi possível trocar agora. Tente de novo."; };
+async function nomeTrocado(novo) {
+  msgPerfil("Avisando seus contatos…", true); me.username = novo; try { localStorage.setItem("lacre:eu:" + me.id, "@" + novo); } catch {}
+  await atualizarGrupos(true).catch(() => {});
+  const gente = new Map(contacts); for (const g of grupos.values()) for (const p of g.membros.values()) gente.set(p.id, p); // avisa contatos e participantes de grupos: eles atualizam na hora
+  // (espera o envio terminar: se a pessoa recarregar a página logo depois da troca, o aviso não pode se perder pelo caminho)
+  await enviarVarios([...gente.values()].filter((p) => p.id !== me.id), { type: "hello", gr: 1, pf: 1 }, { avisar: false }).catch((e) => console.warn("aviso de troca de nome:", e?.code, e?.message || e));
+  for (const id of ["me", "nome-txt", "perfil-nome"]) $(id).textContent = "@" + novo; pintarMeu(); msgPerfil(`Pronto: você agora é @${novo}.`, true);
+}
+$("perfil-trocar").onclick = async () => {
+  msgPerfil("");
+  let dica = `Digite o novo nome (3 a 20 letras minúsculas sem acento, números ou _). Só dá para trocar uma vez a cada ${DIAS_TROCA} dias, e o nome antigo fica reservado por ${DIAS_TROCA} dias.`, novo;
+  for (;;) {
+    const v = await ask("Trocar nome de usuário", dica, { texto: true, valor: "@" + me.username, max: 21 }); if (v === null) return;
+    novo = limpaUsuario(v); if (!novo) { dica = "Use de 3 a 20 letras minúsculas sem acento, números ou _."; continue; }
+    if (novo === me.username) { dica = "Esse já é o seu nome. Digite outro."; continue; } break;
+  }
+  const r = await choose(`Trocar para @${novo}?`, `Seus contatos veem o aviso "@${me.username} agora é @${novo}". O nome @${me.username} fica reservado só para você por ${DIAS_TROCA} dias, e você só poderá trocar de novo depois desse prazo.`, [{ label: "Trocar o nome", value: "sim", cls: "primary" }, { label: "Cancelar", value: "", cls: "ghost" }]);
+  if (r !== "sim") return;
+  const { data, error } = await sb.rpc("trocar_nome", { p_novo: novo }); if (error) return msgPerfil(erroNome(error));
+  await nomeTrocado(data || novo);
+};
 $("perfil-copiar").onclick = async () => msgPerfil(await copiarTexto($("perfil-nome").textContent, $("perfil-nome")) ? "Nome copiado ✓" : "Não deu para copiar: segure no nome", true);
 
 // ---------- Foto de perfil ----------
@@ -666,8 +694,26 @@ async function abrirFoto(p, origem) {
   const url = await fotoUrl(p.avatar).catch(() => null); if (!url) return;
   abrirViewer(url, "Foto de perfil de @" + p.username, { perfil: true, origem });
 }
-async function atualizaFotoDe(peer) { // pega a foto mais nova de quem estou conversando
-  const { data } = await sb.from("profiles").select("avatar").eq("id", peer.id).maybeSingle();
+// ----- nomes de usuário que mudam -----
+function guardaNomes() { const o = {}; for (const [id, p] of contacts) o[id] = p.username; gravarLS("nomes", o); }
+async function aplicarNome(id, nome, de) { // um contato (ou participante de grupo) trocou o nome de usuário
+  const c = contacts.get(id) || perfis.get(id); if (!c || typeof nome !== "string") return;
+  const antes = de || c.username; c.username = nome; const o = perfis.get(id); if (o) o.username = nome;
+  if (antes === nome) return;
+  const k = "d:" + id, est = (await metaGet(me.id, k).catch(() => null)) || { avisos: [] };
+  est.avisos = [...(est.avisos || []), { tipo: "renomeou", de: antes, nome, t: Date.now() }].slice(-30); await metaPut(me.id, k, est).catch(() => {}); // (o aviso fica na conversa, no lugar certo, mesmo depois de recarregar)
+  renderContacts(); guardaNomes();
+  if (active?.id === id && !active.grupo) { $("conv-title").textContent = "@" + nome; $("msgs-empty")?.remove(); addAviso(textoAviso({ tipo: "renomeou", de: antes, nome })); }
+}
+async function atualizarPerfisContatos() { // alguém avisou que o perfil mudou: busca os nomes e fotos atuais
+  const ids = [...contacts.keys()]; if (!ids.length) return;
+  const { data } = await sb.from("profiles").select("id,username,avatar").in("id", ids);
+  for (const p of data || []) { const c = contacts.get(p.id); if (!c) continue; if (p.username !== c.username) await aplicarNome(p.id, p.username); if ((p.avatar || null) !== (c.avatar || null)) c.avatar = p.avatar; }
+  renderContacts(); guardaNomes();
+}
+async function atualizaFotoDe(peer) { // pega a foto (e o nome) mais nova de quem estou conversando
+  const { data } = await sb.from("profiles").select("avatar,username").eq("id", peer.id).maybeSingle();
+  if (data?.username && data.username !== peer.username) await aplicarNome(peer.id, data.username);
   if (data && (data.avatar || null) !== (peer.avatar || null)) { peer.avatar = data.avatar; renderContacts(); if (active === peer) pintarAvatar($("conv-av"), peer, true); }
 }
 const perfil = { img: null, w: 0, h: 0, zoom: 1, cx: 0.5, cy: 0.5, novo: false };
@@ -751,7 +797,9 @@ async function loadContacts() {
   const ids = [...new Set((data || []).flatMap((m) => [m.sender_id, m.recipient_id]))].filter((i) => i !== me.id);
   if (ids.length) {
     const { data: ps } = await sb.from("profiles").select("id,username,public_key,avatar").in("id", ids);
-    (ps || []).forEach((p) => { contacts.set(p.id, p); perfis.set(p.id, p); });
+    const vistos = lerLS("nomes") || {}; // nomes que cada contato tinha da última vez: se mudou, aparece o aviso "@antigo agora é @novo"
+    for (const p of ps || []) { const antigo = contacts.get(p.id)?.username ?? vistos[p.id]; contacts.set(p.id, p); perfis.set(p.id, p); if (antigo && antigo !== p.username) await aplicarNome(p.id, p.username, antigo); }
+    guardaNomes();
   }
   await atualizarGrupos().catch(() => {});
   renderContacts();
@@ -1488,7 +1536,9 @@ async function open(peer) {
   if (active !== peer) return;
   const linhas = (data || []).reverse();
   await loadLegacyReactions(linhas, peer);
-  for (const m of linhas) await show(m, peer, false);
+  const avisosDm = ((await metaGet(me.id, "d:" + peer.id).catch(() => null))?.avisos || []).slice(); // avisos como "@antigo agora é @novo", cada um no seu lugar da conversa
+  for (const m of linhas) { const t = Date.parse(m.created_at); while (avisosDm.length && avisosDm[0].t <= t) addAviso(textoAviso(avisosDm.shift())); await show(m, peer, false); }
+  for (const a of avisosDm) addAviso(textoAviso(a));
   [...msgs.keys()].forEach(renderRx);
   carregandoConversa = null; const fila = filaChegando; filaChegando = [];
   for (const m of fila) if (maisNovaQueATela(m)) await show(m, peer, false);
@@ -1530,7 +1580,7 @@ async function onIncoming(m, aoVivo = true) {
   if (m.v === 2) { // decifra já (para andar a cadeia de chaves), mesmo com a conversa fechada
     const c = await readRow(m, peer);
     if (c.type === "reaction") { if (active?.id === peer.id) applyReaction(c, m); return; }
-    if (c.type === "hello") { if (c.gr) atualizarGrupos(true).catch(() => {}); return; } // (gr: algo mudou num grupo em que estamos os dois)
+    if (c.type === "hello") { if (c.gr) atualizarGrupos(true).catch(() => {}); if (c.pf) atualizarPerfisContatos().catch(() => {}); return; } // (gr: algo mudou num grupo em que estamos os dois; pf: alguém mudou de nome ou foto)
     if (c.type === "delete") { await aplicarApagar(c, m); return; }
   }
   if (!contacts.has(peer.id)) contacts.set(peer.id, peer);
@@ -1605,6 +1655,7 @@ async function anotarMudancas(g, n) {
     const d = diferencaMembros(est.membros || {}, agora, me.id);
     for (const p of d.entraram) avisos.push({ tipo: "entrou", id: p.id, nome: p.nome });
     for (const p of d.sairam) avisos.push({ tipo: "saiu", id: p.id, nome: p.nome });
+    for (const [id, nome] of Object.entries(agora)) if (id !== me.id && id in (est.membros || {}) && est.membros[id] !== nome) avisos.push({ tipo: "renomeou", id, de: est.membros[id], nome }); // trocou de nome de usuário
     if (!g.semNome && est.nome && est.nome !== g.nome) avisos.push({ tipo: "nome", nome: g.nome });
     if (est.cargos) for (const c of diferencaCargos(est.cargos, cargos)) avisos.push({ tipo: c.para === "sub" ? "sub" : c.para === "admin" ? "admin" : "semsub", id: c.id, nome: agora[c.id] });
     if ("foto" in est && est.foto !== foto) avisos.push({ tipo: "foto", removida: !foto });

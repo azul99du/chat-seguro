@@ -104,7 +104,8 @@ export function textoAviso(a) {
   return a.tipo === "criou" ? "Você criou o grupo" : a.tipo === "adicionado" ? `${n} adicionou você ao grupo` : a.tipo === "entrou" ? `${n} entrou no grupo`
     : a.tipo === "saiu" ? `${n} saiu do grupo` : a.tipo === "nome" ? `O grupo agora se chama “${a.nome}”`
     : a.tipo === "sub" ? `${n} agora é sub-admin` : a.tipo === "semsub" ? `${n} deixou de ser sub-admin` : a.tipo === "admin" ? `${n} agora é admin`
-    : a.tipo === "foto" ? (a.removida ? "A foto do grupo foi removida" : "A foto do grupo foi alterada") : "";
+    : a.tipo === "foto" ? (a.removida ? "A foto do grupo foi removida" : "A foto do grupo foi alterada")
+    : a.tipo === "renomeou" ? `@${a.de || "alguém"} agora é @${a.nome || "alguém"}` : "";
 }
 
 // ---------- Cargos ----------

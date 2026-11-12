@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const raiz = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const ler = (f) => readFileSync(join(raiz, f), "utf8");
-const APP = ["guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "recorte.js", "recorte-config.js", "sam2.js", "figurinhas.js", "avatar.js", "historico.js", "video.js", "aparelhos.js", "grupo.js", "videolink.js", "lista.js", "sw.js", "supabase/functions/notificar/vapid.js"];
+const APP = ["guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "recorte.js", "recorte-config.js", "sam2.js", "figurinhas.js", "avatar.js", "historico.js", "video.js", "aparelhos.js", "grupo.js", "videolink.js", "lista.js", "usuario.js", "sw.js", "supabase/functions/notificar/vapid.js"];
 const rastreados = execFileSync("git", ["ls-files"], { cwd: raiz, encoding: "utf8" }).split("\n").filter(Boolean);
 
 describe("código", () => {
@@ -222,4 +222,17 @@ describe("fluxo de publicação (CI em duas etapas)", () => {
     assert.match(sh, /ci_passou\)" -gt 0/); assert.match(sh, /refs\/heads\/main"/); assert.doesNotMatch(sh, /--force[^\n]*main|\+\$sha:refs\/heads\/main/, "sem push forçado na main");
     assert.match(sh, /--force origin "\$sha:refs\/heads\/ci\/teste"/, "só a branch de teste é forçada"); assert.match(sh, /versionar\.mjs --check/);
   });
+});
+
+describe("trocar nome de usuário (supabase/schema.sql)", () => {
+  const sql = ler("supabase/schema.sql"), f = [...sql.matchAll(/create or replace function public\.trocar_nome\([\s\S]*?\$\$;/g)].pop()[0];
+  test("a função confere formato, nome existente, nome reservado de outra pessoa e o prazo de 30 dias; exige o 2º passo e usa limite de uso", () => {
+    assert.match(f, /perform public\.consome\('trocar_nome'/); assert.match(f, /\^\[a-z0-9_\]\{3,20\}\$/); assert.match(f, /exists \(select 1 from public\.profiles p where p\.username = novo\)/);
+    assert.match(f, /n\.username = novo and n\.user_id <> u and n\.trocado_em > now\(\) - interval '30 days'/); assert.match(f, /ultimo > now\(\) - interval '30 days'/); assert.match(f, /errcode = '23505'/);
+  });
+  test("a lista de nomes antigos não é legível nem gravável direto, e o cadastro também respeita os nomes reservados", () => {
+    assert.match(sql, /alter table public\.nomes_antigos enable row level security/); assert.match(sql, /revoke all on public\.nomes_antigos from anon, authenticated/); assert.doesNotMatch(sql, /grant [^;]* on public\.nomes_antigos to authenticated/);
+    assert.match(sql, /create trigger profiles_nome_reservado before insert on public\.profiles/); assert.match(sql, /grant execute on function public\.trocar_nome\(text\) to authenticated/);
+  });
+  test("o prazo do banco (30 dias) é o mesmo do app", async () => { const { DIAS_TROCA } = await import("../usuario.js"); assert.equal(DIAS_TROCA, 30); assert.equal((sql.match(/interval '30 days'/g) || []).length >= 4, true); });
 });

@@ -311,3 +311,34 @@ t("citado: só vale em mensagem de grupo; o aviso (push) de grupo só sai para q
   assert.ok((await b.c.from("messages").update({ citado: true }).eq("id", mid)).error, "o destinatário não mexe na marca");
   assert.ifError((await a.c.rpc("grupo_remover", { p_grupo: g, p_user: b.id })).error); assert.ifError((await a.c.rpc("grupo_remover", { p_grupo: g, p_user: a.id })).error);
 });
+
+// ---------- trocar o nome de usuário ----------
+const nomeDe = async (cli, id) => (await cli.c.from("profiles").select("username").eq("id", id).single()).data?.username;
+t("trocar nome: só logado; formato do cadastro; nunca um nome que já existe (nem com maiúsculas); nunca o mesmo nome", async () => {
+  const n = await usuario("n"), outro = await usuario("o"), alvo = await nomeDe(outro, outro.id);
+  assert.ok((await anon.rpc("trocar_nome", { p_novo: "nome_novo_x" })).error, "sem login");
+  for (const ruim of ["ab", "", "   ", "a".repeat(21), "joão", "ana maria", "ana-maria", "@ana", "a;drop", "ａｎａ", "x".repeat(300)]) assert.match((await n.c.rpc("trocar_nome", { p_novo: ruim })).error?.message || "", /nome_invalido/, JSON.stringify(ruim));
+  assert.match((await n.c.rpc("trocar_nome", { p_novo: alvo })).error?.message || "", /nome_em_uso/, "nome de outra pessoa"); assert.equal((await n.c.rpc("trocar_nome", { p_novo: alvo.toUpperCase() })).error?.code, "23505", "maiúsculas não furam");
+  assert.match((await n.c.rpc("trocar_nome", { p_novo: "  " + alvo + " " })).error?.message || "", /nome_em_uso/, "espaços não furam");
+  assert.match((await n.c.rpc("trocar_nome", { p_novo: await nomeDe(n, n.id) })).error?.message || "", /mesmo_nome/);
+  assert.equal(await nomeDe(n, n.id) !== alvo, true, "nada mudou");
+});
+t("trocar nome: troca de verdade, reserva o nome antigo por 30 dias (ninguém o pega, nem por cadastro novo) e só deixa trocar de novo depois do prazo", async () => {
+  const n = await usuario("p2"), x2 = await usuario("q2"), antigo = await nomeDe(n, n.id), novo = "nn" + hex().slice(0, 12);
+  const r = await n.c.rpc("trocar_nome", { p_novo: novo.toUpperCase() }); assert.ifError(r.error); assert.equal(r.data, novo, "devolve o nome já limpo (minúsculas)"); assert.equal(await nomeDe(n, n.id), novo);
+  assert.equal((await x2.c.rpc("find_user", { p_username: novo })).data.length, 1, "o nome novo já é achado"); assert.equal((await x2.c.rpc("find_user", { p_username: antigo })).data.length, 0, "o antigo não acha mais ninguém");
+  assert.match((await x2.c.rpc("trocar_nome", { p_novo: antigo })).error?.message || "", /nome_em_uso/, "outra pessoa não pega o nome antigo (reservado)");
+  const c3 = mk(), { data } = await c3.auth.signUp({ email: novoEmail(), password: SENHA }); assert.ok(data.session);
+  const ins = await c3.from("profiles").insert({ id: data.user.id, username: antigo, public_key: pk("z") }); assert.equal(ins.error?.code, "23505", "cadastro novo também não pega o nome reservado");
+  const cedo = await n.c.rpc("trocar_nome", { p_novo: "outro" + hex().slice(0, 10) }); assert.match(cedo.error?.message || "", /troca_cedo/, "segunda troca logo em seguida"); const quando = Number(cedo.error.details) * 1000;
+  assert.ok(quando > Date.now() + 29 * 864e5 && quando < Date.now() + 31 * 864e5, "o banco diz quando libera: daqui a ~30 dias");
+  assert.equal(await nomeDe(n, n.id), novo, "continua com o nome da 1ª troca");
+});
+t("trocar nome: não dá por update direto, nem ler ou escrever a lista de nomes antigos; mensagens e grupos seguem a pessoa pelo id", async () => {
+  const n = await usuario("r2"); const antes = await nomeDe(n, n.id);
+  assert.ok(bloqueado(await n.c.from("profiles").update({ username: "direto_" + hex().slice(0, 8) }).eq("id", n.id).select()), "update direto"); assert.equal(await nomeDe(n, n.id), antes);
+  for (const c of [n.c, anon]) { assert.ok((await c.from("nomes_antigos").select("*")).error, "ler"); assert.ok((await c.from("nomes_antigos").insert({ username: "roubado_x", user_id: n.id })).error, "escrever"); }
+  assert.ok((await anon.rpc("profiles_nome_reservado")).error, "a função do gatilho não é chamável");
+  const novo = "rr" + hex().slice(0, 12); assert.ifError((await n.c.rpc("trocar_nome", { p_novo: novo })).error);
+  assert.ifError((await n.c.from("messages").insert({ ...base(b.id), v: 2, header: hdr() })).error); const m = (await b.c.from("messages").select("sender_id").eq("sender_id", n.id).limit(1)).data; assert.equal(m.length, 1, "o destinatário ainda recebe: a conversa não depende do nome");
+});

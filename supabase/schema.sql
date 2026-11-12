@@ -858,3 +858,54 @@ begin
 end $$;
 revoke all on function public.grupo_foto(uuid, jsonb) from public, anon, authenticated;
 grant execute on function public.grupo_foto(uuid, jsonb) to authenticated;
+
+-- ===== Trocar o nome de usuário (migração trocar_nome) =====
+-- Regras (todas aqui no banco, o app só mostra): nome novo no mesmo formato do cadastro; NUNCA um nome que já existe nem um nome antigo de outra pessoa ainda reservado;
+-- no máximo uma troca a cada 30 dias; o nome antigo fica reservado por 30 dias (ninguém o pega para se passar pela pessoa; ela mesma pode voltar a ele).
+create table public.nomes_antigos (
+  username text primary key check (username ~ '^[a-z0-9_]{3,20}$'),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  trocado_em timestamptz not null default now()
+);
+create index nomes_antigos_por_pessoa on public.nomes_antigos (user_id, trocado_em desc);
+alter table public.nomes_antigos enable row level security;
+revoke all on public.nomes_antigos from anon, authenticated;     -- ninguém logado lê nem escreve direto: só pela função trocar_nome()
+create policy "exige dois passos" on public.nomes_antigos as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+
+create or replace function public.trocar_nome(p_novo text) returns text
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); antigo text; novo text := lower(btrim(coalesce(p_novo, ''))); ultimo timestamptz;
+begin
+  perform public.consome('trocar_nome', 5, 20);
+  if novo !~ '^[a-z0-9_]{3,20}$' then raise exception 'nome_invalido' using errcode = '22023'; end if;
+  select p.username into antigo from public.profiles p where p.id = u;
+  if antigo is null then raise exception 'sem_perfil' using errcode = '42501'; end if;
+  if novo = antigo then raise exception 'mesmo_nome' using errcode = '22023'; end if;
+  select max(n.trocado_em) into ultimo from public.nomes_antigos n where n.user_id = u;
+  if ultimo is not null and ultimo > now() - interval '30 days' then
+    raise exception 'troca_cedo' using errcode = '42501', detail = extract(epoch from (ultimo + interval '30 days'))::bigint::text;
+  end if;
+  if exists (select 1 from public.profiles p where p.username = novo)
+     or exists (select 1 from public.nomes_antigos n where n.username = novo and n.user_id <> u and n.trocado_em > now() - interval '30 days') then
+    raise exception 'nome_em_uso' using errcode = '23505';
+  end if;
+  update public.profiles p set username = novo where p.id = u;
+  delete from public.nomes_antigos n where n.username = novo and n.user_id = u;      -- voltou a um nome seu de antes
+  insert into public.nomes_antigos (username, user_id, trocado_em) values (antigo, u, now())
+    on conflict (username) do update set user_id = excluded.user_id, trocado_em = excluded.trocado_em;
+  return novo;
+end $$;
+revoke all on function public.trocar_nome(text) from public, anon, authenticated;
+grant execute on function public.trocar_nome(text) to authenticated;
+
+-- Cadastro: também não pega um nome antigo de outra pessoa ainda reservado
+create or replace function public.profiles_nome_reservado() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if exists (select 1 from public.nomes_antigos n where n.username = new.username and n.user_id <> new.id and n.trocado_em > now() - interval '30 days') then
+    raise exception 'nome_em_uso' using errcode = '23505';
+  end if;
+  return new;
+end $$;
+revoke all on function public.profiles_nome_reservado() from public, anon, authenticated;
+create trigger profiles_nome_reservado before insert on public.profiles for each row execute function public.profiles_nome_reservado();
