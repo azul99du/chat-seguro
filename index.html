@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=59e9a6f74b">
+  <link rel="stylesheet" href="style.css?v=2340ef8d9e">
 </head>
 <body>
 
@@ -52,6 +52,29 @@
       </form>
     </main>
   </div>
+
+  <!-- aparelho pendente: não lê nem envia nada; fica aqui até um aparelho permitido liberar (ou até a recuperação) -->
+  <main id="espera" class="espera" hidden aria-labelledby="espera-tit">
+    <div class="espera-cartao">
+      <div class="wordmark mid">lacre<i class="seal" aria-hidden="true"></i></div>
+      <h1 id="espera-tit">Aguardando permissão</h1>
+      <p id="espera-txt">Este aparelho ainda não foi permitido. Abra o Lacre em um aparelho que já está conectado à sua conta e toque em Permitir. Assim que isso acontecer, este aparelho entra sozinho.</p>
+      <div id="espera-caixa-pedir" class="risco-caixa" hidden>
+        <p>Perdeu o acesso aos outros aparelhos? Você pode pedir a recuperação da conta. Ela só vale <b>24 horas</b> depois do pedido, e qualquer aparelho que ainda esteja conectado pode recusar nesse meio-tempo.</p>
+        <p><b>Ao concluir, todos os outros aparelhos da conta são removidos e desconectados.</b> Mensagens que só estavam neles não voltam.</p>
+        <button id="espera-pedir" type="button" class="primary">Pedir recuperação da conta</button>
+      </div>
+      <div id="espera-caixa-pedido" class="risco-caixa" role="status" hidden>
+        <p id="espera-pedido-txt"></p>
+        <button id="espera-concluir" type="button" class="primary" disabled>Concluir recuperação</button>
+        <button id="espera-cancelar" type="button" class="ghost">Cancelar pedido</button>
+      </div>
+      <div class="espera-acoes">
+        <button id="espera-perdi" type="button" class="ghost">Não tenho mais acesso aos outros aparelhos</button>
+        <button id="espera-sair" type="button" class="ghost">Sair</button>
+      </div>
+    </div>
+  </main>
 
   <div id="chat" hidden>
     <aside id="inbox">
@@ -415,6 +438,7 @@
         <p class="pg-dica sem-recuo">Até 5 aparelhos. O primeiro entra direto; os outros só passam a valer depois que um aparelho já permitido liberar.</p>
         <p id="disp-aviso" class="risco-caixa disp-caixa" role="status" hidden></p>
         <p id="disp-pedido" class="risco-caixa disp-caixa" role="status" hidden></p>
+        <p id="disp-recup" class="risco-caixa disp-caixa alto" role="status" hidden></p>
         <div id="dispositivos-lista" aria-live="polite"></div>
         <h3 class="pg-grupo">Acessos recentes</h3>
         <p class="pg-dica sem-recuo">Os acessos mais recentes à sua conta, do mais novo para o mais antigo.</p>
@@ -469,6 +493,6 @@
 
   <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
 
-  <script src="guarda.js?v=59e9a6f74b"></script>
+  <script src="guarda.js?v=2340ef8d9e"></script>
 </body>
 </html>

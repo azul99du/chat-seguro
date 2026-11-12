@@ -114,11 +114,13 @@ t("responder a uma resposta (cadeia): a citação mostra só a mensagem anterior
 t("citação de uma mensagem que NÃO está na tela: mostra o resumo recebido, marca como não verificado e avisa ao tocar", async () => {
   await enviar(A, "alvo antigo"); await ver(B, "alvo antigo");
   await responderA(B, msgCom("alvo antigo")); await enviar(B, "resposta recente"); await ver(A, "resposta recente", { meu: false });
-  // o histórico passa a trazer só a mensagem mais nova (como numa conversa com milhares de mensagens)
+  // o histórico passa a trazer só a mensagem mais nova (como numa conversa com milhares de mensagens). Agora a conversa é lida em várias consultas (formato antigo, cópias para este
+  // aparelho, minhas linhas): por isso o corte é por id (só entra linha com id >= o da mais nova), em vez de "a mais nova de cada resposta".
+  const corte = await B.evaluate(async ({ url, key }) => { const k = Object.keys(localStorage).find((x) => /^sb-.*-auth-token$/.test(x)); const r = await fetch(`${url}/rest/v1/messages?select=id&order=id.desc&limit=1`, { headers: { Authorization: "Bearer " + JSON.parse(localStorage[k]).access_token, apikey: key } }); return (await r.json())[0].id; }, { url: SUPABASE_URL, key: SUPABASE_KEY });
   await B.route("**/rest/v1/messages?*", async (route) => {
-    if (route.request().method() !== "GET" || !/select=\*/.test(route.request().url())) return route.continue();
+    if (route.request().method() !== "GET") return route.continue();
     const r = await route.fetch(), linhas = await r.json();
-    await route.fulfill({ response: r, json: linhas.length ? [linhas.reduce((a, b) => (a.id > b.id ? a : b))] : [] });
+    await route.fulfill({ response: r, json: Array.isArray(linhas) && linhas.length && "id" in linhas[0] ? linhas.filter((l) => l.id >= corte) : linhas });
   });
   await B.reload(); await B.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 }); await B.waitForSelector("#contacts button"); await B.click("#contacts button");
   await ver(B, "resposta recente", { meu: true });

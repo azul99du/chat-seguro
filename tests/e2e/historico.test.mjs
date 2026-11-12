@@ -5,7 +5,7 @@ import { chromium } from "playwright";
 import { writeFileSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, menuConta, chamar, compartilhaCodigo } from "./env.mjs";
+import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, menuConta, chamar, compartilhaCodigo, permitirNovo } from "./env.mjs";
 
 let skip = configurado ? false : motivoSemConfig, browser, srv, A, B, A2, emailA, nomeA, nomeB, arquivo, senhaArq; const erros = [];
 const t = (nome, fn) => test(nome, { timeout: 180000 }, async (c) => (skip ? c.skip(skip) : fn(c)));
@@ -32,8 +32,9 @@ after(async () => { if (browser) { await browser.close(); await srv.close(); } }
 t("aparelho novo da mesma conta NÃO lê o que já foi trocado (o motivo da exportação)", async () => {
   const c2 = await browser.newContext({ viewport: { width: 1100, height: 780 }, acceptDownloads: true }); await compartilhaCodigo(c2, A); A2 = await c2.newPage(); A2.on("pageerror", (e) => erros.push(`A2: ${e.message}`));
   await A2.goto(srv.url); await A2.fill("#email", emailA); await A2.fill("#password", SENHA); await A2.click("#auth-submit");
-  await A2.waitForSelector("#ask[open]", { timeout: 30000 }); await A2.fill("#ask-input", FRASE); await A2.click("#ask button[value=ok]"); await A2.waitForSelector(pronto, { timeout: 30000 });
-  await A2.waitForSelector("#contacts button", { timeout: 30000 }); await A2.click("#contacts button"); await A2.waitForSelector("#messages .msg", { timeout: 30000 });
+  await A2.waitForSelector("#ask[open]", { timeout: 30000 }); await A2.fill("#ask-input", FRASE); await A2.click("#ask button[value=ok]");
+  await A2.waitForSelector("#espera:not([hidden])", { timeout: 30000 }); await permitirNovo(A); await A2.waitForSelector(pronto, { timeout: 60000 }); // (aparelho novo da conta: pendente até um aparelho permitido liberar)
+  await A2.waitForSelector("#contacts button", { timeout: 30000 }); await A2.click("#contacts button"); await A2.waitForSelector("#messages:not(.carregando)", { timeout: 30000 }); await A2.waitForTimeout(800); // (antes aparecia um balão "indisponível" por mensagem antiga; agora o aparelho novo nem lista o que foi endereçado aos outros aparelhos)
   assert.equal(await A2.locator('.msg .vis:has-text("mensagem-antiga-1")').count(), 0); assert.equal(await A2.locator('.msg .vis:has-text("resposta-antiga-2")').count(), 0);
 });
 t("exportar com senha gerada: baixa um arquivo sem nada legível", async () => {

@@ -10,7 +10,7 @@ const UA_WINDOWS = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
 const UA_MAC_FIREFOX = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14.5; rv:127.0) Gecko/20100101 Firefox/127.0";
 let skip = configurado ? false : motivoSemConfig, browser, srv, P, email; const erros = [];
 const t = (nome, fn) => test(nome, { timeout: 150000 }, async (c) => (skip ? c.skip(skip) : fn(c)));
-const pronto = "#chat:not([hidden]):not(.preparando)";
+const pronto = "#chat:not([hidden]):not(.preparando), #espera:not([hidden])"; // (a partir da etapa 2 de vários aparelhos, o 2º aparelho da conta entra pendente: tela de espera em vez das conversas)
 const abrir = async (p) => { await menuConta(p, "#sec-btn"); await p.waitForSelector("#mfa[open]"); await p.click("#mfa-aparelhos"); await p.waitForSelector("#aparelhos[open]"); await p.waitForFunction(() => document.querySelectorAll("#aparelhos-lista .linha").length > 0, null, { timeout: 20000 }); };
 const fechar = async (p) => { await p.click("#aparelhos button[value=cancel]"); await p.click("#mfa button[value=cancel]"); };
 async function entrar(opts = {}) { // outro aparelho entrando na mesma conta
@@ -18,7 +18,7 @@ async function entrar(opts = {}) { // outro aparelho entrando na mesma conta
   await pg.goto(srv.url); await pg.fill("#email", email); await pg.fill("#password", SENHA); await pg.click("#auth-submit");
   await pg.waitForSelector("#ask[open]", { timeout: 30000 }); await pg.fill("#ask-input", FRASE); await pg.click("#ask button[value=ok]"); await pg.waitForSelector(pronto, { timeout: 30000 }); await pg.waitForTimeout(1500); return pg;
 }
-const sair = async (pg) => { await menuConta(pg, "#logout"); await pg.waitForSelector("#choice[open]"); await pg.click("#choice button[value=keep]"); await pg.waitForSelector("#auth:not([hidden])", { timeout: 15000 }); };
+const sair = async (pg) => { if (await pg.locator("#espera").isVisible()) { await pg.click("#espera-sair"); await pg.waitForSelector("#auth:not([hidden])", { timeout: 15000 }); return; } await menuConta(pg, "#logout"); await pg.waitForSelector("#choice[open]"); await pg.click("#choice button[value=keep]"); await pg.waitForSelector("#auth:not([hidden])", { timeout: 15000 }); };
 const conferir = (p) => p.evaluate(() => document.dispatchEvent(new Event("visibilitychange"))); // o app confere ao voltar para a aba
 const esperarAviso = async (p) => { // o aparelho novo leva alguns segundos para se registrar (consulta do local): confere de novo até a folha aparecer
   for (let i = 0; i < 20; i++) { await conferir(p); if (await p.locator("#novo-aparelho").evaluate((d) => d.open)) return; await p.waitForTimeout(1500); }

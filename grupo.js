@@ -55,10 +55,15 @@ export function abrirEmbrulho(texto, grupoId) {
 // ---------- Mensagens ----------
 // A linha do servidor diz de qual grupo é (ou nenhum); o conteúdo cifrado diz a mesma coisa. Os dois precisam bater:
 // assim o servidor não consegue jogar uma mensagem particular dentro de um grupo, nem levar uma mensagem de um grupo para outro.
-export function conteudoBate(content, grupoDaLinha) {
+// aDois: a linha é uma cópia por aparelho de conversa a dois (formato novo, com para_aparelho): aí a mensagem visível leva o identificador (mid), igual em todas as cópias.
+export function conteudoBate(content, grupoDaLinha, { aDois = false } = {}) {
   const g = content?.g ?? null, linha = grupoDaLinha ?? null;
   if (g !== linha) return false;
-  if (g === null) return content?.mid === undefined;
+  if (g === null) {
+    if (!aDois) return content?.mid === undefined;
+    if (!content) return false;
+    return content.type === "text" || content.type === "media" ? ehMid(content.mid) : content.mid === undefined || ehMid(content.mid);
+  }
   if (!ehGrupoId(g)) return false;
   if (content.type === "text" || content.type === "media") return ehMid(content.mid); // toda mensagem visível de grupo tem identificador
   return content.mid === undefined || ehMid(content.mid);

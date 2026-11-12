@@ -1,5 +1,5 @@
-// Vários aparelhos na mesma conta, etapa 1: o 1º aparelho entra permitido, os outros ficam "aguardando permissão" até um aparelho permitido liberar;
-// aviso no aparelho permitido; Permitir / Recusar / Remover; limite de 5 e registro repetido. O envio de mensagens não muda (veja flow.test.mjs).
+// Vários aparelhos na mesma conta: o 1º aparelho entra permitido, os outros ficam "aguardando permissão" até um aparelho permitido liberar;
+// aviso no aparelho permitido; Permitir / Recusar / Remover; limite de 5 e registro repetido. (Etapa 2: o aparelho pendente não vê as conversas, só a tela "Aguardando permissão"; o envio e a leitura estão em multiaparelho.test.mjs.)
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
@@ -14,7 +14,7 @@ async function entrar() { // outro navegador entrando na mesma conta (pede a fra
   const ctx = await browser.newContext({ viewport: { width: 1100, height: 780 } }); await compartilhaCodigo(ctx, P); // (o aviso antigo de "aparelho novo" não é o assunto aqui: o código antigo vale o mesmo; o aparelho de RECEPÇÃO é outro e é novo)
   const pg = await ctx.newPage(); pg.on("pageerror", (e) => erros.push(e.message));
   await pg.goto(srv.url); await pg.fill("#email", email); await pg.fill("#password", SENHA); await pg.click("#auth-submit");
-  await pg.waitForSelector("#ask[open]", { timeout: 30000 }); await pg.fill("#ask-input", FRASE); await pg.click("#ask button[value=ok]"); await pg.waitForSelector(pronto, { timeout: 30000 });
+  await pg.waitForSelector("#ask[open]", { timeout: 30000 }); await pg.fill("#ask-input", FRASE); await pg.click("#ask button[value=ok]"); await pg.waitForSelector(pronto + ", #espera:not([hidden])", { timeout: 30000 });
   await pg.waitForTimeout(1500); return pg;
 }
 const conferir = (p) => p.evaluate(() => document.dispatchEvent(new Event("visibilitychange"))); // o app confere ao voltar para a aba
@@ -43,13 +43,11 @@ t("o PRIMEIRO aparelho da conta entra permitido: sem aviso de espera, com 'Este 
   assert.equal(await P.locator("#disp-aviso").isVisible(), false); assert.equal(await linhas(P).first().locator('button:has-text("Permitir")').count(), 0);
   assert.match(await linhas(P).first().locator("button").innerText(), /Remover este aparelho/); await fechar(P);
 });
-t("o SEGUNDO aparelho fica pendente: aviso claro e curto, selo 'Aguardando permissão', sem Permitir/Recusar", async () => {
-  Q = await entrar(); await esperarAviso(Q, /Aguardando permissão/); await abrir(Q, 2);
-  assert.equal(await Q.locator("#disp-aviso").isVisible(), true); assert.match(await Q.locator("#disp-aviso").innerText(), /aguarda a permissão de outro aparelho já conectado/);
-  const eu = Q.locator("#dispositivos-lista .linha.atual"), txt = await eu.innerText(); assert.match(txt, /Este aparelho/); assert.match(txt, /Aguardando permissão/);
-  assert.equal(await Q.locator('#dispositivos-lista button:has-text("Permitir")').count(), 0); assert.equal(await Q.locator('#dispositivos-lista button:has-text("Recusar")').count(), 0);
-  assert.equal(await Q.locator("#dispositivos-lista .linha:not(.atual) button").count(), 0, "um pendente não remove nem decide sobre os outros");
-  await fechar(Q);
+t("o SEGUNDO aparelho fica pendente: tela cheia 'Aguardando permissão' (sem conversas, sem menu da conta), com Sair e o pedido de recuperação", async () => {
+  Q = await entrar(); await Q.waitForSelector("#espera:not([hidden])");
+  assert.equal(await Q.locator("#chat").isVisible(), false); assert.equal(await Q.locator("#contacts button").count(), 0); assert.equal(await Q.locator("#aviso-disp").isVisible(), false);
+  const txt = await Q.locator("#espera").innerText(); assert.match(txt, /Aguardando permissão/); assert.match(txt, /aparelho que já está conectado/); assert.match(txt, /Não tenho mais acesso aos outros aparelhos/); assert.match(txt, /Sair/);
+  assert.equal(await Q.locator('#espera button:has-text("Permitir")').count(), 0, "o pendente não decide nada");
 });
 t("o aparelho permitido vê o aviso ao voltar para a aba e permite o novo; o novo deixa de esperar", async () => {
   await esperarAviso(P, /Um aparelho novo pede permissão/); await P.click("#aviso-disp"); await P.waitForSelector("#aparelhos[open]"); await P.waitForFunction(() => document.querySelectorAll("#dispositivos-lista .linha").length === 2);
@@ -57,7 +55,7 @@ t("o aparelho permitido vê o aviso ao voltar para a aba e permite o novo; o nov
   const novo = P.locator('#dispositivos-lista .linha[data-estado=pendente]'); assert.match(await novo.innerText(), /Aguardando permissão/); assert.equal(await novo.locator("button").count(), 2);
   await novo.locator('button:has-text("Permitir")').click(); await P.waitForFunction(() => document.querySelectorAll('#dispositivos-lista .linha[data-estado=pendente]').length === 0, null, { timeout: 15000 });
   assert.equal(await P.locator("#dispositivos-lista .linha:has-text('Permitido')").count(), 2); assert.equal(await P.locator("#disp-pedido").isVisible(), false); await P.click("#aparelhos button[value=cancel]"); // (aberto pelo aviso, sem passar pela Segurança da conta)
-  await esperarSemAviso(P); await esperarSemAviso(Q);
+  await esperarSemAviso(P); await Q.waitForSelector(pronto, { timeout: 60000 }); // (o pendente permitido entra sozinho)
 });
 t("recusar: o pedido some, o aparelho recusado é desconectado (volta para o login) e NÃO reaparece como pendente; entrar de novo gera um pedido novo", async () => {
   const R = await entrar(); await esperarAviso(P, /Um aparelho novo/); await abrir(P, 3);
@@ -66,18 +64,20 @@ t("recusar: o pedido some, o aparelho recusado é desconectado (volta para o log
   await esperarLogin(R); await semPedido(P); await semPedido(R, 2);
   assert.equal(await R.locator("#chat").isVisible(), false);
   // entrar de novo (mesmo navegador): a conta já tem aparelho permitido, então é um pedido novo, pendente
-  await R.fill("#email", email); await R.fill("#password", SENHA); await R.click("#auth-submit"); await R.waitForSelector(pronto, { timeout: 30000 });
-  await esperarAviso(R, /Aguardando permissão/); await esperarAviso(P, /Um aparelho novo/);
+  await R.fill("#email", email); await R.fill("#password", SENHA); await R.click("#auth-submit"); await R.waitForSelector(pronto + ", #espera:not([hidden])", { timeout: 30000 });
+  await R.waitForSelector("#espera:not([hidden])", { timeout: 30000 }); await esperarAviso(P, /Um aparelho novo/);
   await abrir(P, 3); await P.locator('#dispositivos-lista .linha[data-estado=pendente] button:has-text("Recusar")').click(); await confirmar(P);
   await P.waitForFunction(() => document.querySelectorAll("#dispositivos-lista .linha").length === 2, null, { timeout: 15000 }); await fechar(P); await esperarLogin(R); await R.context().close();
 });
-t("remover outro aparelho (permitido): sai da lista; um pendente remove a si mesmo e volta para o login", async () => {
+t("remover outro aparelho (permitido): sai da lista; um pendente só sai (Sair) e um aparelho permitido o recusa", async () => {
   await abrir(P, 2); await P.locator('#dispositivos-lista .linha:not(.atual) button:has-text("Remover")').click(); await confirmar(P);
   await P.waitForFunction(() => document.querySelectorAll("#dispositivos-lista .linha").length === 1, null, { timeout: 15000 }); await fechar(P);
   await esperarLogin(Q); await semPedido(P, 4); assert.equal(await Q.locator("#chat").isVisible(), false, "o removido não volta como pendente"); // (é desconectado: precisa entrar de novo)
   await Q.context().close();
-  const S = await entrar(); await esperarAviso(S, /Aguardando permissão/); await abrir(S, 2); await S.locator("#dispositivos-lista .linha.atual button").click(); await confirmar(S);
-  await S.waitForSelector("#auth:not([hidden])", { timeout: 20000 }); await abrir(P, 1); await fechar(P); await S.context().close();
+  // um pendente só pode "Sair" (desconecta a sessão; o pedido continua na lista da conta até um aparelho permitido recusá-lo)
+  const S = await entrar(); await S.waitForSelector("#espera:not([hidden])"); await S.click("#espera-sair"); await S.waitForSelector("#auth:not([hidden])", { timeout: 20000 });
+  await abrir(P, 2); await P.locator('#dispositivos-lista .linha[data-estado=pendente] button:has-text("Recusar")').click(); await confirmar(P);
+  await P.waitForFunction(() => document.querySelectorAll("#dispositivos-lista .linha").length === 1, null, { timeout: 15000 }); await fechar(P); await S.context().close();
 });
 t("limite de 5 aparelhos e registro repetido (idempotente), direto no servidor", async () => {
   const cli = () => createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });

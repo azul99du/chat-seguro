@@ -58,6 +58,10 @@ describe("a mensagem cifrada e a linha do servidor precisam dizer o mesmo grupo"
     assert.ok(conteudoBate({ type: "reaction", to: MID, emoji: "👍", g: G }, G)); assert.ok(conteudoBate({ type: "delete", to: MID, g: G }, G));
     assert.ok(!conteudoBate({ type: "reaction", g: "nao-e-uuid" }, "nao-e-uuid"), "grupo malformado");
     assert.ok(!conteudoBate(null, G));
+    // conversa a dois no formato por aparelho: a mensagem visível leva o identificador (mid); o resto, opcional; e nada vira de grupo
+    assert.ok(conteudoBate({ type: "text", text: "oi", mid: MID }, null, { aDois: true })); assert.ok(!conteudoBate({ type: "text", text: "oi" }, null, { aDois: true }), "texto a dois sem mid");
+    assert.ok(!conteudoBate({ type: "media", mid: "curto" }, null, { aDois: true })); assert.ok(conteudoBate({ type: "reaction", to: MID, emoji: "👍" }, null, { aDois: true })); assert.ok(conteudoBate({ type: "hello" }, null, { aDois: true }));
+    assert.ok(!conteudoBate({ type: "reaction", to: MID, mid: "xx" }, null, { aDois: true })); assert.ok(!conteudoBate({ type: "text", text: "do grupo", g: G, mid: MID }, null, { aDois: true }), "de grupo entregue como particular"); assert.ok(!conteudoBate(null, null, { aDois: true }));
   });
   test("identificadores", () => {
     assert.ok(ehMid(MID)); for (const x of [MID.toUpperCase(), MID.slice(1), MID + "0", 5, null, undefined]) assert.ok(!ehMid(x), String(x));

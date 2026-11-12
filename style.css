@@ -769,3 +769,15 @@ button.sn-bt{padding:0}
 .aviso-disp{flex:none;display:block;width:100%;min-height:0;margin:0;padding:10px 16px;border:0;border-bottom:1.5px solid var(--seal);border-radius:0;background:var(--rosa-claro);color:var(--texto);font:600 .88rem var(--body);text-align:left;cursor:pointer}
 .aviso-disp[hidden]{display:none}
 .aviso-disp[data-estado=pendente]{font-weight:500}
+
+/* aparelho pendente: tela de espera e pedido de recuperação */
+.espera{min-height:100dvh;display:grid;place-items:center;padding:24px 16px;background:var(--paper)}
+.espera[hidden]{display:none}
+.espera-cartao{width:100%;max-width:440px;display:grid;gap:14px}
+.espera-cartao h1{margin:0;font:700 1.5rem var(--display)}
+.espera-cartao p{margin:0;line-height:1.45}
+.espera-cartao .risco-caixa{display:grid;gap:10px}
+.espera-acoes{display:grid;gap:10px;margin-top:6px}
+.espera-cartao button:disabled{opacity:.55}
+.disp-caixa.alto{border-color:var(--seal);font-weight:600}
+#dispositivos-lista .recup{color:var(--seal-dk);font-weight:600}

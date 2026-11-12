@@ -34,12 +34,14 @@ const range = (prefix) => IDBKeyRange.bound(prefix, prefix + "￿");
 // Grava sessão + (opcionalmente) mensagem lida, tudo na MESMA transação: ou grava os dois ou nenhum.
 // Isso evita perder uma mensagem depois de a chave dela já ter sido consumida.
 // hist: onde a mensagem fica guardada, quando não é na conversa com "peer" (mensagens de grupo ficam sob o id do grupo).
-export async function commit(uid, peer, { session, active, entryId, entry, hist }) {
-  const sealedS = session ? await seal(uid, session) : null, sealedH = entry ? await seal(uid, entry) : null;
+// idx: { k, v } = anotação pequena gravada junto (mesma transação; lê-se com metaGet): ex.: de qual conversa é uma cópia que enviei de outro aparelho meu.
+export async function commit(uid, peer, { session, active, entryId, entry, hist, idx }) {
+  const sealedS = session ? await seal(uid, session) : null, sealedH = entry ? await seal(uid, entry) : null, sealedX = idx ? await seal(uid, idx.v) : null;
   const t = await tx(["sessions", "history", "meta"], "readwrite");
   if (session) t.objectStore("sessions").put({ ...sealedS, t: Date.now() }, sKey(uid, peer, session.sid));
   if (active) t.objectStore("meta").put(active, `act:${uid}|${peer}`);
   if (entry) t.objectStore("history").put(sealedH, hKey(uid, hist || peer, entryId));
+  if (idx) t.objectStore("meta").put(sealedX, `x:${uid}|${idx.k}`);
   await done(t);
   if (session) await pruneSessions(uid, peer, active || session.sid);
 }
@@ -72,6 +74,13 @@ export async function acharNoHistorico(uid, peer, pred, max = 4000) {
     try { const e = await unseal(uid, vals[i]); if (pred(e)) return { id: Number(String(keys[i]).split("|")[2]), entry: e }; } catch {}
   }
   return null;
+}
+// As últimas mensagens guardadas de uma conversa, com o id de cada uma (para mostrar o que este aparelho tem e o servidor não deixa ele listar: histórico importado de outro aparelho).
+export async function ultimosDoHistorico(uid, peer, max = 600) {
+  const t = await tx(["history"], "readonly"), s = t.objectStore("history"), rng = range(`${uid}|${peer}|`);
+  const [keys, vals] = await Promise.all([req(s.getAllKeys(rng)), req(s.getAll(rng))]), out = [];
+  for (let i = Math.max(0, keys.length - max); i < keys.length; i++) { try { out.push({ id: Number(String(keys[i]).split("|")[2]), entry: await unseal(uid, vals[i]) }); } catch {} }
+  return out;
 }
 // Anotações pequenas deste aparelho (cifradas como o resto): o que ele já sabe de cada grupo, por exemplo.
 export async function metaGet(uid, nome) {

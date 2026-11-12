@@ -1,24 +1,24 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=59e9a6f74b";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=59e9a6f74b";
-import { montarFigurinhas } from "./figurinhas.js?v=59e9a6f74b";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=59e9a6f74b";
-import { todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=59e9a6f74b";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=59e9a6f74b";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=59e9a6f74b";
-import { acharVideoLink } from "./videolink.js?v=59e9a6f74b";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=59e9a6f74b";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=59e9a6f74b";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=59e9a6f74b";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=59e9a6f74b";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=59e9a6f74b";
-import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=59e9a6f74b";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=59e9a6f74b";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp } from "./dispositivos.js?v=59e9a6f74b";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=59e9a6f74b";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=59e9a6f74b";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=59e9a6f74b";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=59e9a6f74b";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=2340ef8d9e";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=2340ef8d9e";
+import { montarFigurinhas } from "./figurinhas.js?v=2340ef8d9e";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=2340ef8d9e";
+import { ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=2340ef8d9e";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=2340ef8d9e";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=2340ef8d9e";
+import { acharVideoLink } from "./videolink.js?v=2340ef8d9e";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=2340ef8d9e";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=2340ef8d9e";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=2340ef8d9e";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=2340ef8d9e";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=2340ef8d9e";
+import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=2340ef8d9e";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=2340ef8d9e";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO } from "./dispositivos.js?v=2340ef8d9e";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=2340ef8d9e";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=2340ef8d9e";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=2340ef8d9e";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=2340ef8d9e";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -229,15 +229,18 @@ async function start() {
   pintarMeu();
   mostrarChat();
   aparelhoPronto = registrarDispositivo(); // identifica este aparelho no servidor ANTES de publicar a chave de recepção (que leva a marca dele)
+  await aparelhoPronto;
+  if (dispResumo.souPendente) return iniciarEspera(); // aparelho pendente: não lê, não envia e não aparece para quem envia, até um aparelho permitido liberar
   ensureSpk();
   await loadContacts();
   atualizarAviso2fa();
   sb.channel("msgs", { config: { private: true } })
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `recipient_id=eq.${uid}` }, (p) => naFila(() => onIncoming(p.new)))
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `sender_id=eq.${uid}` }, (p) => {
-      if (p.new.grupo_id) return; // em grupo não há "vista" (cada pessoa recebe a sua cópia)
-      const e = msgs.get(p.new.id); if (e) { e.m.read_at = p.new.read_at; setReceipt(e); }
+      if (p.new.grupo_id || p.new.recipient_id === me.id) return; // em grupo não há "vista" (cada pessoa recebe a sua cópia); cópias para mim mesmo não contam
+      marcarVistaDoEnvio(p.new);
     })
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `recipient_id=eq.${uid}` }, (p) => lidaEmOutroAparelho(p.new)) // li em outro aparelho meu: aqui some a bolinha de não lida
     .subscribe();
   sincronizar();
 
@@ -540,6 +543,7 @@ $("aparelhos-senha").onclick = () => { $("aparelhos").close(); $("mfa-senha").cl
 // ---------- Aparelhos da conta (que recebem mensagens): este aparelho se identifica, o 1º entra permitido e os outros esperam um aparelho permitido liberar ----------
 // Nesta etapa é só o estado e o aviso: o envio e o recebimento de mensagens não dependem disso.
 let aparelhoPronto = Promise.resolve(), meuAparelhoId = null, dispResumo = resumoDisp([]), conferindoDisp = false, ultimaConfDisp = 0;
+const cacheAparelhos = new Map(); // id da pessoa -> { t, lista }: aparelhos aprovados (com chave de recepção) de cada pessoa, guardados por pouco tempo
 async function idDoAparelho() { // código aleatório deste navegador para esta conta; fica cifrado no aparelho e só some em "Sair e apagar chaves" (o servidor o guarda, mas nunca o devolve)
   return withLock(`lacre:aparelho:${me.id}`, async () => {
     const g = await metaGet(me.id, "aparelho"); if (g && idValido(g.id)) return g.id;
@@ -549,17 +553,23 @@ async function idDoAparelho() { // código aleatório deste navegador para esta 
 async function registrarDispositivo() {
   try {
     const id = await idDoAparelho(), { error } = await sb.rpc("registrar_dispositivo", { p_id: id });
-    if (error) throw error; meuAparelhoId = id; return true;
+    if (error) throw error; meuAparelhoId = id; await carregarDispositivos(); return true;
   } catch (e) { console.warn("registrar aparelho:", e?.message || e); return false; }
 }
 async function carregarDispositivos() {
-  const { data, error } = await sb.rpc("meus_dispositivos"); if (error) throw error;
+  const { data, error } = await sb.rpc("dispositivos_conta"); if (error) throw error;
   dispResumo = resumoDisp(data); return dispResumo;
 }
+const meuRef = () => (dispResumo.souAprovado && ehRef(dispResumo.eu?.ref) ? dispResumo.eu.ref : null); // o código público deste aparelho, se ele já é permitido
+const maisDeUmAparelho = () => dispResumo.lista.filter((a) => a.estado === "aprovado").length > 1;
+const quandoCurto = (iso) => { const d = new Date(iso); return Number.isFinite(+d) ? d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""; };
 function pintarAvisoDispositivos() {
   const b = $("aviso-disp"), r = dispResumo;
-  const txt = r.souPendente ? "Aguardando permissão de outro aparelho da sua conta." : r.souAprovado && r.pendentes.length ? textoPendentes(r.pendentes.length) + " Toque para ver." : "";
-  b.hidden = !txt; b.textContent = txt; b.dataset.estado = r.souPendente ? "pendente" : "pedido";
+  const rec = r.souAprovado ? r.recuperacoes[0] : null;
+  const txt = r.souPendente ? "Aguardando permissão de outro aparelho da sua conta."
+    : rec ? `Pedido de recuperação da conta: um aparelho novo vai assumir a conta e remover os outros em ${quandoCurto(rec.vale_em)}, se ninguém recusar. Toque para ver.`
+    : r.souAprovado && r.pendentes.length ? textoPendentes(r.pendentes.length) + " Toque para ver." : "";
+  b.hidden = !txt; b.textContent = txt; b.dataset.estado = r.souPendente ? "pendente" : rec ? "recuperacao" : "pedido";
 }
 // Recusar ou remover um aparelho encerra a sessão dele no servidor: ele percebe aqui e volta para o login (erro de rede NÃO conta: só sessão recusada ou ausente)
 async function sessaoEncerrada() { try { const { error } = await sb.auth.getUser(); return !!error && ([401, 403].includes(error.status) || error.name === "AuthSessionMissingError"); } catch { return false; } } // (sessão apagada no servidor: o Supabase devolve "sessão ausente"; falha de rede é outro erro e não conta)
@@ -571,9 +581,10 @@ async function conferirDispositivos(forca = false) {
     await aparelhoPronto;
     let r = await carregarDispositivos();
     if (!r.eu) { // sessão nova (ou aparelho recusado/removido, que perdeu a sessão): registra de novo
-      if (await registrarDispositivo()) { r = await carregarDispositivos(); ensureSpk(); }
+      if (await registrarDispositivo()) { r = dispResumo; if (r.souPendente) return location.reload(); ensureSpk(); }
       else if (await sessaoEncerrada()) return sairDeVez();
     }
+    cacheAparelhos.clear(); // (a lista de aparelhos de cada contato é refeita no próximo envio)
     pintarAvisoDispositivos(); if ($("aparelhos").open) desenharDispositivos();
   } catch (e) { console.warn("conferir aparelhos da conta:", e?.message || e); if (/42501|nao_autorizado|JWT/i.test(`${e?.code} ${e?.message}`) && await sessaoEncerrada()) return sairDeVez(); } finally { conferindoDisp = false; }
 }
@@ -599,6 +610,8 @@ function desenharDispositivos() {
   const lista = $("dispositivos-lista"), r = dispResumo;
   $("disp-aviso").hidden = !r.souPendente; $("disp-aviso").textContent = r.souPendente ? AVISO_PENDENTE : "";
   const ped = $("disp-pedido"); ped.hidden = !(r.souAprovado && r.pendentes.length); ped.textContent = textoPendentes(r.pendentes.length);
+  const rc = $("disp-recup"), rec = r.souAprovado ? r.recuperacoes[0] : null; rc.hidden = !rec;
+  rc.textContent = rec ? `Pedido de recuperação da conta, feito em ${quandoCurto(rec.recuperacao_em)}. Se ninguém recusar, vale em ${quandoCurto(rec.vale_em)}: esse aparelho assume a conta e TODOS os outros (inclusive este) são removidos. Se não foi você, toque em Recusar.` : "";
   if (!r.lista.length) return lista.replaceChildren(el("p", "pg-dica sem-recuo", "Carregando…"));
   lista.replaceChildren(...r.lista.map((a) => {
     const row = el("div", "linha info" + (a.atual ? " atual" : "")), ic = el("span", "ic"), tx = el("span", "tx"), linhaTit = el("span", "ap-tit");
@@ -607,6 +620,7 @@ function desenharDispositivos() {
     if (a.atual) linhaTit.append(el("span", "selo-estado", "Este aparelho"));
     linhaTit.append(a.estado === "pendente" ? el("span", "selo-novo", "Aguardando permissão") : el("span", "selo-estado ativo", "Permitido"));
     tx.append(linhaTit, el("small", null, localDe(a)), el("small", null, `Entrou em ${quando(a.criado_em)}`));
+    if (a.estado === "pendente" && a.recuperacao_em) tx.append(el("small", "recup", `Pediu a recuperação da conta; vale em ${quandoCurto(a.vale_em)}`));
     const ac = el("span", "ap-acoes");
     if (a.estado === "pendente" && !a.atual && r.souAprovado) ac.append(botaoDisp("Permitir", "ghost", () => decidirDisp(a, true)), botaoDisp("Recusar", "ghost perigo", async () => { if (await choose(`Recusar ${nomeDoAparelho(a)}?`, "O pedido é recusado e esse aparelho é desconectado. Para tentar de novo, ele precisa entrar com a senha outra vez.", [{ label: "Recusar", value: "sim", cls: "primary" }, { label: "Cancelar", value: "", cls: "ghost" }]) === "sim") await decidirDisp(a, false); }));
     else if (a.atual || r.souAprovado) ac.append(botaoDisp(a.atual ? "Remover este aparelho" : "Remover", "ghost perigo", () => removerDisp(a)));
@@ -615,6 +629,52 @@ function desenharDispositivos() {
   }));
 }
 async function abrirDispositivos() { desenharDispositivos(); await conferirDispositivos(true); }
+
+// ---------- Aparelho pendente: tela cheia "Aguardando permissão" (sem conversas, sem chaves de recepção, sem tempo real) ----------
+let esperaQuando = 0;
+function iniciarEspera() {
+  $("chat").hidden = true; $("abrindo").hidden = true; $("espera").hidden = false; document.body.dataset.espera = "1";
+  const confere = () => conferirEspera();
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) confere(); }); addEventListener("focus", confere);
+  setInterval(() => { if (!document.hidden) confere(); }, 8000); setInterval(pintarEspera, 1000);
+  esperaQuando = Date.now(); pintarEspera(); registrarAparelho(true); confere(); // (o acesso desta sessão é registrado: é o que dá nome ao aparelho na lista e faz os outros aparelhos receberem o aviso de "aparelho novo")
+}
+async function conferirEspera() {
+  if (conferindoDisp) return; conferindoDisp = true;
+  try {
+    registrarAparelho();
+    let r = await carregarDispositivos();
+    if (!r.eu) { if (await registrarDispositivo()) r = dispResumo; else if (await sessaoEncerrada()) return sairDeVez(); }
+    if (r.souAprovado) return location.reload(); // foi permitido (ou concluiu a recuperação): entra sozinho
+    esperaQuando = Date.now(); pintarEspera();
+  } catch (e) { console.warn("espera:", e?.message || e); if (/42501|nao_autorizado|JWT/i.test(`${e?.code} ${e?.message}`) && await sessaoEncerrada()) return sairDeVez(); }
+  finally { conferindoDisp = false; }
+}
+function pintarEspera() {
+  const eu = dispResumo.eu; if (!eu || $("espera").hidden) return;
+  const pedido = !!(eu.recuperacao_em && eu.vale_em), falta = pedido ? Math.max(0, faltaMs(eu.vale_em, eu.agora) - (Date.now() - esperaQuando)) : null;
+  $("espera-caixa-pedido").hidden = !pedido; if (pedido) { $("espera-caixa-pedir").hidden = true; $("espera-perdi").hidden = true; }
+  else $("espera-perdi").hidden = !$("espera-caixa-pedir").hidden;
+  if (pedido) {
+    $("espera-pedido-txt").textContent = falta > 0 ? `Pedido de recuperação feito em ${quandoCurto(eu.recuperacao_em)}. Faltam ${textoFalta(falta)} (vale em ${quandoCurto(eu.vale_em)}). ${AVISO_RECUPERACAO} Qualquer aparelho conectado pode recusar até lá.`
+      : `Prazo cumprido. ${AVISO_RECUPERACAO} Toque em Concluir para assumir a conta.`;
+    $("espera-concluir").disabled = falta > 0;
+  }
+}
+$("espera-perdi").onclick = () => { $("espera-caixa-pedir").hidden = false; $("espera-perdi").hidden = true; };
+$("espera-sair").onclick = () => sairDeVez();
+$("espera-pedir").onclick = async () => {
+  if (await choose("Pedir a recuperação da conta?", "Daqui a 24 horas, se nenhum aparelho conectado recusar, este aparelho passa a valer e todos os outros aparelhos da conta são removidos e desconectados.", [{ label: "Pedir recuperação", value: "sim", cls: "primary" }, { label: "Cancelar", value: "", cls: "ghost" }]) !== "sim") return;
+  const { data, error } = await sb.rpc("pedir_recuperacao");
+  if (error || !data) await note(error ? erroDisp(error) : "Não foi possível agora. Tente de novo."); await conferirEspera();
+};
+$("espera-cancelar").onclick = async () => { const { error } = await sb.rpc("cancelar_recuperacao"); if (error) await note(erroDisp(error)); $("espera-caixa-pedir").hidden = true; await conferirEspera(); };
+$("espera-concluir").onclick = async () => {
+  if (await choose("Concluir a recuperação?", "Todos os outros aparelhos da conta serão removidos e desconectados agora, e este passa a ser o único aparelho permitido.", [{ label: "Concluir", value: "sim", cls: "primary" }, { label: "Agora não", value: "", cls: "ghost" }]) !== "sim") return;
+  const { data, error } = await sb.rpc("concluir_recuperacao");
+  if (error || data !== true) { await note(error ? erroDisp(error) : "Ainda não deu o prazo, ou o pedido foi recusado. Atualizei a tela."); return conferirEspera(); }
+  location.reload();
+};
 
 // ---------- Armazenamento: o que este aparelho guarda e o que você já enviou ao servidor ----------
 const MB = 1048576, LIMITE_SERVIDOR = 400 * MB; // (o mesmo limite por pessoa que o servidor aplica)
@@ -877,7 +937,7 @@ async function loadContacts() {
   const [{ data }, { data: doGrupo }] = await Promise.all([
     sb.from("messages").select("sender_id,recipient_id,created_at").is("grupo_id", null).eq("avisar", true).order("created_at", { ascending: false }).limit(200), // (avisar=false são toques automáticos, não conversa)
     sb.from("messages").select("grupo_id,created_at").not("grupo_id", "is", null).order("id", { ascending: false }).limit(200)]); // (as minhas e as dos outros)
-  for (const m of data || []) { const c = m.sender_id === me.id ? m.recipient_id : m.sender_id; tocaAtiv(c, m.created_at); ultimaDoServidor(c, m.created_at); }
+  for (const m of data || []) { if (m.sender_id === m.recipient_id) continue; const c = m.sender_id === me.id ? m.recipient_id : m.sender_id; tocaAtiv(c, m.created_at); ultimaDoServidor(c, m.created_at); }
   for (const m of doGrupo || []) { tocaAtiv(m.grupo_id, m.created_at); ultimaDoServidor(m.grupo_id, m.created_at); }
   const ids = [...new Set((data || []).flatMap((m) => [m.sender_id, m.recipient_id]))].filter((i) => i !== me.id);
   if (ids.length) {
@@ -1166,7 +1226,7 @@ function addMessage(m, content, { err = false, animate = false, em = null } = {}
   const mine = m.sender_id === me.id, at = new Date(m.created_at), emGrupo = !!active?.grupo;
   if (active) marcaUltima(active.id, m.created_at); // (a lista mostra a hora da última mensagem que aparece aqui)
   const wrap = el("div", "msg" + (mine ? " mine" : "")), line = el("div", "line"); wrap.dataset.de = m.sender_id;
-  if (emGrupo && ehMid(content.mid) && !midParaId.has(content.mid)) midParaId.set(content.mid, m.id);
+  if (ehMid(content.mid) && !midParaId.has(content.mid)) midParaId.set(content.mid, m.id); // (grupo e conversa a dois no formato por aparelho: a mensagem se identifica pelo mid)
   const b = el("div", "bubble" + (mine ? " mine" : "") + (err ? " err" : "") + (media ? " has-media" : "") + (media && content.kind === "sticker" ? " sticker" : "") + (apagada ? " apagada" : ""));
   const label = media ? (content.kind === "sticker" ? "Figurinha enviada. " : content.kind === "video" ? "Vídeo enviado. " : content.kind === "audio" ? "Áudio enviado. " : "Foto enviada. ") : "";
   const re = limpaCitacao(content.re), alvo = re ? idDaRef(re) : undefined, original = alvo != null ? msgs.get(alvo) : undefined;
@@ -1215,7 +1275,7 @@ function addMessage(m, content, { err = false, animate = false, em = null } = {}
 // ---------- Reações (emoji cifrado com a chave da conversa) ----------
 // ---------- Responder (citação) ----------
 // citação de uma mensagem desta tela: a dois aponta para o id da linha; em grupo, para o identificador da mensagem (cada pessoa tem uma linha diferente)
-const refCitacao = (id) => { const e = msgs.get(id); if (!e?.content) return null; return active?.grupo ? citacaoGrupo(e.content.mid, e.m.sender_id, e.content) : citacao(id, e.m.sender_id, e.content); };
+const refCitacao = (id) => { const e = msgs.get(id); if (!e?.content) return null; return active?.grupo || ehMid(e.content.mid) ? citacaoGrupo(e.content.mid, e.m.sender_id, e.content) : citacao(id, e.m.sender_id, e.content); }; // (mensagem antiga a dois: pelo id da linha; com mid: pelo mid)
 const citavel = (id) => !!refCitacao(id);
 function mostrarResposta() {
   $("replybar").hidden = !replyTo;
@@ -1347,7 +1407,7 @@ function renderRx(id) {
   }
 }
 async function react(id, emoji) {
-  const peer = active, alvo = peer.grupo ? msgs.get(id)?.content?.mid : id; if (peer.grupo && !ehMid(alvo)) return;
+  const peer = active, mid = msgs.get(id)?.content?.mid, alvo = peer.grupo || ehMid(mid) ? mid : id; if (peer.grupo && !ehMid(alvo)) return;
   const map = reactions.get(id) || new Map(); reactions.set(id, map);
   const prev = map.get(me.id), remove = emoji === prev;
   remove ? map.delete(me.id) : map.set(me.id, emoji); renderRx(id); // atualiza na hora
@@ -1355,7 +1415,7 @@ async function react(id, emoji) {
   catch (e) { prev ? map.set(me.id, prev) : map.delete(me.id); renderRx(id); note(sendError(e, peer)); }
 }
 function applyReaction(c, m) { // reação nova = mensagem cifrada (com sigilo futuro) com conteúdo "reaction"
-  const id = c.g ? midParaId.get(c.to) : Number(c.to); if (!Number.isFinite(id)) return; // (em grupo a reação aponta para o identificador da mensagem)
+  const id = ehMid(c.to) ? midParaId.get(c.to) : Number(c.to); if (!Number.isFinite(id)) return; // (em grupo, e nas mensagens a dois por aparelho, a reação aponta para o identificador da mensagem)
   const map = reactions.get(id) || new Map(); reactions.set(id, map);
   const em = typeof c.emoji === "string" ? c.emoji.slice(0, 16) : "";
   em ? map.set(m.sender_id, em) : map.delete(m.sender_id); renderRx(id);
@@ -1364,27 +1424,30 @@ function applyReaction(c, m) { // reação nova = mensagem cifrada (com sigilo f
 // Para todos: vai uma mensagem cifrada {type:"delete"} para o amigo e, nos dois aparelhos, o texto guardado é trocado por "Mensagem apagada".
 // Só para mim: o aparelho guarda que aquela mensagem ficou escondida. O aviso "Mensagem apagada" também pode ser apagado, só para mim.
 function trocaPorApagada(id) {
-  for (const q of document.querySelectorAll(`.quote[data-re="${Number(id)}"]`)) { const t = q.querySelector(".q-text"); if (t) t.textContent = "Mensagem apagada"; q.setAttribute("aria-label", "Mensagem citada apagada"); } // citações já na tela não guardam o texto antigo
+  for (const q of document.querySelectorAll(`.quote[data-re="${Number(id)}"]`)) { const t = q.querySelector(".q-text"), sr = q.closest(".bubble")?.querySelector(".sr"); if (sr && t?.textContent) sr.textContent = sr.textContent.replace(t.textContent, "Mensagem apagada"); if (t) t.textContent = "Mensagem apagada"; q.setAttribute("aria-label", "Mensagem citada apagada"); } // (o texto para leitor de tela também não guarda o que foi apagado) // citações já na tela não guardam o texto antigo
   const e = msgs.get(id); if (!e) return; reactions.delete(id);
   const novo = { type: "deleted" }; if (e.content?.mid) novo.mid = e.content.mid; // (em grupo o identificador fica: respostas antigas continuam achando a mensagem)
   addMessage(e.m, novo, { em: e.wrap });
 }
 // Em grupo: acha a mensagem pelo identificador (na tela ou no que está guardado) e só aceita o pedido de quem a escreveu.
-async function aplicarApagarGrupo(c, m) {
-  if (!ehMid(c.to)) return;
-  const aberto = active?.id === c.g;
-  let id = aberto ? midParaId.get(c.to) : undefined, cur = id != null ? await getHistory(me.id, c.g, id) : null;
+// conv: a conversa onde a mensagem está guardada (o grupo, ou a pessoa da conversa a dois)
+async function aplicarApagarGrupo(c, m, conv = c.g) {
+  if (!ehMid(c.to) || !conv) return;
+  const aberto = active?.id === conv;
+  let id = aberto ? midParaId.get(c.to) : undefined, cur = id != null ? await getHistory(me.id, conv, id) : null;
   if (cur && cur.content?.mid !== c.to) cur = null;
-  if (!cur) { const r = await acharNoHistorico(me.id, c.g, (e) => e.content?.mid === c.to); if (!r) return; id = r.id; cur = r.entry; }
+  if (!cur) { const r = await acharNoHistorico(me.id, conv, (e) => e.content?.mid === c.to); if (!r) return; id = r.id; cur = r.entry; }
   if (cur.content?.type === "hidden") return; // já apaguei só para mim
   if (cur.content?.type === "deleted") { if (aberto && msgs.get(id)?.content?.type !== "deleted") trocaPorApagada(id); return; }
-  const autor = cur.mine ? me.id : cur.from;
+  const autor = cur.mine ? me.id : (cur.from || (ehGrupoIdLocal(conv) ? null : conv)); // (conversa a dois: quem não sou eu é a própria pessoa)
   if (!autor || autor !== m.sender_id) return; // só quem escreveu a mensagem pode apagá-la para todos
-  await commit(me.id, c.g, { entryId: id, entry: { content: { type: "deleted", by: autor, mid: c.to }, at: cur.at || m.created_at, mine: autor === me.id, from: autor } });
+  await commit(me.id, conv, { entryId: id, entry: { content: { type: "deleted", by: autor, mid: c.to }, at: cur.at || m.created_at, mine: autor === me.id, from: autor } });
   if (aberto) trocaPorApagada(id);
 }
-async function aplicarApagar(c, m) {
-  if (c.g) return aplicarApagarGrupo(c, m);
+const ehGrupoIdLocal = (id) => grupos.has(id);
+async function aplicarApagar(c, m, conv = null) {
+  if (c.g) return aplicarApagarGrupo(c, m, c.g);
+  if (ehMid(c.to)) return aplicarApagarGrupo(c, m, conv || (m.sender_id === me.id ? m.recipient_id : m.sender_id)); // conversa a dois no formato por aparelho
   const id = Number(c.to); if (!Number.isSafeInteger(id) || id <= 0) return;
   const peerId = m.sender_id === me.id ? m.recipient_id : m.sender_id, cur = await getHistory(me.id, peerId, id);
   if (cur?.content?.type === "deleted") { if (msgs.get(id)?.content?.type !== "deleted") trocaPorApagada(id); return; }
@@ -1403,11 +1466,11 @@ async function apagarParaMim(id) {
 }
 async function apagarParaTodos(id) {
   const e = msgs.get(id), peer = active; if (!e || !peer || !e.mine || e.content?.type === "deleted") return;
-  const alvo = peer.grupo ? e.content?.mid : id; if (peer.grupo && !ehMid(alvo)) return;
+  const alvo = peer.grupo || ehMid(e.content?.mid) ? e.content?.mid : id; if (peer.grupo && !ehMid(alvo)) return;
   try { await enviar(peer, { type: "delete", to: alvo }); } catch (err) { return note(sendError(err, peer)); }
   const c = e.content; // o arquivo cifrado de foto/vídeo/áudio sai do servidor (figurinha não: o mesmo arquivo é reaproveitado em outras mensagens)
   if (c?.type === "media" && c.kind !== "sticker" && typeof c.path === "string") { await sb.storage.from("media").remove([c.path]).catch(() => {}); delBlob(me.id, c.path).catch(() => {}); const u = mediaCache.get(c.path); if (u) { URL.revokeObjectURL(u); mediaCache.delete(c.path); } }
-  await commit(me.id, peer.id, { entryId: id, entry: peer.grupo ? { content: { type: "deleted", by: me.id, mid: alvo }, at: e.m.created_at, mine: true, from: me.id } : { content: { type: "deleted", by: me.id }, at: e.m.created_at, mine: true } });
+  await commit(me.id, peer.id, { entryId: id, entry: peer.grupo || ehMid(alvo) ? { content: { type: "deleted", by: me.id, mid: alvo }, at: e.m.created_at, mine: true, from: me.id } : { content: { type: "deleted", by: me.id }, at: e.m.created_at, mine: true } });
   trocaPorApagada(id);
 }
 async function perguntarApagar(id) {
@@ -1438,11 +1501,27 @@ async function markRead() {
   if (!ids.length) return;
   const at = new Date().toISOString();
   ids.forEach((id) => (msgs.get(id).m.read_at = at));
-  await sb.from("messages").update({ read_at: at }).in("id", ids).is("read_at", null);
+  await sb.rpc("marcar_lidas", { p_ids: ids.slice(0, 300) }); // o servidor marca também as cópias que chegaram aos meus outros aparelhos
+}
+// "vista" de uma mensagem minha (uma linha por aparelho de quem recebeu: vale a primeira leitura de qualquer um). Cópias para mim mesmo não entram.
+function marcarVistaDoEnvio(row) {
+  if (!row.read_at) return;
+  let e = msgs.get(linhaParaMsg.get(row.id) ?? row.id);
+  if (!e) { const t = Date.parse(row.created_at); for (const x of msgs.values()) if (x.mine && Date.parse(x.m.created_at) === t) { e = x; break; } } // (mensagem que veio de outro aparelho meu: acha pelo instante do envio)
+  if (e && e.mine && !e.m.read_at) { e.m.read_at = row.read_at; setReceipt(e); }
+}
+// Li esta conversa em outro aparelho meu: some a bolinha de não lida daqui
+function lidaEmOutroAparelho(row) {
+  if (!row?.read_at || row.sender_id === me.id) return;
+  const conv = row.grupo_id || row.sender_id, l = naoLidas.get(conv);
+  if (l?.includes(row.id)) { const resto = l.filter((x) => x !== row.id); resto.length ? naoLidas.set(conv, resto) : naoLidas.delete(conv); salvaNL(); renderContacts(); }
+  const e = msgs.get(row.id); if (e && !e.m.read_at) e.m.read_at = row.read_at;
 }
 
 // ---------- Sigilo futuro (mensagens v2: Double Ratchet) ----------
-const lockName = (peer) => `lacre:${me.id}:${peer.id}`;
+const lockChave = (chave) => `lacre:${me.id}:${chave}`; // uma trava por sessão (pessoa + aparelho)
+const lockName = (peer) => lockChave(peer.id);
+const chaveDaLinha = (m, peer) => (m.para_aparelho && ehRef(m.de_aparelho) ? chaveSessao(peer.id, m.de_aparelho) : peer.id); // cópia por aparelho: a sessão é com o aparelho que enviou; formato antigo: com a pessoa
 const SPK_ROTATE = 7 * 864e5, SPK_KEEP = 14 * 864e5;
 const gone = (t) => ({ type: "unreadable", text: t });
 
@@ -1475,7 +1554,8 @@ function parseContent(s) {
 }
 async function decryptV2(m, peer) {
   const h = m.header; if (!validHeader(h)) throw new Error("cabecalho invalido");
-  let st = await getSession(me.id, peer.id, h.sid);
+  const chave = chaveDaLinha(m, peer);
+  let st = await getSession(me.id, chave, h.sid);
   if (!st) {
     const spk = h.init && (await getSpks(me.id)).find((k) => k.id === h.init.spk);
     if (!spk) throw Object.assign(new Error("sem sessao"), { code: "NO_SESSION" });
@@ -1484,9 +1564,9 @@ async function decryptV2(m, peer) {
   const { state, plaintext } = await ratchetDecrypt(st, m.sender_id, m.recipient_id, h, m.ciphertext);
   const content = parseContent(toText(plaintext));
   // o grupo marcado na linha do servidor tem de ser o mesmo que está DENTRO da mensagem cifrada (o servidor não consegue mudar uma mensagem de lugar)
-  if (!conteudoBate(content, m.grupo_id)) throw new Error("grupo nao confere");
+  if (!conteudoBate(content, m.grupo_id, { aDois: !!m.para_aparelho })) throw new Error("grupo nao confere");
   // sessão nova + mensagem lida na mesma transação: a chave já foi gasta, então não pode haver perda
-  await commit(me.id, peer.id, { session: state, active: h.sid, entryId: m.id, entry: m.grupo_id ? { content, at: m.created_at, from: m.sender_id } : { content, at: m.created_at }, hist: m.grupo_id || undefined });
+  await commit(me.id, chave, { session: state, active: h.sid, entryId: m.id, entry: m.grupo_id ? { content, at: m.created_at, from: m.sender_id } : { content, at: m.created_at }, hist: m.grupo_id || peer.id });
   return content;
 }
 const histDe = (m, peer) => m.grupo_id || peer.id; // onde a mensagem fica guardada: na conversa com a pessoa, ou no grupo
@@ -1498,10 +1578,12 @@ async function readV2(m, peer) {
     return gone("Enviada por você de outro navegador ou aparelho (como o computador). Para ver aqui: exporte o histórico de lá e importe aqui, em Segurança da conta.");
   }
   if ((await pinStatus(peer)) === "changed") return gone("A chave desta pessoa mudou. Abra o código de segurança e confira com ela antes de continuar.");
-  return withLock(lockName(peer), async () => {
+  return withLock(lockChave(chaveDaLinha(m, peer)), async () => {
     const again = await getHistory(me.id, histDe(m, peer), m.id); if (again) return again.content;
     try { return await decryptV2(m, peer); }
     catch (e) {
+      // (cópia no formato antigo, com mais de um aparelho meu: só um deles tem a sessão; nos outros a linha some em silêncio, sem balão de erro nem pedido de refazer)
+      if (e.code === "NO_SESSION" && !m.para_aparelho && maisDeUmAparelho()) return { type: "hello" };
       if (e.code === "NO_SESSION") { sayHello(peer); return gone("Esta mensagem é de uma sessão que este aparelho não tem (por exemplo, você entrou neste aparelho depois). Pedi para refazer: as próximas chegam normais."); }
       return gone("Mensagem protegida que este aparelho não conseguiu decifrar.");
     }
@@ -1526,14 +1608,16 @@ async function newSession(peer) {
   if (error || !pk?.public_key?.x || !pk?.public_key?.y) throw Object.assign(new Error("sem prekey"), { code: "NO_PREKEY" });
   return initiate(ikJwk, peer.public_key, { id: pk.id, x: pk.public_key.x, y: pk.public_key.y });
 }
-async function sendSession(peer) {
-  const act = await getActive(me.id, peer.id);
-  if (act) { const st = await getSession(me.id, peer.id, act); if (st && canSend(st)) return st; }
-  for (const st of await listSessions(me.id, peer.id)) if (canSend(st)) return st;
+// Sessão para enviar a uma pessoa (ref = null: formato antigo) ou a UM aparelho dela (ref + a chave de recepção que o servidor deu).
+async function sendSession(peer, ref = null, prekey = null) {
+  const chave = chaveSessao(peer.id, ref), act = await getActive(me.id, chave);
+  if (act) { const st = await getSession(me.id, chave, act); if (st && canSend(st)) return st; }
+  for (const st of await listSessions(me.id, chave)) if (canSend(st)) return st;
+  if (prekey) return initiate(ikJwk, peer.public_key, { id: prekey.id, x: prekey.public_key.x, y: prekey.public_key.y });
   return newSession(peer);
 }
-async function sendContent(peer, content) {
-  if ((await pinStatus(peer)) === "changed") throw Object.assign(new Error("chave mudou"), { code: "PIN" });
+// Formato antigo: UMA cópia para a pessoa (quem tiver a chave de recepção mais recente lê).
+async function sendContentAntigo(peer, content) {
   return withLock(lockName(peer), async () => {
     const r = await ratchetEncrypt(await sendSession(peer), me.id, peer.id, toBytes(JSON.stringify(content)));
     await commit(me.id, peer.id, { session: r.state, active: r.state.sid }); // grava ANTES de enviar: uma chave nunca é usada duas vezes
@@ -1542,6 +1626,53 @@ async function sendContent(peer, content) {
     await commit(me.id, peer.id, { entryId: data.id, entry: { content, at: data.created_at, mine: true } });
     return data;
   });
+}
+// Aparelhos aprovados (com chave de recepção) de uma pessoa: guardados por 60 s; forcar = ignora o que está guardado
+async function aparelhosDe(pessoaId, forcar = false) {
+  const c = cacheAparelhos.get(pessoaId);
+  if (!forcar && c && Date.now() - c.t < 60000) return c.lista;
+  const { data, error } = await sb.rpc("get_prekeys_aparelhos", { p_user: pessoaId });
+  if (error) { if (limitado(error) && c) return c.lista; throw error; }
+  const lista = limpaPrekeys(data); cacheAparelhos.set(pessoaId, { t: Date.now(), lista }); return lista;
+}
+async function alvosDoEnvio(peer, forcar = false) {
+  const meu = meuRef(); if (!meu) return alvosDeEnvio({ deles: [], meus: [], meuRef: null });
+  const [deles, meus] = await Promise.all([aparelhosDe(peer.id, forcar), aparelhosDe(me.id, forcar)]);
+  return alvosDeEnvio({ deles, meus, meuRef: meu });
+}
+// Formato novo: a MESMA mensagem, cifrada à parte para cada aparelho aprovado de quem recebe e para cada OUTRO aparelho meu (cada um pela sua sessão),
+// gravada num pedido só (uma mensagem a dois: no máximo 5 + 4 linhas). A cópia para mim leva "para" (de qual conversa é) dentro do conteúdo cifrado.
+async function enviarPorAparelho(peer, content, alvos) {
+  const meuPeer = { id: me.id, public_key: me.public_key }, proprias = content.type !== "hello"; // (refazer sessão só interessa a quem recebe)
+  const trabalhos = [...alvos.amigo.map((a) => ({ pessoa: peer, a, texto: JSON.stringify(content), copia: false })), ...(proprias ? alvos.proprios.map((a) => ({ pessoa: meuPeer, a, texto: JSON.stringify({ ...content, para: peer.id }), copia: true })) : [])];
+  const linhas = await Promise.all(trabalhos.map((j) => withLock(lockChave(chaveSessao(j.pessoa.id, j.a.ref)), async () => {
+    let st; try { st = await sendSession(j.pessoa, j.a.ref, j.a); } catch (e) { throw Object.assign(e, { peer: j.pessoa }); }
+    const r = await ratchetEncrypt(st, me.id, j.pessoa.id, toBytes(j.texto));
+    await commit(me.id, chaveSessao(j.pessoa.id, j.a.ref), { session: r.state, active: r.state.sid }); // grava ANTES de enviar: uma chave nunca é usada duas vezes
+    return { recipient_id: j.pessoa.id, para_aparelho: j.a.ref, ciphertext: r.ciphertext, iv: r.iv, v: 2, header: r.header, avisar: !j.copia && !["hello", "delete"].includes(content.type) };
+  })));
+  const { data, error } = await sb.from("messages").insert(linhas).select("id,created_at,recipient_id");
+  if (error) throw error;
+  const dele = data.filter((l) => l.recipient_id === peer.id), id = Math.min(...dele.map((l) => l.id)), at = dele[0].created_at;
+  await commit(me.id, peer.id, { entryId: id, entry: { content, at, mine: true } });
+  for (const l of dele) linhaParaMsg.set(l.id, id);
+  return { id, created_at: at, sender_id: me.id, recipient_id: peer.id, grupo_id: null, read_at: null };
+}
+const linhaParaMsg = new Map(); // linha do servidor (uma por aparelho de quem recebeu) -> mensagem na tela, para a "vista" chegar na mensagem certa
+async function sendContent(peer, content) {
+  if ((await pinStatus(peer)) === "changed") throw Object.assign(new Error("chave mudou"), { code: "PIN" });
+  let alvos = await alvosDoEnvio(peer);
+  if (!alvos.novo) return sendContentAntigo(peer, content); // o destinatário (ou este aparelho) ainda não usa aparelhos: uma cópia só, como antes
+  if ((content.type === "text" || content.type === "media") && !ehMid(content.mid)) content.mid = randomHex(16); // identificador da mensagem (cada aparelho recebe uma linha diferente)
+  try { return await enviarPorAparelho(peer, content, alvos); }
+  catch (e) {
+    if (e?.code !== "42501") throw e;
+    // o servidor recusou: a lista de aparelhos mudou (alguém foi removido ou permitido). Atualiza e tenta mais uma vez.
+    cacheAparelhos.clear(); await conferirDispositivos(true).catch(() => {});
+    alvos = await alvosDoEnvio(peer, true);
+    if (!alvos.novo) { delete content.mid; return sendContentAntigo(peer, content); }
+    return enviarPorAparelho(peer, content, alvos);
+  }
 }
 // Cifra o MESMO conteúdo separadamente para cada pessoa (cada uma pela sua sessão, com sigilo futuro) e grava tudo num pedido só: ou chega para todos, ou para ninguém.
 async function enviarVarios(pessoas, content, { grupoId = null, avisar = true, citados = null } = {}) {
@@ -1637,15 +1768,35 @@ async function open(peer) {
   $("messages").classList.add("carregando"); // a lista só aparece pronta, já nas últimas mensagens (sem descer na frente da pessoa)
   carregandoConversa = peer; filaChegando = [];
   try {
-  const { data } = await sb.from("messages").select("*")
-    .or(`and(sender_id.eq.${me.id},recipient_id.eq.${peer.id}),and(sender_id.eq.${peer.id},recipient_id.eq.${me.id})`)
-    .is("grupo_id", null) // (o que essa pessoa manda num grupo aparece no grupo, não aqui)
-    .order("id", { ascending: false }).limit(200); // as 200 mais NOVAS (e depois ficam em ordem de envio)
+  const base = (cols) => sb.from("messages").select(cols).is("grupo_id", null);
+  const [antigas, recebidas, minhas, proprias] = await Promise.all([
+    base("*").or(`and(sender_id.eq.${me.id},recipient_id.eq.${peer.id}),and(sender_id.eq.${peer.id},recipient_id.eq.${me.id})`).is("para_aparelho", null).order("id", { ascending: false }).limit(200), // formato antigo (as 200 mais NOVAS; depois ficam em ordem de envio)
+    base("*").eq("sender_id", peer.id).eq("recipient_id", me.id).not("para_aparelho", "is", null).order("id", { ascending: false }).limit(200), // cópias endereçadas a ESTE aparelho (o servidor só deixa ler as dele)
+    base("id,created_at,avisar,para_aparelho,read_at").eq("sender_id", me.id).eq("recipient_id", peer.id).not("para_aparelho", "is", null).order("id", { ascending: false }).limit(1000), // o que EU enviei (uma linha por aparelho de quem recebeu)
+    base("id,created_at").eq("sender_id", me.id).eq("recipient_id", me.id).order("id", { ascending: false }).limit(200)]); // o que outro aparelho meu enviou (cópias para mim)
   if (active !== peer) return;
-  const linhas = (data || []).reverse();
+  const linhas = (antigas.data || []).reverse();
   await loadLegacyReactions(linhas, peer);
+  const meusLotes = lotesDm(minhas.data, (minhas.data || []).length === 1000), lotePorT = new Map(meusLotes.map((l) => [l.created_at, l]));
+  const donas = (await Promise.all((proprias.data || []).map(async (r) => { const ix = await metaGet(me.id, "cp:" + r.id).catch(() => null); return ix?.para === peer.id ? r : null; }))).filter(Boolean);
+  const itens = [
+    ...linhas.map((m) => ({ t: Date.parse(m.created_at), id: m.id, m })),
+    ...(recebidas.data || []).reverse().map((m) => ({ t: Date.parse(m.created_at), id: m.id, m })),
+    ...meusLotes.map((l) => ({ t: Date.parse(l.created_at), id: l.id, lote: l })),
+    ...donas.map((r) => { const l = lotePorT.get(r.created_at); if (l) for (const id of l.ids) linhaParaMsg.set(id, r.id); return { t: Date.parse(r.created_at), id: r.id, m: { id: r.id, sender_id: me.id, recipient_id: peer.id, grupo_id: null, created_at: r.created_at, read_at: l?.read_at || null, v: 2 } }; })].sort((a, b) => a.t - b.t || a.id - b.id);
+  { // o que este aparelho guarda mas o servidor não deixa listar (ex.: histórico importado de outro aparelho: as mensagens recebidas eram endereçadas àquele aparelho): entra no lugar certo, dentro do período já listado
+    const vistos = new Set(itens.flatMap((it) => (it.lote ? [it.id, ...it.lote.ids] : [it.id]))), minT = itens.length ? Math.min(...itens.map((it) => it.t)) : 0;
+    for (const { id, entry } of await ultimosDoHistorico(me.id, peer.id, 600).catch(() => [])) {
+      const t = Date.parse(entry?.at); if (vistos.has(id) || !(t >= minT) || !entry?.content || entry.content.type === "hidden") continue;
+      itens.push({ t, id, m: { id, sender_id: entry.mine ? me.id : peer.id, recipient_id: entry.mine ? peer.id : me.id, grupo_id: null, created_at: entry.at, read_at: null, v: 2 } });
+    }
+    itens.sort((a, b) => a.t - b.t || a.id - b.id);
+  }
   const avisosDm = ((await metaGet(me.id, "d:" + peer.id).catch(() => null))?.avisos || []).slice(); // avisos como "@antigo agora é @novo", cada um no seu lugar da conversa
-  for (const m of linhas) { const t = Date.parse(m.created_at); while (avisosDm.length && avisosDm[0].t <= t) addAviso(textoAviso(avisosDm.shift())); await show(m, peer, false); }
+  for (const it of itens) {
+    while (avisosDm.length && avisosDm[0].t <= it.t) addAviso(textoAviso(avisosDm.shift()));
+    if (it.lote) await mostrarMeuLoteDm(peer, it.lote); else await show(it.m, peer, false);
+  }
   for (const a of avisosDm) addAviso(textoAviso(a));
   [...msgs.keys()].forEach(renderRx);
   carregandoConversa = null; const fila = filaChegando; filaChegando = [];
@@ -1683,6 +1834,7 @@ const naFila = (fn) => (filaEntrada = filaEntrada.then(fn).catch((e) => console.
 const maisNovaQueATela = (m) => { for (const id of msgs.keys()) if (id >= m.id) return false; return true; };
 // aoVivo = chegou agora pelo tempo real; false = veio da sincronização (chegou com o Lacre fechado)
 async function onIncoming(m, aoVivo = true) {
+  if (m.sender_id === me.id) return chegouCopiaPropria(m, aoVivo); // cópia do que enviei de outro aparelho meu
   const peer = await perfilDe(m.sender_id); if (!peer) return;
   if (m.grupo_id) return chegouDoGrupo(m, peer, aoVivo);
   if (m.v === 2) { // decifra já (para andar a cadeia de chaves), mesmo com a conversa fechada
@@ -1696,6 +1848,37 @@ async function onIncoming(m, aoVivo = true) {
   if (active?.id === m.sender_id && carregandoConversa === active) filaChegando.push(m); // a conversa ainda está abrindo: entra na ordem certa quando terminar
   else if (active?.id === m.sender_id) { if (aoVivo || maisNovaQueATela(m)) { $("msgs-empty")?.remove(); await show(m, active, aoVivo); markRead(); } }
   else if (aoVivo || !m.read_at) contarNova(m.sender_id, m.id);
+  renderContacts();
+}
+// Cópia cifrada que OUTRO aparelho meu mandou para este (de mim para mim). Só vale se vier de um aparelho meu e disser de qual conversa é (conteúdo cifrado).
+// Fica guardada no histórico daquela conversa como mensagem minha; a anotação "cp:<linha>" diz de qual conversa é, para a lista da conversa achá-la e para nunca decifrar duas vezes.
+async function lerCopiaPropria(m) {
+  if (m.recipient_id !== me.id || m.v !== 2 || m.grupo_id || !ehRef(m.de_aparelho) || !ehRef(m.para_aparelho) || m.de_aparelho === meuRef()) return null; // (a que ESTE aparelho criou também chega pelo tempo real: é só o que ele mesmo enviou)
+  const ja = await metaGet(me.id, "cp:" + m.id).catch(() => null); if (ja) return { content: null, para: ja.para, jaFeita: true };
+  const eu = { id: me.id, public_key: me.public_key }, chave = chaveSessao(me.id, m.de_aparelho);
+  return withLock(lockChave(chave), async () => {
+    const outra = await metaGet(me.id, "cp:" + m.id).catch(() => null); if (outra) return { content: null, para: outra.para, jaFeita: true };
+    const h = m.header; if (!validHeader(h)) return null;
+    let st = await getSession(me.id, chave, h.sid);
+    if (!st) { const spk = h.init && (await getSpks(me.id)).find((k) => k.id === h.init.spk); if (!spk) return null; st = await accept(ikJwk, eu.public_key, spk, h); }
+    let state, plaintext; try { ({ state, plaintext } = await ratchetDecrypt(st, m.sender_id, m.recipient_id, h, m.ciphertext)); } catch { return null; }
+    let content; try { content = parseContent(toText(plaintext)); } catch { return null; }
+    if (!copiaPropriaValida(m, content, me.id, meuRef()) || !conteudoBate(content, null, { aDois: true })) return null; // (a sessão não avança: nada de aceitar o que não confere)
+    await commit(me.id, chave, { session: state, active: h.sid, entryId: m.id, entry: { content, at: m.created_at, mine: true, from: me.id }, hist: content.para, idx: { k: "cp:" + m.id, v: { para: content.para } } });
+    return { content, para: content.para };
+  });
+}
+async function chegouCopiaPropria(m, aoVivo) {
+  const r = await lerCopiaPropria(m); if (!r || r.jaFeita) return;
+  const c = r.content, conv = r.para, peer = await perfilDe(conv); if (!peer) return;
+  const m2 = { id: m.id, sender_id: me.id, recipient_id: conv, grupo_id: null, created_at: m.created_at, read_at: null, v: 2 };
+  if (c.type === "hello") return;
+  if (c.type === "delete") { await aplicarApagar(c, m2, conv); return; }
+  if (c.type === "reaction") { if (active?.id === conv) applyReaction(c, m2); return; }
+  if (!contacts.has(conv)) { contacts.set(conv, peer); perfis.set(conv, peer); }
+  tocaAtiv(conv, m.created_at); marcaUltima(conv, m.created_at);
+  if (active?.id === conv && carregandoConversa === active) filaChegando.push(m2);
+  else if (active?.id === conv) { if (aoVivo || maisNovaQueATela(m2)) { $("msgs-empty")?.remove(); await show(m2, peer, false); } }
   renderContacts();
 }
 async function chegouDoGrupo(m, peer, aoVivo) {
@@ -1713,6 +1896,12 @@ async function chegouDoGrupo(m, peer, aoVivo) {
   renderContacts();
 }
 // O que chegou com o Lacre fechado: decifra tudo, em ordem, logo ao abrir (sem isso, uma mensagem de grupo só seria lida quando eu abrisse a conversa a dois com quem a mandou).
+// Bolinhas de não lida que já foram lidas em outro aparelho meu enquanto este estava fechado ou sem internet
+async function reconciliarNaoLidas() {
+  const ids = [...naoLidas.values()].flat().slice(-300); if (!ids.length) return;
+  const { data } = await sb.from("messages").select("id,sender_id,grupo_id,read_at").in("id", ids).not("read_at", "is", null);
+  for (const r of data || []) lidaEmOutroAparelho(r);
+}
 function sincronizar() {
   return naFila(async () => {
     const k = "lacre:sync:" + me.id; let desde = 0; try { desde = Number(localStorage.getItem(k)) || 0; } catch {}
@@ -1728,7 +1917,7 @@ function sincronizar() {
       try { localStorage.setItem(k, String(desde)); } catch {}
       if (data.length < 500) return;
     }
-  });
+  }).then(() => reconciliarNaoLidas()).catch(() => {});
 }
 
 // ---------- Grupos ----------
@@ -1809,6 +1998,13 @@ function atualizarGrupos(fresco = false) {
       renderContacts();
     } finally { carregandoGrupos = null; }
   })());
+}
+// Uma mensagem MINHA a dois no formato por aparelho (no servidor, uma linha por aparelho de quem recebeu). Só aparece aqui se ESTE aparelho a enviou (está no histórico);
+// a que outro aparelho meu enviou chega como cópia para mim e aparece por ela.
+async function mostrarMeuLoteDm(peer, l) {
+  for (const id of l.ids) linhaParaMsg.set(id, l.id);
+  const e = await getHistory(me.id, peer.id, l.id).catch(() => null); if (!e) return;
+  mostrar({ id: l.id, sender_id: me.id, recipient_id: peer.id, grupo_id: null, created_at: l.created_at, read_at: l.read_at }, e.content, false);
 }
 async function mostrarMeuLote(g, l) { // uma mensagem MINHA no grupo (no servidor ela é uma linha por pessoa)
   const m = { id: l.id, sender_id: me.id, recipient_id: null, grupo_id: g.id, created_at: l.created_at, read_at: null };

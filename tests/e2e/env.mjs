@@ -69,3 +69,14 @@ export async function compartilhaCodigo(contexto, paginaOriginal) {
   const codigo = await paginaOriginal.evaluate(() => localStorage.getItem("lacre:disp"));
   if (codigo) await contexto.addInitScript((c) => { try { localStorage.setItem("lacre:disp", c); } catch {} }, codigo);
 }
+
+// Vários aparelhos (etapa 2): um aparelho novo na conta entra PENDENTE (tela "Aguardando permissão") e só lê depois que um aparelho já permitido o libera.
+export const conferirAba = (p) => p.evaluate(() => document.dispatchEvent(new Event("visibilitychange"))); // o app confere os aparelhos ao voltar para a aba (e esquece a lista guardada de aparelhos dos contatos)
+export async function permitirNovo(P) { // no aparelho PERMITIDO: abre o aviso do pedido e toca em Permitir
+  for (let i = 0; i < 30; i++) { await conferirAba(P); if (await P.locator("#aviso-disp:not([hidden])").count()) break; await P.waitForTimeout(1500); }
+  await P.click("#aviso-disp"); await P.waitForSelector("#aparelhos[open]");
+  await P.waitForSelector('#dispositivos-lista .linha[data-estado=pendente] button:has-text("Permitir")', { timeout: 20000 });
+  await P.locator('#dispositivos-lista .linha[data-estado=pendente] button:has-text("Permitir")').first().click();
+  await P.waitForFunction(() => !document.querySelector("#dispositivos-lista .linha[data-estado=pendente]"), null, { timeout: 20000 });
+  await P.click("#aparelhos button[value=cancel]");
+}

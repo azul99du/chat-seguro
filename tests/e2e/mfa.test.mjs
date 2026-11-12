@@ -67,7 +67,7 @@ t("aparelho novo: primeiro o código do 2º passo, depois a frase-senha da chave
   await N.waitForSelector("#ask[open]", { timeout: 30000 }); assert.match(await N.locator("#ask-title").innerText(), /dois passos/i);
   await N.fill("#ask-input", codigo()); await N.click("#ask button[value=ok]");
   await N.waitForFunction(() => /aparelho novo/i.test(document.getElementById("ask-title").textContent), null, { timeout: 30000 });
-  await N.fill("#ask-input", FRASE); await N.click("#ask button[value=ok]"); await N.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 }); await c3.close();
+  await N.fill("#ask-input", FRASE); await N.click("#ask button[value=ok]"); await N.waitForSelector("#chat:not([hidden]):not(.preparando), #espera:not([hidden])", { timeout: 30000 }); await c3.close();
 });
 t("NO BANCO: sessão só com senha fica trancada (nem sem o site); com o código, libera", async () => {
   const c = cliente(); assert.ok(!(await c.auth.signInWithPassword({ email, password: SENHA })).error);

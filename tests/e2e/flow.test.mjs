@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { chromium } from "playwright";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY, menuConta, chamar, compartilhaCodigo } from "./env.mjs";
+import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY, menuConta, chamar, compartilhaCodigo, permitirNovo, conferirAba } from "./env.mjs";
 import { hasFfmpeg, tmp, makeVideo, makeJpegWithExif } from "../helpers/fixtures.mjs";
 
 let skip = configurado ? false : motivoSemConfig;
@@ -142,25 +142,26 @@ t("chave do amigo diferente da fixada: alerta e a conversa NÃO abre", async () 
   assert.equal(await A.locator("#messages .msg").count(), 0);
   await A.evaluate((key) => localStorage.removeItem(key), k); // restaura (será fixada de novo)
 });
-t("aparelho novo: mensagens antigas com sigilo futuro ficam indisponíveis; a sessão é refeita sozinha e as próximas chegam", async () => {
+// (Etapa 2 de vários aparelhos: antes, o aparelho novo mostrava as mensagens antigas como "indisponíveis" e a sessão era refeita sozinha, e o que A enviava dele aparecia no original como erro.
+//  Agora o aparelho novo entra PENDENTE, só passa a ler depois de permitido, e só as mensagens NOVAS: cada mensagem é cifrada para cada aparelho. Veja também multiaparelho.test.mjs.)
+t("aparelho novo da conta: espera permissão (sem conversas), depois de permitido lê as mensagens NOVAS (não as antigas) e responde", async () => {
   const cn = await browser.newContext({ viewport: { width: 1100, height: 780 } }); await compartilhaCodigo(cn, A); N = await cn.newPage(); vigiar("N", N);
   await N.goto(srv.url); await N.fill("#email", emailA); await N.fill("#password", SENHA); await N.click("#auth-submit");
   await N.waitForSelector("#ask[open]", { timeout: 30000 });
   await N.fill("#ask-input", "frase-errada-qualquer"); await N.click("#ask button[value=ok]"); await N.waitForSelector("#ask-text:has-text('incorreta')");
-  await N.fill("#ask-input", FRASE); await N.click("#ask button[value=ok]"); await N.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 });
-  await N.waitForTimeout(1500); await chamar(N, nomeB);
-  await N.waitForSelector(`#conv-title:has-text("@${nomeB}")`); await N.waitForSelector(".bubble.err", { timeout: 30000 });
-  await N.waitForFunction(() => document.querySelectorAll(".bubble.err").length >= 5, null, { timeout: 30000 }); // a lista carrega em sequência
-  await B.waitForTimeout(3000); await enviar(B, "depois de refazer a sessão");
-  await vista(N, "depois de refazer a sessão", 40000);
+  await N.fill("#ask-input", FRASE); await N.click("#ask button[value=ok]");
+  await N.waitForSelector("#espera:not([hidden])", { timeout: 30000 }); assert.equal(await N.locator("#chat").isVisible(), false, "pendente não vê as conversas");
+  await permitirNovo(A); await N.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 60000 }); await N.waitForTimeout(1500);
+  await conferirAba(B); await B.waitForTimeout(1500); // (B esquece a lista de aparelhos de A, guardada por até 60 s)
+  await chamar(N, nomeB); await N.waitForSelector(`#conv-title:has-text("@${nomeB}")`); await N.waitForTimeout(800);
+  assert.equal(await N.locator("#messages .msg").count(), 0, "as mensagens antigas não aparecem (nem como erro)");
+  await enviar(B, "depois de permitir"); await vista(N, "depois de permitir", 40000);
+  if (await A.locator("#send-form").isHidden()) { await A.click("#contacts button"); await A.waitForSelector("#send-form:not([hidden])"); } await vista(A, "depois de permitir", 40000); // (chega nos dois aparelhos)
   await enviar(N, "respondendo do aparelho novo"); await vista(B, "respondendo do aparelho novo");
 });
-t("avisos automáticos de outro aparelho MEU não viram balão de erro: só a mensagem de verdade aparece (com o texto que ensina a importar o histórico)", async () => {
-  await A.reload(); await A.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 }); await A.click("#contacts button"); await A.waitForSelector(`#conv-title:has-text("@${nomeB}")`);
-  await A.waitForSelector(".bubble.err", { timeout: 20000 }); await A.waitForTimeout(800);
-  // (a resposta do amigo, feita já na sessão nova, também não abre neste aparelho: é a mesma limitação, mas é uma mensagem de verdade dele)
-  assert.equal(await A.locator(".msg.mine .bubble.err").count(), 1, "o 'hello' do outro aparelho some; só 'respondendo do aparelho novo' (uma mensagem real minha) aparece como indisponível");
-  assert.match(await A.locator(".msg.mine .bubble.err").first().innerText(), /exporte o histórico de lá e importe aqui/);
+t("o que A envia do aparelho novo aparece no aparelho original como mensagem minha, sem balão de erro", async () => {
+  await A.waitForSelector('.msg.mine .vis:has-text("respondendo do aparelho novo")', { timeout: 40000 });
+  assert.equal(await A.locator(".bubble.err").count(), 0, "nada de 'Enviada por você de outro aparelho'");
 });
 t("anônimo não entra no canal privado de presença", async () => {
   const r = await A.evaluate(async ({ url, key }) => {
