@@ -179,3 +179,9 @@ describe("citação (@nome)", () => {
     assert.deepEqual(sugerirMembros([{ id: "1", username: "xana" }, { id: "2", username: "ana" }], "an", EU).map((m) => m.username), ["ana", "xana"], "começar com vem antes de só conter");
   });
 });
+
+test("aviso de mudança nas regras dos Selos: quem mudou", () => {
+  assert.equal(textoAviso({ tipo: "selos", nome: "ana" }), "@ana mudou as regras dos Selos");
+  assert.equal(textoAviso({ tipo: "selos", eu: true }), "Você mudou as regras dos Selos");
+  assert.equal(textoAviso({ tipo: "selos" }), "@alguém mudou as regras dos Selos");
+});

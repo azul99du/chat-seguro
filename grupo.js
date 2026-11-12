@@ -105,6 +105,7 @@ export function textoAviso(a) {
     : a.tipo === "saiu" ? `${n} saiu do grupo` : a.tipo === "nome" ? `O grupo agora se chama “${a.nome}”`
     : a.tipo === "sub" ? `${n} agora é sub-admin` : a.tipo === "semsub" ? `${n} deixou de ser sub-admin` : a.tipo === "admin" ? `${n} agora é admin`
     : a.tipo === "foto" ? (a.removida ? "A foto do grupo foi removida" : "A foto do grupo foi alterada")
+    : a.tipo === "selos" ? (a.eu ? "Você mudou as regras dos Selos" : `${n} mudou as regras dos Selos`)
     : a.tipo === "renomeou" ? `@${a.de || "alguém"} agora é @${a.nome || "alguém"}` : "";
 }
 

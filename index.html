@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=0f84b222a3">
+  <link rel="stylesheet" href="style.css?v=e43507cc22">
 </head>
 <body>
 
@@ -149,6 +149,8 @@
       </form>
     </section>
   </div>
+
+  <svg class="selo-oculto" width="0" height="0" aria-hidden="true" focusable="false"><symbol id="selo" viewBox="0 0 100 100"><defs><radialGradient id="selo-g" cx="36%" cy="30%" r="75%"><stop offset="0" stop-color="#FF8DA8"/><stop offset=".45" stop-color="#E8335F"/><stop offset="1" stop-color="#B81E45"/></radialGradient></defs><path d="M95.3,50.0 L96.2,54.0 L95.2,58.0 L92.7,61.5 L90.1,64.6 L88.3,67.9 L87.2,71.5 L85.7,75.0 L83.5,78.1 L80.9,80.9 L78.5,83.9 L76.1,87.2 L73.1,90.0 L69.2,91.2 L64.9,91.0 L60.9,90.7 L57.3,91.3 L53.7,92.8 L50.0,94.0 L46.1,94.3 L42.3,93.7 L38.5,93.1 L34.5,92.6 L30.7,91.4 L27.6,88.8 L25.3,85.3 L23.2,82.0 L20.4,79.6 L16.9,77.8 L13.4,75.6 L10.9,72.6 L9.3,69.0 L8.0,65.3 L6.6,61.6 L5.7,57.8 L6.0,53.9 L7.3,50.0 L8.5,46.4 L8.5,42.7 L7.7,38.7 L7.4,34.5 L8.6,30.7 L10.9,27.5 L13.6,24.5 L16.1,21.5 L18.7,18.7 L21.9,16.5 L25.6,15.1 L29.1,13.7 L32.0,11.4 L34.8,8.3 L38.1,5.7 L42.0,4.6 L46.1,5.1 L50.0,6.0 L53.8,6.6 L57.6,7.0 L61.2,8.1 L64.6,9.9 L67.9,11.6 L71.6,12.6 L75.8,13.2 L79.7,14.6 L82.6,17.4 L84.3,21.2 L85.5,25.1 L87.1,28.6 L89.1,31.8 L90.7,35.2 L91.6,38.8 L92.3,42.5 L93.6,46.2Z" fill="url(#selo-g)"/><circle cx="50" cy="50" r="31" fill="none" stroke="#B81E45" stroke-width="3" opacity=".55"/><rect x="44" y="30" width="12" height="40" rx="6" fill="#15174A" opacity=".92"/><circle cx="50" cy="38" r="5" fill="#E8335F"/></symbol></svg>
 
   <dialog id="ask">
     <form method="dialog">
@@ -317,6 +319,7 @@
         <button type="button" id="gi-foto-rm" class="linha perigo" hidden><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></span><span class="tx"><b>Remover a foto do grupo</b></span></button>
         <button type="button" id="gi-cor" class="linha"><span class="ic"><span id="gi-cor-sw" class="cor-bolinha" aria-hidden="true"></span></span><span class="tx"><b>Minha cor neste grupo</b><small id="gi-cor-nome"></small></span></button>
         <button type="button" id="gi-renomear" class="linha" hidden><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></span><span class="tx"><b>Mudar o nome do grupo</b></span></button>
+        <button type="button" id="gi-selos" class="linha"><span class="ic"><svg class="selo-ico" width="26" height="26" viewBox="0 0 100 100" aria-hidden="true"><use href="#selo"/></svg></span><span class="tx"><b>Selos</b><small>Seu saldo e como ganhar</small></span></button>
         <button type="button" id="gi-est" class="linha"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span><span class="tx"><b>Estatísticas do grupo</b><small>Quem fala mais, tempo na tela, sequência</small></span></button>
         <h3 class="pg-grupo" id="gi-cont">Participantes</h3>
         <button type="button" id="gi-add" class="linha" hidden><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="8" r="4"/><path d="M3 21c0-4 3.5-6 7-6 1.3 0 2.6.3 3.7.8M18 14v6M15 17h6"/></svg></span><span class="tx"><b>Adicionar pessoas</b></span></button>
@@ -326,6 +329,48 @@
         <p class="pg-nota"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span>Cada mensagem do grupo vai cifrada separadamente para cada pessoa. O servidor sabe quem participa, mas não lê as mensagens nem o nome do grupo.</span></p>
       </div>
     </form>
+  </dialog>
+
+  <dialog id="selos" class="pagina">
+    <form method="dialog">
+      <header class="pg-bar"><button value="cancel" class="pg-volta" aria-label="Voltar" formnovalidate><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><h2>Selos do grupo</h2></header>
+      <div class="pg-corpo">
+        <div id="sl-meu" class="sl-meu" role="status"></div>
+        <h3 class="pg-grupo">Selos de cada pessoa</h3>
+        <div id="sl-lista" class="sl-lista"></div>
+        <h3 class="pg-grupo">Como ganhar Selos</h3>
+        <ul id="sl-regras" class="sl-regras"></ul>
+        <button type="button" id="sl-editar" class="btn-limpa sl-editar" hidden>Editar regras</button>
+        <p id="sl-msg" class="pg-msg" role="status"></p>
+        <p class="pg-dica sem-recuo">Os Selos valem só neste grupo e não passam para outras pessoas. O que você ganha hoje aparece como “a confirmar” e fica confirmado quando o dia termina (meia-noite de Brasília). O servidor conta só o que consegue conferir: envios, arquivos, dias e a entrada no grupo.</p>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="selos-regras" class="pagina">
+    <form method="dialog">
+      <header class="pg-bar"><button value="cancel" class="pg-volta" aria-label="Voltar" formnovalidate><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><h2>Regras dos Selos</h2></header>
+      <div class="pg-corpo">
+        <p class="sr-nota">Só o admin altera, e a mudança vale na hora. Toque em um número para mudar.</p>
+        <h3 class="pg-grupo">Ganhar Selos</h3>
+        <div id="sr-cards"></div>
+        <h3 class="pg-grupo">Mais opções</h3>
+        <div id="sr-mais"></div>
+        <div class="sr-linha-fixa"><div class="sr-card sr-soon"><div class="sr-top"><div><b>Preços da loja</b><small>Em breve: quanto custa cada item</small></div></div></div></div>
+        <p id="sr-previa" class="sr-previa" role="status"></p>
+        <p id="sr-msg" class="pg-msg" role="status"></p>
+        <button type="button" id="sr-salvar" class="btn-rosa sr-salvar" disabled>Salvar regras</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="selos-num" class="folha-seg" aria-labelledby="sn-titulo">
+    <div class="grab"></div>
+    <h2 id="sn-titulo"></h2>
+    <p id="sn-ctx"></p>
+    <div class="sn-ed"><button type="button" id="sn-menos" class="sn-bt" aria-label="Diminuir">−</button><label class="sn-campo"><span id="sn-ico" class="sn-ico" aria-hidden="true"></span><input id="sn-valor" type="text" inputmode="numeric" autocomplete="off" maxlength="4" aria-label="Valor"></label><button type="button" id="sn-mais" class="sn-bt" aria-label="Aumentar">+</button></div>
+    <div id="sn-atalhos" class="sn-atalhos"></div>
+    <div class="btns"><button type="button" id="sn-ok" class="btn-rosa">Pronto</button></div>
   </dialog>
 
   <dialog id="grupo-est" class="pagina">
@@ -417,6 +462,6 @@
 
   <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
 
-  <script src="guarda.js?v=0f84b222a3"></script>
+  <script src="guarda.js?v=e43507cc22"></script>
 </body>
 </html>

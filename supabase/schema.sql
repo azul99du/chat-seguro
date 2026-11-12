@@ -1161,3 +1161,184 @@ begin
 end $$;
 revoke all on function public.grupo_estatisticas(uuid) from public, anon, authenticated;
 grant execute on function public.grupo_estatisticas(uuid) to authenticated;
+
+-- ===== Selos: moeda de cada grupo. O admin define as regras; o servidor calcula os ganhos só com o que ele mesmo confere =====
+-- Regras por grupo (um JSON validado), sem teto fixo de Selos por dia (só se o admin ligar o "teto"). Nada é retroativo: cada regra guarda a data em que foi ligada ("desde").
+-- Ganho confirmado = linhas do extrato (moedas_extrato) de dias já encerrados (dia de Brasília). Ganho a confirmar = o de hoje, calculado na hora e ainda sem linha no extrato.
+create table public.selo_regras (
+  grupo_id uuid primary key references public.grupos(id) on delete cascade,
+  regras jsonb not null check (pg_column_size(regras) < 4000),
+  atualizado_em timestamptz not null default now(),
+  por uuid references public.profiles(id) on delete set null
+);
+create table public.selo_apurado (
+  grupo_id uuid primary key references public.grupos(id) on delete cascade,
+  ate date not null
+);
+alter table public.selo_regras enable row level security;
+alter table public.selo_apurado enable row level security;
+revoke all on public.selo_regras, public.selo_apurado from anon, authenticated;
+create policy "exige dois passos" on public.selo_regras as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+create policy "exige dois passos" on public.selo_apurado as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+
+create or replace function public.selo_int(p jsonb, k text, minimo int, maximo int, padrao int) returns int
+language plpgsql immutable set search_path = public as $$
+declare v jsonb := p -> k;
+begin
+  if v is null then return padrao; end if;
+  if jsonb_typeof(v) <> 'number' or (v #>> '{}') !~ '^\d{1,4}$' or (v #>> '{}')::int < minimo or (v #>> '{}')::int > maximo then raise exception 'regras_invalidas' using errcode = '22023', detail = k; end if;
+  return (v #>> '{}')::int;
+end $$;
+
+-- Valida e refaz o JSON de regras (só chaves conhecidas, números inteiros nos limites). "desde" é do servidor: vale a data em que a regra foi ligada.
+create or replace function public.selo_limpa(novo jsonb, velho jsonb, hoje date) returns jsonb
+language plpgsql stable set search_path = public as $$
+declare r jsonb := '{}'::jsonb; k text; o jsonb; ant jsonb; lig boolean; it jsonb; ms jsonb := '[]'::jsonb; vistos int[] := '{}'; d int; v int; m jsonb;
+begin
+  if novo is null or jsonb_typeof(novo) <> 'object' then raise exception 'regras_invalidas' using errcode = '22023'; end if;
+  foreach k in array array['entrada','dia_ativo','mensagens','arquivos','sequencia','teto'] loop
+    o := coalesce(novo -> k, '{"on": false}'::jsonb); ant := coalesce(velho -> k, '{}'::jsonb);
+    if jsonb_typeof(o) <> 'object' or jsonb_typeof(o -> 'on') <> 'boolean' then raise exception 'regras_invalidas' using errcode = '22023', detail = k; end if;
+    lig := (o ->> 'on')::boolean; it := jsonb_build_object('on', lig);
+    if k = 'sequencia' then
+      m := coalesce(o -> 'marcos', '[]'::jsonb);
+      if jsonb_typeof(m) <> 'array' or jsonb_array_length(m) > 10 then raise exception 'regras_invalidas' using errcode = '22023', detail = 'marcos'; end if;
+      for v in select generate_series(0, jsonb_array_length(m) - 1) loop
+        if jsonb_typeof(m -> v) <> 'object' then raise exception 'regras_invalidas' using errcode = '22023', detail = 'marcos'; end if;
+        d := public.selo_int(m -> v, 'dias', 1, 365, 1);
+        if d = any(vistos) then raise exception 'regras_invalidas' using errcode = '22023', detail = 'marcos'; end if;
+        vistos := vistos || d; ms := ms || jsonb_build_array(jsonb_build_object('dias', d, 'valor', public.selo_int(m -> v, 'valor', 1, 999, 1)));
+      end loop;
+      it := it || jsonb_build_object('marcos', (select coalesce(jsonb_agg(e order by (e ->> 'dias')::int), '[]'::jsonb) from jsonb_array_elements(ms) e));
+    else
+      it := it || jsonb_build_object('valor', public.selo_int(o, 'valor', 1, 999, 1));
+      if k = 'dia_ativo' then it := it || jsonb_build_object('min', public.selo_int(o, 'min', 1, 999, 1)); end if;
+      if k in ('mensagens', 'arquivos') then it := it || jsonb_build_object('a_cada', public.selo_int(o, 'a_cada', 1, 999, 1)); end if;
+    end if;
+    if k <> 'teto' then -- (o teto não é ganho: não precisa de data)
+      it := it || jsonb_build_object('desde', case when lig and (not coalesce((ant ->> 'on')::boolean, false) or ant ->> 'desde' is null) then hoje::text else coalesce(ant ->> 'desde', hoje::text) end);
+    end if;
+    r := r || jsonb_build_object(k, it);
+  end loop;
+  return r;
+end $$;
+
+-- O que uma pessoa ganha num dia (dia de Brasília), pelas regras dadas. Só usa o que o servidor confere: envios (lotes de linhas), arquivos enviados, data de entrada.
+create or replace function public.selo_ganhos(p_grupo uuid, p_user uuid, p_dia date, p_regras jsonb) returns table (motivo text, ref text, qtd int)
+language plpgsql stable security definer set search_path = public, storage as $$
+#variable_conflict use_column
+declare msgs int; arq int; resto int; q int; r jsonb; dias date[]; dd date; seq int := 0; mc jsonb; entrou timestamptz;
+begin
+  if p_regras is null then return; end if;
+  select count(distinct ms.created_at)::int into msgs from public.messages ms
+   where ms.grupo_id = p_grupo and ms.sender_id = p_user and ms.avisar and (ms.created_at at time zone 'America/Sao_Paulo')::date = p_dia;
+  select count(*)::int into arq from storage.objects o
+   where o.bucket_id = 'media' and (storage.foldername(o.name))[1] = p_user::text and (storage.foldername(o.name))[2] = p_grupo::text and (o.created_at at time zone 'America/Sao_Paulo')::date = p_dia;
+  resto := case when (p_regras -> 'teto' ->> 'on')::boolean then (p_regras -> 'teto' ->> 'valor')::int else null end;
+  r := p_regras -> 'entrada';
+  if (r ->> 'on')::boolean then
+    select gm.entrou_em into entrou from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = p_user;
+    if entrou is not null and (entrou at time zone 'America/Sao_Paulo')::date = p_dia and p_dia >= (r ->> 'desde')::date then motivo := 'entrada'; ref := ''; qtd := (r ->> 'valor')::int; return next; end if;
+  end if;
+  r := p_regras -> 'dia_ativo';
+  if (r ->> 'on')::boolean and p_dia >= (r ->> 'desde')::date and msgs >= (r ->> 'min')::int then
+    q := (r ->> 'valor')::int; if resto is not null then q := least(q, resto); resto := resto - q; end if;
+    if q > 0 then motivo := 'dia_ativo'; ref := p_dia::text; qtd := q; return next; end if;
+  end if;
+  r := p_regras -> 'mensagens';
+  if (r ->> 'on')::boolean and p_dia >= (r ->> 'desde')::date then
+    q := (msgs / (r ->> 'a_cada')::int) * (r ->> 'valor')::int; if resto is not null then q := least(q, resto); resto := resto - q; end if;
+    if q > 0 then motivo := 'mensagens'; ref := p_dia::text; qtd := q; return next; end if;
+  end if;
+  r := p_regras -> 'arquivos';
+  if (r ->> 'on')::boolean and p_dia >= (r ->> 'desde')::date then
+    q := (arq / (r ->> 'a_cada')::int) * (r ->> 'valor')::int; if resto is not null then q := least(q, resto); resto := resto - q; end if;
+    if q > 0 then motivo := 'arquivos'; ref := p_dia::text; qtd := q; return next; end if;
+  end if;
+  r := p_regras -> 'sequencia';
+  if (r ->> 'on')::boolean and p_dia >= (r ->> 'desde')::date and msgs > 0 then
+    select coalesce(array_agg(x.dia), '{}') into dias from (select distinct (ms.created_at at time zone 'America/Sao_Paulo')::date as dia from public.messages ms
+      where ms.grupo_id = p_grupo and ms.sender_id = p_user and ms.avisar and ms.created_at > now() - interval '400 days') x;
+    dd := p_dia; while dd = any(dias) and seq < 366 loop seq := seq + 1; dd := dd - 1; end loop;
+    for mc in select e from jsonb_array_elements(r -> 'marcos') e where (e ->> 'dias')::int = seq loop
+      motivo := 'sequencia'; ref := seq::text || ':' || (p_dia - seq + 1)::text; qtd := (mc ->> 'valor')::int; return next;
+    end loop;
+  end if;
+end $$;
+
+-- Fecha os dias encerrados (até ontem) que ainda não foram contados, com as regras de agora. Idempotente: o extrato tem chave única por pessoa, motivo e referência.
+create or replace function public.selo_apurar(p_grupo uuid) returns void
+language plpgsql security definer set search_path = public as $$
+declare reg jsonb; ate date; hoje date := (now() at time zone 'America/Sao_Paulo')::date; d date; m uuid;
+begin
+  perform pg_advisory_xact_lock(hashtext('selo:' || p_grupo::text));
+  select s.regras into reg from public.selo_regras s where s.grupo_id = p_grupo; if reg is null then return; end if;
+  select a.ate into ate from public.selo_apurado a where a.grupo_id = p_grupo;
+  ate := greatest(coalesce(ate, hoje - 36), hoje - 36);
+  for d in select g::date from generate_series(ate + 1, hoje - 1, interval '1 day') g loop
+    for m in select gm.user_id from public.grupo_membros gm where gm.grupo_id = p_grupo loop
+      insert into public.moedas_extrato (grupo_id, user_id, quantidade, motivo, ref)
+        select p_grupo, m, g.qtd, g.motivo, g.ref from public.selo_ganhos(p_grupo, m, d, reg) g where g.qtd > 0
+        on conflict (grupo_id, user_id, motivo, ref) do nothing;
+    end loop;
+  end loop;
+  if hoje - 1 > ate then insert into public.selo_apurado (grupo_id, ate) values (p_grupo, hoje - 1) on conflict (grupo_id) do update set ate = excluded.ate; end if;
+end $$;
+
+-- Regras do grupo (qualquer membro lê)
+create or replace function public.selo_regras_ver(p_grupo uuid) returns table (regras jsonb, atualizado_em timestamptz, por uuid)
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if not (select public.mfa_ok()) or not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = (select auth.uid())) then raise exception 'nao_esta_no_grupo' using errcode = '42501'; end if;
+  return query select s.regras, s.atualizado_em, s.por from public.selo_regras s where s.grupo_id = p_grupo;
+end $$;
+revoke all on function public.selo_regras_ver(uuid) from public, anon, authenticated;
+grant execute on function public.selo_regras_ver(uuid) to authenticated;
+
+-- Só o admin muda. Antes de valer a regra nova, fecha os dias passados com a regra antiga (nada é retroativo). Sem mudança real, não mexe em nada (e não gera aviso).
+create or replace function public.selo_regras_mudar(p_grupo uuid, p_regras jsonb) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); hoje date := (now() at time zone 'America/Sao_Paulo')::date; velho jsonb; novo jsonb;
+begin
+  perform public.consome('selo_regras', 60, 300);
+  if not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = u and gm.admin) then raise exception 'so_admin' using errcode = '42501'; end if;
+  perform public.selo_apurar(p_grupo);
+  select s.regras into velho from public.selo_regras s where s.grupo_id = p_grupo;
+  novo := public.selo_limpa(p_regras, coalesce(velho, '{}'::jsonb), hoje);
+  if velho is not distinct from novo then return; end if;
+  insert into public.selo_regras (grupo_id, regras, atualizado_em, por) values (p_grupo, novo, now(), u)
+    on conflict (grupo_id) do update set regras = excluded.regras, atualizado_em = now(), por = u;
+end $$;
+revoke all on function public.selo_regras_mudar(uuid, jsonb) from public, anon, authenticated;
+grant execute on function public.selo_regras_mudar(uuid, jsonb) to authenticated;
+
+-- Saldo de cada pessoa do grupo: confirmado (extrato) e a confirmar (hoje). Qualquer membro lê.
+create or replace function public.selo_saldo(p_grupo uuid) returns table (user_id uuid, confirmados bigint, pendentes bigint)
+language plpgsql security definer set search_path = public as $$
+#variable_conflict use_column
+declare reg jsonb; hoje date := (now() at time zone 'America/Sao_Paulo')::date;
+begin
+  if not (select public.mfa_ok()) or not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = (select auth.uid())) then raise exception 'nao_esta_no_grupo' using errcode = '42501'; end if;
+  perform public.consome('selo_saldo', 20, 300);
+  perform public.selo_apurar(p_grupo);
+  select s.regras into reg from public.selo_regras s where s.grupo_id = p_grupo;
+  return query select gm.user_id,
+      coalesce((select sum(e.quantidade) from public.moedas_extrato e where e.grupo_id = p_grupo and e.user_id = gm.user_id), 0)::bigint,
+      coalesce((select sum(g.qtd) from public.selo_ganhos(p_grupo, gm.user_id, hoje, reg) g), 0)::bigint
+    from public.grupo_membros gm where gm.grupo_id = p_grupo;
+end $$;
+revoke all on function public.selo_saldo(uuid) from public, anon, authenticated;
+grant execute on function public.selo_saldo(uuid) to authenticated;
+
+-- Quando as regras de cada um dos meus grupos mudaram por último (para o aviso no chat)
+create or replace function public.selos_resumo() returns table (grupo_id uuid, atualizado_em timestamptz, por uuid)
+language sql stable security definer set search_path = public as $$
+  select s.grupo_id, s.atualizado_em, s.por from public.selo_regras s
+   where (select public.mfa_ok()) and exists (select 1 from public.grupo_membros gm where gm.grupo_id = s.grupo_id and gm.user_id = (select auth.uid()))
+$$;
+revoke all on function public.selos_resumo() from public, anon, authenticated;
+grant execute on function public.selos_resumo() to authenticated;
+revoke all on function public.selo_int(jsonb, text, int, int, int) from public, anon, authenticated;
+revoke all on function public.selo_limpa(jsonb, jsonb, date) from public, anon, authenticated;
+revoke all on function public.selo_ganhos(uuid, uuid, date, jsonb) from public, anon, authenticated;
+revoke all on function public.selo_apurar(uuid) from public, anon, authenticated;

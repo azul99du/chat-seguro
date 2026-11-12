@@ -1,22 +1,23 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=0f84b222a3";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=0f84b222a3";
-import { montarFigurinhas } from "./figurinhas.js?v=0f84b222a3";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=0f84b222a3";
-import { todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=0f84b222a3";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=0f84b222a3";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=0f84b222a3";
-import { acharVideoLink } from "./videolink.js?v=0f84b222a3";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=0f84b222a3";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=0f84b222a3";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=0f84b222a3";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=0f84b222a3";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=0f84b222a3";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=0f84b222a3";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=0f84b222a3";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=0f84b222a3";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=0f84b222a3";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=0f84b222a3";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=e43507cc22";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=e43507cc22";
+import { montarFigurinhas } from "./figurinhas.js?v=e43507cc22";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=e43507cc22";
+import { todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=e43507cc22";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=e43507cc22";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=e43507cc22";
+import { acharVideoLink } from "./videolink.js?v=e43507cc22";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=e43507cc22";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=e43507cc22";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=e43507cc22";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=e43507cc22";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=e43507cc22";
+import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=e43507cc22";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=e43507cc22";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=e43507cc22";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=e43507cc22";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=e43507cc22";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=e43507cc22";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -1674,7 +1675,7 @@ async function anotarMudancas(g, n) {
   let est = await metaGet(me.id, k).catch(() => null), t = Date.now();
   if (!est) { // primeira vez que este aparelho vê o grupo
     avisos.push(n.eu.por === me.id ? { tipo: "criou" } : { tipo: "adicionado", nome: n.membros.find((p) => p.id === n.eu.por)?.username || "alguém" });
-    est = { membros: agora, nome: g.semNome ? null : g.nome, cargos, foto, avisos: [] }; t = Date.parse(n.eu.entrouEm) || t;
+    est = { membros: agora, nome: g.semNome ? null : g.nome, cargos, foto, selos: n.selos?.atualizado_em || null, avisos: [] }; t = Date.parse(n.eu.entrouEm) || t;
   } else {
     const d = diferencaMembros(est.membros || {}, agora, me.id);
     for (const p of d.entraram) avisos.push({ tipo: "entrou", id: p.id, nome: p.nome });
@@ -1683,9 +1684,11 @@ async function anotarMudancas(g, n) {
     if (!g.semNome && est.nome && est.nome !== g.nome) avisos.push({ tipo: "nome", nome: g.nome });
     if (est.cargos) for (const c of diferencaCargos(est.cargos, cargos)) avisos.push({ tipo: c.para === "sub" ? "sub" : c.para === "admin" ? "admin" : "semsub", id: c.id, nome: agora[c.id] });
     if ("foto" in est && est.foto !== foto) avisos.push({ tipo: "foto", removida: !foto });
-    const igual = JSON.stringify(est.cargos) === JSON.stringify(cargos) && est.foto === foto;
+    const selosAgora = n.selos?.atualizado_em || null;
+    if (selosAgora && est.selos !== undefined && est.selos !== selosAgora) avisos.push({ tipo: "selos", id: n.selos.por, nome: agora[n.selos.por], eu: n.selos.por === me.id }); // (est.selos ainda não existe em quem já via o grupo antes dos Selos: só anota, sem aviso)
+    const igual = JSON.stringify(est.cargos) === JSON.stringify(cargos) && est.foto === foto && est.selos === selosAgora;
     if (!avisos.length && igual && (g.semNome || est.nome === g.nome)) return;
-    est.membros = agora; est.cargos = cargos; est.foto = foto; if (!g.semNome) est.nome = g.nome;
+    est.selos = selosAgora; est.membros = agora; est.cargos = cargos; est.foto = foto; if (!g.semNome) est.nome = g.nome;
   }
   for (const a of avisos) a.t = t;
   est.avisos = [...(est.avisos || []), ...avisos].slice(-60);
@@ -1699,6 +1702,7 @@ function atualizarGrupos(fresco = false) {
   return (carregandoGrupos = (async () => {
     try {
       const { data, error } = await sb.rpc("meus_grupos"); if (error) return;
+      const selosPor = new Map(((await sb.rpc("selos_resumo")).data || []).map((x) => [x.grupo_id, x])); // quando as regras dos Selos de cada grupo mudaram (para o aviso no chat)
       const vistos = new Set();
       for (const n of montarGrupos(data, me.id)) {
         vistos.add(n.id);
@@ -1709,7 +1713,7 @@ function atualizarGrupos(fresco = false) {
         const nome = g.gk ? await abrirNome(g.gk, n.id, n.nomeCifrado).catch(() => null) : null;
         g.nome = nome || "Grupo"; g.semNome = !nome;
         grupos.set(n.id, g); tocaAtiv(n.id, n.eu.entrouEm);
-        await anotarMudancas(g, n);
+        n.selos = selosPor.get(n.id) || null; await anotarMudancas(g, n);
       }
       for (const [id, g] of [...grupos]) if (!vistos.has(id)) { // saí, fui removido, ou o grupo acabou
         grupos.delete(id); limparNaoLidas(id); ultima.delete(id); ultimaCerta.delete(id); agendaUlt(); chavesGrupo.delete(id);
@@ -1915,6 +1919,112 @@ function desenharEstatisticas() {
 $("gi-est").onclick = () => { if (giGrupo) abrirEstatisticas(giGrupo).catch(() => msgEst("Não foi possível abrir agora.")); };
 for (const b of $("grupo-est").querySelectorAll(".est-abas button")) b.onclick = () => { estPeriodo = b.dataset.p; estAberto = null; desenharEstatisticas(); };
 $("grupo-est").addEventListener("close", () => { estGrupo = null; estDados = null; });
+
+// ---------- Selos ----------
+// A moeda do grupo. O servidor calcula os ganhos (envios, arquivos, dias, entrada) pelas regras que o admin define; aqui só se mostra o saldo e se edita a regra.
+const SVGNS = "http://www.w3.org/2000/svg";
+function seloIcone(tam = 20, pendente = false) {
+  const s = document.createElementNS(SVGNS, "svg"), u = document.createElementNS(SVGNS, "use");
+  s.setAttribute("viewBox", "0 0 100 100"); s.setAttribute("width", String(tam)); s.setAttribute("height", String(tam)); s.setAttribute("aria-hidden", "true"); s.setAttribute("class", "selo-ico" + (pendente ? " pend" : ""));
+  u.setAttribute("href", "#selo"); s.append(u); return s;
+}
+let slGrupo = null, slDados = null, srRascunho = null, srAntes = null;
+const msgSelos = (t) => { $("sl-msg").textContent = t; };
+async function abrirSelos(g) {
+  slGrupo = g; slDados = null; msgSelos(""); $("sl-lista").replaceChildren(); $("sl-regras").replaceChildren(); $("sl-meu").replaceChildren(el("span", "t", "Carregando…")); $("sl-editar").hidden = true; $("selos").showModal();
+  await carregarSelos(g);
+}
+async function carregarSelos(g) {
+  const [s, r] = await Promise.all([sb.rpc("selo_saldo", { p_grupo: g.id }), sb.rpc("selo_regras_ver", { p_grupo: g.id })]);
+  if (slGrupo !== g) return;
+  if (s.error || r.error) { msgSelos("Não foi possível carregar os Selos agora."); $("sl-meu").replaceChildren(); return; }
+  slDados = { regras: limpaRegras(r.data?.[0]?.regras), saldo: new Map((s.data || []).map(saldoLimpo).map((x) => [x.id, x])) }; desenharSelos();
+}
+function desenharSelos() {
+  const g = slGrupo && grupos.get(slGrupo.id); if (!g || !slDados) return;
+  const meu = slDados.saldo.get(me.id) || { confirmados: 0, pendentes: 0 }, tem = (x) => slDados.saldo.get(x) || { confirmados: 0, pendentes: 0 };
+  const n = el("span", "n", String(meu.confirmados)), t = el("span", "t"); t.append(n, el("small", null, meu.confirmados === 1 ? "Selo confirmado" : "Selos confirmados"));
+  const box = $("sl-meu"); box.replaceChildren(seloIcone(48), t);
+  if (meu.pendentes > 0) { const p = el("span", "t"); p.append(el("span", "n", "+" + meu.pendentes), el("small", null, "a confirmar hoje")); box.append(el("span", "sep"), seloIcone(30, true), p); }
+  const ordem = [...g.membros.values()].sort((a, b) => (tem(b.id).confirmados + tem(b.id).pendentes) - (tem(a.id).confirmados + tem(a.id).pendentes) || a.username.localeCompare(b.username));
+  $("sl-lista").replaceChildren(...ordem.map((p) => {
+    const eu = p.id === me.id, s = tem(p.id), row = el("div", "sl-pessoa" + (eu ? " eu" : "")), av = el("span", "avatar"), nm = el("span", "nm"), sal = el("span", "sal");
+    pintarAvatar(av, p, false); nm.append(el("b", null, "@" + p.username + (eu ? " (você)" : ""))); if (s.pendentes > 0) nm.append(el("small", null, "+" + s.pendentes + " a confirmar"));
+    sal.append(seloIcone(22), String(s.confirmados)); row.append(av, nm, sal); return row;
+  }));
+  const fs = frasesLigadas(slDados.regras);
+  $("sl-regras").replaceChildren(...(fs.length ? fs.map((f) => el("li", null, f.texto)) : [el("li", "vazio", g.admin ? "Ainda não há regras. Toque em “Editar regras” para escolher como ganhar Selos." : "O admin ainda não definiu como ganhar Selos.")]));
+  $("sl-editar").hidden = !g.admin;
+}
+$("gi-selos").onclick = () => { if (giGrupo) abrirSelos(giGrupo).catch(() => msgSelos("Não foi possível abrir agora.")); };
+$("selos").addEventListener("close", () => { slGrupo = null; slDados = null; });
+$("sl-editar").onclick = () => { if (slGrupo?.admin && slDados) abrirRegras(slGrupo); };
+
+// Editor das regras (só admin): cada regra é uma frase; os números são tocáveis e abrem a folha de edição
+function pedirNumero({ titulo, contexto, valor, campo, selos }) {
+  return new Promise((ok) => {
+    const [min, max] = faixa(campo), inp = $("sn-valor"), dlg = $("selos-num"); let atual = valor, fim = false;
+    const fecha = (v) => { if (fim) return; fim = true; ok(v); if (dlg.open) dlg.close(); };
+    const pinta = () => { $("sn-menos").disabled = atual <= min; $("sn-mais").disabled = atual >= max; };
+    $("sn-titulo").textContent = titulo; $("sn-ctx").textContent = contexto; inp.value = String(atual); $("sn-ico").replaceChildren(...(selos ? [seloIcone(30)] : []));
+    $("sn-atalhos").replaceChildren(...[1, 5, 10, 50, 100, 999].filter((x) => x >= min && x <= max).map((x) => { const b = el("button", null, String(x)); b.type = "button"; b.onclick = () => { atual = x; inp.value = String(x); pinta(); }; return b; }));
+    $("sn-menos").onclick = () => { atual = Math.max(min, atual - 1); inp.value = String(atual); pinta(); };
+    $("sn-mais").onclick = () => { atual = Math.min(max, atual + 1); inp.value = String(atual); pinta(); };
+    inp.oninput = () => { const v = ajustaCampo(campo, inp.value); if (v !== null) { atual = v; if (String(v) !== inp.value) inp.value = String(v); } pinta(); };
+    inp.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); fecha(atual); } };
+    $("sn-ok").onclick = () => fecha(atual);
+    dlg.onclose = () => fecha(null); pinta(); dlg.showModal(); inp.focus(); inp.select();
+  });
+}
+const TITULO_CAMPO = { valor: "Quantos Selos?", min: "Quantas mensagens, no mínimo?", a_cada: "A cada quantas?", dias: "Quantos dias seguidos?" };
+async function editarNumero(acao, p) {
+  const r = srRascunho, marco = p.marco, ctx = fraseTexto(frase(acao, r, marco));
+  const v = await pedirNumero({ titulo: TITULO_CAMPO[p.campo] || "Quanto?", contexto: ctx, valor: p.n, campo: p.campo, selos: p.tipo === "s" }); if (v === null || !srRascunho) return;
+  if (acao === "sequencia") {
+    const m = r.sequencia.marcos[marco]; if (!m) return;
+    if (p.campo === "dias") { if (r.sequencia.marcos.some((x, i) => i !== marco && x.dias === v)) { $("sr-msg").textContent = "Já existe um marco com " + v + " dias."; return; } m.dias = v; r.sequencia.marcos.sort((a, b) => a.dias - b.dias); }
+    else m.valor = v;
+  } else r[acao][p.campo] = v;
+  $("sr-msg").textContent = ""; desenharRegras();
+}
+function fraseEl(acao, partes) {
+  const d = el("div", "sr-frase");
+  for (const p of partes) {
+    if (typeof p === "string") { d.append(p); continue; }
+    const b = el("button", "sr-n " + p.tipo, String(p.n)); b.type = "button"; b.setAttribute("aria-label", "Mudar o número " + p.n); b.onclick = () => editarNumero(acao, p).catch(() => {}); d.append(b);
+  }
+  return d;
+}
+function interruptor(on, rotulo, fn) { const b = el("button", "sr-sw" + (on ? " on" : "")); b.type = "button"; b.setAttribute("role", "switch"); b.setAttribute("aria-checked", String(on)); b.setAttribute("aria-label", rotulo); b.onclick = fn; return b; }
+function abrirRegras(g) {
+  srAntes = limpaRegras(slDados.regras); srRascunho = limpaRegras(slDados.regras); $("sr-msg").textContent = ""; desenharRegras(); $("selos-regras").showModal();
+}
+function desenharRegras() {
+  const r = srRascunho; if (!r) return;
+  const cartao = (acao, titulo, desc, corpo) => {
+    const c = el("div", "sr-card"), top = el("div", "sr-top"), tx = el("div"); tx.append(el("b", null, titulo), el("small", null, desc));
+    top.append(tx, interruptor(r[acao].on, titulo, () => { r[acao].on = !r[acao].on; if (acao === "sequencia" && r[acao].on && !r.sequencia.marcos.length) r.sequencia.marcos.push(marcoNovo([])); desenharRegras(); }));
+    c.append(top); if (r[acao].on) for (const x of corpo()) c.append(x); return c;
+  };
+  $("sr-cards").replaceChildren(...ACOES.map((acao) => cartao(acao, TITULOS[acao][0], TITULOS[acao][1], () => {
+    if (acao !== "sequencia") return [fraseEl(acao, frase(acao, r))];
+    const linhas = r.sequencia.marcos.map((_, i) => { const l = el("div", "sr-linha"), x = el("button", "sr-x", "×"); x.type = "button"; x.setAttribute("aria-label", "Remover este marco"); x.onclick = () => { r.sequencia.marcos.splice(i, 1); desenharRegras(); }; l.append(fraseEl("sequencia", frase("sequencia", r, i)), x); return l; });
+    const novo = marcoNovo(r.sequencia.marcos); if (novo) { const b = el("button", "sr-add", "+ Adicionar marco"); b.type = "button"; b.onclick = () => { r.sequencia.marcos.push(marcoNovo(r.sequencia.marcos)); r.sequencia.marcos.sort((a, b2) => a.dias - b2.dias); desenharRegras(); }; linhas.push(b); }
+    return linhas;
+  })));
+  const teto = el("div", "sr-card"), top = el("div", "sr-top"), tx = el("div"); tx.append(el("b", null, "Limite de Selos por dia"), el("small", null, r.teto.on ? "Por pessoa, somando as regras do dia" : "Sem limite"));
+  top.append(tx, interruptor(r.teto.on, "Limite de Selos por dia", () => { r.teto.on = !r.teto.on; desenharRegras(); })); teto.append(top); if (r.teto.on) teto.append(fraseEl("teto", frase("teto", r)));
+  $("sr-mais").replaceChildren(teto);
+  const p = previa(r, 20); $("sr-previa").replaceChildren(...(p.total ? [seloIcone(18), " ", el("b", null, textoSelos(p.total)), " em um dia comum (20 mensagens enviadas)"] : ["Com estas regras, um dia comum (20 mensagens enviadas) não rende Selos."]));
+  $("sr-salvar").disabled = igualRegras(r, srAntes);
+}
+$("sr-salvar").onclick = async () => {
+  const g = slGrupo; if (!g || !srRascunho || $("sr-salvar").disabled) return; $("sr-salvar").disabled = true; $("sr-msg").textContent = "";
+  const { error } = await sb.rpc("selo_regras_mudar", { p_grupo: g.id, p_regras: limpaRegras(srRascunho) });
+  if (error) { $("sr-msg").textContent = erroRegras(error); $("sr-salvar").disabled = false; return; }
+  $("selos-regras").close(); await atualizarGrupos(true).catch(() => {}); avisarMudanca([...g.membros.values()]); await carregarSelos(g).catch(() => {});
+};
+$("selos-regras").addEventListener("close", () => { srRascunho = null; srAntes = null; });
 async function mudarCargo(g, p, sub) {
   msgGrupo("");
   const { error } = await sb.rpc("grupo_cargo", { p_grupo: g.id, p_user: p.id, p_sub: sub });
