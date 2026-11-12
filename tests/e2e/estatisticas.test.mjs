@@ -44,17 +44,28 @@ t("a tela de estatísticas mostra quem falou mais, o tempo na tela e o aviso de 
   assert.match(await A.locator("#est-resumo").innerText(), /4 mensagens hoje no grupo/);
   assert.match(linhas[1], /na tela/); assert.doesNotMatch(linhas[1], /^\s*2\s+0min/, "o meu tempo de tela já chegou ao servidor");
   await A.click("#est-lista .est-pessoa:first-child .est-linha"); const mais = await A.locator("#est-lista .est-mais").innerText(); assert.match(mais, /3 texto/); assert.match(mais, /0 fotos/); assert.match(mais, /Entrou hoje|há/);
+  await A.setViewportSize({ width: 390, height: 380 }); // tela baixa: a página precisa rolar (a lista não pode encolher para caber)
+  const r = await A.evaluate(() => { const c = document.querySelector("#grupo-est .pg-corpo"), l = document.querySelector("#est-lista"), soma = [...l.children].reduce((n, x) => n + x.getBoundingClientRect().height, 0); const y0 = c.scrollTop; c.scrollTop = 9999; return { rola: c.scrollHeight > c.clientHeight, moveu: c.scrollTop > y0, lista: l.getBoundingClientRect().height, soma }; });
+  assert.ok(r.rola && r.moveu, "a tela de estatísticas rola"); assert.ok(r.lista >= r.soma - 1, `a lista não encolhe (${r.lista} < ${r.soma})`);
+  await A.setViewportSize({ width: 1100, height: 800 });
   await A.click('.est-abas button[data-p="mes"]'); assert.match(await A.locator("#est-resumo").innerText(), /neste mês/);
 });
 t("o outro membro vê o meu tempo de tela (as estatísticas são do grupo todo)", async () => {
   await B.click("#grupo-btn"); await B.waitForSelector("#grupo-info[open]"); await B.click("#gi-est"); await B.waitForSelector("#grupo-est[open] #est-lista .est-pessoa", { timeout: 30000 });
   const linhaA = await B.locator("#est-lista .est-pessoa").filter({ hasNotText: "(você)" }).locator(".est-linha").innerText(); assert.match(linhaA, /menos de 1min na tela|\dmin na tela/);
+  const antes = await B.locator("#est-lista .est-linha").allInnerTexts(); assert.match(antes.join(" "), /\b3\b[\s\S]*mensagens/);
+  // Aparelho "novo": sem nenhuma mensagem guardada. Os números têm de continuar iguais, porque cada pessoa publicou o que enviou.
+  await B.click("#grupo-est .pg-volta"); await B.evaluate(() => new Promise((ok, no) => { const r = indexedDB.open("lacre-sf"); r.onsuccess = () => { const t = r.result.transaction("history", "readwrite"); t.objectStore("history").clear(); t.oncomplete = ok; t.onerror = () => no(t.error); }; }));
+  await B.click("#gi-est"); await B.waitForSelector("#grupo-est[open] #est-lista .est-pessoa", { timeout: 30000 });
+  assert.match(await B.locator("#est-resumo").innerText(), /4 mensagens hoje no grupo/, "sem histórico local, vale o que foi publicado no servidor");
+  const depois = await B.locator("#est-lista .est-linha").allInnerTexts(); assert.deepEqual(depois.map((x) => x.match(/\b(\d+)\s*mensage/)[1]), antes.map((x) => x.match(/\b(\d+)\s*mensage/)[1]));
 });
 t("travas do banco: de fora não soma nem lê; tabelas fechadas; ninguém escreve no extrato de moedas", async () => {
   const x = await apiUser("x"), g = hex().replace(/^(.{8})(.{4})(.{4})(.{4})(.{12}).*$/, "$1-$2-$3-$4-$5");
   assert.equal((await x.c.rpc("grupo_tela", { p_grupo: g, p_segundos: 30 })).error?.code, "42501");
   assert.equal((await x.c.rpc("grupo_estatisticas", { p_grupo: g })).error?.code, "42501");
   assert.equal((await x.c.rpc("moedas_saldo", { p_grupo: g })).error?.code, "42501");
+  assert.equal((await x.c.rpc("grupo_enviadas", { p_grupo: g, p_dias: [{ dia: "2026-11-12", texto: 99999 }] })).error?.code, "42501", "de fora não publica");
   assert.ok((await x.c.from("grupo_dia").select("*")).error, "tabela fechada para leitura direta");
   assert.ok((await x.c.from("grupo_dia").insert({ grupo_id: g, user_id: x.id, dia: "2026-01-01", segundos: 9999 })).error);
   assert.ok((await x.c.from("moedas_extrato").insert({ grupo_id: g, user_id: x.id, quantidade: 1000, motivo: "teste" })).error, "ninguém dá moeda a si mesmo");

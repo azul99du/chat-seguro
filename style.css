@@ -712,3 +712,4 @@ dialog#video-view::backdrop{background:rgba(5,6,28,.9)}
 .est-mais{padding:2px 16px 14px 58px;font:500 .88rem/1.5 var(--body)}
 .est-mais .est-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.est-mais .est-chips span{padding:4px 10px;border-radius:99px;background:var(--paper);border:1px solid var(--line);font:600 .8rem var(--body)}
 .est-mais div.est-ln{display:flex;justify-content:space-between;padding:4px 0;color:var(--mut)}.est-mais div.est-ln b{color:var(--texto);font-weight:600}
+.est-abas,.est-aviso,.est-resumo,.est-lista{flex:none} /* (o corpo da página é uma coluna que rola: sem isto a lista encolhia em vez de rolar) */

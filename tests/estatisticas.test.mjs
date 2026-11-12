@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { tipoDe, diaLocal, primeiroDia, contar, sequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, textoSequencia } from "../estatisticas.js";
+import { porDia, publicavel, mesclar, resumir, tipoDe, diaLocal, primeiroDia, contar, sequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, textoSequencia } from "../estatisticas.js";
 
 const M = [{ id: "a", username: "ana" }, { id: "b", username: "beto" }, { id: "c", username: "caio" }];
 const t = (d, h = 12) => new Date(2026, 10, d, h).getTime();
@@ -56,4 +56,20 @@ test("ranking: mais mensagens primeiro; empate pelo tempo de tela, depois pelo n
   const c = new Map([["a", { total: 3 }], ["b", { total: 5 }], ["c", { total: 3 }]]);
   assert.deepEqual(ranking(M, c, new Map([["c", 10]])).map((x) => x.p.id), ["b", "c", "a"]);
   assert.deepEqual(ranking(M, new Map(), new Map()).map((x) => x.p.id), ["a", "b", "c"]);
+});
+test("aparelhos diferentes: vale o maior valor por dia e tipo (nunca soma duas vezes, nunca passa do que foi enviado)", () => {
+  const local = porDia([txt("a", 12, "um"), txt("a", 12, "dois"), med("b", 12, "image")], M);
+  const remoto = [{ user_id: "a", dia: "2026-11-12", env: { texto: 5, foto: 1 } }, { user_id: "b", dia: "2026-11-12", env: { foto: 1 } }, { user_id: "b", dia: "2026-11-11", env: { video: 2 } }];
+  const r = resumir(mesclar(local, remoto), "2026-11-11");
+  assert.deepEqual([r.get("a").texto, r.get("a").foto, r.get("a").total], [5, 1, 6], "o servidor sabe de mais mensagens do a (mandadas de outro aparelho)");
+  assert.deepEqual([r.get("b").foto, r.get("b").video, r.get("b").total], [1, 2, 3], "foto: iguais, não dobra; vídeo só no servidor");
+  assert.equal(resumir(mesclar(local, remoto), "2026-11-12").get("b").video, 0, "fora do período");
+  const ruim = mesclar(local, [{ user_id: "a", dia: "2026-11-12", env: { texto: -3, foto: 1.5, video: "9", audio: 1e12, figurinha: NaN } }, { user_id: "zzz", dia: "2026-11-12", env: { texto: 9 } }, null, { user_id: "a", dia: 4, env: {} }]);
+  assert.equal(resumir(ruim).get("a").total, 2, "lixo do servidor é ignorado"); assert.equal(ruim.has("zzz"), false);
+});
+test("o que publico no servidor: só os meus números dos últimos dias", () => {
+  const l = porDia([txt("a", 12, "oi @beto", { re: {} }), med("a", 3, "sticker"), txt("b", 12, "x")], M);
+  const p = publicavel(l.get("a"), "2026-11-10");
+  assert.deepEqual(p, [{ dia: "2026-11-12", texto: 1, foto: 0, video: 0, audio: 0, figurinha: 0, respostas: 1, citou: 1 }]);
+  assert.deepEqual(publicavel(new Map(), "2026-01-01"), []);
 });

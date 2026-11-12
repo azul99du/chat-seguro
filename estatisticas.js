@@ -1,6 +1,6 @@
 // Estatísticas do grupo. Funções puras (testadas em Node): contam o que este aparelho tem guardado das mensagens do grupo.
 // O servidor não vê o conteúdo, então tipo de mensagem, respostas e citações são contados aqui; só o tempo de tela vem do servidor.
-import { mencionados } from "./grupo.js?v=49dcb55301";
+import { mencionados } from "./grupo.js?v=fe4c2bd875";
 
 export const TIPOS = ["texto", "foto", "video", "audio", "figurinha"];
 const por = (n, um, varios) => (n === 1 ? `1 ${um}` : `${n} ${varios}`);
@@ -20,21 +20,57 @@ const somaDias = (dia, n) => { const [y, m, d] = dia.split("-").map(Number); ret
 export const PERIODOS = { hoje: 1, semana: 7, mes: 30 };
 export const primeiroDia = (periodo, agora = new Date()) => somaDias(diaLocal(agora), 1 - (PERIODOS[periodo] || 1));
 
-const vazio = () => ({ total: 0, texto: 0, foto: 0, video: 0, audio: 0, figurinha: 0, respostas: 0, citou: 0, citada: 0, dias: new Set() });
-// entradas: [{ content, at, from }] (as minhas têm from = meu id). membros: [{ id, username }]. Conta só de "desde" (dia local, inclusive) em diante;
-// os dias de atividade (para a sequência) contam desde sempre.
-export function contar(entradas, membros, desde) {
-  const r = new Map(membros.map((p) => [p.id, vazio()]));
+const CHAVES = ["texto", "foto", "video", "audio", "figurinha", "respostas", "citou"]; // o que cada pessoa publica sobre o que ELA enviou (o resto, como "citada", é só local)
+const diaVazio = () => ({ texto: 0, foto: 0, video: 0, audio: 0, figurinha: 0, respostas: 0, citou: 0, citada: 0 });
+// Conta por pessoa e por dia a partir do histórico deste aparelho. entradas: [{ content, at, from }]; membros: [{ id, username }]
+export function porDia(entradas, membros) {
+  const r = new Map(membros.map((p) => [p.id, new Map()]));
   for (const e of entradas || []) {
-    const t = tipoDe(e?.content), c = r.get(e?.from); if (!t || !c) continue;
+    const t = tipoDe(e?.content), m = r.get(e?.from); if (!t || !m) continue;
     const dia = diaLocal(e.at); if (!dia) continue;
-    c.dias.add(dia); if (desde && dia < desde) continue;
-    c.total++; c[t]++;
-    if (e.content.re) c.respostas++;
-    if (t === "texto") for (const id of mencionados(String(e.content.text ?? ""), membros.filter((p) => p.id !== e.from))) { c.citou++; const o = r.get(id); if (o) o.citada++; }
+    const d = m.get(dia) || m.set(dia, diaVazio()).get(dia); d[t]++;
+    if (e.content.re) d.respostas++;
+    if (t === "texto") for (const id of mencionados(String(e.content.text ?? ""), membros.filter((p) => p.id !== e.from))) {
+      d.citou++; const o = r.get(id); if (o) { const od = o.get(dia) || o.set(dia, diaVazio()).get(dia); od.citada++; }
+    }
   }
   return r;
 }
+// Só o que a própria pessoa enviou, nos últimos dias, para publicar no servidor: [{ dia, texto, foto, ... }]
+export function publicavel(mapaDaPessoa, desde) {
+  const out = [];
+  for (const [dia, d] of mapaDaPessoa || []) if (dia >= desde) { const o = { dia }; for (const k of CHAVES) o[k] = d[k]; if (CHAVES.some((k) => o[k])) out.push(o); }
+  return out.sort((a, b) => a.dia.localeCompare(b.dia));
+}
+// Cada aparelho só conhece o que recebeu (o que eu mando de um aparelho não chega ao outro), e o servidor tem o que cada pessoa publicou do que enviou:
+// as duas contas só podem estar incompletas, nunca grandes demais, então vale o maior valor de cada dia e tipo.
+// remoto: [{ user_id, dia, env: { texto, ... } }] (desconfiável: só números inteiros pequenos)
+export function mesclar(local, remoto) {
+  const r = new Map([...local].map(([id, m]) => [id, new Map([...m].map(([dia, d]) => [dia, { ...d }]))]));
+  for (const l of remoto || []) {
+    const m = r.get(l?.user_id); if (!m || typeof l.dia !== "string" || !l.env || typeof l.env !== "object") continue;
+    const d = m.get(l.dia) || m.set(l.dia, diaVazio()).get(l.dia);
+    for (const k of CHAVES) { const v = l.env[k]; if (typeof v === "number" && Number.isSafeInteger(v) && v > 0 && v <= 100000) d[k] = Math.max(d[k], v); }
+  }
+  return r;
+}
+// Soma de um período (desde = primeiro dia, inclusive); "dias" = dias com mensagem desde sempre (para a sequência)
+export function resumir(mapa, desde) {
+  const r = new Map();
+  for (const [id, m] of mapa) {
+    const c = { total: 0, texto: 0, foto: 0, video: 0, audio: 0, figurinha: 0, respostas: 0, citou: 0, citada: 0, dias: new Set() };
+    for (const [dia, d] of m) {
+      if (TIPOS.some((k) => d[k])) c.dias.add(dia);
+      if (desde && dia < desde) continue;
+      for (const k of TIPOS) { c[k] += d[k]; c.total += d[k]; }
+      c.respostas += d.respostas; c.citou += d.citou; c.citada += d.citada;
+    }
+    r.set(id, c);
+  }
+  return r;
+}
+export const contar = (entradas, membros, desde) => resumir(porDia(entradas, membros), desde);
+const vazio = () => resumir(new Map([["x", new Map()]])).get("x");
 // Dias seguidos com mensagem, terminando hoje (ou ontem: o dia de hoje ainda não acabou)
 export function sequencia(dias, hoje) {
   let d = dias.has(hoje) ? hoje : somaDias(hoje, -1), n = 0;

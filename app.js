@@ -1,22 +1,22 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=49dcb55301";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=49dcb55301";
-import { montarFigurinhas } from "./figurinhas.js?v=49dcb55301";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=49dcb55301";
-import { todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=49dcb55301";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=49dcb55301";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=49dcb55301";
-import { acharVideoLink } from "./videolink.js?v=49dcb55301";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=49dcb55301";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=49dcb55301";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=49dcb55301";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=49dcb55301";
-import { contar, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=49dcb55301";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=49dcb55301";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=49dcb55301";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=49dcb55301";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=49dcb55301";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=49dcb55301";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=fe4c2bd875";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=fe4c2bd875";
+import { montarFigurinhas } from "./figurinhas.js?v=fe4c2bd875";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=fe4c2bd875";
+import { todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=fe4c2bd875";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=fe4c2bd875";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=fe4c2bd875";
+import { acharVideoLink } from "./videolink.js?v=fe4c2bd875";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=fe4c2bd875";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=fe4c2bd875";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=fe4c2bd875";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=fe4c2bd875";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=fe4c2bd875";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=fe4c2bd875";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=fe4c2bd875";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=fe4c2bd875";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=fe4c2bd875";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=fe4c2bd875";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -1863,25 +1863,35 @@ async function enviarTela() {
 }
 setInterval(() => {
   const g = active?.grupo ? active.id : null;
-  if (g !== telaGrupo) { const velho = telaGrupo; if (velho) enviarTela().catch(() => {}); telaGrupo = g; telaSeg = 0; }
+  if (g !== telaGrupo) { const velho = telaGrupo; if (velho) { enviarTela().catch(() => {}); publicarDoHistorico(velho); } telaGrupo = g; telaSeg = 0; if (g) publicarDoHistorico(g); }
   if (g && document.visibilityState === "visible" && Date.now() - ultimoToque < 60000) { telaSeg += 5; if (telaSeg >= 60) enviarTela().catch(() => {}); }
 }, 5000);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") enviarTela().catch(() => {}); });
 
+// O que eu enviei, por dia, vai para o servidor (só contagens): assim o outro aparelho meu e os dos outros membros mostram o mesmo número. No máximo 1 envio por minuto por grupo.
+const enviadasEm = new Map();
+async function publicarEnviadas(g, local, forcar = false) {
+  if (!forcar && Date.now() - (enviadasEm.get(g.id) || 0) < 60000) return;
+  const dias = publicavel(local.get(me.id), primeiroDia("mes", new Date(Date.now() - 5 * 864e5))); if (!dias.length) return;
+  enviadasEm.set(g.id, Date.now()); await sb.rpc("grupo_enviadas", { p_grupo: g.id, p_dias: dias });
+}
+async function publicarDoHistorico(id) { const g = grupos.get(id); if (!g) return; const local = porDia(await todoHistorico(me.id, id).catch(() => []), [...g.membros.values()]); await publicarEnviadas(g, local).catch(() => {}); }
 let estPeriodo = "hoje", estAberto = null, estGrupo = null, estDados = null;
 const msgEst = (t) => { $("est-msg").textContent = t; };
 async function abrirEstatisticas(g) {
   estGrupo = g; estDados = null; estAberto = null; msgEst(""); $("est-lista").replaceChildren(); $("est-resumo").textContent = "Carregando…"; $("grupo-est").showModal();
   if (telaGrupo === g.id) await enviarTela().catch(() => {}); // (o meu tempo de agora entra na conta)
-  const [hist, tela] = await Promise.all([todoHistorico(me.id, g.id).catch(() => []), sb.rpc("grupo_estatisticas", { p_grupo: g.id })]);
+  const hist = await todoHistorico(me.id, g.id).catch(() => []), local = porDia(hist, [...g.membros.values()]);
+  await publicarEnviadas(g, local, true); // (o que eu enviei entra no servidor antes de eu ler: os outros aparelhos passam a contar igual)
+  const tela = await sb.rpc("grupo_estatisticas", { p_grupo: g.id });
   if (estGrupo !== g) return;
   if (tela.error) msgEst("Não foi possível carregar o tempo na tela agora.");
-  estDados = { hist, tela: tela.data || [] }; desenharEstatisticas();
+  estDados = { local, tela: tela.data || [] }; desenharEstatisticas();
 }
 function desenharEstatisticas() {
   const g = estGrupo && grupos.get(estGrupo.id); if (!g || !estDados) return;
   const membros = [...g.membros.values()], desde = primeiroDia(estPeriodo), hoje = diaLocal(Date.now());
-  const cont = contar(estDados.hist, membros, desde), tela = somarTela(estDados.tela, desde), lista = ranking(membros, cont, tela);
+  const cont = resumir(mesclar(estDados.local, estDados.tela), desde), tela = somarTela(estDados.tela, desde), lista = ranking(membros, cont, tela);
   const total = totalDe(cont), nome = { hoje: "hoje", semana: "nesta semana", mes: "neste mês" }[estPeriodo];
   $("est-resumo").textContent = `${total === 1 ? "1 mensagem" : total + " mensagens"} ${nome} no grupo`;
   for (const b of $("grupo-est").querySelectorAll(".est-abas button")) b.setAttribute("aria-selected", String(b.dataset.p === estPeriodo));

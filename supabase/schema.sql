@@ -1061,3 +1061,49 @@ begin
 end $$;
 revoke all on function public.moedas_saldo(uuid) from public, anon, authenticated;
 grant execute on function public.moedas_saldo(uuid) to authenticated;
+
+-- Estatísticas: cada pessoa publica o que ELA enviou por dia (só contagens, sem conteúdo), para os números baterem em todos os aparelhos.
+-- Quem lê usa o maior valor entre o que o próprio aparelho contou e o que foi publicado. É só exibição: não vale como prova para moedas.
+alter table public.grupo_dia add column env jsonb not null default '{}'::jsonb check (pg_column_size(env) < 300);
+
+create or replace function public.grupo_enviadas(p_grupo uuid, p_dias jsonb) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); hoje date := (now() at time zone 'America/Sao_Paulo')::date;
+        it jsonb; k text; v jsonb; d date; novo jsonb; velho jsonb;
+        chaves text[] := array['texto','foto','video','audio','figurinha','respostas','citou'];
+begin
+  perform public.consome('grupo_enviadas', 4, 60);
+  if not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = u) then raise exception 'nao_esta_no_grupo' using errcode = '42501'; end if;
+  if p_dias is null or jsonb_typeof(p_dias) <> 'array' or jsonb_array_length(p_dias) > 35 then raise exception 'dados_invalidos' using errcode = '22023'; end if;
+  for it in select * from jsonb_array_elements(p_dias) loop
+    if jsonb_typeof(it) <> 'object' or jsonb_typeof(it->'dia') <> 'string' or (it->>'dia') !~ '^\d{4}-\d{2}-\d{2}$' then raise exception 'dados_invalidos' using errcode = '22023'; end if;
+    d := (it->>'dia')::date;
+    if d > hoje + 1 or d < hoje - 35 then continue; end if;
+    novo := '{}'::jsonb;
+    foreach k in array chaves loop
+      v := it->k;
+      if v is not null then
+        if jsonb_typeof(v) <> 'number' or (v #>> '{}') !~ '^\d{1,6}$' then raise exception 'dados_invalidos' using errcode = '22023'; end if;
+        if (v #>> '{}')::int > 0 then novo := novo || jsonb_build_object(k, (v #>> '{}')::int); end if;
+      end if;
+    end loop;
+    insert into public.grupo_dia (grupo_id, user_id, dia, segundos, env) values (p_grupo, u, d, 0, novo)
+      on conflict (grupo_id, user_id, dia) do update set env = (
+        select coalesce(jsonb_object_agg(kk, greatest(coalesce((public.grupo_dia.env->>kk)::int, 0), coalesce((novo->>kk)::int, 0))), '{}'::jsonb)
+          from unnest(chaves) kk where greatest(coalesce((public.grupo_dia.env->>kk)::int, 0), coalesce((novo->>kk)::int, 0)) > 0);
+  end loop;
+end $$;
+revoke all on function public.grupo_enviadas(uuid, jsonb) from public, anon, authenticated;
+grant execute on function public.grupo_enviadas(uuid, jsonb) to authenticated;
+
+drop function public.grupo_estatisticas(uuid);
+create or replace function public.grupo_estatisticas(p_grupo uuid) returns table (user_id uuid, dia date, segundos int, env jsonb)
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if not (select public.mfa_ok()) or not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = (select auth.uid())) then raise exception 'nao_esta_no_grupo' using errcode = '42501'; end if;
+  return query select d.user_id, d.dia, d.segundos, d.env from public.grupo_dia d
+    join public.grupo_membros m on m.grupo_id = d.grupo_id and m.user_id = d.user_id
+   where d.grupo_id = p_grupo and d.dia > (now() at time zone 'America/Sao_Paulo')::date - 36;
+end $$;
+revoke all on function public.grupo_estatisticas(uuid) from public, anon, authenticated;
+grant execute on function public.grupo_estatisticas(uuid) to authenticated;
