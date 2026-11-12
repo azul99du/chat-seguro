@@ -345,27 +345,27 @@ t("trocar nome: não dá por update direto, nem ler ou escrever a lista de nomes
 
 // ---------- cor de cada pessoa no grupo ----------
 t("cor no grupo: cada pessoa entra com uma cor pronta diferente, só escolhe a própria, nunca repete a de outra pessoa e o formato é conferido", async () => {
-  const c = await usuario("c1"), d = await usuario("c2"), g = crypto.randomUUID();
-  for (const q of [c, d]) { assert.ifError((await a.c.from("messages").insert({ ...base(q.id), v: 2, header: hdr() })).error); assert.ifError((await q.c.from("messages").insert({ ...base(a.id), v: 2, header: hdr() })).error); }
-  assert.ifError((await a.c.rpc("criar_grupo", { p_id: g, p_nome: nomeCif(), p_chave: cif(), p_membros: [{ id: c.id, chave: cif() }, { id: d.id, chave: cif() }] })).error);
+  const adm = await usuario("c0"), c = await usuario("c1"), d = await usuario("c2"), g = crypto.randomUUID(); // (administrador próprio: as contas compartilhadas já criaram grupos demais neste minuto)
+  for (const q of [c, d]) { assert.ifError((await adm.c.from("messages").insert({ ...base(q.id), v: 2, header: hdr() })).error); assert.ifError((await q.c.from("messages").insert({ ...base(adm.id), v: 2, header: hdr() })).error); }
+  assert.ifError((await adm.c.rpc("criar_grupo", { p_id: g, p_nome: nomeCif(), p_chave: cif(), p_membros: [{ id: c.id, chave: cif() }, { id: d.id, chave: cif() }] })).error);
   const cores = async (q) => Object.fromEntries((await q.c.rpc("meus_grupos")).data.filter((l) => l.grupo_id === g).map((l) => [l.user_id, l.cor]));
-  const c0 = await cores(a); assert.deepEqual(Object.values(c0).sort(), ["p0", "p1", "p2"], "três cores prontas, uma para cada, na ordem de entrada"); assert.equal(c0[a.id], "p0", "quem criou fica com a primeira");
-  assert.match((await c.c.rpc("grupo_cor", { p_grupo: g, p_cor: c0[d.id] })).error?.message || "", /cor_em_uso/, "pegar a cor de outra pessoa"); assert.equal((await c.c.rpc("grupo_cor", { p_grupo: g, p_cor: c0[a.id] })).error?.code, "23505");
+  const c0 = await cores(adm); assert.deepEqual(Object.values(c0).sort(), ["p0", "p1", "p2"], "três cores prontas, uma para cada, na ordem de entrada"); assert.equal(c0[adm.id], "p0", "quem criou fica com a primeira");
+  assert.match((await c.c.rpc("grupo_cor", { p_grupo: g, p_cor: c0[d.id] })).error?.message || "", /cor_em_uso/, "pegar a cor de outra pessoa"); assert.equal((await c.c.rpc("grupo_cor", { p_grupo: g, p_cor: c0[adm.id] })).error?.code, "23505");
   for (const ruim of ["p10", "P1", "#AABBCC", "#abc", "azul", "", "p1; drop table x", "#aabbccdd", " p3"]) assert.match((await c.c.rpc("grupo_cor", { p_grupo: g, p_cor: ruim })).error?.message || "", /cor_invalida/, JSON.stringify(ruim));
   assert.ok((await c.c.rpc("grupo_cor", { p_grupo: g, p_cor: null })).error, "nulo"); assert.ok((await x.c.rpc("grupo_cor", { p_grupo: g, p_cor: "p9" })).error, "de fora"); assert.ok((await anon.rpc("grupo_cor", { p_grupo: g, p_cor: "p9" })).error, "sem login");
-  assert.ifError((await c.c.rpc("grupo_cor", { p_grupo: g, p_cor: "p7" })).error); assert.equal((await cores(a))[c.id], "p7", "mudou só a dela"); assert.equal((await cores(a))[d.id], c0[d.id]);
+  assert.ifError((await c.c.rpc("grupo_cor", { p_grupo: g, p_cor: "p7" })).error); assert.equal((await cores(adm))[c.id], "p7", "mudou só a dela"); assert.equal((await cores(adm))[d.id], c0[d.id]);
   assert.match((await d.c.rpc("grupo_cor", { p_grupo: g, p_cor: "p7" })).error?.message || "", /cor_em_uso/, "agora a p7 é da outra pessoa");
   assert.ifError((await c.c.rpc("grupo_cor", { p_grupo: g, p_cor: "p7" })).error, "escolher a própria cor de novo não é conflito");
   assert.ifError((await d.c.rpc("grupo_cor", { p_grupo: g, p_cor: "#a1b2c3" })).error, "cor aleatória (hexadecimal)"); assert.match((await c.c.rpc("grupo_cor", { p_grupo: g, p_cor: "#a1b2c3" })).error?.message || "", /cor_em_uso/, "a aleatória também não repete");
-  assert.ok(bloqueado(await c.c.from("grupo_membros").update({ cor: "p9" }).eq("grupo_id", g).select()), "update direto na tabela"); assert.ok(bloqueado(await a.c.from("grupo_membros").update({ cor: "p9" }).eq("user_id", c.id).select()), "nem o admin muda a cor de outra pessoa");
-  globalThis.__cor = { g, c, d, cores };
+  assert.ok(bloqueado(await c.c.from("grupo_membros").update({ cor: "p9" }).eq("grupo_id", g).select()), "update direto na tabela"); assert.ok(bloqueado(await adm.c.from("grupo_membros").update({ cor: "p9" }).eq("user_id", c.id).select()), "nem o admin muda a cor de outra pessoa");
+  globalThis.__cor = { g, c, d, adm, cores };
 });
 t("cor no grupo: quem sai libera a cor, quem entra depois ganha a primeira pronta livre, e as cores existentes não são tocadas", async () => {
-  const { g, c, d, cores } = globalThis.__cor, antes = await cores(a), livreAntes = c.id;
+  const { g, c, d, adm, cores } = globalThis.__cor, antes = await cores(adm), livreAntes = c.id;
   assert.ifError((await c.c.rpc("grupo_remover", { p_grupo: g, p_user: c.id })).error); // c sai: a p7 fica livre
-  const e = await usuario("c3"); assert.ifError((await a.c.from("messages").insert({ ...base(e.id), v: 2, header: hdr() })).error); assert.ifError((await e.c.from("messages").insert({ ...base(a.id), v: 2, header: hdr() })).error);
-  assert.ifError((await a.c.rpc("grupo_adicionar", { p_grupo: g, p_user: e.id, p_chave: cif() })).error);
-  const depois = await cores(a); assert.equal(depois[e.id], antes[a.id] === "p0" && !Object.values(depois).includes("p1") ? "p1" : depois[e.id]); assert.match(depois[e.id], /^p[0-9]$/, "entrou com uma cor pronta");
-  assert.ok(!Object.entries(depois).some(([u, cor]) => u !== e.id && cor === depois[e.id]), "e nenhuma repetida"); assert.equal(depois[a.id], antes[a.id], "as outras não mudaram"); assert.equal(depois[d.id], "#a1b2c3");
+  const e = await usuario("c3"); assert.ifError((await adm.c.from("messages").insert({ ...base(e.id), v: 2, header: hdr() })).error); assert.ifError((await e.c.from("messages").insert({ ...base(adm.id), v: 2, header: hdr() })).error);
+  assert.ifError((await adm.c.rpc("grupo_adicionar", { p_grupo: g, p_user: e.id, p_chave: cif() })).error);
+  const depois = await cores(adm); assert.match(depois[e.id], /^p[0-9]$/, "entrou com uma cor pronta");
+  assert.ok(!Object.entries(depois).some(([u, cor]) => u !== e.id && cor === depois[e.id]), "e nenhuma repetida"); assert.equal(depois[adm.id], antes[adm.id], "as outras não mudaram"); assert.equal(depois[d.id], "#a1b2c3");
   assert.equal(livreAntes, c.id);
 });
