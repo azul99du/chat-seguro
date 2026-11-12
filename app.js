@@ -1,23 +1,24 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=8ef27c4be7";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=8ef27c4be7";
-import { montarFigurinhas } from "./figurinhas.js?v=8ef27c4be7";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=8ef27c4be7";
-import { todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=8ef27c4be7";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=8ef27c4be7";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=8ef27c4be7";
-import { acharVideoLink } from "./videolink.js?v=8ef27c4be7";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=8ef27c4be7";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=8ef27c4be7";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=8ef27c4be7";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=8ef27c4be7";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=8ef27c4be7";
-import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=8ef27c4be7";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=8ef27c4be7";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=8ef27c4be7";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=8ef27c4be7";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=8ef27c4be7";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=8ef27c4be7";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=5e824750af";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=5e824750af";
+import { montarFigurinhas } from "./figurinhas.js?v=5e824750af";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=5e824750af";
+import { todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=5e824750af";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=5e824750af";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=5e824750af";
+import { acharVideoLink } from "./videolink.js?v=5e824750af";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=5e824750af";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=5e824750af";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=5e824750af";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=5e824750af";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=5e824750af";
+import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=5e824750af";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=5e824750af";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp } from "./dispositivos.js?v=5e824750af";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=5e824750af";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=5e824750af";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=5e824750af";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=5e824750af";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -153,7 +154,7 @@ $("logout").onclick = async () => {
     { label: "Cancelar", value: "", cls: "ghost" }]);
   if (!r) return;
   await removerRegistroPush(); // este aparelho deixa de receber avisos desta conta
-  if (r === "wipe" && me) { await deleteLocalKeys(me.id); await wipeLocal(me.id); }
+  if (r === "wipe" && me) { const ref = dispResumo.eu?.ref; if (ref) { try { await sb.rpc("remover_dispositivo", { p_ref: ref }); } catch {} } await deleteLocalKeys(me.id); await wipeLocal(me.id); } // apagar as chaves também tira este aparelho da lista da conta
   await sb.auth.signOut({ scope: "local" }); location.reload(); // só ESTE aparelho sai (antes o "Sair" desconectava a conta em todos os aparelhos)
 };
 
@@ -227,6 +228,7 @@ async function start() {
   carregarLista();
   pintarMeu();
   mostrarChat();
+  aparelhoPronto = registrarDispositivo(); // identifica este aparelho no servidor ANTES de publicar a chave de recepção (que leva a marca dele)
   ensureSpk();
   await loadContacts();
   atualizarAviso2fa();
@@ -246,12 +248,12 @@ async function start() {
     renderContacts(); updateStatus();
   }).subscribe(async (st) => { if (st === "SUBSCRIBED") await pres.track({ at: Date.now() }); });
 
-  document.addEventListener("visibilitychange", () => { markRead(); if (!document.hidden) { loadContacts().catch(() => {}).then(sincronizar); conferirAparelhos(true); } });
-  addEventListener("focus", markRead);
+  document.addEventListener("visibilitychange", () => { markRead(); if (!document.hidden) { loadContacts().catch(() => {}).then(sincronizar); conferirAparelhos(true); conferirDispositivos(); } });
+  addEventListener("focus", () => { markRead(); conferirDispositivos(); });
   addEventListener("online", () => { loadContacts().catch(() => {}).then(sincronizar); }); // a internet voltou: busca o que chegou nesse meio-tempo
   $("chat").classList.remove("preparando"); document.body.dataset.pronto = "1";
-  sincronizarNotificacoes(); conferirAparelhos(true, true);
-  setInterval(() => { if (!document.hidden) conferirAparelhos(true); }, 60000);
+  sincronizarNotificacoes(); conferirAparelhos(true, true); conferirDispositivos(true);
+  setInterval(() => { if (!document.hidden) { conferirAparelhos(true); conferirDispositivos(); } }, 60000);
 }
 
 // ---------- Verificação em dois passos (código de app autenticador, TOTP) ----------
@@ -476,6 +478,7 @@ function localDe(a) {
   const partes = [a.cidade, a.regiao, pais].filter(Boolean); return partes.length ? partes.join(", ") + " (aproximado)" : "Local indisponível";
 }
 async function desenharAparelhos() {
+  abrirDispositivos();
   const lista = $("aparelhos-lista"); lista.replaceChildren(el("p", "pg-dica sem-recuo", "Carregando…"));
   await registrarAparelho(true); // garante que ESTE aparelho já aparece na lista
   const { data, error } = await sb.rpc("meus_aparelhos");
@@ -533,6 +536,79 @@ function mostrarAparelhoNovo(a, novos, lista = []) {
   $("novo-nao").onclick = async () => { const id = d.dataset.sessao; d.close(); await decidirAparelho(id, "recusado"); await abrirSeguranca(); $("mfa-senha").click(); }; } // (abre a Segurança ANTES: senão a janela da senha ficaria escondida embaixo dela)
 $("mfa-aparelhos").onclick = () => { $("aparelhos").showModal(); desenharAparelhos(); };
 $("aparelhos-senha").onclick = () => { $("aparelhos").close(); $("mfa-senha").click(); };
+
+// ---------- Aparelhos da conta (que recebem mensagens): este aparelho se identifica, o 1º entra permitido e os outros esperam um aparelho permitido liberar ----------
+// Nesta etapa é só o estado e o aviso: o envio e o recebimento de mensagens não dependem disso.
+let aparelhoPronto = Promise.resolve(), meuAparelhoId = null, dispResumo = resumoDisp([]), conferindoDisp = false, ultimaConfDisp = 0;
+async function idDoAparelho() { // código aleatório deste navegador para esta conta; fica cifrado no aparelho e só some em "Sair e apagar chaves" (o servidor o guarda, mas nunca o devolve)
+  return withLock(`lacre:aparelho:${me.id}`, async () => {
+    const g = await metaGet(me.id, "aparelho"); if (g && idValido(g.id)) return g.id;
+    const id = novoId(); await metaPut(me.id, "aparelho", { id }); return id;
+  });
+}
+async function registrarDispositivo() {
+  try {
+    const id = await idDoAparelho(), { error } = await sb.rpc("registrar_dispositivo", { p_id: id });
+    if (error) throw error; meuAparelhoId = id; return true;
+  } catch (e) { console.warn("registrar aparelho:", e?.message || e); return false; }
+}
+async function carregarDispositivos() {
+  const { data, error } = await sb.rpc("meus_dispositivos"); if (error) throw error;
+  dispResumo = resumoDisp(data); return dispResumo;
+}
+function pintarAvisoDispositivos() {
+  const b = $("aviso-disp"), r = dispResumo;
+  const txt = r.souPendente ? "Aguardando permissão de outro aparelho da sua conta." : r.souAprovado && r.pendentes.length ? textoPendentes(r.pendentes.length) + " Toque para ver." : "";
+  b.hidden = !txt; b.textContent = txt; b.dataset.estado = r.souPendente ? "pendente" : "pedido";
+}
+async function conferirDispositivos(forca = false) {
+  if (!me || conferindoDisp || (!forca && Date.now() - ultimaConfDisp < 3000)) return;
+  conferindoDisp = true; ultimaConfDisp = Date.now();
+  try {
+    await aparelhoPronto;
+    let r = await carregarDispositivos();
+    if (!r.eu) { if (await registrarDispositivo()) { r = await carregarDispositivos(); ensureSpk(); } } // sessão nova (ou aparelho removido): registra de novo
+    pintarAvisoDispositivos(); if ($("aparelhos").open) desenharDispositivos();
+  } catch (e) { console.warn("conferir aparelhos da conta:", e?.message || e); } finally { conferindoDisp = false; }
+}
+$("aviso-disp").onclick = () => { $("aparelhos").showModal(); desenharAparelhos(); };
+function botaoDisp(txt, cls, fn) { const b = el("button", cls, txt); b.type = "button"; b.onclick = async () => { b.disabled = true; try { await fn(); } finally { b.disabled = false; } }; return b; }
+async function decidirDisp(a, permitir) {
+  const { data, error } = await sb.rpc("decidir_dispositivo", { p_ref: a.ref, p_permitir: permitir });
+  if (error || data !== true) await note(error ? erroDisp(error) : "Não foi possível agora. Atualize a lista e tente de novo.");
+  await conferirDispositivos(true);
+}
+async function removerDisp(a) {
+  const eu = a.atual;
+  const r = await choose(eu ? "Remover este aparelho?" : `Remover ${nomeDoAparelho(a)}?`,
+    eu ? "Este aparelho sai da lista da conta e a sessão dele é encerrada aqui. Para voltar, entre de novo (ele pedirá permissão se a conta já tiver outro aparelho)." : "Ele sai da lista da conta. Se ainda estiver aberto, pedirá permissão de novo na próxima vez que o Lacre for aberto nele.",
+    [{ label: "Remover", value: "sim", cls: "primary" }, { label: "Cancelar", value: "", cls: "ghost" }]);
+  if (r !== "sim") return;
+  const { data, error } = await sb.rpc("remover_dispositivo", { p_ref: a.ref });
+  if (error || data !== true) { await note(error ? erroDisp(error) : "Não foi possível agora. Atualize a lista e tente de novo."); return conferirDispositivos(true); }
+  if (eu) { await removerRegistroPush(); try { await metaPut(me.id, "aparelho", null); } catch {} await sb.auth.signOut({ scope: "local" }); location.reload(); return; }
+  await conferirDispositivos(true);
+}
+function desenharDispositivos() {
+  const lista = $("dispositivos-lista"), r = dispResumo;
+  $("disp-aviso").hidden = !r.souPendente; $("disp-aviso").textContent = r.souPendente ? AVISO_PENDENTE : "";
+  const ped = $("disp-pedido"); ped.hidden = !(r.souAprovado && r.pendentes.length); ped.textContent = textoPendentes(r.pendentes.length);
+  if (!r.lista.length) return lista.replaceChildren(el("p", "pg-dica sem-recuo", "Carregando…"));
+  lista.replaceChildren(...r.lista.map((a) => {
+    const row = el("div", "linha info" + (a.atual ? " atual" : "")), ic = el("span", "ic"), tx = el("span", "tx"), linhaTit = el("span", "ap-tit");
+    ic.append(svgAparelho(a.tipo)); row.dataset.ref = a.ref; row.dataset.estado = a.estado;
+    linhaTit.append(el("b", null, nomeDoAparelho(a)));
+    if (a.atual) linhaTit.append(el("span", "selo-estado", "Este aparelho"));
+    linhaTit.append(a.estado === "pendente" ? el("span", "selo-novo", "Aguardando permissão") : el("span", "selo-estado ativo", "Permitido"));
+    tx.append(linhaTit, el("small", null, localDe(a)), el("small", null, `Entrou em ${quando(a.criado_em)}`));
+    const ac = el("span", "ap-acoes");
+    if (a.estado === "pendente" && !a.atual && r.souAprovado) ac.append(botaoDisp("Permitir", "ghost", () => decidirDisp(a, true)), botaoDisp("Recusar", "ghost perigo", async () => { if (await choose(`Recusar ${nomeDoAparelho(a)}?`, "O pedido some e o aparelho não entra na conta.", [{ label: "Recusar", value: "sim", cls: "primary" }, { label: "Cancelar", value: "", cls: "ghost" }]) === "sim") await decidirDisp(a, false); }));
+    else if (a.atual || r.souAprovado) ac.append(botaoDisp(a.atual ? "Remover este aparelho" : "Remover", "ghost perigo", () => removerDisp(a)));
+    if (ac.childElementCount) tx.append(ac);
+    row.append(ic, tx); return row;
+  }));
+}
+async function abrirDispositivos() { desenharDispositivos(); await conferirDispositivos(true); }
 
 // ---------- Armazenamento: o que este aparelho guarda e o que você já enviou ao servidor ----------
 const MB = 1048576, LIMITE_SERVIDOR = 400 * MB; // (o mesmo limite por pessoa que o servidor aplica)
@@ -1367,12 +1443,13 @@ const gone = (t) => ({ type: "unreadable", text: t });
 // Chave de médio prazo: publicamos a parte pública; a privada fica só aqui e é apagada depois de 14 dias.
 async function ensureSpk() {
   try {
+    await aparelhoPronto; const ap = meuAparelhoId; // (sem aparelho registrado, a chave sai sem marca, como antes)
     const now = Date.now(), list = await getSpks(me.id);
     const newest = list.reduce((a, k) => (k.created > (a?.created ?? 0) ? k : a), null);
-    if (!newest || now - newest.created > SPK_ROTATE) {
+    if (!newest || now - newest.created > SPK_ROTATE || (ap && newest.ap !== ap)) { // (a chave sem a marca deste aparelho é trocada uma vez)
       const k = await genDH(), id = randomHex(16);
-      await addSpk(me.id, { id, priv: k.priv, created: now });
-      const { error } = await sb.from("prekeys").insert({ id, public_key: { kty: "EC", crv: "P-256", x: k.pub.x, y: k.pub.y } });
+      await addSpk(me.id, { id, priv: k.priv, created: now, ...(ap ? { ap } : {}) });
+      const { error } = await sb.from("prekeys").insert({ id, public_key: { kty: "EC", crv: "P-256", x: k.pub.x, y: k.pub.y }, ...(ap ? { aparelho: ap } : {}) });
       if (error) await removeSpk(me.id, id);
     }
     await pruneSpks(me.id, now - SPK_KEEP);

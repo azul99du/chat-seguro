@@ -84,7 +84,7 @@ t("prekeys: só a própria; em nome de outra pessoa, malformada e gigante são n
   assert.ok((await a.c.from("prekeys").insert({ user_id: b.id, id: hex(), public_key: spk })).error, "em nome de b");
   assert.ok((await a.c.from("prekeys").insert({ id: "nao-e-hex", public_key: spk })).error, "id inválido");
   assert.ok((await a.c.from("prekeys").insert({ id: hex(), public_key: { ...spk, lixo: "A".repeat(600) } })).error, "gigante");
-  assert.equal((await b.c.from("prekeys").select("*").eq("user_id", a.id)).data.length, 0);
+  assert.equal((await b.c.from("prekeys").select("id,user_id").eq("user_id", a.id)).data.length, 0);
   assert.ok(bloqueado(await b.c.from("prekeys").delete().eq("user_id", a.id).select()));
   const r = await b.c.rpc("get_prekey", { p_user: a.id });
   assert.equal(r.data.length, 1, "(controle) a busca da prekey mais recente funciona");
@@ -368,4 +368,79 @@ t("cor no grupo: quem sai libera a cor, quem entra depois ganha a primeira pront
   const depois = await cores(adm); assert.match(depois[e.id], /^p[0-9]$/, "entrou com uma cor pronta");
   assert.ok(!Object.entries(depois).some(([u, cor]) => u !== e.id && cor === depois[e.id]), "e nenhuma repetida"); assert.equal(depois[adm.id], antes[adm.id], "as outras não mudaram"); assert.equal(depois[d.id], "#a1b2c3");
   assert.equal(livreAntes, c.id);
+});
+
+// ---------- Aparelhos da conta (permissão entre aparelhos) ----------
+// Uma conta com três sessões (três aparelhos): m1 = 1º (permitido), m2 e m3 = pendentes.
+async function contaComAparelhos() {
+  const em = novoEmail(), c1 = mk(), s = await c1.auth.signUp({ email: em, password: SENHA }); if (s.error || !s.data.session) throw new Error("sem sessão");
+  const r = await c1.from("profiles").insert({ id: s.data.user.id, username: novoUsuario("m"), public_key: pk("m") }); if (r.error) throw r.error;
+  const cs = [c1]; for (let i = 1; i < 3; i++) { const c = mk(); const l = await c.auth.signInWithPassword({ email: em, password: SENHA }); if (l.error) throw l.error; cs.push(c); }
+  const ids = [hex(), hex(), hex()], est = []; for (let i = 0; i < 3; i++) est.push((await cs[i].rpc("registrar_dispositivo", { p_id: ids[i] })).data);
+  return { cs, ids, est, id: s.data.user.id };
+}
+const estados = async (c) => Object.fromEntries((await c.rpc("meus_dispositivos")).data.map((a) => [a.atual ? "eu" : a.ref, a.estado]));
+t("aparelhos da conta: o 1º entra aprovado e os outros pendentes; o servidor não devolve o identificador secreto", async () => {
+  const m = await contaComAparelhos(); globalThis.__ap = m; assert.deepEqual(m.est, ["aprovado", "pendente", "pendente"]);
+  const l = (await m.cs[0].rpc("meus_dispositivos")).data; assert.equal(l.length, 3); assert.equal(l.filter((a) => a.atual).length, 1);
+  for (const a of l) { assert.ok(!("id" in a) && !JSON.stringify(a).includes(m.ids[0]), "sem o identificador"); assert.match(a.ref, /^[0-9a-f-]{36}$/); }
+});
+t("aparelhos da conta: um aparelho PENDENTE não aprova, não recusa e não remove ninguém (nem a si mesmo como aprovado)", async () => {
+  const m = globalThis.__ap, [c1, c2, c3] = m.cs, l = (await c1.rpc("meus_dispositivos")).data, pend = l.filter((a) => a.estado === "pendente"), aprov = l.find((a) => a.estado === "aprovado");
+  const alvo3 = (await c3.rpc("meus_dispositivos")).data.find((a) => a.atual).ref, alvo2 = (await c2.rpc("meus_dispositivos")).data.find((a) => a.atual).ref;
+  assert.equal((await c2.rpc("decidir_dispositivo", { p_ref: alvo3, p_permitir: true })).data, false, "pendente aprovando outro");
+  assert.equal((await c2.rpc("decidir_dispositivo", { p_ref: alvo2, p_permitir: true })).data, false, "pendente se aprovando");
+  assert.equal((await c2.rpc("decidir_dispositivo", { p_ref: alvo3, p_permitir: false })).data, false, "pendente recusando outro");
+  assert.equal((await c2.rpc("remover_dispositivo", { p_ref: aprov.ref })).data, false, "pendente removendo o aprovado");
+  assert.equal((await c2.rpc("remover_dispositivo", { p_ref: alvo3 })).data, false, "pendente removendo outro pendente");
+  assert.equal(Object.values(await estados(c1)).filter((e) => e === "pendente").length, 2, "nada mudou"); assert.equal(pend.length, 2);
+});
+t("aparelhos da conta: outra conta não lista, aprova, recusa nem remove aparelhos alheios; e as tabelas ficam fechadas", async () => {
+  const m = globalThis.__ap, refs = (await m.cs[0].rpc("meus_dispositivos")).data.map((a) => a.ref), pend = (await m.cs[0].rpc("meus_dispositivos")).data.find((a) => a.estado === "pendente").ref;
+  assert.equal((await x.c.rpc("registrar_dispositivo", { p_id: hex() })).data, "aprovado", "(controle: x tem a conta dele)");
+  const lx = (await x.c.rpc("meus_dispositivos")).data; assert.ok(!lx.some((a) => refs.includes(a.ref)), "x só vê o dele");
+  assert.equal((await x.c.rpc("decidir_dispositivo", { p_ref: pend, p_permitir: true })).data, false, "aprovar de fora");
+  assert.equal((await x.c.rpc("decidir_dispositivo", { p_ref: pend, p_permitir: false })).data, false, "recusar de fora");
+  for (const r of refs) assert.equal((await x.c.rpc("remover_dispositivo", { p_ref: r })).data, false, "remover de fora");
+  assert.equal(Object.values(await estados(m.cs[0])).length, 3, "tudo no lugar");
+  for (const c of [x.c, m.cs[0], anon]) for (const tab of ["dispositivos", "dispositivo_sessoes"]) {
+    assert.ok((await c.from(tab).select("*")).error, tab + " não é legível"); assert.ok((await c.from(tab).insert({ user_id: m.id, id: hex(), estado: "aprovado" })).error, tab + " não aceita escrita");
+    assert.ok(bloqueado(await c.from(tab).update({ estado: "aprovado" }).neq("estado", "x").select()), tab + " sem update"); assert.ok(bloqueado(await c.from(tab).delete().neq("estado", "x").select()), tab + " sem delete");
+  }
+});
+t("aparelhos da conta: sem login nada funciona, e as funções internas não são chamáveis", async () => {
+  const ref = "00000000-0000-4000-8000-000000000000";
+  for (const [f, a] of [["registrar_dispositivo", { p_id: hex() }], ["meus_dispositivos", {}], ["decidir_dispositivo", { p_ref: ref, p_permitir: true }], ["remover_dispositivo", { p_ref: ref }]]) assert.ok((await anon.rpc(f, a)).error, f + " sem login");
+  for (const c of [anon, x.c]) { assert.ok((await c.rpc("dispositivo_atual")).error, "dispositivo_atual"); assert.ok((await c.rpc("valida_aparelho_prekey")).error, "gatilho"); }
+});
+t("aparelhos da conta: prekey só pode ser marcada com o aparelho DESTA sessão; a marca não é legível; recusar apaga as chaves do aparelho", async () => {
+  const m = globalThis.__ap, [c1, c2, c3] = m.cs, spk = pk("s");
+  assert.ifError((await c1.from("prekeys").insert({ id: hex(), public_key: spk })).error); // (sem marca, como antes)
+  assert.ifError((await c1.from("prekeys").insert({ id: hex(), public_key: spk, aparelho: m.ids[0] })).error); // o próprio aparelho
+  assert.ok((await c2.from("prekeys").insert({ id: hex(), public_key: spk, aparelho: m.ids[0] })).error, "outro aparelho da MESMA conta");
+  assert.ok((await x.c.from("prekeys").insert({ id: hex(), public_key: spk, aparelho: m.ids[0] })).error, "aparelho de OUTRA conta");
+  assert.ok((await x.c.from("prekeys").insert({ id: hex(), public_key: spk, aparelho: hex() })).error, "aparelho que ninguém registrou");
+  assert.ok((await c1.from("prekeys").insert({ id: hex(), public_key: spk, aparelho: "xyz" })).error, "formato inválido");
+  assert.ok((await anon.from("prekeys").insert({ id: hex(), public_key: spk, aparelho: m.ids[0] })).error, "sem login");
+  assert.ok((await c1.from("prekeys").select("aparelho")).error, "a coluna da marca não é legível"); assert.ok((await c1.from("prekeys").select("*")).error, "nem com *");
+  assert.ifError((await c1.from("prekeys").select("id,user_id,public_key,created_at")).error); // as colunas de sempre seguem legíveis
+  const alvo = hex(); assert.ifError((await c3.from("prekeys").insert({ id: alvo, public_key: spk, aparelho: m.ids[2] })).error); // um pendente pode publicar a dele
+  assert.equal((await c1.from("prekeys").select("id").eq("id", alvo)).data.length, 1);
+  const ref3 = (await c3.rpc("meus_dispositivos")).data.find((a) => a.atual).ref;
+  assert.equal((await c1.rpc("decidir_dispositivo", { p_ref: ref3, p_permitir: false })).data, true, "o aprovado recusa");
+  assert.equal((await c1.from("prekeys").select("id").eq("id", alvo)).data.length, 0, "as chaves do aparelho recusado sumiram");
+  assert.equal(Object.values(await estados(c1)).length, 2, "o registro também");
+  assert.equal((await b.c.rpc("get_prekey", { p_user: m.id })).data.length, 1, "quem busca chaves continua recebendo uma (sem filtro por aparelho)");
+});
+t("aparelhos da conta: o aprovado permite um pendente; remover apaga o registro e as chaves; uma sessão sem aparelho registrado não decide nada", async () => {
+  const m = globalThis.__ap, [c1, c2] = m.cs, ref2 = (await c2.rpc("meus_dispositivos")).data.find((a) => a.atual).ref;
+  const solto = mk(), em = (await c1.auth.getUser()).data.user.email; assert.ifError((await solto.auth.signInWithPassword({ email: em, password: SENHA })).error);
+  assert.equal((await solto.rpc("decidir_dispositivo", { p_ref: ref2, p_permitir: true })).data, false, "sessão que ainda não registrou aparelho");
+  assert.equal((await solto.rpc("remover_dispositivo", { p_ref: ref2 })).data, false);
+  assert.equal((await c1.rpc("decidir_dispositivo", { p_ref: ref2, p_permitir: true })).data, true);
+  assert.equal((await c2.rpc("meus_dispositivos")).data.find((a) => a.atual).estado, "aprovado"); assert.ok((await c2.rpc("meus_dispositivos")).data.find((a) => a.atual).aprovado_em);
+  assert.equal((await c1.rpc("decidir_dispositivo", { p_ref: ref2, p_permitir: true })).data, false, "já aprovado: nada a decidir");
+  assert.ifError((await c2.from("prekeys").insert({ id: hex(), public_key: pk("s"), aparelho: m.ids[1] })).error);
+  assert.equal((await c2.rpc("remover_dispositivo", { p_ref: ref2 })).data, true, "um aparelho remove a si mesmo");
+  assert.equal(Object.values(await estados(c1)).length, 1);
 });

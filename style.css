@@ -760,3 +760,12 @@ button.sr-add{min-height:40px;padding:0 10px}
 .sn-atalhos button{min-height:36px;padding:0 14px}
 button.sn-bt{padding:0}
 .sl-meu,.sl-lista,.sl-regras,.sl-editar,.sr-nota,.sr-card,.sr-previa,.sr-salvar{flex:none} /* (o corpo da página é uma coluna que rola: sem isto a lista encolhia em vez de rolar) */
+
+/* aparelhos da conta (permissão entre aparelhos) */
+#dispositivos-lista,#aparelhos-lista{flex:none}
+#dispositivos-lista .linha.info{align-items:flex-start;padding-top:2px}
+#dispositivos-lista .linha .ic{margin-top:18px}
+.disp-caixa{margin:8px 16px 4px}
+.aviso-disp{flex:none;display:block;width:100%;min-height:0;margin:0;padding:10px 16px;border:0;border-bottom:1.5px solid var(--seal);border-radius:0;background:var(--rosa-claro);color:var(--texto);font:600 .88rem var(--body);text-align:left;cursor:pointer}
+.aviso-disp[hidden]{display:none}
+.aviso-disp[data-estado=pendente]{font-weight:500}

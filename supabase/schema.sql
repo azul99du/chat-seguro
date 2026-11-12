@@ -1377,3 +1377,165 @@ end $$;
 revoke all on function public.selo_apurar(uuid) from public, anon, authenticated;
 revoke all on function public.selo_saldo(uuid) from public, anon, authenticated;
 grant execute on function public.selo_saldo(uuid) to authenticated;
+
+-- ===== Vários aparelhos na mesma conta, etapa 1 (migração aparelhos_etapa1) =====
+-- Cada navegador/aparelho tem um identificador aleatório (32 hex) que só ele conhece. O servidor guarda quais aparelhos a conta tem e se cada um já foi
+-- permitido por outro aparelho da conta. O 1º aparelho (nenhum permitido ainda) entra como 'aprovado'; os seguintes entram 'pendente' até um aparelho
+-- aprovado permitir. Máximo de 5 por conta (pendentes contam). NESTA etapa nada disso muda o envio nem o recebimento de mensagens.
+-- O identificador (id) é segredo do aparelho: nada o devolve ao app. Para apontar um aparelho na tela usa-se "ref", um código sem valor de acesso.
+create table public.dispositivos (
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  id text not null check (id ~ '^[0-9a-f]{32}$'),
+  ref uuid not null default gen_random_uuid() unique,
+  estado text not null check (estado in ('pendente', 'aprovado')),
+  criado_em timestamptz not null default now(),
+  visto_em timestamptz not null default now(),
+  aprovado_em timestamptz,
+  aprovado_por text check (aprovado_por is null or aprovado_por ~ '^[0-9a-f]{32}$'),   -- id do aparelho que permitiu (o 1º aparelho se aprova sozinho)
+  primary key (user_id, id),
+  check ((estado = 'aprovado') = (aprovado_em is not null))
+);
+alter table public.dispositivos enable row level security;
+revoke all on public.dispositivos from anon, authenticated;   -- ninguém logado lê nem escreve direto: só pelas funções abaixo
+create policy "exige dois passos" on public.dispositivos as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+
+-- Ligação sessão de login -> aparelho: é assim que o servidor sabe DE QUAL aparelho vem uma chamada (a sessão vem do JWT, que o app não forja)
+create table public.dispositivo_sessoes (
+  session_id uuid primary key,
+  user_id uuid not null,
+  dispositivo text not null,
+  criado_em timestamptz not null default now(),
+  foreign key (user_id, dispositivo) references public.dispositivos (user_id, id) on delete cascade
+);
+create index dispositivo_sessoes_por_aparelho on public.dispositivo_sessoes (user_id, dispositivo);
+alter table public.dispositivo_sessoes enable row level security;
+revoke all on public.dispositivo_sessoes from anon, authenticated;
+create policy "exige dois passos" on public.dispositivo_sessoes as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+
+-- O aparelho desta chamada (linha vazia se a sessão ainda não registrou o aparelho, ou se a sessão já foi encerrada). Interna: ninguém logado chama.
+create or replace function public.dispositivo_atual() returns public.dispositivos
+language sql stable security definer set search_path = public, auth as $$
+  select d.* from public.dispositivo_sessoes s
+    join public.dispositivos d on d.user_id = s.user_id and d.id = s.dispositivo
+   where s.session_id = nullif((select auth.jwt() ->> 'session_id'), '')::uuid
+     and s.user_id = (select auth.uid())
+     and exists (select 1 from auth.sessions x where x.id = s.session_id)
+$$;
+revoke all on function public.dispositivo_atual() from public, anon, authenticated;
+
+-- Registrar (ou reconfirmar) este aparelho. Idempotente. Devolve o estado: 'aprovado' ou 'pendente'.
+create or replace function public.registrar_dispositivo(p_id text) returns text
+language plpgsql security definer set search_path = public, auth as $$
+declare u uuid := auth.uid(); s uuid := nullif(auth.jwt() ->> 'session_id', '')::uuid; r public.dispositivos; est text;
+begin
+  perform public.consome('registrar_dispositivo', 20, 200);
+  if s is null or not (select public.mfa_ok()) or not exists (select 1 from auth.sessions x where x.id = s) then raise exception 'nao_autorizado' using errcode = '42501'; end if;
+  if p_id is null or p_id !~ '^[0-9a-f]{32}$' then raise exception 'aparelho_invalido'; end if;
+  perform pg_advisory_xact_lock(hashtextextended('dispositivos:' || u::text, 0));   -- uma conta por vez: "o primeiro aparelho" e o limite não têm corrida
+  select * into r from public.dispositivos d where d.user_id = u and d.id = p_id;
+  if not found then
+    if (select count(*) from public.dispositivos d where d.user_id = u) >= 5 then raise exception 'limite_de_aparelhos'; end if;
+    est := case when exists (select 1 from public.dispositivos d where d.user_id = u and d.estado = 'aprovado') then 'pendente' else 'aprovado' end;
+    insert into public.dispositivos (user_id, id, estado, aprovado_em, aprovado_por)
+      values (u, p_id, est, case when est = 'aprovado' then now() end, case when est = 'aprovado' then p_id end);
+  elsif r.estado = 'pendente' and not exists (select 1 from public.dispositivos d where d.user_id = u and d.estado = 'aprovado') then
+    -- ninguém aprovado restou na conta (o último saiu): não há quem permita, então este vira o primeiro
+    est := 'aprovado';
+    update public.dispositivos d set estado = 'aprovado', aprovado_em = now(), aprovado_por = p_id, visto_em = now() where d.user_id = u and d.id = p_id;
+  else
+    est := r.estado;
+    update public.dispositivos d set visto_em = now() where d.user_id = u and d.id = p_id;
+  end if;
+  insert into public.dispositivo_sessoes (session_id, user_id, dispositivo) values (s, u, p_id)
+    on conflict (session_id) do update set dispositivo = excluded.dispositivo where public.dispositivo_sessoes.user_id = u;
+  delete from public.dispositivo_sessoes x where x.user_id = u and not exists (select 1 from auth.sessions a where a.id = x.session_id);   -- sessões que já acabaram
+  return est;
+end $$;
+revoke all on function public.registrar_dispositivo(text) from public, anon, authenticated;
+grant execute on function public.registrar_dispositivo(text) to authenticated;
+
+-- Os aparelhos da própria conta (sem o identificador secreto). O nome ("Chrome no Windows") vem do acesso mais recente daquele aparelho.
+create or replace function public.meus_dispositivos() returns table (ref uuid, estado text, criado_em timestamptz, visto_em timestamptz, aprovado_em timestamptz, atual boolean, navegador text, sistema text, tipo text, pais_codigo text, regiao text, cidade text)
+language plpgsql security definer set search_path = public, auth as $$
+#variable_conflict use_column
+declare u uuid := auth.uid(); cur public.dispositivos;
+begin
+  perform public.consome('meus_dispositivos', 60, 600);
+  if not (select public.mfa_ok()) then return; end if;
+  cur := public.dispositivo_atual();
+  return query
+    select d.ref, d.estado, d.criado_em, d.visto_em, d.aprovado_em, d.id = cur.id, ap.navegador, ap.sistema, ap.tipo, ap.pais_codigo, ap.regiao, ap.cidade
+      from public.dispositivos d
+      left join lateral (select a.navegador, a.sistema, a.tipo, a.pais_codigo, a.regiao, a.cidade
+                           from public.dispositivo_sessoes s join public.aparelhos a on a.session_id = s.session_id
+                          where s.user_id = d.user_id and s.dispositivo = d.id order by a.ultimo_acesso desc limit 1) ap on true
+     where d.user_id = u order by d.criado_em, d.ref;
+end $$;
+revoke all on function public.meus_dispositivos() from public, anon, authenticated;
+grant execute on function public.meus_dispositivos() to authenticated;
+
+-- Permitir (p_permitir = true) ou recusar um aparelho PENDENTE. Só vale se a chamada vem de um aparelho APROVADO da mesma conta.
+-- Recusar apaga o registro e as chaves de recepção dele. Devolve false (sem mudar nada) quando não pode.
+create or replace function public.decidir_dispositivo(p_ref uuid, p_permitir boolean) returns boolean
+language plpgsql security definer set search_path = public, auth as $$
+declare u uuid := auth.uid(); cur public.dispositivos; alvo public.dispositivos;
+begin
+  perform public.consome('decidir_dispositivo', 30, 200);
+  if p_ref is null or p_permitir is null or not (select public.mfa_ok()) then return false; end if;
+  perform pg_advisory_xact_lock(hashtextextended('dispositivos:' || u::text, 0));
+  cur := public.dispositivo_atual();
+  if cur.id is null or cur.estado <> 'aprovado' then return false; end if;
+  select * into alvo from public.dispositivos d where d.user_id = u and d.ref = p_ref and d.estado = 'pendente';
+  if not found then return false; end if;
+  if p_permitir then
+    update public.dispositivos d set estado = 'aprovado', aprovado_em = now(), aprovado_por = cur.id where d.user_id = u and d.id = alvo.id;
+  else
+    delete from public.prekeys k where k.user_id = u and k.aparelho = alvo.id;
+    delete from public.dispositivos d where d.user_id = u and d.id = alvo.id;
+  end if;
+  return true;
+end $$;
+revoke all on function public.decidir_dispositivo(uuid, boolean) from public, anon, authenticated;
+grant execute on function public.decidir_dispositivo(uuid, boolean) to authenticated;
+
+-- Remover um aparelho (aprovado ou pendente): apaga o registro e as chaves de recepção dele. Um aparelho pode remover a si mesmo (em qualquer estado);
+-- remover OUTRO só vale vindo de um aparelho aprovado. Um pendente não mexe nos outros.
+create or replace function public.remover_dispositivo(p_ref uuid) returns boolean
+language plpgsql security definer set search_path = public, auth as $$
+declare u uuid := auth.uid(); cur public.dispositivos; alvo public.dispositivos;
+begin
+  perform public.consome('remover_dispositivo', 30, 200);
+  if p_ref is null or not (select public.mfa_ok()) then return false; end if;
+  perform pg_advisory_xact_lock(hashtextextended('dispositivos:' || u::text, 0));
+  cur := public.dispositivo_atual();
+  if cur.id is null then return false; end if;
+  select * into alvo from public.dispositivos d where d.user_id = u and d.ref = p_ref;
+  if not found then return false; end if;
+  if alvo.id <> cur.id and cur.estado <> 'aprovado' then return false; end if;
+  delete from public.prekeys k where k.user_id = u and k.aparelho = alvo.id;
+  delete from public.dispositivos d where d.user_id = u and d.id = alvo.id;
+  return true;
+end $$;
+revoke all on function public.remover_dispositivo(uuid) from public, anon, authenticated;
+grant execute on function public.remover_dispositivo(uuid) to authenticated;
+
+-- Chaves de recepção marcadas com o aparelho que as guarda (nula nas antigas). Quem busca (get_prekey) continua igual: ainda não filtra por aparelho.
+alter table public.prekeys add column aparelho text check (aparelho is null or aparelho ~ '^[0-9a-f]{32}$');
+create index prekeys_por_aparelho on public.prekeys (user_id, aparelho);
+-- A coluna nova não é legível por quem está logado (senão um aparelho pendente leria o identificador secreto dos outros): leitura só das colunas de sempre
+revoke select on public.prekeys from authenticated;
+grant select (user_id, id, public_key, created_at) on public.prekeys to authenticated;
+-- Só dá para marcar uma chave com o aparelho DESTA sessão (que por sua vez é da própria conta). Interna: é gatilho.
+create or replace function public.valida_aparelho_prekey() returns trigger
+language plpgsql security definer set search_path = public, auth as $$
+begin
+  if new.aparelho is null then return new; end if;
+  if (select auth.jwt() ->> 'role') = 'authenticated' then
+    if (public.dispositivo_atual()).id is distinct from new.aparelho then raise exception 'aparelho_invalido' using errcode = '42501'; end if;
+  elsif not exists (select 1 from public.dispositivos d where d.user_id = new.user_id and d.id = new.aparelho) then raise exception 'aparelho_invalido' using errcode = '42501';
+  end if;
+  return new;
+end $$;
+revoke all on function public.valida_aparelho_prekey() from public, anon, authenticated;
+create trigger valida_aparelho_prekey before insert on public.prekeys
+  for each row execute function public.valida_aparelho_prekey();

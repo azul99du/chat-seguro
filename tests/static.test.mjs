@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const raiz = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const ler = (f) => readFileSync(join(raiz, f), "utf8");
-const APP = ["guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "recorte.js", "recorte-config.js", "sam2.js", "figurinhas.js", "avatar.js", "historico.js", "video.js", "aparelhos.js", "grupo.js", "videolink.js", "lista.js", "usuario.js", "cores.js", "estatisticas.js", "selos.js", "sw.js", "supabase/functions/notificar/vapid.js"];
+const APP = ["guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "recorte.js", "recorte-config.js", "sam2.js", "figurinhas.js", "avatar.js", "historico.js", "video.js", "aparelhos.js", "dispositivos.js", "grupo.js", "videolink.js", "lista.js", "usuario.js", "cores.js", "estatisticas.js", "selos.js", "sw.js", "supabase/functions/notificar/vapid.js"];
 const rastreados = execFileSync("git", ["ls-files"], { cwd: raiz, encoding: "utf8" }).split("\n").filter(Boolean);
 
 describe("código", () => {
@@ -246,5 +246,30 @@ describe("cor no grupo (supabase/schema.sql)", () => {
     const g = f("grupo_cor"); assert.match(g, /gm\.grupo_id = p_grupo and gm\.user_id = u/); assert.match(g, /p_cor !~/); assert.match(g, /unique_violation then raise exception 'cor_em_uso'/); assert.match(g, /perform public\.consome\(/);
     assert.match(f("criar_grupo"), /public\.cor_livre\(p_id\)/); assert.match(f("grupo_adicionar"), /public\.cor_livre\(p_grupo\)/); assert.match(sql, /revoke all on function public\.cor_livre\(uuid\) from public, anon, authenticated/);
     assert.match(f("meus_grupos"), /m\.cor/);
+  });
+});
+
+describe("aparelhos da conta (supabase/schema.sql)", () => {
+  const sql = ler("supabase/schema.sql"), f = (n) => [...sql.matchAll(new RegExp(`create or replace function public\\.${n}\\([\\s\\S]*?\\$\\$;`, "g"))].pop()[0];
+  test("tabelas fechadas: RLS, sem acesso direto, política dos dois passos", () => {
+    for (const tb of ["dispositivos", "dispositivo_sessoes"]) { assert.match(sql, new RegExp(`revoke all on public\\.${tb} from anon, authenticated`)); assert.doesNotMatch(sql, new RegExp(`grant [^;]* on public\\.${tb} to authenticated`)); }
+    assert.match(sql, /estado text not null check \(estado in \('pendente', 'aprovado'\)\)/); assert.match(sql, /id text not null check \(id ~ '\^\[0-9a-f\]\{32\}\$'\)/);
+  });
+  test("só as quatro funções do app são chamáveis; as internas não", () => {
+    for (const [n, a] of [["registrar_dispositivo", "text"], ["meus_dispositivos", ""], ["decidir_dispositivo", "uuid, boolean"], ["remover_dispositivo", "uuid"]]) assert.match(sql, new RegExp(`grant execute on function public\\.${n}\\(${a}\\) to authenticated`), n);
+    for (const n of ["dispositivo_atual", "valida_aparelho_prekey"]) { assert.match(sql, new RegExp(`revoke all on function public\\.${n}\\(\\) from public, anon, authenticated`)); assert.doesNotMatch(sql, new RegExp(`grant execute on function public\\.${n}\\(`)); }
+  });
+  test("regras no servidor: limite de 5, 1º aparelho aprovado, só aprovado decide, recusar e remover apagam as chaves, tudo com limite de uso", () => {
+    const r = f("registrar_dispositivo"); assert.match(r, />= 5 then raise exception 'limite_de_aparelhos'/); assert.match(r, /pg_advisory_xact_lock/); assert.match(r, /public\.mfa_ok\(\)/);
+    assert.match(f("decidir_dispositivo"), /cur\.estado <> 'aprovado' then return false/); assert.match(f("decidir_dispositivo"), /d\.estado = 'pendente'/);
+    assert.match(f("remover_dispositivo"), /alvo\.id <> cur\.id and cur\.estado <> 'aprovado' then return false/);
+    for (const n of ["decidir_dispositivo", "remover_dispositivo"]) assert.match(f(n), /delete from public\.prekeys k where k\.user_id = u and k\.aparelho = alvo\.id/);
+    for (const n of ["registrar_dispositivo", "meus_dispositivos", "decidir_dispositivo", "remover_dispositivo"]) assert.match(f(n), /perform public\.consome\('/, n);
+    assert.doesNotMatch(f("meus_dispositivos"), /\bd\.id,/, "o identificador secreto não é devolvido");
+  });
+  test("prekeys: a marca do aparelho só é aceita para o aparelho da sessão e a coluna não é legível", () => {
+    assert.match(sql, /alter table public\.prekeys add column aparelho text check \(aparelho is null or aparelho ~ '\^\[0-9a-f\]\{32\}\$'\)/);
+    assert.match(sql, /grant select \(user_id, id, public_key, created_at\) on public\.prekeys to authenticated/);
+    assert.match(f("valida_aparelho_prekey"), /dispositivo_atual\(\)\)\.id is distinct from new\.aparelho/); assert.match(sql, /create trigger valida_aparelho_prekey before insert on public\.prekeys/);
   });
 });

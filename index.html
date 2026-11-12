@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=8ef27c4be7">
+  <link rel="stylesheet" href="style.css?v=5e824750af">
 </head>
 <body>
 
@@ -66,6 +66,7 @@
           </span>
         </div>
       </header>
+      <button id="aviso-disp" class="aviso-disp" type="button" hidden></button>
       <div id="menu-fundo" hidden></div>
       <div id="menu-conta" role="menu" aria-label="Minha conta" hidden>
         <button id="copiar-nome" class="mi nome" type="button" role="menuitem" aria-label="Copiar meu nome">
@@ -410,7 +411,13 @@
     <form method="dialog">
       <header class="pg-bar"><button value="cancel" class="pg-volta" aria-label="Voltar" formnovalidate><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><h2>Aparelhos conectados</h2></header>
       <div class="pg-corpo">
-        <p class="pg-dica sem-recuo topo">Os acessos mais recentes à sua conta, do mais novo para o mais antigo.</p>
+        <h3 class="pg-grupo">Aparelhos da conta</h3>
+        <p class="pg-dica sem-recuo">Até 5 aparelhos. O primeiro entra direto; os outros só passam a valer depois que um aparelho já permitido liberar.</p>
+        <p id="disp-aviso" class="risco-caixa disp-caixa" role="status" hidden></p>
+        <p id="disp-pedido" class="risco-caixa disp-caixa" role="status" hidden></p>
+        <div id="dispositivos-lista" aria-live="polite"></div>
+        <h3 class="pg-grupo">Acessos recentes</h3>
+        <p class="pg-dica sem-recuo">Os acessos mais recentes à sua conta, do mais novo para o mais antigo.</p>
         <div id="aparelhos-lista" aria-live="polite"></div>
         <p class="pg-nota"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span>O local é aproximado e vem do endereço de internet (IP) usado no acesso. O Lacre não guarda o IP; guarda só cidade, estado, navegador e datas.</span></p>
         <button type="button" id="aparelhos-senha" class="btn-limpa">Não reconheço um aparelho: trocar a senha</button>
@@ -462,6 +469,6 @@
 
   <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
 
-  <script src="guarda.js?v=8ef27c4be7"></script>
+  <script src="guarda.js?v=5e824750af"></script>
 </body>
 </html>
