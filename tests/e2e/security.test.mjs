@@ -444,3 +444,28 @@ t("aparelhos da conta: o aprovado permite um pendente; remover apaga o registro 
   assert.equal((await c2.rpc("remover_dispositivo", { p_ref: ref2 })).data, true, "um aparelho remove a si mesmo");
   assert.equal(Object.values(await estados(c1)).length, 1);
 });
+t("aparelhos da conta: recusar e remover OUTRO aparelho encerram as sessões dele; com o JWT antigo nenhuma função (nem a prekey marcada) funciona, e o refresh token morre", async () => {
+  const m = await contaComAparelhos(), [c1, c2, c3] = m.cs, tok = async (c) => (await c.auth.getSession()).data.session, t2 = await tok(c2), t3 = await tok(c3);
+  const velho = (s) => createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false, autoRefreshToken: false }, global: { headers: { Authorization: "Bearer " + s.access_token } } });
+  const ref = async (c) => (await c.rpc("meus_dispositivos")).data.find((a) => a.atual).ref, ref2 = await ref(c2), ref3 = await ref(c3);
+  assert.ifError((await c2.from("prekeys").insert({ id: hex(), public_key: pk("s"), aparelho: m.ids[1] })).error); // (controle: antes, funciona)
+  assert.equal((await c1.rpc("decidir_dispositivo", { p_ref: ref3, p_permitir: true })).data, true);
+  assert.equal((await c1.rpc("remover_dispositivo", { p_ref: ref3 })).data, true, "remover OUTRO aparelho (aprovado)");
+  assert.equal((await c1.rpc("decidir_dispositivo", { p_ref: ref2, p_permitir: false })).data, true, "recusar");
+  assert.equal(Object.values(await estados(c1)).length, 1, "só o 1º aparelho restou"); assert.equal((await c1.rpc("meus_dispositivos")).data[0].atual, true, "o 1º aparelho segue conectado e funcionando");
+  for (const [s, n] of [[t2, "recusado"], [t3, "removido"]]) {
+    const o = velho(s), id = n === "recusado" ? m.ids[1] : m.ids[2], rf = n === "recusado" ? ref2 : ref3;
+    assert.ok((await o.rpc("registrar_dispositivo", { p_id: id })).error, n + ": registrar de novo");
+    const l = await o.rpc("meus_dispositivos"); assert.ok(l.error || l.data.length === 0, n + ": listar");
+    assert.notEqual((await o.rpc("decidir_dispositivo", { p_ref: rf, p_permitir: true })).data, true, n + ": decidir");
+    assert.notEqual((await o.rpc("remover_dispositivo", { p_ref: ref3 })).data, true, n + ": remover");
+    assert.ok((await o.from("prekeys").insert({ id: hex(), public_key: pk("s"), aparelho: id })).error, n + ": prekey marcada");
+    assert.ok((await o.from("prekeys").insert({ id: hex(), public_key: pk("s"), aparelho: m.ids[0] })).error, n + ": prekey marcada com o aparelho de outro");
+  }
+  assert.ok((await c2.auth.refreshSession()).error, "o refresh token do recusado não vale mais"); assert.ok((await c3.auth.refreshSession()).error, "nem o do removido");
+  assert.equal(Object.values(await estados(c1)).length, 1, "nada reapareceu");
+  // entrar de novo com a senha: um pedido novo, pendente
+  const em = (await c1.auth.getUser()).data.user.email, novo = mk(); assert.ifError((await novo.auth.signInWithPassword({ email: em, password: SENHA })).error);
+  assert.equal((await novo.rpc("registrar_dispositivo", { p_id: m.ids[1] })).data, "pendente");
+  assert.equal(Object.values(await estados(c1)).length, 2);
+});

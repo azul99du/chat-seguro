@@ -1,24 +1,24 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=5e824750af";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=5e824750af";
-import { montarFigurinhas } from "./figurinhas.js?v=5e824750af";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=5e824750af";
-import { todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=5e824750af";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=5e824750af";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=5e824750af";
-import { acharVideoLink } from "./videolink.js?v=5e824750af";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=5e824750af";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=5e824750af";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=5e824750af";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=5e824750af";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=5e824750af";
-import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=5e824750af";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=5e824750af";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp } from "./dispositivos.js?v=5e824750af";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=5e824750af";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=5e824750af";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=5e824750af";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=5e824750af";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=59e9a6f74b";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=59e9a6f74b";
+import { montarFigurinhas } from "./figurinhas.js?v=59e9a6f74b";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=59e9a6f74b";
+import { todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=59e9a6f74b";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=59e9a6f74b";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=59e9a6f74b";
+import { acharVideoLink } from "./videolink.js?v=59e9a6f74b";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=59e9a6f74b";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=59e9a6f74b";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=59e9a6f74b";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=59e9a6f74b";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=59e9a6f74b";
+import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=59e9a6f74b";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=59e9a6f74b";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp } from "./dispositivos.js?v=59e9a6f74b";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=59e9a6f74b";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=59e9a6f74b";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=59e9a6f74b";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=59e9a6f74b";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -561,15 +561,21 @@ function pintarAvisoDispositivos() {
   const txt = r.souPendente ? "Aguardando permissão de outro aparelho da sua conta." : r.souAprovado && r.pendentes.length ? textoPendentes(r.pendentes.length) + " Toque para ver." : "";
   b.hidden = !txt; b.textContent = txt; b.dataset.estado = r.souPendente ? "pendente" : "pedido";
 }
+// Recusar ou remover um aparelho encerra a sessão dele no servidor: ele percebe aqui e volta para o login (erro de rede NÃO conta: só sessão recusada ou ausente)
+async function sessaoEncerrada() { try { const { error } = await sb.auth.getUser(); return !!error && ([401, 403].includes(error.status) || error.name === "AuthSessionMissingError"); } catch { return false; } } // (sessão apagada no servidor: o Supabase devolve "sessão ausente"; falha de rede é outro erro e não conta)
+async function sairDeVez() { await sb.auth.signOut({ scope: "local" }).catch(() => {}); location.reload(); }
 async function conferirDispositivos(forca = false) {
   if (!me || conferindoDisp || (!forca && Date.now() - ultimaConfDisp < 3000)) return;
   conferindoDisp = true; ultimaConfDisp = Date.now();
   try {
     await aparelhoPronto;
     let r = await carregarDispositivos();
-    if (!r.eu) { if (await registrarDispositivo()) { r = await carregarDispositivos(); ensureSpk(); } } // sessão nova (ou aparelho removido): registra de novo
+    if (!r.eu) { // sessão nova (ou aparelho recusado/removido, que perdeu a sessão): registra de novo
+      if (await registrarDispositivo()) { r = await carregarDispositivos(); ensureSpk(); }
+      else if (await sessaoEncerrada()) return sairDeVez();
+    }
     pintarAvisoDispositivos(); if ($("aparelhos").open) desenharDispositivos();
-  } catch (e) { console.warn("conferir aparelhos da conta:", e?.message || e); } finally { conferindoDisp = false; }
+  } catch (e) { console.warn("conferir aparelhos da conta:", e?.message || e); if (/42501|nao_autorizado|JWT/i.test(`${e?.code} ${e?.message}`) && await sessaoEncerrada()) return sairDeVez(); } finally { conferindoDisp = false; }
 }
 $("aviso-disp").onclick = () => { $("aparelhos").showModal(); desenharAparelhos(); };
 function botaoDisp(txt, cls, fn) { const b = el("button", cls, txt); b.type = "button"; b.onclick = async () => { b.disabled = true; try { await fn(); } finally { b.disabled = false; } }; return b; }
@@ -581,7 +587,7 @@ async function decidirDisp(a, permitir) {
 async function removerDisp(a) {
   const eu = a.atual;
   const r = await choose(eu ? "Remover este aparelho?" : `Remover ${nomeDoAparelho(a)}?`,
-    eu ? "Este aparelho sai da lista da conta e a sessão dele é encerrada aqui. Para voltar, entre de novo (ele pedirá permissão se a conta já tiver outro aparelho)." : "Ele sai da lista da conta. Se ainda estiver aberto, pedirá permissão de novo na próxima vez que o Lacre for aberto nele.",
+    eu ? "Este aparelho sai da lista da conta e a sessão dele é encerrada aqui. Para voltar, entre de novo (ele pedirá permissão se a conta já tiver outro aparelho)." : "Ele sai da lista da conta e é desconectado agora. Para voltar, precisa entrar de novo com a senha e esperar uma nova permissão.",
     [{ label: "Remover", value: "sim", cls: "primary" }, { label: "Cancelar", value: "", cls: "ghost" }]);
   if (r !== "sim") return;
   const { data, error } = await sb.rpc("remover_dispositivo", { p_ref: a.ref });
@@ -602,7 +608,7 @@ function desenharDispositivos() {
     linhaTit.append(a.estado === "pendente" ? el("span", "selo-novo", "Aguardando permissão") : el("span", "selo-estado ativo", "Permitido"));
     tx.append(linhaTit, el("small", null, localDe(a)), el("small", null, `Entrou em ${quando(a.criado_em)}`));
     const ac = el("span", "ap-acoes");
-    if (a.estado === "pendente" && !a.atual && r.souAprovado) ac.append(botaoDisp("Permitir", "ghost", () => decidirDisp(a, true)), botaoDisp("Recusar", "ghost perigo", async () => { if (await choose(`Recusar ${nomeDoAparelho(a)}?`, "O pedido some e o aparelho não entra na conta.", [{ label: "Recusar", value: "sim", cls: "primary" }, { label: "Cancelar", value: "", cls: "ghost" }]) === "sim") await decidirDisp(a, false); }));
+    if (a.estado === "pendente" && !a.atual && r.souAprovado) ac.append(botaoDisp("Permitir", "ghost", () => decidirDisp(a, true)), botaoDisp("Recusar", "ghost perigo", async () => { if (await choose(`Recusar ${nomeDoAparelho(a)}?`, "O pedido é recusado e esse aparelho é desconectado. Para tentar de novo, ele precisa entrar com a senha outra vez.", [{ label: "Recusar", value: "sim", cls: "primary" }, { label: "Cancelar", value: "", cls: "ghost" }]) === "sim") await decidirDisp(a, false); }));
     else if (a.atual || r.souAprovado) ac.append(botaoDisp(a.atual ? "Remover este aparelho" : "Remover", "ghost perigo", () => removerDisp(a)));
     if (ac.childElementCount) tx.append(ac);
     row.append(ic, tx); return row;

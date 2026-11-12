@@ -19,6 +19,8 @@ async function entrar() { // outro navegador entrando na mesma conta (pede a fra
 }
 const conferir = (p) => p.evaluate(() => document.dispatchEvent(new Event("visibilitychange"))); // o app confere ao voltar para a aba
 const aviso = (p) => p.locator("#aviso-disp");
+async function esperarLogin(p) { for (let i = 0; i < 25; i++) { await conferir(p); if (await p.locator("#auth").isVisible().catch(() => false)) return; await p.waitForTimeout(1500); } throw new Error("o aparelho desconectado não voltou para o login"); }
+async function semPedido(p, ciclos = 5) { for (let i = 0; i < ciclos; i++) { await conferir(p); await p.waitForTimeout(3300); if (await aviso(p).isVisible()) throw new Error("o pedido reapareceu: " + await aviso(p).innerText()); } } // (a conferência tem espaço de 3 s: cada volta é um ciclo de verdade)
 async function esperarAviso(p, re) { for (let i = 0; i < 20; i++) { await conferir(p); if (await aviso(p).isVisible() && re.test(await aviso(p).innerText())) return; await p.waitForTimeout(1200); } throw new Error("o aviso não apareceu: " + re); }
 async function esperarSemAviso(p) { for (let i = 0; i < 20; i++) { await conferir(p); if (!(await aviso(p).isVisible())) return; await p.waitForTimeout(1200); } throw new Error("o aviso não sumiu"); }
 const abrir = async (p, n) => { await menuConta(p, "#sec-btn"); await p.waitForSelector("#mfa[open]"); await p.click("#mfa-aparelhos"); await p.waitForSelector("#aparelhos[open]"); await p.waitForFunction((k) => document.querySelectorAll("#dispositivos-lista .linha").length === k, n, { timeout: 20000 }); };
@@ -57,14 +59,22 @@ t("o aparelho permitido vê o aviso ao voltar para a aba e permite o novo; o nov
   assert.equal(await P.locator("#dispositivos-lista .linha:has-text('Permitido')").count(), 2); assert.equal(await P.locator("#disp-pedido").isVisible(), false); await P.click("#aparelhos button[value=cancel]"); // (aberto pelo aviso, sem passar pela Segurança da conta)
   await esperarSemAviso(P); await esperarSemAviso(Q);
 });
-t("recusar: o pedido some da lista (e do servidor)", async () => {
+t("recusar: o pedido some, o aparelho recusado é desconectado (volta para o login) e NÃO reaparece como pendente; entrar de novo gera um pedido novo", async () => {
   const R = await entrar(); await esperarAviso(P, /Um aparelho novo/); await abrir(P, 3);
   await P.locator('#dispositivos-lista .linha[data-estado=pendente] button:has-text("Recusar")').click(); await confirmar(P);
-  await P.waitForFunction(() => document.querySelectorAll("#dispositivos-lista .linha").length === 2, null, { timeout: 15000 }); await fechar(P); await esperarSemAviso(P); await R.context().close();
+  await P.waitForFunction(() => document.querySelectorAll("#dispositivos-lista .linha").length === 2, null, { timeout: 15000 }); await fechar(P);
+  await esperarLogin(R); await semPedido(P); await semPedido(R, 2);
+  assert.equal(await R.locator("#chat").isVisible(), false);
+  // entrar de novo (mesmo navegador): a conta já tem aparelho permitido, então é um pedido novo, pendente
+  await R.fill("#email", email); await R.fill("#password", SENHA); await R.click("#auth-submit"); await R.waitForSelector(pronto, { timeout: 30000 });
+  await esperarAviso(R, /Aguardando permissão/); await esperarAviso(P, /Um aparelho novo/);
+  await abrir(P, 3); await P.locator('#dispositivos-lista .linha[data-estado=pendente] button:has-text("Recusar")').click(); await confirmar(P);
+  await P.waitForFunction(() => document.querySelectorAll("#dispositivos-lista .linha").length === 2, null, { timeout: 15000 }); await fechar(P); await esperarLogin(R); await R.context().close();
 });
 t("remover outro aparelho (permitido): sai da lista; um pendente remove a si mesmo e volta para o login", async () => {
   await abrir(P, 2); await P.locator('#dispositivos-lista .linha:not(.atual) button:has-text("Remover")').click(); await confirmar(P);
   await P.waitForFunction(() => document.querySelectorAll("#dispositivos-lista .linha").length === 1, null, { timeout: 15000 }); await fechar(P);
+  await esperarLogin(Q); await semPedido(P, 4); assert.equal(await Q.locator("#chat").isVisible(), false, "o removido não volta como pendente"); // (é desconectado: precisa entrar de novo)
   await Q.context().close();
   const S = await entrar(); await esperarAviso(S, /Aguardando permissão/); await abrir(S, 2); await S.locator("#dispositivos-lista .linha.atual button").click(); await confirmar(S);
   await S.waitForSelector("#auth:not([hidden])", { timeout: 20000 }); await abrir(P, 1); await fechar(P); await S.context().close();

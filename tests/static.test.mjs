@@ -266,6 +266,9 @@ describe("aparelhos da conta (supabase/schema.sql)", () => {
     for (const n of ["decidir_dispositivo", "remover_dispositivo"]) assert.match(f(n), /delete from public\.prekeys k where k\.user_id = u and k\.aparelho = alvo\.id/);
     for (const n of ["registrar_dispositivo", "meus_dispositivos", "decidir_dispositivo", "remover_dispositivo"]) assert.match(f(n), /perform public\.consome\('/, n);
     assert.doesNotMatch(f("meus_dispositivos"), /\bd\.id,/, "o identificador secreto não é devolvido");
+    assert.match(f("decidir_dispositivo"), /delete from auth\.sessions[\s\S]*delete from public\.dispositivos/, "recusar desconecta o aparelho antes de apagar o registro");
+    assert.match(f("remover_dispositivo"), /if alvo\.id <> cur\.id then\s+delete from auth\.sessions[\s\S]*delete from public\.dispositivos/, "remover OUTRO desconecta; a auto-remoção não");
+    assert.match(f("meus_dispositivos"), /from auth\.sessions/, "sessão encerrada não lista nada");
   });
   test("prekeys: a marca do aparelho só é aceita para o aparelho da sessão e a coluna não é legível", () => {
     assert.match(sql, /alter table public\.prekeys add column aparelho text check \(aparelho is null or aparelho ~ '\^\[0-9a-f\]\{32\}\$'\)/);

@@ -1461,7 +1461,7 @@ language plpgsql security definer set search_path = public, auth as $$
 declare u uuid := auth.uid(); cur public.dispositivos;
 begin
   perform public.consome('meus_dispositivos', 60, 600);
-  if not (select public.mfa_ok()) then return; end if;
+  if not (select public.mfa_ok()) or not exists (select 1 from auth.sessions x where x.id = nullif(auth.jwt() ->> 'session_id', '')::uuid) then return; end if;   -- (sessão já encerrada: nada)
   cur := public.dispositivo_atual();
   return query
     select d.ref, d.estado, d.criado_em, d.visto_em, d.aprovado_em, d.id = cur.id, ap.navegador, ap.sistema, ap.tipo, ap.pais_codigo, ap.regiao, ap.cidade
@@ -1475,7 +1475,7 @@ revoke all on function public.meus_dispositivos() from public, anon, authenticat
 grant execute on function public.meus_dispositivos() to authenticated;
 
 -- Permitir (p_permitir = true) ou recusar um aparelho PENDENTE. Só vale se a chamada vem de um aparelho APROVADO da mesma conta.
--- Recusar apaga o registro e as chaves de recepção dele. Devolve false (sem mudar nada) quando não pode.
+-- Recusar apaga o registro, as chaves de recepção e as SESSÕES de login dele (o aparelho é desconectado). Devolve false (sem mudar nada) quando não pode.
 create or replace function public.decidir_dispositivo(p_ref uuid, p_permitir boolean) returns boolean
 language plpgsql security definer set search_path = public, auth as $$
 declare u uuid := auth.uid(); cur public.dispositivos; alvo public.dispositivos;
@@ -1490,6 +1490,7 @@ begin
   if p_permitir then
     update public.dispositivos d set estado = 'aprovado', aprovado_em = now(), aprovado_por = cur.id where d.user_id = u and d.id = alvo.id;
   else
+    delete from auth.sessions a where a.id in (select s.session_id from public.dispositivo_sessoes s where s.user_id = u and s.dispositivo = alvo.id);   -- desconecta o aparelho (apagar a sessão leva os refresh tokens)
     delete from public.prekeys k where k.user_id = u and k.aparelho = alvo.id;
     delete from public.dispositivos d where d.user_id = u and d.id = alvo.id;
   end if;
@@ -1498,7 +1499,7 @@ end $$;
 revoke all on function public.decidir_dispositivo(uuid, boolean) from public, anon, authenticated;
 grant execute on function public.decidir_dispositivo(uuid, boolean) to authenticated;
 
--- Remover um aparelho (aprovado ou pendente): apaga o registro e as chaves de recepção dele. Um aparelho pode remover a si mesmo (em qualquer estado);
+-- Remover um aparelho (aprovado ou pendente): apaga o registro e as chaves de recepção dele (e, sendo OUTRO aparelho, desconecta as sessões dele). Um aparelho pode remover a si mesmo (em qualquer estado);
 -- remover OUTRO só vale vindo de um aparelho aprovado. Um pendente não mexe nos outros.
 create or replace function public.remover_dispositivo(p_ref uuid) returns boolean
 language plpgsql security definer set search_path = public, auth as $$
@@ -1512,6 +1513,9 @@ begin
   select * into alvo from public.dispositivos d where d.user_id = u and d.ref = p_ref;
   if not found then return false; end if;
   if alvo.id <> cur.id and cur.estado <> 'aprovado' then return false; end if;
+  if alvo.id <> cur.id then
+      delete from auth.sessions a where a.id in (select s.session_id from public.dispositivo_sessoes s where s.user_id = u and s.dispositivo = alvo.id);   -- desconecta o aparelho (apagar a sessão leva os refresh tokens)
+  end if;
   delete from public.prekeys k where k.user_id = u and k.aparelho = alvo.id;
   delete from public.dispositivos d where d.user_id = u and d.id = alvo.id;
   return true;
