@@ -68,20 +68,22 @@ t("o grupo é avisado da mudança (quem mudou e quem vê), e quem só lê não v
   await B.click("#grupo-btn"); await B.click("#gi-selos"); await B.waitForSelector("#selos[open]"); await B.waitForFunction(() => document.querySelectorAll("#sl-regras li").length === 3 && !document.querySelector("#sl-regras li.vazio"), null, { timeout: 30000 });
   assert.equal(await B.locator("#sl-editar").isVisible(), false);
 });
-t("o saldo do dia aparece como “a confirmar” (entrada + mensagens) e todos do grupo veem o de todos", async () => {
+t("os Selos valem na hora (entrada + mensagens) e todos do grupo veem o saldo de todos", async () => {
   await B.click("#selos .pg-volta"); await B.click("#grupo-info .pg-volta");
   for (const x of ["um", "dois", "três"]) await enviar(A, "selos " + x);
   await B.waitForSelector(".msg.grupo-msg .vis:text-is('selos três')", { timeout: 30000 });
   await A.click("#grupo-btn"); await A.click("#gi-selos"); await A.waitForSelector("#selos[open]");
-  await A.waitForFunction(() => /\+13/.test(document.querySelector("#sl-meu")?.innerText || ""), null, { timeout: 30000 }); // 7 da entrada + 3 mensagens × 2
+  await A.waitForFunction(() => document.querySelector("#sl-meu .n")?.textContent === "13", null, { timeout: 30000 }); // 7 da entrada + 3 mensagens × 2, já confirmados
+  assert.doesNotMatch(await A.locator("#selos").innerText(), /confirmar/, "não existe mais “a confirmar”");
+  const linhas = await A.locator("#sl-lista .sl-pessoa").allInnerTexts(); assert.equal(linhas.length, 2); assert.match(linhas[0], /@.*\(você\)[\s\S]*13/); assert.match(linhas[1], /7/);
   await A.setViewportSize({ width: 390, height: 420 }); // tela baixa: a página precisa rolar e a lista de pessoas não pode encolher para caber
   const rolagem = await A.evaluate(() => { const c = document.querySelector("#selos .pg-corpo"), l = document.querySelector("#sl-lista"), soma = [...l.children].reduce((n, x) => n + x.getBoundingClientRect().height, 0), y0 = c.scrollTop; c.scrollTop = 9999; return { rola: c.scrollHeight > c.clientHeight, moveu: c.scrollTop > y0, lista: l.getBoundingClientRect().height, soma }; });
   assert.ok(rolagem.rola && rolagem.moveu, "a tela de Selos rola"); assert.ok(rolagem.lista >= rolagem.soma - 1, `a lista de pessoas não encolhe (${rolagem.lista} < ${rolagem.soma})`);
   await A.setViewportSize({ width: 1100, height: 800 });
-  assert.match(await A.locator("#sl-meu").innerText(), /a confirmar hoje/); assert.equal(await A.locator("#sl-meu .n").first().innerText(), "0", "nada confirmado: o dia ainda não acabou");
-  const linhas = await A.locator("#sl-lista .sl-pessoa").allInnerTexts(); assert.equal(linhas.length, 2); assert.match(linhas[0], /\+13 a confirmar/); assert.match(linhas[1], /\+7 a confirmar/);
-  await B.click("#grupo-btn"); await B.click("#gi-selos"); await B.waitForSelector("#selos[open]"); await B.waitForFunction(() => /\+7/.test(document.querySelector("#sl-meu")?.innerText || ""), null, { timeout: 30000 });
-  assert.match(await B.locator("#sl-lista").innerText(), /\+13 a confirmar/, "B vê o saldo de A");
+  await B.click("#grupo-btn"); await B.click("#gi-selos"); await B.waitForSelector("#selos[open]"); await B.waitForFunction(() => document.querySelector("#sl-meu .n")?.textContent === "7", null, { timeout: 30000 });
+  assert.match(await B.locator("#sl-lista").innerText(), /13/, "B vê o saldo de A");
+  await A.click("#selos .pg-volta"); await A.click("#grupo-info .pg-volta"); await enviar(A, "selos quatro"); await B.waitForTimeout(500); await B.click("#selos .pg-volta"); await B.click("#grupo-info .pg-volta"); await B.click("#grupo-btn"); await B.click("#gi-selos"); await B.waitForSelector("#selos[open]");
+  await B.waitForFunction(() => /15/.test(document.querySelector("#sl-lista")?.innerText || ""), null, { timeout: 30000 }); // a quarta mensagem rendeu mais 2, na hora
 });
 t("travas do banco: só o admin muda; valores fora do limite recusados; de fora não lê; tabelas e funções internas fechadas", async () => {
   const bom = { entrada: { on: true, valor: 7 } };

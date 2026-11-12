@@ -1342,3 +1342,38 @@ revoke all on function public.selo_int(jsonb, text, int, int, int) from public, 
 revoke all on function public.selo_limpa(jsonb, jsonb, date) from public, anon, authenticated;
 revoke all on function public.selo_ganhos(uuid, uuid, date, jsonb) from public, anon, authenticated;
 revoke all on function public.selo_apurar(uuid) from public, anon, authenticated;
+
+-- Selos valem na hora: o servidor já conta tudo o que importa, então não há por que esperar o dia acabar.
+-- Cada chamada recalcula o dia de HOJE também e grava no extrato; as linhas do dia só crescem (maior valor), nunca pagam em dobro (chave única) e nunca são tiradas.
+-- "pendentes" fica sempre 0 (a assinatura de selo_saldo não muda, para quem ainda tem o site antigo aberto).
+create or replace function public.selo_apurar(p_grupo uuid) returns void
+language plpgsql security definer set search_path = public as $$
+declare reg jsonb; ate date; hoje date := (now() at time zone 'America/Sao_Paulo')::date; d date; m uuid;
+begin
+  perform pg_advisory_xact_lock(hashtext('selo:' || p_grupo::text));
+  select s.regras into reg from public.selo_regras s where s.grupo_id = p_grupo; if reg is null then return; end if;
+  select a.ate into ate from public.selo_apurado a where a.grupo_id = p_grupo;
+  ate := greatest(coalesce(ate, hoje - 36), hoje - 36);
+  for d in select g::date from generate_series(ate + 1, hoje, interval '1 day') g loop
+    for m in select gm.user_id from public.grupo_membros gm where gm.grupo_id = p_grupo loop
+      insert into public.moedas_extrato (grupo_id, user_id, quantidade, motivo, ref)
+        select p_grupo, m, g.qtd, g.motivo, g.ref from public.selo_ganhos(p_grupo, m, d, reg) g where g.qtd > 0
+        on conflict (grupo_id, user_id, motivo, ref) do update set quantidade = greatest(public.moedas_extrato.quantidade, excluded.quantidade);
+    end loop;
+  end loop;
+  if hoje - 1 > ate then insert into public.selo_apurado (grupo_id, ate) values (p_grupo, hoje - 1) on conflict (grupo_id) do update set ate = excluded.ate; end if; -- (hoje nunca é "encerrado": é recalculado a cada chamada)
+end $$;
+
+create or replace function public.selo_saldo(p_grupo uuid) returns table (user_id uuid, confirmados bigint, pendentes bigint)
+language plpgsql security definer set search_path = public as $$
+#variable_conflict use_column
+begin
+  if not (select public.mfa_ok()) or not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = (select auth.uid())) then raise exception 'nao_esta_no_grupo' using errcode = '42501'; end if;
+  perform public.consome('selo_saldo', 20, 300);
+  perform public.selo_apurar(p_grupo);
+  return query select gm.user_id, coalesce((select sum(e.quantidade) from public.moedas_extrato e where e.grupo_id = p_grupo and e.user_id = gm.user_id), 0)::bigint, 0::bigint
+    from public.grupo_membros gm where gm.grupo_id = p_grupo;
+end $$;
+revoke all on function public.selo_apurar(uuid) from public, anon, authenticated;
+revoke all on function public.selo_saldo(uuid) from public, anon, authenticated;
+grant execute on function public.selo_saldo(uuid) to authenticated;

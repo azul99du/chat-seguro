@@ -52,7 +52,7 @@ test("prévia de um dia comum, com e sem teto", () => {
 test("igualdade de regras e textos", () => {
   assert.equal(igualRegras(regrasVazias(), { entrada: { on: false, valor: 1 } }), true); assert.equal(igualRegras(regrasVazias(), { entrada: { on: true, valor: 1 } }), false);
   assert.equal(textoSelos(1), "1 Selo"); assert.equal(textoSelos(0), "0 Selos"); assert.equal(textoSelos(12), "12 Selos");
-  assert.deepEqual(saldoLimpo({ user_id: "u", confirmados: "12", pendentes: -5 }), { id: "u", confirmados: 12, pendentes: 0 });
-  assert.deepEqual(saldoLimpo(null), { id: undefined, confirmados: 0, pendentes: 0 }); assert.equal(saldoLimpo({ confirmados: 1e15 }).confirmados, 1e9);
+  assert.deepEqual(saldoLimpo({ user_id: "u", confirmados: "12", pendentes: 5 }), { id: "u", saldo: 12 }, "vale o saldo do extrato");
+  assert.deepEqual(saldoLimpo(null), { id: undefined, saldo: 0 }); assert.equal(saldoLimpo({ confirmados: 1e15 }).saldo, 1e9); assert.equal(saldoLimpo({ confirmados: -4 }).saldo, 0);
   assert.match(erroRegras({ code: "42501" }), /admin/); assert.match(erroRegras({ code: "22023" }), /999/); assert.match(erroRegras({}), /Não foi possível/);
 });

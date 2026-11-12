@@ -85,6 +85,6 @@ export function previa(r, msgs = 20, arquivos = 0) {
   return { total, itens };
 }
 export const textoSelos = (n) => `${n} ${pl(n, "Selo", "Selos")}`;
-// Saldo vindo do servidor (desconfiável)
-export const saldoLimpo = (l) => ({ id: l?.user_id, confirmados: Math.max(0, Math.min(1e9, Number.isSafeInteger(Number(l?.confirmados)) ? Number(l.confirmados) : 0)), pendentes: Math.max(0, Math.min(1e9, Number.isSafeInteger(Number(l?.pendentes)) ? Number(l.pendentes) : 0)) });
+// Saldo vindo do servidor (desconfiável). Os Selos valem na hora: o servidor soma no extrato conforme a pessoa ganha.
+export const saldoLimpo = (l) => ({ id: l?.user_id, saldo: Math.max(0, Math.min(1e9, Number.isSafeInteger(Number(l?.confirmados)) ? Number(l.confirmados) : 0)) });
 export const erroRegras = (e) => e?.code === "42501" ? "Só o admin do grupo pode mudar as regras dos Selos." : e?.code === "22023" ? "Algum valor está fora do limite (de 1 a 999)." : e?.code === "PT429" ? "Muitas mudanças seguidas. Espere um pouco." : "Não foi possível salvar agora. Tente de novo.";

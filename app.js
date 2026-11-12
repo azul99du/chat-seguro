@@ -1,23 +1,23 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=180964eaf1";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=180964eaf1";
-import { montarFigurinhas } from "./figurinhas.js?v=180964eaf1";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=180964eaf1";
-import { todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=180964eaf1";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=180964eaf1";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=180964eaf1";
-import { acharVideoLink } from "./videolink.js?v=180964eaf1";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=180964eaf1";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=180964eaf1";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=180964eaf1";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=180964eaf1";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=180964eaf1";
-import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=180964eaf1";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=180964eaf1";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=180964eaf1";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=180964eaf1";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=180964eaf1";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=180964eaf1";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=8ef27c4be7";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=8ef27c4be7";
+import { montarFigurinhas } from "./figurinhas.js?v=8ef27c4be7";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=8ef27c4be7";
+import { todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=8ef27c4be7";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=8ef27c4be7";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=8ef27c4be7";
+import { acharVideoLink } from "./videolink.js?v=8ef27c4be7";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=8ef27c4be7";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=8ef27c4be7";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=8ef27c4be7";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=8ef27c4be7";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=8ef27c4be7";
+import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=8ef27c4be7";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=8ef27c4be7";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=8ef27c4be7";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=8ef27c4be7";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=8ef27c4be7";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=8ef27c4be7";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -1942,15 +1942,14 @@ async function carregarSelos(g) {
 }
 function desenharSelos() {
   const g = slGrupo && grupos.get(slGrupo.id); if (!g || !slDados) return;
-  const meu = slDados.saldo.get(me.id) || { confirmados: 0, pendentes: 0 }, tem = (x) => slDados.saldo.get(x) || { confirmados: 0, pendentes: 0 };
-  const n = el("span", "n", String(meu.confirmados)), t = el("span", "t"); t.append(n, el("small", null, meu.confirmados === 1 ? "Selo confirmado" : "Selos confirmados"));
-  const box = $("sl-meu"); box.replaceChildren(seloIcone(48), t);
-  if (meu.pendentes > 0) { const p = el("span", "t"); p.append(el("span", "n", "+" + meu.pendentes), el("small", null, "a confirmar hoje")); box.append(el("span", "sep"), seloIcone(30, true), p); }
-  const ordem = [...g.membros.values()].sort((a, b) => (tem(b.id).confirmados + tem(b.id).pendentes) - (tem(a.id).confirmados + tem(a.id).pendentes) || a.username.localeCompare(b.username));
+  const tem = (x) => slDados.saldo.get(x)?.saldo || 0, meu = tem(me.id);
+  const n = el("span", "n", String(meu)), t = el("span", "t"); t.append(n, el("small", null, meu === 1 ? "Selo" : "Selos"));
+  $("sl-meu").replaceChildren(seloIcone(48), t);
+  const ordem = [...g.membros.values()].sort((a, b) => tem(b.id) - tem(a.id) || a.username.localeCompare(b.username));
   $("sl-lista").replaceChildren(...ordem.map((p) => {
-    const eu = p.id === me.id, s = tem(p.id), row = el("div", "sl-pessoa" + (eu ? " eu" : "")), av = el("span", "avatar"), nm = el("span", "nm"), sal = el("span", "sal");
-    pintarAvatar(av, p, false); nm.append(el("b", null, "@" + p.username + (eu ? " (você)" : ""))); if (s.pendentes > 0) nm.append(el("small", null, "+" + s.pendentes + " a confirmar"));
-    sal.append(seloIcone(22), String(s.confirmados)); row.append(av, nm, sal); return row;
+    const eu = p.id === me.id, row = el("div", "sl-pessoa" + (eu ? " eu" : "")), av = el("span", "avatar"), nm = el("span", "nm"), sal = el("span", "sal");
+    pintarAvatar(av, p, false); nm.append(el("b", null, "@" + p.username + (eu ? " (você)" : "")));
+    sal.append(seloIcone(22), String(tem(p.id))); row.append(av, nm, sal); return row;
   }));
   const fs = frasesLigadas(slDados.regras);
   $("sl-regras").replaceChildren(...(fs.length ? fs.map((f) => el("li", null, f.texto)) : [el("li", "vazio", g.admin ? "Ainda não há regras. Toque em “Editar regras” para escolher como ganhar Selos." : "O admin ainda não definiu como ganhar Selos.")]));
