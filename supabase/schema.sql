@@ -909,3 +909,92 @@ begin
 end $$;
 revoke all on function public.profiles_nome_reservado() from public, anon, authenticated;
 create trigger profiles_nome_reservado before insert on public.profiles for each row execute function public.profiles_nome_reservado();
+
+-- ===== Cor de cada pessoa no grupo (migração grupo_cor) =====
+-- Cada participante tem UMA cor por grupo, só dele: 'p0'..'p9' (cores prontas) ou '#rrggbb' (cor aleatória, a mais diferente das já usadas, calculada no aparelho).
+-- O banco impede duas pessoas com a mesma cor no mesmo grupo (índice único). Quem entra ganha a primeira cor pronta livre; quem sai libera a sua.
+alter table public.grupo_membros add column cor text check (cor is null or cor ~ '^(p[0-9]|#[0-9a-f]{6})$');
+create unique index grupo_membros_cor_unica on public.grupo_membros (grupo_id, cor) where cor is not null;
+
+create or replace function public.cor_livre(p_grupo uuid) returns text
+language sql stable security definer set search_path = public as $$
+  select x.c from (select 'p' || g as c from generate_series(0, 9) g) x
+   where not exists (select 1 from public.grupo_membros m where m.grupo_id = p_grupo and m.cor = x.c)
+   order by x.c limit 1
+$$;
+revoke all on function public.cor_livre(uuid) from public, anon, authenticated;
+
+-- grupos que já existem: cada pessoa ganha uma cor pronta, na ordem em que entrou (a partir da 11ª pessoa, sem cor até escolher uma)
+do $$ declare r record; n int; begin
+  for r in select grupo_id, user_id, row_number() over (partition by grupo_id order by entrou_em, user_id) - 1 as i from public.grupo_membros loop
+    if r.i < 10 then update public.grupo_membros set cor = 'p' || r.i where grupo_id = r.grupo_id and user_id = r.user_id; end if;
+  end loop;
+end $$;
+
+-- criar e adicionar passam a dar a primeira cor livre
+create or replace function public.criar_grupo(p_id uuid, p_nome jsonb, p_chave jsonb, p_membros jsonb) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); m jsonb; alvo uuid; n int;
+begin
+  perform public.consome('criar_grupo', 5, 20);
+  if jsonb_typeof(p_membros) is distinct from 'array' then raise exception 'dados invalidos' using errcode = '22023'; end if;
+  n := jsonb_array_length(p_membros);
+  if n < 1 or n > 19 then raise exception 'tamanho_do_grupo' using errcode = '22023'; end if;
+  if (select count(*) from public.grupo_membros gm where gm.user_id = u) >= 50 then raise exception 'grupos_demais' using errcode = 'PT429', hint = 'rate_limit'; end if;
+  insert into public.grupos (id, criador, nome) values (p_id, u, p_nome);
+  insert into public.grupo_membros (grupo_id, user_id, admin, chave, por, cor) values (p_id, u, true, p_chave, u, public.cor_livre(p_id));
+  for m in select * from jsonb_array_elements(p_membros) loop
+    alvo := (m ->> 'id')::uuid;
+    if alvo = u or not public.ja_conversou(alvo) then raise exception 'nao_conversou' using errcode = '42501', detail = alvo::text; end if;
+    if (select count(*) from public.grupo_membros gm where gm.user_id = alvo) >= 50 then raise exception 'grupos_demais_dela' using errcode = '42501', detail = alvo::text; end if;
+    insert into public.grupo_membros (grupo_id, user_id, chave, por, cor) values (p_id, alvo, m -> 'chave', u, public.cor_livre(p_id));
+  end loop;
+end $$;
+revoke all on function public.criar_grupo(uuid, jsonb, jsonb, jsonb) from public, anon, authenticated;
+grant execute on function public.criar_grupo(uuid, jsonb, jsonb, jsonb) to authenticated;
+
+create or replace function public.grupo_adicionar(p_grupo uuid, p_user uuid, p_chave jsonb) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid());
+begin
+  perform public.consome('grupo_mudar', 30, 200);
+  if not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = u and gm.admin) then raise exception 'so_admin' using errcode = '42501'; end if;
+  if p_user = u or not public.ja_conversou(p_user) then raise exception 'nao_conversou' using errcode = '42501', detail = p_user::text; end if;
+  if (select count(*) from public.grupo_membros gm where gm.grupo_id = p_grupo) >= 20 then raise exception 'grupo_cheio' using errcode = '22023'; end if;
+  if (select count(*) from public.grupo_membros gm where gm.user_id = p_user) >= 50 then raise exception 'grupos_demais_dela' using errcode = '42501', detail = p_user::text; end if;
+  insert into public.grupo_membros (grupo_id, user_id, chave, por, cor) values (p_grupo, p_user, p_chave, u, public.cor_livre(p_grupo));
+end $$;
+revoke all on function public.grupo_adicionar(uuid, uuid, jsonb) from public, anon, authenticated;
+grant execute on function public.grupo_adicionar(uuid, uuid, jsonb) to authenticated;
+
+-- Escolher a própria cor: só a da própria linha; nunca uma cor já usada por outra pessoa do grupo (o índice único recusa)
+create or replace function public.grupo_cor(p_grupo uuid, p_cor text) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid());
+begin
+  perform public.consome('grupo_mudar', 30, 200);
+  if p_cor is null or p_cor !~ '^(p[0-9]|#[0-9a-f]{6})$' then raise exception 'cor_invalida' using errcode = '22023'; end if;
+  update public.grupo_membros gm set cor = p_cor where gm.grupo_id = p_grupo and gm.user_id = u;
+  if not found then raise exception 'nao_esta_no_grupo' using errcode = '42501'; end if;
+exception when unique_violation then raise exception 'cor_em_uso' using errcode = '23505';
+end $$;
+revoke all on function public.grupo_cor(uuid, text) from public, anon, authenticated;
+grant execute on function public.grupo_cor(uuid, text) to authenticated;
+
+drop function public.meus_grupos();
+create or replace function public.meus_grupos() returns table (grupo_id uuid, nome jsonb, criado_em timestamptz, user_id uuid, username text, public_key jsonb, avatar text, admin boolean, entrou_em timestamptz, chave jsonb, por uuid, por_chave jsonb, foto jsonb, sub boolean, cor text)
+language sql stable security definer set search_path = public as $$
+  select g.id, g.nome, g.created_at, m.user_id, p.username, p.public_key, p.avatar, m.admin, m.entrou_em,
+         case when m.user_id = (select auth.uid()) then m.chave end,
+         case when m.user_id = (select auth.uid()) then m.por end,
+         case when m.user_id = (select auth.uid()) then (select q.public_key from public.profiles q where q.id = m.por) end,
+         g.foto, m.sub, m.cor
+    from public.grupo_membros eu
+    join public.grupos g on g.id = eu.grupo_id
+    join public.grupo_membros m on m.grupo_id = g.id
+    join public.profiles p on p.id = m.user_id
+   where eu.user_id = (select auth.uid()) and (select public.mfa_ok())
+   order by g.id, m.entrou_em, m.user_id
+$$;
+revoke all on function public.meus_grupos() from public, anon, authenticated;
+grant execute on function public.meus_grupos() to authenticated;

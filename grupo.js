@@ -86,7 +86,7 @@ export function montarGrupos(linhas, eu) {
     if (!ehGrupoId(l.grupo_id) || !ehGrupoId(l.user_id) || typeof l.username !== "string") continue;
     let g = m.get(l.grupo_id);
     if (!g) m.set(l.grupo_id, (g = { id: l.grupo_id, nomeCifrado: l.nome, criadoEm: l.criado_em, membros: [], eu: null, foto: null }));
-    g.membros.push({ id: l.user_id, username: l.username, public_key: l.public_key, avatar: l.avatar || null, admin: !!l.admin, sub: !!l.sub, entrou_em: l.entrou_em });
+    g.membros.push({ id: l.user_id, username: l.username, public_key: l.public_key, avatar: l.avatar || null, admin: !!l.admin, sub: !!l.sub, cor: l.cor || null, entrou_em: l.entrou_em });
     if (!g.foto && l.foto) g.foto = l.foto;
     if (l.user_id === eu) g.eu = { admin: !!l.admin, sub: !!l.sub, entrouEm: l.entrou_em, chave: l.chave, por: l.por, porChave: l.por_chave };
   }

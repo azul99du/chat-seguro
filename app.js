@@ -1,20 +1,21 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=bfdb270dea";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=bfdb270dea";
-import { montarFigurinhas } from "./figurinhas.js?v=bfdb270dea";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=bfdb270dea";
-import { acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=bfdb270dea";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=bfdb270dea";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=bfdb270dea";
-import { acharVideoLink } from "./videolink.js?v=bfdb270dea";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=bfdb270dea";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=bfdb270dea";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=bfdb270dea";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=bfdb270dea";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=bfdb270dea";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=bfdb270dea";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=bfdb270dea";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=bfdb270dea";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=dd2ca99bda";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=dd2ca99bda";
+import { montarFigurinhas } from "./figurinhas.js?v=dd2ca99bda";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=dd2ca99bda";
+import { acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=dd2ca99bda";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=dd2ca99bda";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=dd2ca99bda";
+import { acharVideoLink } from "./videolink.js?v=dd2ca99bda";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=dd2ca99bda";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=dd2ca99bda";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=dd2ca99bda";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=dd2ca99bda";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=dd2ca99bda";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=dd2ca99bda";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=dd2ca99bda";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=dd2ca99bda";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=dd2ca99bda";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -1051,6 +1052,23 @@ $("video-view").addEventListener("close", () => $("vv-quadro").replaceChildren()
 $("vv-fechar").onclick = () => $("video-view").close();
 $("video-view").addEventListener("click", (e) => { if (e.target === $("video-view")) $("video-view").close(); });
 
+// ----- cor e foto de cada pessoa nas mensagens do grupo -----
+function aplicarCor(wrap) {
+  const st = estilosDaCor(active?.membros?.get(wrap.dataset.de)?.cor); if (!st) { wrap.classList.remove("cor"); return; }
+  for (const [v, k] of [["--mc-bg", "bg"], ["--mc-bd", "bd"], ["--mc-n", "nome"], ["--mc-f", "forte"]]) { wrap.style.setProperty(v, st.claro[k]); wrap.style.setProperty(v + "-e", st.escuro[k]); }
+  wrap.classList.add("cor");
+}
+function reavaliarAvatar(w) { // a foto só aparece na última mensagem seguida da mesma pessoa
+  const slot = w?.querySelector?.(":scope > .line > .ava-slot"); if (!slot) return;
+  const prox = w.nextElementSibling; slot.classList.toggle("oculto", !!(prox?.classList.contains("msg") && prox.dataset.de === w.dataset.de));
+}
+function repintarCoresGrupo() { // alguém trocou de cor, de foto ou entrou: as mensagens já na tela acompanham
+  if (!active?.grupo) return;
+  for (const w of $("messages").querySelectorAll(".msg.grupo-msg")) {
+    if (!w.querySelector(".bubble.err")) aplicarCor(w);
+    const av = w.querySelector(".ava-slot .avatar"), p = active.membros.get(w.dataset.de); if (av && p && (av.dataset.foto || "") !== (p.avatar || "")) pintarAvatar(av, p);
+  }
+}
 function pintaMencoes(vis, text) {
   const pedacos = partirTexto(text, [...(active?.membros?.values() ?? [])]); if (!pedacos.some((x) => x.id)) return;
   vis.replaceChildren(...pedacos.map((x) => { if (!x.id) return document.createTextNode(x.t); const sp = el("span", "mencao" + (x.id === me.id ? " eu" : ""), x.t); return sp; }));
@@ -1071,7 +1089,7 @@ function addMessage(m, content, { err = false, animate = false, em = null } = {}
   const citado = re ? exibir(re, original, { me: me.id, peer: emGrupo ? (re.from && re.from !== me.id ? re.from : undefined) : active?.id }) : null;
   const quemCitado = citado?.autor === "mine" ? "Você" : citado?.autor === "theirs" ? "@" + (emGrupo ? nomeDe(original?.m.sender_id ?? re.from) : active.username) : "Mensagem";
   let autor = null; // em grupo: quem escreveu (só na primeira de uma sequência da mesma pessoa)
-  if (emGrupo && !mine) { const ant = em ? em.previousElementSibling : $("messages").lastElementChild; if (!(ant?.classList.contains("msg") && ant.dataset.de === m.sender_id)) autor = el("span", "autor c" + corDoAutor(m.sender_id), "@" + nomeDe(m.sender_id)); }
+  if (emGrupo && !mine) { const ant = em ? em.previousElementSibling : $("messages").lastElementChild; if (!(ant?.classList.contains("msg") && ant.dataset.de === m.sender_id)) autor = el("span", "autor", "@" + nomeDe(m.sender_id)); }
   const sr = el("span", "sr", (emGrupo && !mine ? `@${nomeDe(m.sender_id)}: ` : "") + (citado ? `Em resposta a ${quemCitado}: ${citado.rotulo}. ` : "") + label + text), vis = el("span", "vis", text), meta = el("div", "meta");
   vis.setAttribute("aria-hidden", "true");
   const tm = el("time", null, hhmm(at)); tm.dateTime = at.toISOString();
@@ -1097,6 +1115,11 @@ function addMessage(m, content, { err = false, animate = false, em = null } = {}
   wrap.append(line, rx);
   if (!err) gestosMensagem(wrap, line, b, m.id);
   if (em) em.replaceWith(wrap); else $("messages").append(wrap);
+  if (emGrupo && !mine) { // em grupo: a foto de quem escreveu fica ao lado da ÚLTIMA mensagem de cada sequência, e o balão leva a cor da pessoa
+    wrap.classList.add("grupo-msg"); const slot = el("span", "ava-slot oculto"), av = el("span", "avatar mini");
+    pintarAvatar(av, active.membros.get(m.sender_id) || { username: nomeDe(m.sender_id), avatar: null }); slot.append(av); line.insertBefore(slot, b); if (!err) aplicarCor(wrap);
+  }
+  if (emGrupo) { reavaliarAvatar(wrap); if (wrap.previousElementSibling) reavaliarAvatar(wrap.previousElementSibling); }
   const e = { m, mine, rcpt, rx, wrap, content: err ? null : content }; msgs.set(m.id, e); if (!apagada) setReceipt(e);
   if (emGrupo && !err && !apagada && text) { // em grupo: "@nome" de quem está no grupo fica em destaque (o seu, mais forte)
     if (animate) { b.classList.add("deciphering"); reveal(vis, text, () => { b.classList.remove("deciphering"); pintaMencoes(vis, text); }); } else pintaMencoes(vis, text);
@@ -1291,7 +1314,7 @@ async function apagarParaMim(id) {
   const e = msgs.get(id), peer = active; if (!e || !peer) return;
   await commit(me.id, peer.id, { entryId: id, entry: { content: { type: "hidden" }, at: e.m.created_at, mine: e.mine } });
   { const c = e.content; if (c?.type === "media" && c.kind !== "sticker" && typeof c.path === "string") delBlob(me.id, c.path).catch(() => {}); } // some também a cópia guardada
-  e.wrap.remove(); msgs.delete(id); reactions.delete(id);
+  const antes = e.wrap.previousElementSibling; e.wrap.remove(); if (antes) reavaliarAvatar(antes); msgs.delete(id); reactions.delete(id);
   if (!msgs.size && !$("msgs-empty")) { const p = el("p", "empty", "Nenhuma mensagem aqui."); p.id = "msgs-empty"; $("messages").append(p); }
 }
 async function apagarParaTodos(id) {
@@ -1692,7 +1715,8 @@ function atualizarGrupos(fresco = false) {
         if (active === g) sairDaConversa(g.saindo ? "" : `Você não participa mais do grupo “${g.nome}”.`);
       }
       for (const [id, g] of grupos) if (!g.pintado || g.pintado !== g.nome + "|" + (g.foto?.p || "")) { g.pintado = g.nome + "|" + (g.foto?.p || ""); if (active === g) pintarAvatarGrupo($("conv-av"), g, true); }
-      if (active?.grupo) { $("conv-title").textContent = active.nome; updateStatus(); }
+      if (active?.grupo) { $("conv-title").textContent = active.nome; updateStatus(); repintarCoresGrupo(); }
+      if ($("cor-folha").open) desenharCor();
       if ($("grupo-info").open) desenharInfoGrupo();
       renderContacts();
     } finally { carregandoGrupos = null; }
@@ -1763,6 +1787,8 @@ const erroGrupo = (e) => { const m = e?.message || "", quem = (id) => "@" + (per
     : /sem_permissao/.test(m) ? "Você não tem permissão para fazer isso neste grupo."
     : /alvo_invalido/.test(m) ? "Não dá para dar esse cargo a essa pessoa."
     : /foto_invalida/.test(m) ? "Não foi possível usar essa foto. Tente outra."
+    : /cor_em_uso/.test(m) ? "Essa cor acabou de ser escolhida por outra pessoa. Escolha outra."
+    : /cor_invalida/.test(m) ? "Essa cor não é válida."
     : e?.code === "PIN" ? `A chave de @${e.peer?.username} mudou. Abra a conversa com essa pessoa e confira o código de segurança antes.`
     : limitado(e) ? "Muitas mudanças em pouco tempo. Espere um minuto e tente de novo."
     : "Não foi possível agora. Verifique a conexão e tente de novo."; };
@@ -1808,6 +1834,7 @@ function desenharInfoGrupo() {
   const meu = cargoDe({ admin: g.admin, sub: g.sub });
   pintarAvatarGrupo($("gi-av"), g); $("gi-nome").textContent = g.nome; $("gi-sub").textContent = "Grupo · " + contagem(g.membros.size);
   $("gi-foto-btn").hidden = !g.admin || !g.gk; $("gi-foto-rm").hidden = !g.admin || !g.foto;
+  { const c = g.membros.get(me.id)?.cor, st = estilosDaCor(c); $("gi-cor-nome").textContent = nomeDaCor(c); $("gi-cor-sw").style.setProperty("--c", st?.claro.forte || "transparent"); }
   $("gi-renomear").hidden = !g.admin || !g.gk; $("gi-add").hidden = !g.admin || !g.gk || g.membros.size >= MAX_MEMBROS;
   $("gi-cont").textContent = `Participantes · ${g.membros.size} de ${MAX_MEMBROS}`;
   const ordem = [...g.membros.values()].sort((a, b) => (b.id === me.id) - (a.id === me.id) || b.admin - a.admin || b.sub - a.sub || a.username.localeCompare(b.username));
@@ -1860,6 +1887,36 @@ $("gi-foto-rm").onclick = async () => {
   await atualizarGrupos(true); avisarMudanca([...g.membros.values()]); msgGrupo("Foto removida.", true);
 };
 $("grupo-btn").onclick = () => { if (active?.grupo) abrirInfoGrupo(active); };
+// ----- minha cor neste grupo: folha com cores prontas (as de outras pessoas aparecem com a FOTO de quem usa) e, se todas estão em uso, a cor aleatória -----
+let cfGrupo = null, cfSel = null;
+const coresDeOutros = (g) => { const m = new Map(); for (const p of g.membros.values()) if (p.cor && p.id !== me.id) m.set(p.cor, p); return m; };
+function abrirCor(g) { cfGrupo = g; cfSel = g.membros.get(me.id)?.cor ?? null; $("cf-msg").textContent = ""; desenharCor(); $("cor-folha").showModal(); }
+function desenharCor() {
+  const g = cfGrupo && grupos.get(cfGrupo.id); if (!g) { if ($("cor-folha").open) $("cor-folha").close(); return; }
+  const outros = coresDeOutros(g), meu = g.membros.get(me.id)?.cor ?? null, naoTemLivre = primeiraLivre([...outros.keys(), ...(meu ? [meu] : [])]) === null;
+  if (cfSel && outros.has(cfSel)) cfSel = meu; // a cor que eu ia pegar acabou de ser escolhida por outra pessoa
+  $("cf-grade").replaceChildren(...PALETA.map((c) => {
+    const b = el("button", "cf-sw"), dono = outros.get(c.id), st = estilosDaCor(c.id); b.type = "button"; b.style.setProperty("--c", st.claro.forte); b.setAttribute("role", "radio"); b.setAttribute("aria-checked", String(cfSel === c.id));
+    if (cfSel === c.id) b.classList.add("sel");
+    if (dono) { b.disabled = true; b.classList.add("ocup"); const av = el("span", "avatar mini"); pintarAvatar(av, dono); b.append(av); b.title = `${c.nome}: usada por @${dono.username}`; b.setAttribute("aria-label", `${c.nome}, usada por @${dono.username}`); }
+    else { b.title = c.nome; b.setAttribute("aria-label", c.nome); b.onclick = () => { cfSel = c.id; $("cf-msg").textContent = ""; desenharCor(); }; }
+    return b;
+  }));
+  if (cfSel && cfSel[0] === "#") { const b = el("button", "cf-sw alea sel"), st = estilosDaCor(cfSel); b.type = "button"; b.style.setProperty("--c", st.claro.forte); b.setAttribute("role", "radio"); b.setAttribute("aria-checked", "true"); b.setAttribute("aria-label", "Cor aleatória escolhida"); b.title = "Cor aleatória"; $("cf-grade").append(b); }
+  $("cf-cheio").hidden = !naoTemLivre; $("cf-alea").hidden = !naoTemLivre; $("cf-dica").hidden = naoTemLivre || !outros.size;
+  const st = estilosDaCor(cfSel); pintarAvatar($("cf-ava"), me); $("cf-ava").style.setProperty("--c", st?.claro.forte || "var(--ink-2)"); $("cf-bub-n").textContent = "@" + me.username;
+  for (const [v, k] of [["--mc-bg", "bg"], ["--mc-bd", "bd"], ["--mc-n", "nome"]]) { $("cf-bub").style.setProperty(v, st?.claro[k] || (k === "bg" ? "var(--card)" : k === "bd" ? "var(--line)" : "var(--ink-2)")); $("cf-bub").style.setProperty(v + "-e", st?.escuro[k] || (k === "bg" ? "var(--card)" : k === "bd" ? "var(--line)" : "var(--mut)")); }
+  $("cf-salvar").disabled = !cfSel || cfSel === meu;
+}
+$("gi-cor").onclick = () => { const g = giGrupo && grupos.get(giGrupo.id); if (g) abrirCor(g); };
+$("cf-alea").onclick = () => { const g = cfGrupo && grupos.get(cfGrupo.id); if (!g) return; cfSel = corMaisDiferente([...coresDeOutros(g).keys()]); $("cf-msg").textContent = ""; desenharCor(); }; // a mais diferente de todas as que os outros usam
+$("cf-cancelar").onclick = () => $("cor-folha").close();
+$("cf-salvar").onclick = async () => {
+  const g = cfGrupo && grupos.get(cfGrupo.id); if (!g || !cfSel) return; const b = $("cf-salvar"); b.disabled = true;
+  const { error } = await sb.rpc("grupo_cor", { p_grupo: g.id, p_cor: cfSel });
+  if (error) { $("cf-msg").className = "pg-msg"; $("cf-msg").textContent = erroGrupo(error); await atualizarGrupos(true).catch(() => {}); return desenharCor(); }
+  $("cor-folha").close(); await atualizarGrupos(true); avisarMudanca([...g.membros.values()]); msgGrupo("Cor atualizada ✓", true);
+};
 $("gi-add").onclick = () => { const g = giGrupo && grupos.get(giGrupo.id); if (g) abrirSeletor({ tipo: "add", g }); };
 $("gi-renomear").onclick = async () => {
   const g = giGrupo && grupos.get(giGrupo.id); if (!g?.gk) return;

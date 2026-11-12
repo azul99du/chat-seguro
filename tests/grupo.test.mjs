@@ -135,6 +135,7 @@ describe("cargos", () => {
   test("montarGrupos traz o cargo de sub-admin e a foto", () => {
     const l = (u, nome, x = {}) => ({ grupo_id: G, nome: { c: "x", iv: "y" }, criado_em: "2026-11-10T00:00:00Z", user_id: u, username: nome, public_key: {}, avatar: null, admin: false, sub: false, entrou_em: "2026-11-10T00:00:00Z", chave: null, por: null, por_chave: null, foto: { p: "x", iv: "y" }, ...x });
     const [g] = montarGrupos([l(EU, "eu", { sub: true, chave: { ciphertext: "c" }, por: ANA }), l(ANA, "ana", { admin: true })], EU);
+    assert.deepEqual(g.membros.map((p) => p.cor), [null, null], "sem cor no servidor, vira null");
     assert.equal(g.eu.sub, true); assert.equal(g.eu.admin, false); assert.deepEqual(g.membros.map((p) => [p.username, p.admin, p.sub]), [["eu", false, true], ["ana", true, false]]); assert.deepEqual(g.foto, { p: "x", iv: "y" });
   });
 });

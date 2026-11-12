@@ -24,7 +24,7 @@ export const apiKey = SUPABASE_KEY;
 
 // Cópia do site com a URL/chave (config.js e CSP do index.html) trocadas pelas do projeto de teste.
 export function prepararSite() {
-  const dir = tmp(), arquivos = ["index.html", "style.css", "guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "recorte.js", "recorte-config.js", "sam2.js", "figurinhas.js", "avatar.js", "historico.js", "video.js", "aparelhos.js", "grupo.js", "videolink.js", "lista.js", "usuario.js", "config.js", "favicon.svg", "favicon.ico", "apple-touch-icon.png", "sw.js", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-maskable-512.png"];
+  const dir = tmp(), arquivos = ["index.html", "style.css", "guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "recorte.js", "recorte-config.js", "sam2.js", "figurinhas.js", "avatar.js", "historico.js", "video.js", "aparelhos.js", "grupo.js", "videolink.js", "lista.js", "usuario.js", "cores.js", "config.js", "favicon.svg", "favicon.ico", "apple-touch-icon.png", "sw.js", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-maskable-512.png"];
   for (const f of arquivos) cpSync(join(raiz, f), join(dir, f));
   symlinkSync(join(raiz, "vendor"), join(dir, "vendor"), "dir"); // (link em vez de cópia: são ~75 MB de modelos por teste)
   const host = (u) => new URL(u).host;

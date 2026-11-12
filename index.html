@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=bfdb270dea">
+  <link rel="stylesheet" href="style.css?v=dd2ca99bda">
 </head>
 <body>
 
@@ -315,6 +315,7 @@
         <div class="gi-topo"><div class="gi-av-box"><span id="gi-av" class="avatar grupo grande" aria-hidden="true"></span><button type="button" id="gi-foto-btn" class="cam" aria-label="Trocar a foto do grupo" hidden><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button></div><b id="gi-nome"></b><small id="gi-sub"></small></div>
         <input id="gi-file" type="file" accept="image/*" hidden>
         <button type="button" id="gi-foto-rm" class="linha perigo" hidden><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></span><span class="tx"><b>Remover a foto do grupo</b></span></button>
+        <button type="button" id="gi-cor" class="linha"><span class="ic"><span id="gi-cor-sw" class="cor-bolinha" aria-hidden="true"></span></span><span class="tx"><b>Minha cor neste grupo</b><small id="gi-cor-nome"></small></span></button>
         <button type="button" id="gi-renomear" class="linha" hidden><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></span><span class="tx"><b>Mudar o nome do grupo</b></span></button>
         <h3 class="pg-grupo" id="gi-cont">Participantes</h3>
         <button type="button" id="gi-add" class="linha" hidden><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="8" r="4"/><path d="M3 21c0-4 3.5-6 7-6 1.3 0 2.6.3 3.7.8M18 14v6M15 17h6"/></svg></span><span class="tx"><b>Adicionar pessoas</b></span></button>
@@ -375,6 +376,19 @@
     </div>
   </dialog>
 
+  <dialog id="cor-folha" class="folha-seg" aria-labelledby="cf-titulo">
+    <div class="grab"></div>
+    <h2 id="cf-titulo">Sua cor neste grupo</h2>
+    <p>Todo mundo do grupo vê as suas mensagens nesta cor. Cada pessoa tem uma cor só dela.</p>
+    <div class="cf-prev"><span class="cf-rot">COMO O GRUPO VÊ VOCÊ</span><div class="cf-prevrow"><span id="cf-ava" class="avatar mini" aria-hidden="true"></span><span id="cf-bub" class="cf-bub"><b id="cf-bub-n"></b>Fechado então 🔥</span></div></div>
+    <div id="cf-grade" class="cf-grade" role="radiogroup" aria-label="Cores"></div>
+    <p id="cf-dica" class="cf-dica">As cores apagadas já são de outra pessoa: a foto mostra de quem.</p>
+    <p id="cf-cheio" class="cf-cheio" role="status" hidden>Todas as cores prontas já estão em uso. Você pode pedir uma cor aleatória: o Lacre escolhe a mais diferente de todas as outras.</p>
+    <button type="button" id="cf-alea" class="btn-limpa cf-alea" hidden><span class="cf-roda" aria-hidden="true"></span>Cor aleatória (a mais diferente)</button>
+    <p id="cf-msg" class="pg-msg" role="status"></p>
+    <div class="btns"><button type="button" id="cf-salvar" class="btn-rosa" disabled>Salvar cor</button><button type="button" id="cf-cancelar" class="btn-limpa">Cancelar</button></div>
+  </dialog>
+
   <dialog id="choice"><form method="dialog"><h2 id="choice-title"></h2><p id="choice-text"></p><div class="dialog-actions col" id="choice-actions"></div></form></dialog>
 
   <dialog id="safety">
@@ -388,6 +402,6 @@
 
   <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
 
-  <script src="guarda.js?v=bfdb270dea"></script>
+  <script src="guarda.js?v=dd2ca99bda"></script>
 </body>
 </html>

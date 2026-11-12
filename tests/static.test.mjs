@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const raiz = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const ler = (f) => readFileSync(join(raiz, f), "utf8");
-const APP = ["guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "recorte.js", "recorte-config.js", "sam2.js", "figurinhas.js", "avatar.js", "historico.js", "video.js", "aparelhos.js", "grupo.js", "videolink.js", "lista.js", "usuario.js", "sw.js", "supabase/functions/notificar/vapid.js"];
+const APP = ["guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "recorte.js", "recorte-config.js", "sam2.js", "figurinhas.js", "avatar.js", "historico.js", "video.js", "aparelhos.js", "grupo.js", "videolink.js", "lista.js", "usuario.js", "cores.js", "sw.js", "supabase/functions/notificar/vapid.js"];
 const rastreados = execFileSync("git", ["ls-files"], { cwd: raiz, encoding: "utf8" }).split("\n").filter(Boolean);
 
 describe("código", () => {
@@ -235,4 +235,16 @@ describe("trocar nome de usuário (supabase/schema.sql)", () => {
     assert.match(sql, /create trigger profiles_nome_reservado before insert on public\.profiles/); assert.match(sql, /grant execute on function public\.trocar_nome\(text\) to authenticated/);
   });
   test("o prazo do banco (30 dias) é o mesmo do app", async () => { const { DIAS_TROCA } = await import("../usuario.js"); assert.equal(DIAS_TROCA, 30); assert.equal((sql.match(/interval '30 days'/g) || []).length >= 4, true); });
+});
+
+describe("cor no grupo (supabase/schema.sql)", () => {
+  const sql = ler("supabase/schema.sql"), f = (n) => [...sql.matchAll(new RegExp(`create or replace function public\\.${n}\\([\\s\\S]*?\\$\\$;`, "g"))].pop()[0];
+  test("a cor só tem o formato p0..p9 ou #rrggbb, e o banco impede repetir cor no mesmo grupo (índice único)", () => {
+    assert.match(sql, /add column cor text check \(cor is null or cor ~ '\^\(p\[0-9\]\|#\[0-9a-f\]\{6\}\)\$'\)/); assert.match(sql, /create unique index grupo_membros_cor_unica on public\.grupo_membros \(grupo_id, cor\) where cor is not null/);
+  });
+  test("escolher a cor: só a própria linha, formato conferido, conflito vira 'cor_em_uso'; quem entra ganha a primeira cor livre", () => {
+    const g = f("grupo_cor"); assert.match(g, /gm\.grupo_id = p_grupo and gm\.user_id = u/); assert.match(g, /p_cor !~/); assert.match(g, /unique_violation then raise exception 'cor_em_uso'/); assert.match(g, /perform public\.consome\(/);
+    assert.match(f("criar_grupo"), /public\.cor_livre\(p_id\)/); assert.match(f("grupo_adicionar"), /public\.cor_livre\(p_grupo\)/); assert.match(sql, /revoke all on function public\.cor_livre\(uuid\) from public, anon, authenticated/);
+    assert.match(f("meus_grupos"), /m\.cor/);
+  });
 });
