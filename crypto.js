@@ -83,5 +83,5 @@ export async function restoreBackup(uid, pass, backup, publicJwk) {
 }
 
 // ---------- Verificação de chaves (anti "homem no meio"): funções puras em verify.js ----------
-export { fingerprint, safetyCode, mesmaChavePublica } from "./verify.js?v=fe4c2bd875";
+export { fingerprint, safetyCode, mesmaChavePublica } from "./verify.js?v=0f84b222a3";
 export const deleteLocalKeys = (uid) => idb("readwrite", (s) => s.delete(uid));

@@ -1107,3 +1107,57 @@ begin
 end $$;
 revoke all on function public.grupo_estatisticas(uuid) from public, anon, authenticated;
 grant execute on function public.grupo_estatisticas(uuid) to authenticated;
+
+-- Estatísticas que o servidor confere (não dá para forjar um número grande):
+-- (1) tempo de tela: só vale o tempo real que passou desde a última chamada da pessoa (um relógio só, em qualquer grupo ou aparelho);
+-- (2) o servidor conta sozinho quantas mensagens cada pessoa mandou por dia (cada envio = um lote de linhas) e quantos arquivos ela enviou ao armazenamento;
+--     o que a pessoa publica sobre os próprios tipos (grupo_enviadas) é limitado por essas duas contas ao exibir.
+create table public.tela_ping (
+  user_id uuid primary key references public.profiles(id) on delete cascade,
+  ultimo timestamptz not null
+);
+alter table public.tela_ping enable row level security;
+revoke all on public.tela_ping from anon, authenticated;
+create policy "exige dois passos" on public.tela_ping as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+
+create or replace function public.grupo_tela(p_grupo uuid, p_segundos int) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); hoje date := (now() at time zone 'America/Sao_Paulo')::date; antes timestamptz; passou numeric; credito int;
+begin
+  perform public.consome('grupo_tela', 4, 120);
+  if p_segundos is null or p_segundos < 1 then return; end if;
+  if not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = u) then raise exception 'nao_esta_no_grupo' using errcode = '42501'; end if;
+  perform pg_advisory_xact_lock(hashtext('tela:' || u::text));
+  select t.ultimo into antes from public.tela_ping t where t.user_id = u;
+  insert into public.tela_ping (user_id, ultimo) values (u, now()) on conflict (user_id) do update set ultimo = now();
+  passou := case when antes is null then null else extract(epoch from now() - antes) end;
+  -- sessão nova (sem chamada nos últimos 3 min): no máximo um bloco normal (70 s); senão, no máximo o tempo que realmente passou (+6 s de folga)
+  credito := least(p_segundos, 120, case when passou is null or passou > 180 then 70 else ceil(passou)::int + 6 end);
+  if credito < 1 then return; end if;
+  insert into public.grupo_dia (grupo_id, user_id, dia, segundos) values (p_grupo, u, hoje, credito)
+    on conflict (grupo_id, user_id, dia) do update set segundos = least(public.grupo_dia.segundos + credito, 21600);
+end $$;
+revoke all on function public.grupo_tela(uuid, int) from public, anon, authenticated;
+grant execute on function public.grupo_tela(uuid, int) to authenticated;
+
+drop function public.grupo_estatisticas(uuid);
+create or replace function public.grupo_estatisticas(p_grupo uuid) returns table (user_id uuid, dia date, segundos int, env jsonb, msgs int, arquivos int)
+language plpgsql stable security definer set search_path = public, storage as $$
+#variable_conflict use_column
+declare lim date := (now() at time zone 'America/Sao_Paulo')::date - 36;
+begin
+  if not (select public.mfa_ok()) or not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = (select auth.uid())) then raise exception 'nao_esta_no_grupo' using errcode = '42501'; end if;
+  return query
+  with mem as (select gm.user_id as uid from public.grupo_membros gm where gm.grupo_id = p_grupo),
+  d as (select x.user_id as uid, x.dia as dia, x.segundos as seg, x.env as env from public.grupo_dia x where x.grupo_id = p_grupo and x.dia > lim and x.user_id in (select uid from mem)),
+  s as (select ms.sender_id as uid, (ms.created_at at time zone 'America/Sao_Paulo')::date as dia, count(distinct ms.created_at)::int as n -- um envio = um lote de linhas com o mesmo horário (reações entram: é um limite máximo, nunca menos que o real)
+          from public.messages ms where ms.grupo_id = p_grupo and ms.avisar and ms.created_at > now() - interval '37 days' and ms.sender_id in (select uid from mem) group by 1, 2),
+  a as (select ((storage.foldername(o.name))[1])::uuid as uid, (o.created_at at time zone 'America/Sao_Paulo')::date as dia, count(*)::int as n
+          from storage.objects o where o.bucket_id = 'media' and (storage.foldername(o.name))[2] = p_grupo::text and o.created_at > now() - interval '37 days' group by 1, 2),
+  t as (select uid, dia from d union select uid, dia from s union select uid, dia from a)
+  select t.uid, t.dia, coalesce(d.seg, 0), coalesce(d.env, '{}'::jsonb), coalesce(s.n, 0), coalesce(a.n, 0)
+    from t left join d using (uid, dia) left join s using (uid, dia) left join a using (uid, dia)
+   where t.dia > lim and t.uid in (select uid from mem);
+end $$;
+revoke all on function public.grupo_estatisticas(uuid) from public, anon, authenticated;
+grant execute on function public.grupo_estatisticas(uuid) to authenticated;

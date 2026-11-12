@@ -1,9 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { porDia, publicavel, mesclar, resumir, tipoDe, diaLocal, primeiroDia, contar, sequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, textoSequencia } from "../estatisticas.js";
+import { limitar, porDia, publicavel, mesclar, resumir, tipoDe, diaLocal, primeiroDia, contar, sequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, textoSequencia } from "../estatisticas.js";
 
 const M = [{ id: "a", username: "ana" }, { id: "b", username: "beto" }, { id: "c", username: "caio" }];
-const t = (d, h = 12) => new Date(2026, 10, d, h).getTime();
+const t = (d, h = 15) => Date.UTC(2026, 10, d, h); // 15h UTC = meio-dia em Brasília, em qualquer fuso do computador
 const txt = (from, d, text, extra = {}) => ({ from, at: t(d), content: { type: "text", text, ...extra } });
 const med = (from, d, kind) => ({ from, at: t(d), content: { type: "media", kind } });
 
@@ -15,7 +15,7 @@ test("tipos de mensagem: só o que é mensagem de verdade conta", () => {
 });
 test("dias e períodos (hoje, semana, mês)", () => {
   assert.equal(diaLocal(t(5)), "2026-11-05"); assert.equal(diaLocal("lixo"), null);
-  const agora = new Date(2026, 10, 12, 10);
+  const agora = new Date(Date.UTC(2026, 10, 12, 13));
   assert.equal(primeiroDia("hoje", agora), "2026-11-12"); assert.equal(primeiroDia("semana", agora), "2026-11-06"); assert.equal(primeiroDia("mes", agora), "2026-10-14");
 });
 test("contagem por pessoa e tipo, só dentro do período", () => {
@@ -47,25 +47,44 @@ test("tempo de tela: texto e soma por período", () => {
   assert.equal(somarTela(l, "2026-11-12").get("a"), 100); assert.equal(somarTela(l, "2026-11-01").get("a"), 150); assert.equal(somarTela(null).size, 0);
 });
 test("no grupo há…", () => {
-  const ag = new Date(2026, 10, 12, 10);
+  const ag = new Date(Date.UTC(2026, 10, 12, 13));
   assert.equal(noGrupoHa(t(12), ag), "Entrou hoje"); assert.equal(noGrupoHa(t(11), ag), "No grupo há 1 dia"); assert.equal(noGrupoHa(t(2), ag), "No grupo há 10 dias");
-  assert.equal(noGrupoHa(new Date(2026, 9, 1), ag), "No grupo há 6 semanas"); assert.equal(noGrupoHa(new Date(2026, 7, 1), ag), "No grupo há 3 meses");
-  assert.equal(noGrupoHa(new Date(2024, 0, 1), ag), "No grupo há 2 anos"); assert.equal(noGrupoHa("lixo", ag), "");
+  assert.equal(noGrupoHa(new Date(Date.UTC(2026, 9, 1, 15)), ag), "No grupo há 6 semanas"); assert.equal(noGrupoHa(new Date(Date.UTC(2026, 7, 1, 15)), ag), "No grupo há 3 meses");
+  assert.equal(noGrupoHa(new Date(Date.UTC(2024, 0, 1, 15)), ag), "No grupo há 2 anos"); assert.equal(noGrupoHa("lixo", ag), "");
 });
 test("ranking: mais mensagens primeiro; empate pelo tempo de tela, depois pelo nome", () => {
   const c = new Map([["a", { total: 3 }], ["b", { total: 5 }], ["c", { total: 3 }]]);
   assert.deepEqual(ranking(M, c, new Map([["c", 10]])).map((x) => x.p.id), ["b", "c", "a"]);
   assert.deepEqual(ranking(M, new Map(), new Map()).map((x) => x.p.id), ["a", "b", "c"]);
 });
-test("aparelhos diferentes: vale o maior valor por dia e tipo (nunca soma duas vezes, nunca passa do que foi enviado)", () => {
+test("aparelhos diferentes: vale o maior valor por dia e tipo (nunca soma duas vezes)", () => {
   const local = porDia([txt("a", 12, "um"), txt("a", 12, "dois"), med("b", 12, "image")], M);
-  const remoto = [{ user_id: "a", dia: "2026-11-12", env: { texto: 5, foto: 1 } }, { user_id: "b", dia: "2026-11-12", env: { foto: 1 } }, { user_id: "b", dia: "2026-11-11", env: { video: 2 } }];
+  const remoto = [{ user_id: "a", dia: "2026-11-12", env: { texto: 5, foto: 1 }, msgs: 6, arquivos: 1 }, { user_id: "b", dia: "2026-11-12", env: { foto: 1 }, msgs: 1, arquivos: 1 }, { user_id: "b", dia: "2026-11-11", env: { video: 2 }, msgs: 2, arquivos: 2 }];
   const r = resumir(mesclar(local, remoto), "2026-11-11");
   assert.deepEqual([r.get("a").texto, r.get("a").foto, r.get("a").total], [5, 1, 6], "o servidor sabe de mais mensagens do a (mandadas de outro aparelho)");
   assert.deepEqual([r.get("b").foto, r.get("b").video, r.get("b").total], [1, 2, 3], "foto: iguais, não dobra; vídeo só no servidor");
   assert.equal(resumir(mesclar(local, remoto), "2026-11-12").get("b").video, 0, "fora do período");
-  const ruim = mesclar(local, [{ user_id: "a", dia: "2026-11-12", env: { texto: -3, foto: 1.5, video: "9", audio: 1e12, figurinha: NaN } }, { user_id: "zzz", dia: "2026-11-12", env: { texto: 9 } }, null, { user_id: "a", dia: 4, env: {} }]);
+  const ruim = mesclar(local, [{ user_id: "a", dia: "2026-11-12", env: { texto: -3, foto: 1.5, video: "9", audio: 1e12, figurinha: NaN }, msgs: 9e9, arquivos: 9 }, { user_id: "zzz", dia: "2026-11-12", env: { texto: 9 }, msgs: 9 }, null, { user_id: "a", dia: 4, env: {} }]);
   assert.equal(resumir(ruim).get("a").total, 2, "lixo do servidor é ignorado"); assert.equal(ruim.has("zzz"), false);
+});
+test("falsificar não adianta: o que a pessoa publica é limitado pelo que o servidor viu", () => {
+  // publicou 5000 textos, mas o servidor só viu 3 envios nesse dia
+  assert.equal(limitar({ texto: 5000 }, 3, 0).texto, 3);
+  assert.equal(limitar({ texto: 5000, foto: 40, video: 9, respostas: 900, citou: 900 }, 10, 3).foto + limitar({ texto: 5000, foto: 40, video: 9 }, 10, 3).video <= 3, true, "fotos, vídeos e áudios não passam dos arquivos enviados");
+  const l = limitar({ texto: 5000, foto: 40, video: 9, audio: 9, figurinha: 100, respostas: 900, citou: 900 }, 10, 3);
+  assert.ok(l.texto + l.foto + l.video + l.audio + l.figurinha <= 10, "o total não passa dos envios vistos"); assert.ok(l.foto + l.video + l.audio <= 3);
+  assert.equal(l.respostas, 10); assert.equal(l.citou, 10);
+  assert.deepEqual(limitar({ texto: 5 }, 5, 0), { texto: 5, foto: 0, video: 0, audio: 0, figurinha: 0, respostas: 0, citou: 0, citada: 0 });
+  assert.equal(limitar({ texto: 5 }, undefined, undefined).texto, 0, "sem prova do servidor, não vale");
+  assert.equal(limitar(null, 5, 5).texto, 0); assert.equal(limitar("x", 5, 5).texto, 0);
+  assert.equal(limitar({ foto: 4 }, 100, 4).foto, 4, "dentro do limite, fica igual");
+  // pelo fluxo todo: quem publicou 5000 aparece com 3
+  const r = resumir(mesclar(porDia([], M), [{ user_id: "a", dia: "2026-11-12", env: { texto: 5000 }, msgs: 3, arquivos: 0 }]), "2026-11-12"); assert.equal(r.get("a").total, 3);
+});
+test("o dia é o de Brasília, qualquer que seja o fuso do aparelho", () => {
+  assert.equal(diaLocal(Date.UTC(2026, 10, 12, 2, 30)), "2026-11-11", "02:30 UTC ainda é dia 11 em Brasília");
+  assert.equal(diaLocal(Date.UTC(2026, 10, 12, 3, 0)), "2026-11-12");
+  assert.equal(primeiroDia("semana", new Date(Date.UTC(2026, 10, 12, 15))), "2026-11-06");
 });
 test("o que publico no servidor: só os meus números dos últimos dias", () => {
   const l = porDia([txt("a", 12, "oi @beto", { re: {} }), med("a", 3, "sticker"), txt("b", 12, "x")], M);

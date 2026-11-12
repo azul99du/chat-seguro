@@ -60,6 +60,24 @@ t("o outro membro vê o meu tempo de tela (as estatísticas são do grupo todo)"
   assert.match(await B.locator("#est-resumo").innerText(), /4 mensagens hoje no grupo/, "sem histórico local, vale o que foi publicado no servidor");
   const depois = await B.locator("#est-lista .est-linha").allInnerTexts(); assert.deepEqual(depois.map((x) => x.match(/\b(\d+)\s*mensage/)[1]), antes.map((x) => x.match(/\b(\d+)\s*mensage/)[1]));
 });
+t("quem forja os números pelo console (como o teste das 5000 mensagens) não engana a tela, nem soma tempo de tela a mais que o real", async () => {
+  await A.click("#grupo-est .pg-volta");
+  const r = await A.evaluate(async () => {
+    const { createClient } = await import("./vendor/supabase.js"), { SUPABASE_URL, SUPABASE_KEY } = await import("./config.js"), sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+    const gid = (await sb.rpc("meus_grupos")).data[0].grupo_id, eu = (await sb.auth.getUser()).data.user.id, hoje = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
+    const linha = async () => (await sb.rpc("grupo_estatisticas", { p_grupo: gid })).data.find((x) => x.user_id === eu && x.dia === hoje);
+    let falso; for (let i = 0; i < 4; i++) { falso = await sb.rpc("grupo_enviadas", { p_grupo: gid, p_dias: [{ dia: hoje, texto: 5000, foto: 700 }] }); if (!falso.error) break; await new Promise((ok) => setTimeout(ok, 16000)); }
+    await sb.rpc("grupo_tela", { p_grupo: gid, p_segundos: 120 }); const s1 = (await linha()).segundos;
+    await sb.rpc("grupo_tela", { p_grupo: gid, p_segundos: 120 }); const x = await linha();
+    return { erroFalso: falso.error?.message || null, texto: x.env.texto, foto: x.env.foto, msgs: x.msgs, arquivos: x.arquivos, ganhou: x.segundos - s1 };
+  });
+  assert.equal(r.erroFalso, null); assert.equal(r.texto, 5000, "o valor falso fica guardado, mas é limitado ao exibir");
+  assert.ok(r.msgs >= 1 && r.msgs <= 6, "o servidor conta os envios sozinho: " + r.msgs); assert.equal(r.arquivos, 0, "nenhum arquivo foi enviado");
+  assert.ok(r.ganhou <= 12, `120 s pedidos de uma vez só valem o tempo real que passou (ganhou ${r.ganhou})`);
+  await A.click("#gi-est"); await A.waitForSelector("#grupo-est[open] #est-lista .est-pessoa", { timeout: 30000 });
+  assert.match(await A.locator("#est-resumo").innerText(), /^[1-9]\d? mensagens? (hoje|nesta semana|neste mês) no grupo/, "a tela não mostra as 5000");
+  const minha = await A.locator("#est-lista .est-pessoa.eu .est-num").innerText(); assert.ok(Number(minha.match(/\d+/)[0]) <= 6, "meu número: " + minha);
+});
 t("travas do banco: de fora não soma nem lê; tabelas fechadas; ninguém escreve no extrato de moedas", async () => {
   const x = await apiUser("x"), g = hex().replace(/^(.{8})(.{4})(.{4})(.{4})(.{12}).*$/, "$1-$2-$3-$4-$5");
   assert.equal((await x.c.rpc("grupo_tela", { p_grupo: g, p_segundos: 30 })).error?.code, "42501");

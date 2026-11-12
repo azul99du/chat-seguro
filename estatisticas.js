@@ -1,6 +1,6 @@
 // Estatísticas do grupo. Funções puras (testadas em Node): contam o que este aparelho tem guardado das mensagens do grupo.
 // O servidor não vê o conteúdo, então tipo de mensagem, respostas e citações são contados aqui; só o tempo de tela vem do servidor.
-import { mencionados } from "./grupo.js?v=fe4c2bd875";
+import { mencionados } from "./grupo.js?v=0f84b222a3";
 
 export const TIPOS = ["texto", "foto", "video", "audio", "figurinha"];
 const por = (n, um, varios) => (n === 1 ? `1 ${um}` : `${n} ${varios}`);
@@ -13,8 +13,10 @@ export function tipoDe(c) {
   return null;
 }
 const pad = (n) => String(n).padStart(2, "0");
-export const diaLocal = (t) => { const d = new Date(t); return Number.isFinite(d.getTime()) ? `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` : null; };
-const somaDias = (dia, n) => { const [y, m, d] = dia.split("-").map(Number); return diaLocal(new Date(y, m - 1, d + n)); };
+// O dia é sempre o de Brasília, o mesmo do servidor (que corta o tempo de tela e as provas por esse dia). Quem está em outro fuso vê o corte de Brasília.
+const FORMATO = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" });
+export const diaLocal = (t) => { const d = new Date(t); return Number.isFinite(d.getTime()) ? FORMATO.format(d) : null; };
+const somaDias = (dia, n) => { const [y, m, d] = dia.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10); };
 
 // Primeiro dia (inclusive) de cada período
 export const PERIODOS = { hoje: 1, semana: 7, mes: 30 };
@@ -42,15 +44,26 @@ export function publicavel(mapaDaPessoa, desde) {
   for (const [dia, d] of mapaDaPessoa || []) if (dia >= desde) { const o = { dia }; for (const k of CHAVES) o[k] = d[k]; if (CHAVES.some((k) => o[k])) out.push(o); }
   return out.sort((a, b) => a.dia.localeCompare(b.dia));
 }
-// Cada aparelho só conhece o que recebeu (o que eu mando de um aparelho não chega ao outro), e o servidor tem o que cada pessoa publicou do que enviou:
-// as duas contas só podem estar incompletas, nunca grandes demais, então vale o maior valor de cada dia e tipo.
-// remoto: [{ user_id, dia, env: { texto, ... } }] (desconfiável: só números inteiros pequenos)
+// O servidor confere o que cada pessoa publica sobre si: o que ela diz ter enviado nunca passa do que o servidor viu. msgs = envios (lotes de linhas) naquele dia;
+// arquivos = envios ao armazenamento naquele dia. Sem essas provas (resposta antiga ou ausente) o valor vale 0.
+const inteiro = (v, max = 100000) => (typeof v === "number" && Number.isSafeInteger(v) && v > 0 && v <= max ? v : 0);
+export function limitar(env, msgs, arquivos) {
+  const o = diaVazio(); if (!env || typeof env !== "object") return o;
+  for (const k of CHAVES) o[k] = inteiro(env[k]);
+  const m = inteiro(msgs, 1e7), f = inteiro(arquivos, 1e7), escala = (ks, teto) => { const t = ks.reduce((n, k) => n + o[k], 0); if (t > teto) for (const k of ks) o[k] = Math.floor((o[k] * teto) / t); };
+  escala(["foto", "video", "audio"], f); escala(TIPOS, m);
+  o.respostas = Math.min(o.respostas, m); o.citou = Math.min(o.citou, m);
+  return o;
+}
+// Cada aparelho só conhece o que recebeu (o que eu mando de um aparelho não chega ao outro) e o servidor tem o que cada pessoa publicou, já limitado pelas provas.
+// As duas contas só podem estar incompletas, nunca grandes demais (a do servidor é limitada): vale o maior valor de cada dia e tipo.
+// remoto: [{ user_id, dia, env, msgs, arquivos }] (desconfiável)
 export function mesclar(local, remoto) {
   const r = new Map([...local].map(([id, m]) => [id, new Map([...m].map(([dia, d]) => [dia, { ...d }]))]));
   for (const l of remoto || []) {
-    const m = r.get(l?.user_id); if (!m || typeof l.dia !== "string" || !l.env || typeof l.env !== "object") continue;
-    const d = m.get(l.dia) || m.set(l.dia, diaVazio()).get(l.dia);
-    for (const k of CHAVES) { const v = l.env[k]; if (typeof v === "number" && Number.isSafeInteger(v) && v > 0 && v <= 100000) d[k] = Math.max(d[k], v); }
+    const m = r.get(l?.user_id); if (!m || typeof l.dia !== "string") continue;
+    const lim = limitar(l.env, l.msgs, l.arquivos), d = m.get(l.dia) || m.set(l.dia, diaVazio()).get(l.dia);
+    for (const k of CHAVES) d[k] = Math.max(d[k], lim[k]);
   }
   return r;
 }
