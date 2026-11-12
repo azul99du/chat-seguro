@@ -184,3 +184,9 @@ export async function importarHistorico(uid, itens) {
   let novos = 0; sel.forEach((x, i) => { if (ja[i] === undefined) { s.put(x.rec, x.k); novos++; } });
   await done(t); return { novos, jaExistiam: sel.length - novos };
 }
+// Todas as mensagens guardadas de uma conversa/grupo, da mais antiga para a mais nova (para as estatísticas, contadas só neste aparelho).
+export async function todoHistorico(uid, peer, max = 20000) {
+  const t = await tx(["history"], "readonly"), s = t.objectStore("history"), rng = range(`${uid}|${peer}|`), vals = (await req(s.getAll(rng))).slice(-max), out = [];
+  for (const v of vals) { try { out.push(await unseal(uid, v)); } catch {} }
+  return out;
+}

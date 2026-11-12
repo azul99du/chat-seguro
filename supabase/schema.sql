@@ -998,3 +998,66 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke all on function public.meus_grupos() from public, anon, authenticated;
 grant execute on function public.meus_grupos() to authenticated;
+
+-- Estatísticas do grupo: tempo de tela por pessoa e por dia (todos do grupo veem) + base para as moedas.
+-- O servidor só conhece o que enxerga sem decifrar nada: segundos na tela e a data de entrada. O resto das estatísticas é contado no aparelho.
+create table public.grupo_dia (
+  grupo_id uuid not null references public.grupos(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  dia date not null,
+  segundos int not null default 0 check (segundos between 0 and 86400),
+  primary key (grupo_id, user_id, dia)
+);
+alter table public.grupo_dia enable row level security;
+revoke all on public.grupo_dia from anon, authenticated;
+create policy "exige dois passos" on public.grupo_dia as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+
+-- Soma segundos de tela de HOJE (dia de Brasília). Cada pedido soma no máximo 120 s e o dia nunca passa de 6 h: não dá para inflar o tempo à vontade.
+create or replace function public.grupo_tela(p_grupo uuid, p_segundos int) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); hoje date := (now() at time zone 'America/Sao_Paulo')::date;
+begin
+  perform public.consome('grupo_tela', 4, 120);
+  if p_segundos is null or p_segundos < 1 then return; end if;
+  if not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = u) then raise exception 'nao_esta_no_grupo' using errcode = '42501'; end if;
+  insert into public.grupo_dia (grupo_id, user_id, dia, segundos) values (p_grupo, u, hoje, least(p_segundos, 120))
+    on conflict (grupo_id, user_id, dia) do update set segundos = least(public.grupo_dia.segundos + least(p_segundos, 120), 21600);
+end $$;
+revoke all on function public.grupo_tela(uuid, int) from public, anon, authenticated;
+grant execute on function public.grupo_tela(uuid, int) to authenticated;
+
+-- Tempo de tela dos últimos 35 dias de quem está no grupo (só quem está no grupo lê)
+create or replace function public.grupo_estatisticas(p_grupo uuid) returns table (user_id uuid, dia date, segundos int)
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if not (select public.mfa_ok()) or not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = (select auth.uid())) then raise exception 'nao_esta_no_grupo' using errcode = '42501'; end if;
+  return query select d.user_id, d.dia, d.segundos from public.grupo_dia d
+    join public.grupo_membros m on m.grupo_id = d.grupo_id and m.user_id = d.user_id
+   where d.grupo_id = p_grupo and d.dia > (now() at time zone 'America/Sao_Paulo')::date - 35;
+end $$;
+revoke all on function public.grupo_estatisticas(uuid) from public, anon, authenticated;
+grant execute on function public.grupo_estatisticas(uuid) to authenticated;
+
+-- Território das moedas: um extrato (só soma ou desconta; ninguém logado escreve nele). Ainda nenhuma regra de ganho: quando houver, entra por uma função do servidor.
+-- A chave (grupo, pessoa, motivo, ref) impede pagar duas vezes pelo mesmo motivo.
+create table public.moedas_extrato (
+  id bigint generated always as identity primary key,
+  grupo_id uuid not null references public.grupos(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  quantidade int not null check (quantidade <> 0),
+  motivo text not null check (length(motivo) between 1 and 40),
+  ref text not null default '' check (length(ref) < 80),
+  criado_em timestamptz not null default now(),
+  unique (grupo_id, user_id, motivo, ref)
+);
+alter table public.moedas_extrato enable row level security;
+revoke all on public.moedas_extrato from anon, authenticated;
+create policy "exige dois passos" on public.moedas_extrato as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+create or replace function public.moedas_saldo(p_grupo uuid) returns table (user_id uuid, saldo bigint)
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if not (select public.mfa_ok()) or not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = (select auth.uid())) then raise exception 'nao_esta_no_grupo' using errcode = '42501'; end if;
+  return query select e.user_id, sum(e.quantidade)::bigint from public.moedas_extrato e where e.grupo_id = p_grupo group by e.user_id;
+end $$;
+revoke all on function public.moedas_saldo(uuid) from public, anon, authenticated;
+grant execute on function public.moedas_saldo(uuid) to authenticated;

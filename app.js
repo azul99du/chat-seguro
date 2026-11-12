@@ -1,21 +1,22 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=dd2ca99bda";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=dd2ca99bda";
-import { montarFigurinhas } from "./figurinhas.js?v=dd2ca99bda";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=dd2ca99bda";
-import { acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=dd2ca99bda";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=dd2ca99bda";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=dd2ca99bda";
-import { acharVideoLink } from "./videolink.js?v=dd2ca99bda";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=dd2ca99bda";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=dd2ca99bda";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=dd2ca99bda";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=dd2ca99bda";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=dd2ca99bda";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=dd2ca99bda";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=dd2ca99bda";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=dd2ca99bda";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=dd2ca99bda";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=49dcb55301";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=49dcb55301";
+import { montarFigurinhas } from "./figurinhas.js?v=49dcb55301";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=49dcb55301";
+import { todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=49dcb55301";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=49dcb55301";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=49dcb55301";
+import { acharVideoLink } from "./videolink.js?v=49dcb55301";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=49dcb55301";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=49dcb55301";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=49dcb55301";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=49dcb55301";
+import { contar, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=49dcb55301";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=49dcb55301";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=49dcb55301";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=49dcb55301";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=49dcb55301";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=49dcb55301";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -1851,6 +1852,59 @@ function desenharInfoGrupo() {
     return row;
   }));
 }
+
+// ---------- Estatísticas do grupo ----------
+// Tempo de tela: conta de 5 em 5 s enquanto o chat DESTE grupo está aberto, a aba visível e a pessoa mexendo (toque, tecla, rolagem nos últimos 60 s); manda ao servidor a cada ~60 s.
+let telaGrupo = null, telaSeg = 0, ultimoToque = Date.now();
+for (const ev of ["pointerdown", "keydown", "scroll", "touchstart", "wheel"]) addEventListener(ev, () => { ultimoToque = Date.now(); }, { passive: true, capture: true });
+async function enviarTela() {
+  const g = telaGrupo, n = Math.min(120, telaSeg); if (!g || n < 1) return; telaSeg -= n;
+  const { error } = await sb.rpc("grupo_tela", { p_grupo: g, p_segundos: n }); if (error && error.code !== "PT429" && error.code !== "42501") telaSeg += n; // (falha de rede: tenta de novo; limite ou saída do grupo: descarta)
+}
+setInterval(() => {
+  const g = active?.grupo ? active.id : null;
+  if (g !== telaGrupo) { const velho = telaGrupo; if (velho) enviarTela().catch(() => {}); telaGrupo = g; telaSeg = 0; }
+  if (g && document.visibilityState === "visible" && Date.now() - ultimoToque < 60000) { telaSeg += 5; if (telaSeg >= 60) enviarTela().catch(() => {}); }
+}, 5000);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") enviarTela().catch(() => {}); });
+
+let estPeriodo = "hoje", estAberto = null, estGrupo = null, estDados = null;
+const msgEst = (t) => { $("est-msg").textContent = t; };
+async function abrirEstatisticas(g) {
+  estGrupo = g; estDados = null; estAberto = null; msgEst(""); $("est-lista").replaceChildren(); $("est-resumo").textContent = "Carregando…"; $("grupo-est").showModal();
+  if (telaGrupo === g.id) await enviarTela().catch(() => {}); // (o meu tempo de agora entra na conta)
+  const [hist, tela] = await Promise.all([todoHistorico(me.id, g.id).catch(() => []), sb.rpc("grupo_estatisticas", { p_grupo: g.id })]);
+  if (estGrupo !== g) return;
+  if (tela.error) msgEst("Não foi possível carregar o tempo na tela agora.");
+  estDados = { hist, tela: tela.data || [] }; desenharEstatisticas();
+}
+function desenharEstatisticas() {
+  const g = estGrupo && grupos.get(estGrupo.id); if (!g || !estDados) return;
+  const membros = [...g.membros.values()], desde = primeiroDia(estPeriodo), hoje = diaLocal(Date.now());
+  const cont = contar(estDados.hist, membros, desde), tela = somarTela(estDados.tela, desde), lista = ranking(membros, cont, tela);
+  const total = totalDe(cont), nome = { hoje: "hoje", semana: "nesta semana", mes: "neste mês" }[estPeriodo];
+  $("est-resumo").textContent = `${total === 1 ? "1 mensagem" : total + " mensagens"} ${nome} no grupo`;
+  for (const b of $("grupo-est").querySelectorAll(".est-abas button")) b.setAttribute("aria-selected", String(b.dataset.p === estPeriodo));
+  $("est-lista").replaceChildren(...lista.map(({ p, c, seg }, i) => {
+    const eu = p.id === me.id, wrap = el("div", "est-pessoa" + (eu ? " eu" : "")), b = el("button", "est-linha"), av = el("span", "avatar"), nm = el("span", "est-nome"), n = el("span", "est-num");
+    b.type = "button"; b.setAttribute("aria-expanded", String(estAberto === p.id)); pintarAvatar(av, p, false);
+    const seq = sequencia(c.dias, hoje), sub = [tempoTexto(seg) + " na tela", seq > 1 ? "🔥 " + textoSequencia(seq) : ""].filter(Boolean).join(" · ");
+    nm.append(el("b", null, "@" + p.username + (eu ? " (você)" : "")), el("small", null, sub));
+    n.append(String(c.total), el("small", null, c.total === 1 ? "mensagem" : "mensagens")); { const st = estilosDaCor(p.cor); if (st) n.style.setProperty("--c", st.claro.forte); }
+    b.append(el("span", "est-pos", String(i + 1)), av, nm, n); b.onclick = () => { estAberto = estAberto === p.id ? null : p.id; desenharEstatisticas(); };
+    wrap.append(b);
+    if (estAberto === p.id) {
+      const mais = el("div", "est-mais"), chips = el("div", "est-chips"), ln = (r, v) => { const d = el("div", "est-ln"); d.append(el("span", null, r), el("b", null, String(v))); return d; };
+      for (const [k, r] of [["texto", "texto"], ["foto", "fotos"], ["video", "vídeos"], ["audio", "áudios"], ["figurinha", "figurinhas"]]) chips.append(el("span", null, `${c[k]} ${r}`));
+      mais.append(chips, ln("Respostas", c.respostas), ln("Citou (@) / foi citado", `${c.citou} / ${c.citada}`), ln("Sequência", seq ? textoSequencia(seq) : "—"), ln("No grupo", noGrupoHa(p.entrou_em).replace("No grupo há ", "há ")));
+      wrap.append(mais);
+    }
+    return wrap;
+  }));
+}
+$("gi-est").onclick = () => { if (giGrupo) abrirEstatisticas(giGrupo).catch(() => msgEst("Não foi possível abrir agora.")); };
+for (const b of $("grupo-est").querySelectorAll(".est-abas button")) b.onclick = () => { estPeriodo = b.dataset.p; estAberto = null; desenharEstatisticas(); };
+$("grupo-est").addEventListener("close", () => { estGrupo = null; estDados = null; });
 async function mudarCargo(g, p, sub) {
   msgGrupo("");
   const { error } = await sb.rpc("grupo_cargo", { p_grupo: g.id, p_user: p.id, p_sub: sub });

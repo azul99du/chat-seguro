@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=dd2ca99bda">
+  <link rel="stylesheet" href="style.css?v=49dcb55301">
 </head>
 <body>
 
@@ -317,12 +317,27 @@
         <button type="button" id="gi-foto-rm" class="linha perigo" hidden><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></span><span class="tx"><b>Remover a foto do grupo</b></span></button>
         <button type="button" id="gi-cor" class="linha"><span class="ic"><span id="gi-cor-sw" class="cor-bolinha" aria-hidden="true"></span></span><span class="tx"><b>Minha cor neste grupo</b><small id="gi-cor-nome"></small></span></button>
         <button type="button" id="gi-renomear" class="linha" hidden><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></span><span class="tx"><b>Mudar o nome do grupo</b></span></button>
+        <button type="button" id="gi-est" class="linha"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span><span class="tx"><b>Estatísticas do grupo</b><small>Quem fala mais, tempo na tela, sequência</small></span></button>
         <h3 class="pg-grupo" id="gi-cont">Participantes</h3>
         <button type="button" id="gi-add" class="linha" hidden><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="8" r="4"/><path d="M3 21c0-4 3.5-6 7-6 1.3 0 2.6.3 3.7.8M18 14v6M15 17h6"/></svg></span><span class="tx"><b>Adicionar pessoas</b></span></button>
         <div id="gi-lista"></div>
         <p id="gi-msg" class="pg-msg" role="status"></p>
         <button type="button" id="gi-sair" class="linha perigo"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></span><span class="tx"><b>Sair do grupo</b></span></button>
         <p class="pg-nota"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span>Cada mensagem do grupo vai cifrada separadamente para cada pessoa. O servidor sabe quem participa, mas não lê as mensagens nem o nome do grupo.</span></p>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="grupo-est" class="pagina">
+    <form method="dialog">
+      <header class="pg-bar"><button value="cancel" class="pg-volta" aria-label="Voltar" formnovalidate><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><h2>Estatísticas do grupo</h2></header>
+      <div class="pg-corpo">
+        <div class="est-abas" role="tablist" aria-label="Período"><button type="button" role="tab" data-p="hoje" aria-selected="true">Hoje</button><button type="button" role="tab" data-p="semana" aria-selected="false">Semana</button><button type="button" role="tab" data-p="mes" aria-selected="false">Mês</button></div>
+        <p class="est-aviso"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><span>Todos do grupo veem estas estatísticas, inclusive o tempo na tela do chat.</span></p>
+        <p id="est-resumo" class="est-resumo" role="status"></p>
+        <div id="est-lista" class="est-lista"></div>
+        <p class="pg-dica sem-recuo">Toque em uma pessoa para ver mais. As mensagens são contadas neste aparelho (o servidor não as lê): o que chegou antes de você entrar ou com o Lacre fechado em outro aparelho pode não entrar na conta. O tempo na tela vem do servidor e só conta com o chat do grupo aberto e em uso.</p>
+        <p id="est-msg" class="pg-msg" role="status"></p>
       </div>
     </form>
   </dialog>
@@ -402,6 +417,6 @@
 
   <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
 
-  <script src="guarda.js?v=dd2ca99bda"></script>
+  <script src="guarda.js?v=49dcb55301"></script>
 </body>
 </html>
