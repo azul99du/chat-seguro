@@ -1543,3 +1543,260 @@ end $$;
 revoke all on function public.valida_aparelho_prekey() from public, anon, authenticated;
 create trigger valida_aparelho_prekey before insert on public.prekeys
   for each row execute function public.valida_aparelho_prekey();
+
+-- ===== Vários aparelhos na mesma conta, etapa 2 (migração aparelhos_etapa2) =====
+-- Conversa a dois: cada mensagem vai cifrada separadamente para CADA aparelho aprovado de quem recebe e para CADA OUTRO aparelho aprovado de quem envia.
+-- para_aparelho = "ref" (código público) do aparelho de destino (nulo = formato antigo: uma cópia que qualquer aparelho aprovado da pessoa enxerga).
+-- de_aparelho = "ref" do aparelho que enviou, preenchido PELO SERVIDOR (o cliente não tem permissão de gravar a coluna). O identificador secreto do aparelho nunca sai.
+-- Um aparelho PENDENTE não lê, não envia e não aparece para quem envia. Sessão de login sem aparelho registrado (site antigo em cache) segue lendo só o formato antigo.
+alter table public.messages add column para_aparelho uuid, add column de_aparelho uuid;
+alter table public.messages add constraint messages_aparelho_so_a_dois check (para_aparelho is null or grupo_id is null);
+create index messages_para_aparelho on public.messages (recipient_id, para_aparelho, id) where para_aparelho is not null;
+create index messages_irmas on public.messages (recipient_id, sender_id, created_at) where para_aparelho is not null;
+revoke insert on public.messages from authenticated;
+grant insert (recipient_id, ciphertext, iv, v, header, avisar, grupo_id, citado, para_aparelho) on public.messages to authenticated;   -- (de_aparelho fica de fora: só o gatilho preenche)
+
+-- Recuperação: o pendente pede; o prazo é contado pelo relógio do banco
+alter table public.dispositivos add column recuperacao_pedida_em timestamptz;
+
+-- Estado e código do aparelho DESTA chamada (só dizem respeito a quem chama; as políticas precisam executá-las)
+create or replace function public.aparelho_estado() returns text
+language sql stable security definer set search_path = public, auth as $$ select (public.dispositivo_atual()).estado $$;
+create or replace function public.aparelho_ref() returns uuid
+language sql stable security definer set search_path = public, auth as $$ select case when (public.dispositivo_atual()).estado = 'aprovado' then (public.dispositivo_atual()).ref end $$;
+revoke all on function public.aparelho_estado() from public, anon, authenticated;
+revoke all on function public.aparelho_ref() from public, anon, authenticated;
+grant execute on function public.aparelho_estado() to authenticated;
+grant execute on function public.aparelho_ref() to authenticated;
+
+-- Quem lê: pendente nada. Quem enviou lê o que enviou (menos as cópias para si mesmo, que só o aparelho de destino e o que as criou leem).
+-- Quem recebe lê o formato antigo (para_aparelho nulo) e só as cópias endereçadas ao SEU aparelho.
+alter policy "le proprias mensagens" on public.messages using (
+  coalesce((select public.aparelho_estado()), 'aprovado') <> 'pendente' and (
+    (sender_id = (select auth.uid()) and (recipient_id <> sender_id or de_aparelho = (select public.aparelho_ref())))
+    or (recipient_id = (select auth.uid()) and (para_aparelho is null or para_aparelho = (select public.aparelho_ref())))));
+alter policy "destinatario marca como lida" on public.messages
+  using (recipient_id = (select auth.uid()) and sender_id <> recipient_id and coalesce((select public.aparelho_estado()), 'aprovado') <> 'pendente' and (para_aparelho is null or para_aparelho = (select public.aparelho_ref())))
+  with check (recipient_id = (select auth.uid()) and sender_id <> recipient_id and coalesce((select public.aparelho_estado()), 'aprovado') <> 'pendente' and (para_aparelho is null or para_aparelho = (select public.aparelho_ref())));
+alter policy "envia como si mesmo" on public.messages with check (
+  sender_id = (select auth.uid()) and v = 2 and coalesce((select public.aparelho_estado()), 'aprovado') <> 'pendente'
+  and (grupo_id is null or public.pode_enviar_ao_grupo(grupo_id, recipient_id)));
+
+-- Gatilho de inserção: preenche de_aparelho e confere o destino (aparelho APROVADO de quem recebe; cópia para si só para OUTRO aparelho aprovado meu). Interna.
+create or replace function public.confere_aparelho_mensagem() returns trigger
+language plpgsql security definer set search_path = public, auth as $$
+declare cur public.dispositivos;
+begin
+  cur := public.dispositivo_atual();
+  new.de_aparelho := case when cur.estado = 'aprovado' then cur.ref end;   -- (qualquer valor vindo do cliente é descartado)
+  if new.para_aparelho is not null then
+    if not exists (select 1 from public.dispositivos d where d.user_id = new.recipient_id and d.ref = new.para_aparelho and d.estado = 'aprovado') then
+      raise exception 'aparelho_invalido' using errcode = '42501';
+    end if;
+    if new.recipient_id = new.sender_id and (cur.ref is null or cur.estado <> 'aprovado' or new.para_aparelho = cur.ref) then
+      raise exception 'copia_propria_invalida' using errcode = '42501';
+    end if;
+  elsif new.recipient_id = new.sender_id then
+    raise exception 'copia_propria_invalida' using errcode = '42501';
+  end if;
+  return new;
+end $$;
+revoke all on function public.confere_aparelho_mensagem() from public, anon, authenticated;
+create trigger confere_aparelho_mensagem before insert on public.messages for each row execute function public.confere_aparelho_mensagem();
+
+-- Push: UM aviso por mensagem por pessoa (só a linha de menor id da leva avisa) e nenhum para cópia própria
+create or replace function public.notificar_mensagem() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare u text;
+begin
+  if new.recipient_id = new.sender_id then return new; end if;
+  if new.para_aparelho is not null and exists (select 1 from public.messages m where m.sender_id = new.sender_id and m.recipient_id = new.recipient_id
+       and m.created_at = new.created_at and m.para_aparelho is not null and m.id < new.id) then return new; end if;
+  select valor into u from public.push_config where chave = 'functions_url';
+  if u is null then return new; end if;
+  perform net.http_post(url := u || '/notificar', headers := jsonb_build_object('content-type', 'application/json'),
+    body := jsonb_build_object('mensagem', new.id, 'destinatario', new.recipient_id), timeout_milliseconds := 4000);
+  return new;
+exception when others then return new;
+end $$;
+
+-- Chaves: a antiga só devolve chave de aparelho aprovado (ou sem marca); a nova devolve a mais recente de CADA aparelho aprovado (pode ser a minha própria conta)
+create or replace function public.get_prekey(p_user uuid)
+returns table (id text, public_key jsonb)
+language plpgsql security definer set search_path = public as $$
+#variable_conflict use_column
+begin
+  perform public.consome('get_prekey', 30, 300);
+  return query select k.id, k.public_key from public.prekeys k
+    left join public.dispositivos d on d.user_id = k.user_id and d.id = k.aparelho
+    where k.user_id = p_user and (k.aparelho is null or d.estado = 'aprovado') order by k.created_at desc limit 1;
+end $$;
+revoke all on function public.get_prekey(uuid) from public, anon, authenticated;
+grant execute on function public.get_prekey(uuid) to authenticated;
+
+create or replace function public.get_prekeys_aparelhos(p_user uuid)
+returns table (ref uuid, id text, public_key jsonb)
+language plpgsql security definer set search_path = public as $$
+#variable_conflict use_column
+begin
+  perform public.consome('get_prekeys_aparelhos', 30, 300);
+  if coalesce(public.aparelho_estado(), 'aprovado') = 'pendente' then return; end if;
+  return query select distinct on (d.ref) d.ref, k.id, k.public_key from public.dispositivos d
+    join public.prekeys k on k.user_id = d.user_id and k.aparelho = d.id
+    where d.user_id = p_user and d.estado = 'aprovado' order by d.ref, k.created_at desc;
+end $$;
+revoke all on function public.get_prekeys_aparelhos(uuid) from public, anon, authenticated;
+grant execute on function public.get_prekeys_aparelhos(uuid) to authenticated;
+
+-- Lida: ler num aparelho marca a mensagem como lida em TODAS as cópias que recebi (as dos meus outros aparelhos), o que respeita a política nova
+create or replace function public.marcar_lidas(p_ids bigint[]) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); r uuid;
+begin
+  perform public.consome('marcar_lidas', 120, 2000);
+  if p_ids is null or array_length(p_ids, 1) is null then return; end if;
+  if array_length(p_ids, 1) > 300 then raise exception 'lote grande demais' using errcode = '22023'; end if;
+  if coalesce(public.aparelho_estado(), 'aprovado') = 'pendente' then return; end if;
+  r := public.aparelho_ref();
+  update public.messages m set read_at = now() where m.id = any(p_ids) and m.recipient_id = u and m.sender_id <> u and m.read_at is null and (m.para_aparelho is null or m.para_aparelho = r);
+  if r is not null then
+    update public.messages m set read_at = now() from public.messages x
+     where x.id = any(p_ids) and x.recipient_id = u and x.sender_id <> u and x.para_aparelho = r
+       and m.recipient_id = u and m.sender_id = x.sender_id and m.created_at = x.created_at and m.para_aparelho is not null and m.read_at is null;
+  end if;
+end $$;
+revoke all on function public.marcar_lidas(bigint[]) from public, anon, authenticated;
+grant execute on function public.marcar_lidas(bigint[]) to authenticated;
+
+-- Prazo da recuperação: 24 horas (parâmetro interno em push_config, que ninguém logado lê; serve para o projeto de TESTE encurtar o prazo)
+create or replace function public.recuperacao_prazo() returns interval
+language plpgsql stable security definer set search_path = public as $$
+declare v text;
+begin
+  select valor into v from public.push_config where chave = 'recuperacao_prazo';
+  return coalesce(v::interval, interval '24 hours');
+exception when others then return interval '24 hours';
+end $$;
+revoke all on function public.recuperacao_prazo() from public, anon, authenticated;
+
+-- Registrar: sem o atalho "o pendente vira aprovado ao reabrir". Só o 1º aparelho de uma conta SEM nenhum aprovado entra aprovado; pendente só vira aprovado por permissão ou por recuperação.
+create or replace function public.registrar_dispositivo(p_id text) returns text
+language plpgsql security definer set search_path = public, auth as $$
+declare u uuid := auth.uid(); s uuid := nullif(auth.jwt() ->> 'session_id', '')::uuid; r public.dispositivos; est text;
+begin
+  perform public.consome('registrar_dispositivo', 20, 200);
+  if s is null or not (select public.mfa_ok()) or not exists (select 1 from auth.sessions x where x.id = s) then raise exception 'nao_autorizado' using errcode = '42501'; end if;
+  if p_id is null or p_id !~ '^[0-9a-f]{32}$' then raise exception 'aparelho_invalido'; end if;
+  perform pg_advisory_xact_lock(hashtextextended('dispositivos:' || u::text, 0));
+  select * into r from public.dispositivos d where d.user_id = u and d.id = p_id;
+  if not found then
+    if (select count(*) from public.dispositivos d where d.user_id = u) >= 5 then raise exception 'limite_de_aparelhos'; end if;
+    est := case when exists (select 1 from public.dispositivos d where d.user_id = u and d.estado = 'aprovado') then 'pendente' else 'aprovado' end;
+    insert into public.dispositivos (user_id, id, estado, aprovado_em, aprovado_por)
+      values (u, p_id, est, case when est = 'aprovado' then now() end, case when est = 'aprovado' then p_id end);
+  else
+    est := r.estado;
+    update public.dispositivos d set visto_em = now() where d.user_id = u and d.id = p_id;
+  end if;
+  insert into public.dispositivo_sessoes (session_id, user_id, dispositivo) values (s, u, p_id)
+    on conflict (session_id) do update set dispositivo = excluded.dispositivo where public.dispositivo_sessoes.user_id = u;
+  delete from public.dispositivo_sessoes x where x.user_id = u and not exists (select 1 from auth.sessions a where a.id = x.session_id);
+  return est;
+end $$;
+revoke all on function public.registrar_dispositivo(text) from public, anon, authenticated;
+grant execute on function public.registrar_dispositivo(text) to authenticated;
+
+-- Permitir apaga qualquer pedido de recuperação do aparelho
+create or replace function public.decidir_dispositivo(p_ref uuid, p_permitir boolean) returns boolean
+language plpgsql security definer set search_path = public, auth as $$
+declare u uuid := auth.uid(); cur public.dispositivos; alvo public.dispositivos;
+begin
+  perform public.consome('decidir_dispositivo', 30, 200);
+  if p_ref is null or p_permitir is null or not (select public.mfa_ok()) then return false; end if;
+  perform pg_advisory_xact_lock(hashtextextended('dispositivos:' || u::text, 0));
+  cur := public.dispositivo_atual();
+  if cur.id is null or cur.estado <> 'aprovado' then return false; end if;
+  select * into alvo from public.dispositivos d where d.user_id = u and d.ref = p_ref and d.estado = 'pendente';
+  if not found then return false; end if;
+  if p_permitir then
+    update public.dispositivos d set estado = 'aprovado', aprovado_em = now(), aprovado_por = cur.id, recuperacao_pedida_em = null where d.user_id = u and d.id = alvo.id;
+  else
+    delete from auth.sessions a where a.id in (select s.session_id from public.dispositivo_sessoes s where s.user_id = u and s.dispositivo = alvo.id);
+    delete from public.prekeys k where k.user_id = u and k.aparelho = alvo.id;
+    delete from public.dispositivos d where d.user_id = u and d.id = alvo.id;
+  end if;
+  return true;
+end $$;
+revoke all on function public.decidir_dispositivo(uuid, boolean) from public, anon, authenticated;
+grant execute on function public.decidir_dispositivo(uuid, boolean) to authenticated;
+
+-- Os aparelhos da conta, com o pedido de recuperação (quando foi pedido e quando vale) e a hora do banco
+create or replace function public.dispositivos_conta() returns table (ref uuid, estado text, criado_em timestamptz, visto_em timestamptz, aprovado_em timestamptz, atual boolean, navegador text, sistema text, tipo text, pais_codigo text, regiao text, cidade text, recuperacao_em timestamptz, vale_em timestamptz, agora timestamptz)
+language plpgsql security definer set search_path = public, auth as $$
+#variable_conflict use_column
+declare u uuid := auth.uid(); cur public.dispositivos;
+begin
+  perform public.consome('meus_dispositivos', 60, 600);
+  if not (select public.mfa_ok()) or not exists (select 1 from auth.sessions x where x.id = nullif(auth.jwt() ->> 'session_id', '')::uuid) then return; end if;
+  cur := public.dispositivo_atual();
+  return query
+    select d.ref, d.estado, d.criado_em, d.visto_em, d.aprovado_em, d.id = cur.id, ap.navegador, ap.sistema, ap.tipo, ap.pais_codigo, ap.regiao, ap.cidade,
+           d.recuperacao_pedida_em, d.recuperacao_pedida_em + public.recuperacao_prazo(), now()
+      from public.dispositivos d
+      left join lateral (select a.navegador, a.sistema, a.tipo, a.pais_codigo, a.regiao, a.cidade
+                           from public.dispositivo_sessoes s join public.aparelhos a on a.session_id = s.session_id
+                          where s.user_id = d.user_id and s.dispositivo = d.id order by a.ultimo_acesso desc limit 1) ap on true
+     where d.user_id = u order by d.criado_em, d.ref;
+end $$;
+revoke all on function public.dispositivos_conta() from public, anon, authenticated;
+grant execute on function public.dispositivos_conta() to authenticated;
+
+-- Recuperação ("perdi o único aparelho"): só um aparelho PENDENTE pede; um pedido por vez; vale 24 h depois, se ninguém recusar. Tudo pelo relógio do banco.
+create or replace function public.pedir_recuperacao() returns timestamptz
+language plpgsql security definer set search_path = public, auth as $$
+declare u uuid := auth.uid(); cur public.dispositivos; t timestamptz;
+begin
+  perform public.consome('recuperacao', 10, 60);
+  if not (select public.mfa_ok()) then return null; end if;
+  perform pg_advisory_xact_lock(hashtextextended('dispositivos:' || u::text, 0));
+  cur := public.dispositivo_atual();
+  if cur.id is null or cur.estado <> 'pendente' then return null; end if;
+  update public.dispositivos d set recuperacao_pedida_em = coalesce(d.recuperacao_pedida_em, now()) where d.user_id = u and d.id = cur.id returning d.recuperacao_pedida_em into t;
+  return t;
+end $$;
+revoke all on function public.pedir_recuperacao() from public, anon, authenticated;
+grant execute on function public.pedir_recuperacao() to authenticated;
+
+create or replace function public.cancelar_recuperacao() returns boolean
+language plpgsql security definer set search_path = public, auth as $$
+declare u uuid := auth.uid(); cur public.dispositivos;
+begin
+  perform public.consome('recuperacao', 10, 60);
+  if not (select public.mfa_ok()) then return false; end if;
+  perform pg_advisory_xact_lock(hashtextextended('dispositivos:' || u::text, 0));
+  cur := public.dispositivo_atual();
+  if cur.id is null or cur.estado <> 'pendente' then return false; end if;
+  update public.dispositivos d set recuperacao_pedida_em = null where d.user_id = u and d.id = cur.id;
+  return true;
+end $$;
+revoke all on function public.cancelar_recuperacao() from public, anon, authenticated;
+grant execute on function public.cancelar_recuperacao() to authenticated;
+
+-- Concluir: só o próprio aparelho pendente, só depois do prazo contado pelo banco. Remove e desconecta TODOS os outros aparelhos e vira o único aprovado.
+create or replace function public.concluir_recuperacao() returns boolean
+language plpgsql security definer set search_path = public, auth as $$
+declare u uuid := auth.uid(); cur public.dispositivos; s uuid := nullif(auth.jwt() ->> 'session_id', '')::uuid;
+begin
+  perform public.consome('recuperacao', 10, 60);
+  if not (select public.mfa_ok()) then return false; end if;
+  perform pg_advisory_xact_lock(hashtextextended('dispositivos:' || u::text, 0));
+  cur := public.dispositivo_atual();
+  if cur.id is null or cur.estado <> 'pendente' or cur.recuperacao_pedida_em is null or now() < cur.recuperacao_pedida_em + public.recuperacao_prazo() then return false; end if;
+  delete from auth.sessions a where a.user_id = u and a.id is distinct from s;
+  delete from public.prekeys k where k.user_id = u and k.aparelho is distinct from cur.id;
+  delete from public.dispositivos d where d.user_id = u and d.id <> cur.id;
+  update public.dispositivos d set estado = 'aprovado', aprovado_em = now(), aprovado_por = cur.id, recuperacao_pedida_em = null where d.user_id = u and d.id = cur.id;
+  return true;
+end $$;
+revoke all on function public.concluir_recuperacao() from public, anon, authenticated;
+grant execute on function public.concluir_recuperacao() to authenticated;

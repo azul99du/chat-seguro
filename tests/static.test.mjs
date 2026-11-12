@@ -86,7 +86,23 @@ describe("avisos push (supabase/schema.sql)", () => {
   });
   test("o cliente não escreve 'notificada' e o gatilho só dispara para mensagens que querem aviso", () => {
     const ultimo = [...sql.matchAll(/grant insert \(([^)]*)\) on public\.messages to authenticated/g)].pop()[1];
-    assert.equal(ultimo, "recipient_id, ciphertext, iv, v, header, avisar, grupo_id, citado", "o cliente só escolhe destinatário, conteúdo cifrado, aviso, grupo e quem foi citado"); assert.match(sql, /when \(new\.avisar\)/);
+    assert.equal(ultimo, "recipient_id, ciphertext, iv, v, header, avisar, grupo_id, citado, para_aparelho", "o cliente só escolhe destinatário, conteúdo cifrado, aviso, grupo, quem foi citado e o aparelho de destino (nunca de_aparelho: quem preenche é o servidor)"); assert.doesNotMatch(ultimo, /de_aparelho/); assert.match(sql, /when \(new\.avisar\)/);
+  });
+});
+
+describe("vários aparelhos, etapa 2 (supabase/schema.sql)", () => {
+  const sql = ler("supabase/schema.sql");
+  test("o servidor preenche de_aparelho e confere o destino; funções internas não são chamáveis; as de política e as do app têm permissão só para logados", () => {
+    assert.match(sql, /create trigger confere_aparelho_mensagem before insert on public\.messages/); assert.match(sql, /new\.de_aparelho := /);
+    for (const f of ["confere_aparelho_mensagem\\(\\)", "recuperacao_prazo\\(\\)"]) { assert.match(sql, new RegExp(`revoke all on function public\\.${f} from public, anon, authenticated`)); assert.doesNotMatch(sql, new RegExp(`grant execute on function public\\.${f}`)); }
+    for (const f of ["get_prekeys_aparelhos\\(uuid\\)", "marcar_lidas\\(bigint\\[\\]\\)", "dispositivos_conta\\(\\)", "pedir_recuperacao\\(\\)", "cancelar_recuperacao\\(\\)", "concluir_recuperacao\\(\\)"]) assert.match(sql, new RegExp(`grant execute on function public\\.${f} to authenticated`));
+  });
+  test("a leitura de mensagens exige aparelho não pendente e só mostra a cópia do próprio aparelho", () => {
+    const pol = [...sql.matchAll(/alter policy "le proprias mensagens"[\s\S]*?;\n/g)].pop()[0]; assert.match(pol, /aparelho_estado\(\)/); assert.match(pol, /para_aparelho = \(select public\.aparelho_ref\(\)\)/); assert.match(pol, /recipient_id <> sender_id/);
+  });
+  test("sem atalho: a recuperação é a única forma de um pendente virar aprovado sem permissão (24 h, relógio do banco)", () => {
+    const reg = [...sql.matchAll(/create or replace function public\.registrar_dispositivo[\s\S]*?\$\$;/g)].pop()[0]; assert.doesNotMatch(reg, /vira o primeiro|elsif r\.estado = 'pendente'/);
+    assert.match(sql, /interval '24 hours'/); assert.match(sql, /now\(\) < cur\.recuperacao_pedida_em \+ public\.recuperacao_prazo\(\)/);
   });
 });
 
