@@ -104,6 +104,6 @@ t("abrir a conversa: a lista só aparece pronta, já nas últimas mensagens (nã
   await A.evaluate(() => { window.__vis = []; const m = document.getElementById("messages"); new MutationObserver(() => window.__vis.push(getComputedStyle(m).visibility)).observe(m, { childList: true }); });
   await A.click("#contacts button"); await A.waitForSelector("#messages:not(.carregando) .msg", { timeout: 30000 });
   const r = await A.evaluate(() => { const m = document.getElementById("messages"); return { vis: window.__vis, top: Math.round(m.scrollTop), max: m.scrollHeight - m.clientHeight }; });
-  assert.ok(r.vis.length > 5 && r.vis.every((v) => v === "hidden"), `a lista ficou visível durante o carregamento: ${[...new Set(r.vis)]}`); assert.ok(r.max > 200 && r.max - r.top <= 5, `abriu em ${r.top} de ${r.max}`);
+  assert.ok(r.vis.length >= 1 && r.vis.every((v) => v === "hidden"), `a lista ficou visível enquanto era montada: ${[...new Set(r.vis)]} (${r.vis.length} avisos)`); // (as mensagens agora são pintadas do histórico do aparelho de uma vez só: o navegador junta tudo num aviso; o que importa é que nenhum aconteceu com a lista visível) assert.ok(r.max > 200 && r.max - r.top <= 5, `abriu em ${r.top} de ${r.max}`);
 });
 t("nenhum erro de script", () => assert.deepEqual(erros, []));

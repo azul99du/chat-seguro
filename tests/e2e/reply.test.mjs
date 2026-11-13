@@ -122,6 +122,12 @@ t("citação de uma mensagem que NÃO está na tela: mostra o resumo recebido, m
     const r = await route.fetch(), linhas = await r.json();
     await route.fulfill({ response: r, json: Array.isArray(linhas) && linhas.length && "id" in linhas[0] ? linhas.filter((l) => l.id >= corte) : linhas });
   });
+  // (o aparelho também pinta na hora o que guarda localmente: numa conversa com milhares de mensagens ele só guardaria/mostraria as mais novas. Aqui o histórico local fica só com a mais nova.)
+  await B.evaluate(([c]) => new Promise((ok, no) => {
+    const r = indexedDB.open("lacre-sf"); r.onerror = () => no(r.error);
+    r.onsuccess = () => { const tx = r.result.transaction("history", "readwrite"), st = tx.objectStore("history"), q = st.openCursor();
+      q.onsuccess = () => { const cur = q.result; if (!cur) return; const id = Number(String(cur.key).split("|")[2]); if (Number.isFinite(id) && id < c) cur.delete(); cur.continue(); }; tx.oncomplete = () => ok(); tx.onerror = () => no(tx.error); };
+  }), [corte]);
   await B.reload(); await B.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 }); await B.waitForSelector("#contacts button"); await B.click("#contacts button");
   await ver(B, "resposta recente", { meu: true });
   assert.equal(await B.locator(".msg .vis").count(), 1, "só a mensagem mais nova está na tela");

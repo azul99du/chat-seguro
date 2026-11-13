@@ -82,6 +82,17 @@ export async function ultimosDoHistorico(uid, peer, max = 600) {
   for (let i = Math.max(0, keys.length - max); i < keys.length; i++) { try { out.push({ id: Number(String(keys[i]).split("|")[2]), entry: await unseal(uid, vals[i]) }); } catch {} }
   return out;
 }
+// As últimas mensagens guardadas de uma conversa/grupo, em ordem (as mais novas primeiro vêm do fim do índice: só lê o que precisa, sem carregar o histórico inteiro).
+// Serve para pintar a conversa na hora que ela abre, antes de o servidor responder. Cada item: { id, entry }.
+export async function recentesDoHistorico(uid, peer, max = 200) {
+  const t = await tx(["history"], "readonly"), s = t.objectStore("history"), brutos = [];
+  await new Promise((ok, no) => {
+    const c = s.openCursor(range(`${uid}|${peer}|`), "prev"); c.onerror = () => no(c.error);
+    c.onsuccess = () => { const cur = c.result; if (!cur || brutos.length >= max) return ok(); brutos.push({ k: cur.key, v: cur.value }); cur.continue(); };
+  });
+  const out = await Promise.all(brutos.map(async ({ k, v }) => { try { return { id: Number(String(k).split("|")[2]), entry: await unseal(uid, v) }; } catch { return null; } }));
+  return out.filter(Boolean).reverse();
+}
 // Anotações pequenas deste aparelho (cifradas como o resto): o que ele já sabe de cada grupo, por exemplo.
 export async function metaGet(uid, nome) {
   const r = await req((await tx(["meta"], "readonly")).objectStore("meta").get(`x:${uid}|${nome}`));
