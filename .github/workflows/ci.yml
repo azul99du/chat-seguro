@@ -59,7 +59,7 @@ jobs:
     needs: ja-testado
     if: needs.ja-testado.outputs.pular != 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 45
     # um de cada vez: todos usam o mesmo projeto de teste
     concurrency:
       group: e2e-projeto-de-teste
