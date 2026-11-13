@@ -77,7 +77,9 @@ t("o servidor sabe de uma mensagem mais ANTIGA que a mais nova do aparelho: a li
       q.onsuccess = () => { const alvo = q.result[1]; s.delete(alvo); tx.oncomplete = () => ok(String(alvo)); }; tx.onerror = () => no(tx.error); };
   }), [await meuId(A), await meuId(B)]);
   assert.match(esquecida, /^[0-9a-f-]{36}\|[0-9a-f-]{36}\|\d{12}$/);
-  await recarregar(A); await A.click(`#contacts button:not([data-grupo]):has-text("@${nomeB}")`); await A.waitForSelector("#messages:not(.carregando) .msg", { timeout: 30000 }); await A.waitForTimeout(3500);
+  await recarregar(A); await A.click(`#contacts button:not([data-grupo]):has-text("@${nomeB}")`); await A.waitForSelector("#messages:not(.carregando) .msg", { timeout: 30000 });
+  // a conferência do servidor (e a lista refeita, se preciso) leva um tempo que varia: espera a mensagem esquecida voltar em vez de um tempo fixo
+  await A.waitForFunction((n) => [...document.querySelectorAll(".msg .vis")].filter((x) => x.textContent.trim()).length === n, antes, { timeout: 30000 }).catch(() => {}); await A.waitForTimeout(800);
   const l = await textos(A);
   assert.equal(l.length, antes, `a mensagem esquecida volta (decifrada ou como aviso de que não dá): antes ${antes}, depois ${l.length}`);
   for (const x of ["dm um do A", "dm quatro do B", "dm chegou durante a abertura"]) assert.equal(l.filter((y) => y === x).length, 1, x);

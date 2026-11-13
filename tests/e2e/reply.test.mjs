@@ -118,9 +118,11 @@ t("citação de uma mensagem que NÃO está na tela: mostra o resumo recebido, m
   // aparelho, minhas linhas): por isso o corte é por id (só entra linha com id >= o da mais nova), em vez de "a mais nova de cada resposta".
   const corte = await B.evaluate(async ({ url, key }) => { const k = Object.keys(localStorage).find((x) => /^sb-.*-auth-token$/.test(x)); const r = await fetch(`${url}/rest/v1/messages?select=id&order=id.desc&limit=1`, { headers: { Authorization: "Bearer " + JSON.parse(localStorage[k]).access_token, apikey: key } }); return (await r.json())[0].id; }, { url: SUPABASE_URL, key: SUPABASE_KEY });
   await B.route("**/rest/v1/messages?*", async (route) => {
-    if (route.request().method() !== "GET") return route.continue();
-    const r = await route.fetch(), linhas = await r.json();
-    await route.fulfill({ response: r, json: Array.isArray(linhas) && linhas.length && "id" in linhas[0] ? linhas.filter((l) => l.id >= corte) : linhas });
+    if (route.request().method() !== "GET") return route.continue().catch(() => {});
+    try { // (a conferência do servidor ainda pode estar em andamento quando o teste termina e a rota é removida: aí o pedido já foi tratado e não há mais nada a fazer)
+      const r = await route.fetch(), linhas = await r.json();
+      await route.fulfill({ response: r, json: Array.isArray(linhas) && linhas.length && "id" in linhas[0] ? linhas.filter((l) => l.id >= corte) : linhas });
+    } catch {}
   });
   // (o aparelho também pinta na hora o que guarda localmente: numa conversa com milhares de mensagens ele só guardaria/mostraria as mais novas. Aqui o histórico local fica só com a mais nova.)
   await B.evaluate(([c]) => new Promise((ok, no) => {
@@ -134,7 +136,7 @@ t("citação de uma mensagem que NÃO está na tela: mostra o resumo recebido, m
   const q = B.locator(".quote.sem-original"); await q.waitFor();
   assert.equal(await q.locator(".q-text").innerText(), "alvo antigo"); assert.equal(await q.locator(".q-who").innerText(), `@${nomeA}`);
   await q.click(); await B.waitForSelector("#note[open]"); assert.match(await B.locator("#note-text").innerText(), /não está mais nesta tela/);
-  await B.click("#note button"); await B.unroute("**/rest/v1/messages?*");
+  await B.click("#note button"); await B.waitForLoadState("networkidle").catch(() => {}); await B.unroute("**/rest/v1/messages?*");
 });
 // gestos de toque simulados com eventos de ponteiro "touch" (o app só escuta toque/caneta para segurar e arrastar)
 const ALVO = ".msg:not(.mine):has(.vis:text-is(\"alvo de toque\")) .bubble";
