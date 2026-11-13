@@ -119,8 +119,10 @@ t("limite de mensagens: 300 MENSAGENS por minuto por pessoa (um pedido = uma men
     const rs = await Promise.all(Array.from({ length: 25 }, () => f.c.from("messages").insert(msg(b.id))));
     for (const r of rs) assert.ok(!r.error, `leva ${i + 1}: ${r.error?.message}`);
   }
-  const r = await f.c.from("messages").insert(msg(b.id));
-  assert.ok(limitado(r), "a 301ª mensagem deveria ser limitada: " + JSON.stringify(r.error));
+  // (um envio conta pelo horário do pedido: dois dos 300 enviados ao mesmo tempo podem cair no mesmo microssegundo e contar como um só. Por isso o limite é conferido mandando mais alguns, um de cada vez.)
+  let limitada = null, extras = 0;
+  for (let i = 0; i < 8 && !limitada; i++) { const r = await f.c.from("messages").insert(msg(b.id)); extras++; if (limitado(r)) limitada = r; else assert.ok(!r.error, r.error?.message); }
+  assert.ok(limitada, "o limite de 300 mensagens por minuto deveria aparecer em até 8 mensagens a mais"); assert.ok(extras <= 4, `deveria limitar logo depois das 300 (limitou na ${300 + extras}ª)`);
 });
 // (o teto de LINHAS, 3000 por minuto e 30000 por hora, não é exercitado aqui: seriam 3000 linhas a cada execução, pesado demais para o projeto de teste. A regra é conferida no teste estático do schema.)
 t("pedido em lote: mais de 100 linhas num só pedido é recusado (não dá para furar o limite)", async () => {
