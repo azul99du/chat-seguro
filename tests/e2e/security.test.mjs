@@ -113,17 +113,22 @@ t("storage: só a pasta própria; nome fora do padrão e HTML são recusados; ou
 const limitado = (r) => r.error?.code === "PT429" || /limite|lote grande|chaves demais/i.test(r.error?.message || "");
 const msg = (to) => ({ ...base(to), v: 2, header: hdr() });
 
-t("limite de mensagens: 300 por minuto por pessoa (uma mensagem de grupo vira várias linhas); a 301ª é recusada com 'espere um pouco'", async () => {
+t("limite de mensagens: 300 MENSAGENS por minuto por pessoa (um pedido = uma mensagem, tenha quantas linhas tiver); a 301ª é recusada com 'espere um pouco'", async () => {
   const f = await usuario("f");
-  for (let i = 0; i < 15; i++) { const r = await f.c.from("messages").insert(Array.from({ length: 20 }, () => msg(b.id))); assert.ok(!r.error, `leva ${i + 1}: ${r.error?.message}`); }
+  for (let i = 0; i < 12; i++) { // 300 pedidos de uma linha, 25 de cada vez
+    const rs = await Promise.all(Array.from({ length: 25 }, () => f.c.from("messages").insert(msg(b.id))));
+    for (const r of rs) assert.ok(!r.error, `leva ${i + 1}: ${r.error?.message}`);
+  }
   const r = await f.c.from("messages").insert(msg(b.id));
-  assert.ok(limitado(r), "a 301ª deveria ser limitada: " + JSON.stringify(r.error));
+  assert.ok(limitado(r), "a 301ª mensagem deveria ser limitada: " + JSON.stringify(r.error));
 });
-t("pedido em lote: mais de 20 mensagens num só pedido é recusado (não dá para furar o limite)", async () => {
+// (o teto de LINHAS, 3000 por minuto e 30000 por hora, não é exercitado aqui: seriam 3000 linhas a cada execução, pesado demais para o projeto de teste. A regra é conferida no teste estático do schema.)
+t("pedido em lote: mais de 100 linhas num só pedido é recusado (não dá para furar o limite)", async () => {
   const g = await usuario("g");
-  assert.ok(limitado(await g.c.from("messages").insert(Array.from({ length: 21 }, () => msg(b.id)))), "lote de 21");
-  assert.ok(!(await g.c.from("messages").insert(Array.from({ length: 3 }, () => msg(b.id)))).error, "(controle) lote pequeno passa");
+  assert.ok(limitado(await g.c.from("messages").insert(Array.from({ length: 101 }, () => msg(b.id)))), "lote de 101");
+  assert.ok(!(await g.c.from("messages").insert(Array.from({ length: 21 }, () => msg(b.id)))).error, "(controle) lote de 21 passa: um grupo com vários aparelhos por pessoa precisa disso");
 });
+
 // O limite é por janela de 1 minuto: se a janela virar no meio da sequência, passam mais do que o limite. Nesse caso (e só nele) repete com outra pessoa.
 async function testaLimite(prefixo, max, chamada) {
   for (let tent = 0; tent < 3; tent++) {

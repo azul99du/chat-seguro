@@ -1,4 +1,4 @@
-// Vários aparelhos, etapa 2: o que o BANCO deixa cada conta e cada aparelho fazer (cópia endereçada a um aparelho, aparelho pendente, recuperação).
+// Vários aparelhos, etapas 2 e 3: o que o BANCO deixa cada conta e cada aparelho fazer (cópia endereçada a um aparelho, aparelho pendente, recuperação).
 // O conteúdo das mensagens aqui é falso: o que se testa são as regras do servidor. (O tempo real e o fluxo completo estão em multiaparelho.test.mjs.)
 import { test, before } from "node:test";
 import assert from "node:assert/strict";
@@ -63,7 +63,7 @@ t("inserir: só com para_aparelho de aparelho APROVADO de quem recebe; pendente,
     const r = await a1.from("messages").insert(linha(B.id, para)); assert.ok(r.error, nome); assert.equal(r.error.code, "42501", nome + ": " + r.error.message);
   }
   assert.ok((await a1.from("messages").insert(linha(B.id, "nao-e-uuid"))).error, "formato inválido");
-  assert.ok((await a1.from("messages").insert({ ...linha(B.id, B.refs[0]), grupo_id: crypto.randomUUID() })).error, "cópia por aparelho não vale em grupo (etapa 3)");
+  assert.ok((await a1.from("messages").insert({ ...linha(B.id, B.refs[0]), grupo_id: crypto.randomUUID() })).error, "cópia por aparelho num grupo de que não participo: recusada");
 });
 t("cópia para si mesmo: só para OUTRO aparelho aprovado meu; não para o próprio aparelho, pendente, de outra conta nem sem aparelho de destino", async () => {
   const [a1, a2] = A.cs;
@@ -166,6 +166,60 @@ t("sem atalho: o último aprovado sai e o pendente NÃO vira aprovado sozinho; u
   assert.equal((await m.cs[1].rpc("registrar_dispositivo", { p_id: m.ids[1] })).data, "pendente", "continua pendente: só permissão ou recuperação");
   const novo = mk(); assert.ifError((await novo.auth.signInWithPassword({ email: m.email, password: SENHA })).error);
   assert.equal((await novo.rpc("registrar_dispositivo", { p_id: hex() })).data, "aprovado", "conta sem nenhum aprovado: o aparelho novo é o primeiro");
+});
+// ----- Etapa 3: grupos com uma cópia por aparelho -----
+const cif = () => ({ c: "Y2hhdmU=", iv: "aXZpdml2aXZpdg==" });
+let G;
+t("grupo: cópia por aparelho só para aparelho APROVADO de participante; a mim mesmo só como cópia para OUTRO aparelho meu; pendente e gente de fora ficam de fora", async () => {
+  const [a1, a2, a3] = A.cs, [b1] = B.cs;
+  assert.ifError((await a1.from("messages").insert(linha(B.id, B.refs[0]))).error); assert.ifError((await b1.from("messages").insert(linha(A.id, A.refs[0]))).error); // já conversaram (ida e volta)
+  G = crypto.randomUUID(); assert.ifError((await a1.rpc("criar_grupo", { p_id: G, p_nome: cif(), p_chave: cif(), p_membros: [{ id: B.id, chave: cif() }] })).error);
+  const g = (to, para, extra = {}) => ({ ...linha(to, para), grupo_id: G, avisar: true, citado: false, ...extra });
+  // uma mensagem de grupo "de verdade": os dois aparelhos de B e a cópia para o meu outro aparelho, num pedido só
+  const ok = await a1.from("messages").insert([g(B.id, B.refs[0]), g(B.id, B.refs[1]), g(A.id, A.refs[1], { avisar: false })]).select("id,recipient_id,para_aparelho,de_aparelho,created_at");
+  assert.ifError(ok.error); assert.equal(ok.data.length, 3); assert.ok(ok.data.every((l) => l.de_aparelho === A.refs[0]), "o servidor carimba o aparelho que enviou");
+  assert.equal(new Set(ok.data.map((l) => l.created_at)).size, 1, "um pedido = um horário = UMA mensagem para as estatísticas e os Selos");
+  assert.ifError((await a1.from("messages").insert(g(B.id, null))).error, "formato antigo (uma cópia só) continua valendo no grupo");
+  for (const [nome, l] of [["aparelho pendente de quem recebe", g(B.id, B.refs[2])], ["aparelho removido", g(B.id, B.refs[3])], ["aparelho de outra pessoa", g(B.id, A.refs[1])], ["quem não está no grupo", g(X.id, X.refs[0])],
+    ["cópia para o MEU próprio aparelho (este)", g(A.id, A.refs[0])], ["cópia para mim sem aparelho", g(A.id, null)], ["cópia para o meu aparelho pendente", g(A.id, A.refs[2])]])
+    assert.ok((await a1.from("messages").insert(l)).error, nome);
+  assert.ok((await a1.from("messages").insert([g(B.id, B.refs[0]), g(B.id, B.refs[2])])).error, "uma linha inválida derruba o pedido inteiro");
+  assert.ok((await a3.from("messages").insert(g(B.id, B.refs[0]))).error, "aparelho pendente não envia ao grupo");
+  assert.ok((await X.cs[0].from("messages").insert({ ...linha(X.id, null), grupo_id: G })).error, "de fora: nem cópia para si");
+  const outro = crypto.randomUUID(); assert.ok((await a1.from("messages").insert({ ...linha(A.id, A.refs[1]), grupo_id: outro })).error, "cópia para mim num grupo de que não participo");
+  // quem lê o quê
+  const [paraB1, paraB2, copia] = [ok.data.find((l) => l.para_aparelho === B.refs[0]).id, ok.data.find((l) => l.para_aparelho === B.refs[1]).id, ok.data.find((l) => l.recipient_id === A.id).id];
+  assert.equal(await le(B.cs[0], paraB1), true); assert.equal(await le(B.cs[1], paraB1), false, "o 2º aparelho de B não lê a cópia do 1º"); assert.equal(await le(B.cs[1], paraB2), true);
+  assert.equal(await le(B.cs[2], paraB1), false, "pendente não lê"); assert.equal(await le(a2, copia), true, "o meu outro aparelho lê a cópia"); assert.equal(await le(a1, copia), true, "(quem criou enxerga)");
+  assert.equal(await le(B.cs[0], copia), false, "a cópia para mim não aparece para os outros"); assert.equal(await le(a3, copia), false); assert.equal(await le(X.cs[0], paraB1), false);
+  assert.equal(await le(a2, paraB1), true, "o meu outro aparelho vê que a mensagem foi enviada (linha sem conteúdo legível para ele)");
+});
+t("get_prekeys_grupo: uma chamada devolve os aparelhos APROVADOS de todos os participantes (e os meus), sem o identificador secreto; de fora e pendente não leem", async () => {
+  const r = await A.cs[0].rpc("get_prekeys_grupo", { p_grupo: G }); assert.ifError(r.error);
+  assert.deepEqual(r.data.map((x) => x.ref).sort(), [A.refs[0], A.refs[1], B.refs[0], B.refs[1]].sort(), "só os aprovados (sem o pendente e sem o removido)");
+  for (const x of r.data) { assert.deepEqual(Object.keys(x).sort(), ["id", "public_key", "ref", "user_id"]); assert.ok([A.id, B.id].includes(x.user_id)); }
+  const txt = JSON.stringify(r.data); for (const id of [...A.ids, ...B.ids]) assert.ok(!txt.includes(id), "o identificador secreto do aparelho não pode aparecer");
+  assert.equal((await X.cs[0].rpc("get_prekeys_grupo", { p_grupo: G })).error?.code, "42501", "quem não está no grupo");
+  assert.equal((await A.cs[2].rpc("get_prekeys_grupo", { p_grupo: G })).data?.length ?? 0, 0, "aparelho pendente"); assert.ok((await anon.rpc("get_prekeys_grupo", { p_grupo: G })).error, "sem login");
+});
+t("grupo: estatísticas e Selos contam UMA mensagem por envio, tenha quantas cópias tiver", async () => {
+  const [a1] = A.cs, hoje = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
+  const conta = async () => (await a1.rpc("grupo_estatisticas", { p_grupo: G })).data.find((x) => x.user_id === A.id && x.dia === hoje)?.msgs ?? 0;
+  const antes = await conta(), g = (to, para, extra = {}) => ({ ...linha(to, para), grupo_id: G, avisar: true, citado: false, ...extra });
+  await dorme(50); assert.ifError((await a1.from("messages").insert([g(B.id, B.refs[0]), g(B.id, B.refs[1]), g(A.id, A.refs[1], { avisar: false })])).error);
+  assert.equal(await conta(), antes + 1, "3 linhas, 1 mensagem");
+  assert.ifError((await a1.rpc("selo_regras_mudar", { p_grupo: G, p_regras: { mensagens: { on: true, valor: 7, a_cada: 1 } } })).error);
+  const s1 = (await a1.rpc("selo_saldo", { p_grupo: G })).data.find((x) => x.user_id === A.id).confirmados;
+  await dorme(50); assert.ifError((await a1.from("messages").insert([g(B.id, B.refs[0]), g(B.id, B.refs[1]), g(A.id, A.refs[1], { avisar: false })])).error);
+  const s2 = (await a1.rpc("selo_saldo", { p_grupo: G })).data.find((x) => x.user_id === A.id).confirmados;
+  assert.equal(Number(s2) - Number(s1), 7, "uma mensagem a mais = 7 Selos a mais (não 21)");
+});
+t("grupo: ler num aparelho marca as cópias dos meus outros aparelhos; o push sai uma vez por pessoa", async () => {
+  const [a1] = A.cs, g = (to, para, extra = {}) => ({ ...linha(to, para), grupo_id: G, avisar: true, citado: true, ...extra });
+  const r = await a1.from("messages").insert([g(B.id, B.refs[0]), g(B.id, B.refs[1])]).select("id,para_aparelho"); assert.ifError(r.error);
+  const [l1, l2] = [r.data.find((l) => l.para_aparelho === B.refs[0]).id, r.data.find((l) => l.para_aparelho === B.refs[1]).id];
+  assert.ifError((await B.cs[0].rpc("marcar_lidas", { p_ids: [l1] })).error);
+  const lidas = (await a1.from("messages").select("id,read_at").in("id", [l1, l2])).data; assert.equal(lidas.filter((x) => x.read_at).length, 2, "lida nos dois aparelhos de B");
 });
 t("funções e tabelas: internas não são chamáveis; sem login nada roda; tabelas dos aparelhos seguem fechadas", async () => {
   for (const c of [anon, X.cs[0]]) for (const f of ["confere_aparelho_mensagem", "recuperacao_prazo", "dispositivo_atual"]) assert.ok((await c.rpc(f)).error, f);

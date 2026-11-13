@@ -1,24 +1,24 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=2340ef8d9e";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=2340ef8d9e";
-import { montarFigurinhas } from "./figurinhas.js?v=2340ef8d9e";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=2340ef8d9e";
-import { ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=2340ef8d9e";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=2340ef8d9e";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=2340ef8d9e";
-import { acharVideoLink } from "./videolink.js?v=2340ef8d9e";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=2340ef8d9e";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=2340ef8d9e";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=2340ef8d9e";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=2340ef8d9e";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=2340ef8d9e";
-import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=2340ef8d9e";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=2340ef8d9e";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO } from "./dispositivos.js?v=2340ef8d9e";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=2340ef8d9e";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=2340ef8d9e";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=2340ef8d9e";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=2340ef8d9e";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=e44731b89c";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=e44731b89c";
+import { montarFigurinhas } from "./figurinhas.js?v=e44731b89c";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=e44731b89c";
+import { ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=e44731b89c";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=e44731b89c";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=e44731b89c";
+import { acharVideoLink } from "./videolink.js?v=e44731b89c";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=e44731b89c";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=e44731b89c";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=e44731b89c";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=e44731b89c";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=e44731b89c";
+import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=e44731b89c";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=e44731b89c";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=e44731b89c";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=e44731b89c";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=e44731b89c";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=e44731b89c";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=e44731b89c";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -1635,6 +1635,16 @@ async function aparelhosDe(pessoaId, forcar = false) {
   if (error) { if (limitado(error) && c) return c.lista; throw error; }
   const lista = limpaPrekeys(data); cacheAparelhos.set(pessoaId, { t: Date.now(), lista }); return lista;
 }
+// Grupo: os aparelhos de todos os participantes (e os meus) numa chamada só, guardados por 60 s como os de cada pessoa. Quem não tem aparelho fica com a lista vazia (formato antigo).
+const cacheGrupoAparelhos = new Map(); // id do grupo -> quando foi buscado
+async function aquecerAparelhosDoGrupo(grupoId, pessoas, forcar = false) {
+  if (!forcar && Date.now() - (cacheGrupoAparelhos.get(grupoId) || 0) < 60000 && pessoas.every((p) => cacheAparelhos.has(p.id))) return;
+  const { data, error } = await sb.rpc("get_prekeys_grupo", { p_grupo: grupoId }); if (error) { if (limitado(error)) return; throw error; } // (limite de uso: segue com o que já está guardado)
+  const porPessoa = new Map([[me.id, []], ...pessoas.map((p) => [p.id, []])]);
+  for (const r of Array.isArray(data) ? data : []) porPessoa.get(r?.user_id)?.push(r);
+  const t = Date.now(); for (const [id, linhas] of porPessoa) cacheAparelhos.set(id, { t, lista: limpaPrekeys(linhas) });
+  cacheGrupoAparelhos.set(grupoId, t);
+}
 async function alvosDoEnvio(peer, forcar = false) {
   const meu = meuRef(); if (!meu) return alvosDeEnvio({ deles: [], meus: [], meuRef: null });
   const [deles, meus] = await Promise.all([aparelhosDe(peer.id, forcar), aparelhosDe(me.id, forcar)]);
@@ -1674,33 +1684,56 @@ async function sendContent(peer, content) {
     return enviarPorAparelho(peer, content, alvos);
   }
 }
-// Cifra o MESMO conteúdo separadamente para cada pessoa (cada uma pela sua sessão, com sigilo futuro) e grava tudo num pedido só: ou chega para todos, ou para ninguém.
-async function enviarVarios(pessoas, content, { grupoId = null, avisar = true, citados = null } = {}) {
+// Cifra o MESMO conteúdo separadamente para cada pessoa e grava tudo num pedido só: ou chega para todos, ou para ninguém.
+// Quem já usa aparelhos recebe uma cópia POR APARELHO aprovado (cada uma pela sua sessão); quem ainda não usa recebe uma cópia só, no formato antigo.
+// copias = mandar também para os meus outros aparelhos (mensagens de grupo: o grupo vai na linha e dentro do conteúdo cifrado).
+async function enviarVariosJa(pessoas, content, { grupoId = null, avisar = true, citados = null, copias = false } = {}) {
   for (const p of pessoas) if ((await pinStatus(p)) === "changed") throw Object.assign(new Error("chave mudou"), { code: "PIN", peer: p });
-  const texto = toBytes(JSON.stringify(content));
-  const linhas = await Promise.all(pessoas.map((p) => withLock(lockName(p), async () => {
-    let st; try { st = await sendSession(p); } catch (e) { throw Object.assign(e, { peer: p }); }
-    const r = await ratchetEncrypt(st, me.id, p.id, texto);
-    await commit(me.id, p.id, { session: r.state, active: r.state.sid }); // grava ANTES de enviar: uma chave nunca é usada duas vezes
-    return { recipient_id: p.id, ciphertext: r.ciphertext, iv: r.iv, v: 2, header: r.header, avisar, grupo_id: grupoId, citado: !!citados?.has(p.id) }; // (citado: só a linha de quem foi citado leva a marca, e só ela dá o aviso de push; sempre vai true ou false, senão um pedido em lote manda "nulo" nas outras linhas)
-  })));
-  const { data, error } = await sb.from("messages").insert(linhas).select("id,created_at,recipient_id");
-  if (error) throw error;
-  return data;
+  const texto = toBytes(JSON.stringify(content)), meu = meuRef(), porId = new Map(pessoas.map((p) => [p.id, p])), meuPeer = { id: me.id, public_key: me.public_key };
+  if (meu && grupoId) await aquecerAparelhosDoGrupo(grupoId, pessoas);
+  const comAparelhos = meu ? await Promise.all(pessoas.map(async (p) => ({ id: p.id, aparelhos: await aparelhosDe(p.id).catch(() => []) }))) : pessoas.map((p) => ({ id: p.id, aparelhos: [] })); // (sem a lista: formato antigo)
+  const trabalhos = trabalhosDeEnvio({ pessoas: comAparelhos, meus: meu && copias ? await aparelhosDe(me.id).catch(() => []) : [], meuRef: meu, copias });
+  const linhas = await Promise.all(trabalhos.map((j) => {
+    const p = j.copia ? meuPeer : porId.get(j.pessoaId), ref = j.a?.ref ?? null, chave = chaveSessao(p.id, ref);
+    return withLock(ref ? lockChave(chave) : lockName(p), async () => {
+      let st; try { st = await sendSession(p, ref, j.a); } catch (e) { throw Object.assign(e, { peer: p }); }
+      const r = await ratchetEncrypt(st, me.id, p.id, texto);
+      await commit(me.id, chave, { session: r.state, active: r.state.sid }); // grava ANTES de enviar: uma chave nunca é usada duas vezes
+      // (para_aparelho e citado vão sempre, mesmo vazios: num pedido em lote todas as linhas precisam ter as mesmas colunas. Só a linha de quem foi citado leva a marca; cópia para mim nunca avisa.)
+      return { recipient_id: p.id, para_aparelho: ref, ciphertext: r.ciphertext, iv: r.iv, v: 2, header: r.header, avisar: j.copia ? false : avisar, grupo_id: grupoId, citado: !j.copia && !!citados?.has(p.id) };
+    });
+  }));
+  // mensagem de grupo: UM pedido (ou chega para todos, ou para ninguém; e conta como um envio só). Toques sem grupo (hello) podem ir em levas.
+  const out = [];
+  for (const leva of grupoId ? [linhas] : emLevas(linhas)) {
+    const { data, error } = await sb.from("messages").insert(leva).select("id,created_at,recipient_id");
+    if (error) throw error;
+    out.push(...data);
+  }
+  return out;
 }
-// Mensagem para o grupo: uma cópia cifrada por pessoa. Aqui fica guardada UMA vez (sob o id do grupo), com o menor id da leva.
+async function enviarVarios(pessoas, content, opts = {}) {
+  try { return await enviarVariosJa(pessoas, content, opts); }
+  catch (e) {
+    if (e?.code !== "42501") throw e;
+    cacheAparelhos.clear(); cacheGrupoAparelhos.clear(); // o servidor recusou: a lista de aparelhos de alguém mudou (ou a de participantes do grupo, que quem chamou confere)
+    if (opts.grupoId) throw e;
+    return enviarVariosJa(pessoas, content, opts);
+  }
+}
+// Mensagem para o grupo: uma cópia cifrada por aparelho de cada pessoa (ou por pessoa, no formato antigo) e para os meus outros aparelhos. Aqui fica guardada UMA vez (sob o id do grupo), com o menor id da leva.
 const enviarAoGrupo = (g, content) => withLock(`lacre:g:${me.id}:${g.id}`, () => enviarAoGrupoJa(g, content)); // um envio por vez em cada grupo: as mensagens chegam na ordem em que foram escritas
 async function enviarAoGrupoJa(g, content) {
   content.g = g.id; if (content.type === "text" || content.type === "media") content.mid = randomHex(16);
   const outros = () => [...g.membros.values()].filter((p) => p.id !== me.id);
   const texto = content.type === "text" ? content.text : content.type === "media" ? content.caption : "";
-  const opts = { grupoId: g.id, avisar: content.type !== "delete", citados: new Set(mencionados(String(texto ?? ""), [...g.membros.values()].filter((p) => p.id !== me.id))) };
+  const opts = { grupoId: g.id, copias: true, avisar: content.type !== "delete", citados: new Set(mencionados(String(texto ?? ""), [...g.membros.values()].filter((p) => p.id !== me.id))) };
   let linhas;
   if (!outros().length) throw Object.assign(new Error("grupo vazio"), { code: "SOZINHO" });
   try { linhas = await enviarVarios(outros(), content, opts); }
   catch (e) {
     if (e?.code !== "42501") throw e;
-    await atualizarGrupos(true).catch(() => {}); // o servidor recusou: a lista de participantes mudou (alguém saiu, ou eu saí). Atualiza e tenta mais uma vez.
+    await atualizarGrupos(true).catch(() => {}); await conferirDispositivos(true).catch(() => {}); // o servidor recusou: a lista de participantes mudou (alguém saiu, ou eu saí) ou a de aparelhos de alguém. Atualiza e tenta mais uma vez.
     if (!grupos.has(g.id)) throw Object.assign(e, { code: "FORA" });
     if (!outros().length) throw Object.assign(new Error("grupo vazio"), { code: "SOZINHO" });
     linhas = await enviarVarios(outros(), content, opts);
@@ -1853,7 +1886,7 @@ async function onIncoming(m, aoVivo = true) {
 // Cópia cifrada que OUTRO aparelho meu mandou para este (de mim para mim). Só vale se vier de um aparelho meu e disser de qual conversa é (conteúdo cifrado).
 // Fica guardada no histórico daquela conversa como mensagem minha; a anotação "cp:<linha>" diz de qual conversa é, para a lista da conversa achá-la e para nunca decifrar duas vezes.
 async function lerCopiaPropria(m) {
-  if (m.recipient_id !== me.id || m.v !== 2 || m.grupo_id || !ehRef(m.de_aparelho) || !ehRef(m.para_aparelho) || m.de_aparelho === meuRef()) return null; // (a que ESTE aparelho criou também chega pelo tempo real: é só o que ele mesmo enviou)
+  if (m.recipient_id !== me.id || m.v !== 2 || !ehRef(m.de_aparelho) || !ehRef(m.para_aparelho) || m.de_aparelho === meuRef()) return null; // (a que ESTE aparelho criou também chega pelo tempo real: é só o que ele mesmo enviou)
   const ja = await metaGet(me.id, "cp:" + m.id).catch(() => null); if (ja) return { content: null, para: ja.para, jaFeita: true };
   const eu = { id: me.id, public_key: me.public_key }, chave = chaveSessao(me.id, m.de_aparelho);
   return withLock(lockChave(chave), async () => {
@@ -1863,13 +1896,17 @@ async function lerCopiaPropria(m) {
     if (!st) { const spk = h.init && (await getSpks(me.id)).find((k) => k.id === h.init.spk); if (!spk) return null; st = await accept(ikJwk, eu.public_key, spk, h); }
     let state, plaintext; try { ({ state, plaintext } = await ratchetDecrypt(st, m.sender_id, m.recipient_id, h, m.ciphertext)); } catch { return null; }
     let content; try { content = parseContent(toText(plaintext)); } catch { return null; }
-    if (!copiaPropriaValida(m, content, me.id, meuRef()) || !conteudoBate(content, null, { aDois: true })) return null; // (a sessão não avança: nada de aceitar o que não confere)
-    await commit(me.id, chave, { session: state, active: h.sid, entryId: m.id, entry: { content, at: m.created_at, mine: true, from: me.id }, hist: content.para, idx: { k: "cp:" + m.id, v: { para: content.para } } });
-    return { content, para: content.para };
+    // (a sessão não avança: nada de aceitar o que não confere). Conversa a dois: o conteúdo diz de qual conversa é ("para"). Grupo: o grupo da linha tem de ser o do conteúdo.
+    const ok = m.grupo_id ? copiaGrupoValida(m, content, me.id, meuRef()) && conteudoBate(content, m.grupo_id) : copiaPropriaValida(m, content, me.id, meuRef()) && conteudoBate(content, null, { aDois: true });
+    if (!ok) return null;
+    const conv = m.grupo_id || content.para;
+    await commit(me.id, chave, { session: state, active: h.sid, entryId: m.id, entry: { content, at: m.created_at, mine: true, from: me.id }, hist: conv, idx: { k: "cp:" + m.id, v: { para: conv } } });
+    return { content, para: conv };
   });
 }
 async function chegouCopiaPropria(m, aoVivo) {
   const r = await lerCopiaPropria(m); if (!r || r.jaFeita) return;
+  if (m.grupo_id) return chegouCopiaDoGrupo(m, r.content, aoVivo);
   const c = r.content, conv = r.para, peer = await perfilDe(conv); if (!peer) return;
   const m2 = { id: m.id, sender_id: me.id, recipient_id: conv, grupo_id: null, created_at: m.created_at, read_at: null, v: 2 };
   if (c.type === "hello") return;
@@ -1879,6 +1916,18 @@ async function chegouCopiaPropria(m, aoVivo) {
   tocaAtiv(conv, m.created_at); marcaUltima(conv, m.created_at);
   if (active?.id === conv && carregandoConversa === active) filaChegando.push(m2);
   else if (active?.id === conv) { if (aoVivo || maisNovaQueATela(m2)) { $("msgs-empty")?.remove(); await show(m2, peer, false); } }
+  renderContacts();
+}
+// O que outro aparelho meu mandou para um grupo: entra na conversa do grupo como mensagem minha (reagir e apagar também valem aqui)
+async function chegouCopiaDoGrupo(m, c, aoVivo) {
+  let g = grupos.get(m.grupo_id); if (!g) { await atualizarGrupos(true).catch(() => {}); g = grupos.get(m.grupo_id); } if (!g) return;
+  const m2 = { id: m.id, sender_id: me.id, recipient_id: null, grupo_id: g.id, created_at: m.created_at, read_at: null, v: 2 };
+  if (c.type === "hello") return;
+  if (c.type === "delete") { await aplicarApagar(c, m2); return; }
+  if (c.type === "reaction") { if (active === g) applyReaction(c, m2); return; }
+  tocaAtiv(g.id, m.created_at); marcaUltima(g.id, m.created_at);
+  if (active === g && carregandoConversa === g) filaChegando.push(m2);
+  else if (active === g) { if (aoVivo || maisNovaQueATela(m2)) { $("msgs-empty")?.remove(); mostrar(m2, c, false); } }
   renderContacts();
 }
 async function chegouDoGrupo(m, peer, aoVivo) {
@@ -2013,6 +2062,13 @@ async function mostrarMeuLote(g, l) { // uma mensagem MINHA no grupo (no servido
   if (!l.avisar) return; // aviso automático (apagar…) enviado por outro aparelho meu
   addMessage(m, "Enviada por você de outro navegador ou aparelho (como o computador). Para ver aqui: exporte o histórico de lá e importe aqui, em Segurança da conta.", { err: true });
 }
+// Ao abrir o grupo: a cópia que outro aparelho meu mandou para este (já lida antes, ou lida agora) aparece como mensagem minha
+async function mostrarCopiaDoGrupo(g, m) {
+  const m2 = { id: m.id, sender_id: me.id, recipient_id: null, grupo_id: g.id, created_at: m.created_at, read_at: null, v: 2 };
+  const r = await lerCopiaPropria(m).catch(() => null);
+  if (r?.content && !r.jaFeita) { const c = r.content; if (c.type === "delete") return aplicarApagar(c, m2); if (c.type === "reaction") return applyReaction(c, m2); if (c.type !== "hello") mostrar(m2, c, false); return; }
+  const e = await getHistory(me.id, g.id, m.id).catch(() => null); if (e) mostrar(m2, e.content, false);
+}
 async function abrirGrupo(g) {
   bandeja(false); fecharMencoes();
   active = g; limparNaoLidas(g.id); renderContacts(); updateStatus();
@@ -2028,22 +2084,24 @@ async function abrirGrupo(g) {
   try {
     const [rec, meus, est] = await Promise.all([
       sb.from("messages").select("*").eq("grupo_id", g.id).eq("recipient_id", me.id).order("id", { ascending: false }).limit(200), // o que os outros mandaram (as 200 mais novas)
-      sb.from("messages").select("id,created_at,avisar").eq("grupo_id", g.id).eq("sender_id", me.id).order("id", { ascending: false }).limit(1000), // o que eu mandei (uma linha por pessoa)
+      sb.from("messages").select("id,created_at,avisar,para_aparelho,de_aparelho").eq("grupo_id", g.id).eq("sender_id", me.id).order("id", { ascending: false }).limit(1000), // o que eu mandei (uma linha por aparelho de cada pessoa)
       metaGet(me.id, "g:" + g.id).catch(() => null)]);
     if (active !== g) return;
-    const recebidas = (rec.data || []).reverse(), cheio = recebidas.length === 200, corte = cheio ? recebidas[0].id : 0, corteT = cheio ? Date.parse(recebidas[0].created_at) : 0;
+    // (entre as linhas "para mim" vêm também as cópias que ESTE aparelho mandou aos meus outros aparelhos: essas não são para ler aqui)
+    const recebidas = (rec.data || []).reverse().filter((m) => m.sender_id !== me.id || m.para_aparelho === meuRef()), cheio = (rec.data || []).length === 200, corte = cheio && recebidas.length ? recebidas[0].id : 0, corteT = cheio && recebidas.length ? Date.parse(recebidas[0].created_at) : 0;
     const itens = [
       ...recebidas.map((m) => ({ t: Date.parse(m.created_at), id: m.id, m })),
-      ...lotes(meus.data, (meus.data || []).length === 1000).filter((l) => l.id >= corte).map((l) => ({ t: Date.parse(l.created_at), id: l.id, lote: l })),
+      ...lotesGrupo(meus.data, (meus.data || []).length === 1000).filter((l) => l.id >= corte && !loteDeOutroAparelho(l, meuRef())).map((l) => ({ t: Date.parse(l.created_at), id: l.id, lote: l })), // (o que OUTRO aparelho meu enviou aparece pela cópia que ele mandou para este)
       ...(est?.avisos || []).filter((a) => a.t >= corteT).map((a) => ({ t: a.t, id: 0, aviso: a }))].sort((a, b) => a.t - b.t || a.id - b.id);
     for (const it of itens) {
       if (it.aviso) addAviso(textoAviso(it.aviso));
       else if (it.lote) await mostrarMeuLote(g, it.lote);
+      else if (it.m.sender_id === me.id) await mostrarCopiaDoGrupo(g, it.m);
       else { const p = await perfilDe(it.m.sender_id); if (p) await show(it.m, p, false); }
     }
     [...msgs.keys()].forEach(renderRx);
     carregandoConversa = null; const fila = filaChegando; filaChegando = [];
-    for (const m of fila) { const p = await perfilDe(m.sender_id); if (p && maisNovaQueATela(m)) await show(m, p, false); }
+    for (const m of fila) { if (!maisNovaQueATela(m)) continue; if (m.sender_id === me.id) { const e = await getHistory(me.id, g.id, m.id).catch(() => null); if (e) mostrar(m, e.content, false); } else { const p = await perfilDe(m.sender_id); if (p) await show(m, p, false); } }
     if (!$("messages").childElementCount) {
       const p = el("p", "empty", "Nenhuma mensagem ainda. Diga oi: só quem está no grupo vai ler."); p.id = "msgs-empty";
       $("messages").append(p);

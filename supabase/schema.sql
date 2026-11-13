@@ -1800,3 +1800,60 @@ begin
 end $$;
 revoke all on function public.concluir_recuperacao() from public, anon, authenticated;
 grant execute on function public.concluir_recuperacao() to authenticated;
+
+-- ===== Vários aparelhos na mesma conta, etapa 3 (migração aparelhos_etapa3): grupos =====
+-- A mensagem de grupo passa a ir cifrada para CADA aparelho aprovado de cada participante e para CADA outro aparelho de quem envia (como já era na conversa a dois).
+-- Quem ainda não usa aparelhos continua recebendo uma cópia só (para_aparelho nulo). O grupo vai na linha e dentro do conteúdo cifrado.
+alter table public.messages drop constraint messages_aparelho_so_a_dois;   -- (a etapa 2 só permitia cópia por aparelho fora de grupo)
+
+-- Enviar ao grupo: aos outros participantes, como sempre; e a mim mesmo só como cópia para OUTRO aparelho meu (o gatilho confere_aparelho_mensagem confere o aparelho)
+alter policy "envia como si mesmo" on public.messages with check (
+  sender_id = (select auth.uid()) and v = 2 and coalesce((select public.aparelho_estado()), 'aprovado') <> 'pendente'
+  and (grupo_id is null or public.pode_enviar_ao_grupo(grupo_id, recipient_id)
+       or (recipient_id = (select auth.uid()) and para_aparelho is not null and public.membro_de(grupo_id::text))));
+
+-- Limites de envio, conferidos UMA vez por pedido (antes eram conferidos a cada linha, o que ficava lento num pedido de 100 linhas):
+--   * um pedido leva até 100 linhas: grupo de 20 pessoas com 5 aparelhos cada = 19 × 5 + 4 cópias para os meus outros aparelhos = 99;
+--   * por pessoa, contam MENSAGENS (um envio = um pedido = um horário), não linhas: 300 por minuto e 5000 por hora, como já era na conversa a dois com um aparelho;
+--   * as linhas têm um teto próprio, mais alto (3000 por minuto e 30000 por hora), para ninguém encher o banco com pedidos grandes.
+-- O gatilho roda depois de inserir: se passar do limite, o pedido inteiro é desfeito.
+create or replace function public.limita_lote_mensagens() returns trigger
+language plpgsql set search_path = public as $$
+declare r record;
+begin
+  if (select count(*) from novas) > 100 then
+    raise exception 'lote grande demais' using errcode = 'PT429', hint = 'rate_limit';
+  end if;
+  for r in select distinct n.sender_id from novas n loop
+    if (select count(distinct m.created_at) filter (where m.created_at > now() - interval '1 minute') > 300 or count(distinct m.created_at) > 5000
+            or count(*) filter (where m.created_at > now() - interval '1 minute') > 3000 or count(*) > 30000
+          from public.messages m where m.sender_id = r.sender_id and m.created_at > now() - interval '1 hour') then
+      raise exception 'limite de mensagens atingido: espere um pouco' using errcode = 'PT429', hint = 'rate_limit';
+    end if;
+  end loop;
+  return null;
+end $$;
+-- (o gatilho por linha continua existindo, mas não faz mais nada: a conferência é a do pedido, acima)
+create or replace function public.limita_mensagens() returns trigger
+language plpgsql set search_path = public as $$
+begin
+  return new;
+end $$;
+
+-- As chaves de recepção de TODOS os aparelhos aprovados de quem está no grupo, numa chamada só (inclui os meus: servem para as cópias). Só participante chama; pendente não.
+create or replace function public.get_prekeys_grupo(p_grupo uuid)
+returns table (user_id uuid, ref uuid, id text, public_key jsonb)
+language plpgsql security definer set search_path = public as $$
+#variable_conflict use_column
+begin
+  perform public.consome('get_prekeys_grupo', 30, 600);
+  if coalesce(public.aparelho_estado(), 'aprovado') = 'pendente' then return; end if;
+  if not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = (select auth.uid())) then raise exception 'nao_esta_no_grupo' using errcode = '42501'; end if;
+  return query select distinct on (d.user_id, d.ref) d.user_id, d.ref, k.id, k.public_key
+    from public.grupo_membros gm
+    join public.dispositivos d on d.user_id = gm.user_id and d.estado = 'aprovado'
+    join public.prekeys k on k.user_id = d.user_id and k.aparelho = d.id
+   where gm.grupo_id = p_grupo order by d.user_id, d.ref, k.created_at desc;
+end $$;
+revoke all on function public.get_prekeys_grupo(uuid) from public, anon, authenticated;
+grant execute on function public.get_prekeys_grupo(uuid) to authenticated;

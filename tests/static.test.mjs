@@ -156,6 +156,16 @@ describe("banco (supabase/schema.sql)", () => {
       assert.match(sql, new RegExp(`revoke all on function public\\.${f[1]}\\([^)]*\\) from public, anon, authenticated`), `${f[1]} deve negar execução a anon`);
     }
   });
+  test("limites de envio (etapa 3): conferidos uma vez por pedido; 100 linhas por pedido; 300 mensagens/min e 5000/h; teto de linhas 3000/min e 30000/h", () => {
+    const lote = [...sql.matchAll(/create or replace function public\.limita_lote_mensagens\(\)[\s\S]*?end \$\$;/g)].pop()[0];
+    assert.match(lote, /from novas\) > 100/); assert.match(lote, /count\(distinct m\.created_at\) filter \(where m\.created_at > now\(\) - interval '1 minute'\) > 300/); assert.match(lote, /count\(distinct m\.created_at\) > 5000/);
+    assert.match(lote, /count\(\*\) filter \(where m\.created_at > now\(\) - interval '1 minute'\) > 3000/); assert.match(lote, /count\(\*\) > 30000/); assert.match(lote, /interval '1 hour'/);
+    const linha = [...sql.matchAll(/create or replace function public\.limita_mensagens\(\)[\s\S]*?end \$\$;/g)].pop()[0]; assert.doesNotMatch(linha, /select|count/, "o gatilho por linha não consulta mais nada");
+    assert.match(sql, /alter table public\.messages drop constraint messages_aparelho_so_a_dois;/);
+    const pol = [...sql.matchAll(/alter policy "envia como si mesmo"[\s\S]*?;\n/g)].pop()[0]; assert.match(pol, /recipient_id = \(select auth\.uid\(\)\) and para_aparelho is not null and public\.membro_de\(grupo_id::text\)/, "a mim mesmo num grupo: só cópia para outro aparelho, e só se participo"); assert.match(pol, /aparelho_estado\(\)/);
+    assert.match(sql, /function public\.get_prekeys_grupo\(p_grupo uuid\)[\s\S]*?nao_esta_no_grupo[\s\S]*?d\.estado = 'aprovado'/);
+    assert.match(sql, /revoke all on function public\.get_prekeys_grupo\(uuid\) from public, anon, authenticated;\ngrant execute on function public\.get_prekeys_grupo\(uuid\) to authenticated;/);
+  });
   test("há limites de uso: mensagens, lote, buscas, prekeys e arquivos", () => {
     for (const nome of ["limita_mensagens", "limita_lote_mensagens", "limita_prekeys", "limita_lote_prekeys", "consome", "pode_enviar_arquivo"]) assert.match(sql, new RegExp(`function public\\.${nome}\\(`), nome);
     assert.match(sql, /perform public\.consome\('find_user'/); assert.match(sql, /perform public\.consome\('get_prekey'/);

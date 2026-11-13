@@ -58,7 +58,7 @@ No GitHub Actions (`.github/workflows/ci.yml`) isso roda a cada push, usando o p
 
 ## Limites de uso e monitoramento
 **Limites no banco** (todos devolvem HTTP 429 "espere um pouco"; o site mostra uma mensagem clara):
-- mensagens: 300 por minuto e 5000 por hora por pessoa (linhas no banco: uma mensagem de grupo vira uma linha por participante); no máximo 20 por pedido em lote (reações e controle contam);
+- mensagens: 300 por minuto e 5000 por hora por pessoa, contando MENSAGENS (um pedido = uma mensagem, tenha quantas linhas tiver: uma por aparelho de cada destinatário); as linhas têm teto próprio de 3000 por minuto e 30000 por hora; no máximo 100 linhas por pedido (grupo de 20 pessoas com 5 aparelhos cada = 99; reações e controle contam);
 - grupos: criar 5 por minuto e 20 por hora; adicionar/remover/renomear/dar cargo/trocar foto 30 por minuto e 200 por hora; no máximo 20 pessoas por grupo e 50 grupos por pessoa;
 - busca de amigo (`find_user`): 15 por minuto e 100 por hora; busca de chave (`get_prekey`): 30 por minuto e 300 por hora;
 - chaves de médio prazo: no máximo 30 por pessoa e 5 por pedido;
@@ -237,6 +237,15 @@ A suíte completa (unitários + ~250 testes de navegador, uns 12 minutos) roda *
 2. Se houve mudança de banco: aplicar no projeto de teste antes da etapa 1 e no banco real **depois** de o CI passar (banco primeiro, depois o código).
 3. `scripts/publicar.sh main`: leva o **mesmo commit** (mesmo hash) para a `main`. O script recusa se aquele hash não tem um CI completo e bem-sucedido em outra branch. Na `main`, o CI só confere isso e **pula os testes** (o hash identifica o conteúdo exato, então não há o que repetir). Um envio direto à `main` sem ter passado antes roda tudo normalmente.
 O CI continua só com permissão de leitura de conteúdo (mais `actions: read`, para conferir o hash). Sem mudança nos testes nem nas regras de segurança: só muda **onde e quando** eles rodam. O arquivo do ffmpeg deixou de rodar `apt-get update` antes de instalar quando não precisa (uns 15 s a menos por trabalho).
+
+## Vários aparelhos na mesma conta: etapa 3 (grupos)
+A mensagem de grupo também vai com uma cópia cifrada para CADA aparelho aprovado de cada participante e para os outros aparelhos de quem envia (`enviarVarios` em `app.js`; as linhas são montadas por `trabalhosDeEnvio`, em `dispositivos.js`). Quem ainda não usa aparelhos recebe uma cópia só, no formato antigo, na mesma leva.
+- **Um pedido só** (ou chega para todos, ou para ninguém): por isso as estatísticas e os Selos continuam contando UMA mensagem por envio (`count(distinct created_at)`; há teste).
+- **Cópia para os meus outros aparelhos:** linha de mim para mim com o grupo na linha E dentro do conteúdo cifrado (os dois têm de bater: `copiaGrupoValida`); o aparelho que a recebe guarda no histórico do grupo como mensagem minha. Reagir e apagar para todos seguem o mesmo caminho.
+- **Ao abrir o grupo**, as minhas linhas viram uma mensagem (`lotesGrupo`); a que OUTRO aparelho meu enviou não aparece por aí (seria o balão "Enviada por você de outro aparelho"): aparece pela cópia.
+- **No banco:** saiu a restrição que proibia `para_aparelho` em grupo; a policy de envio aceita linha para mim mesmo num grupo só como cópia para OUTRO aparelho meu aprovado (o gatilho `confere_aparelho_mensagem` confere) e só se eu participo do grupo; um pedido leva até 100 linhas; o limite por pessoa passou a contar mensagens (300/min, 5000/h), com teto de linhas à parte (3000/min, 30000/h).
+- **O que ainda fica do formato antigo:** sessões de login sem aparelho registrado e chaves de recepção sem marca continuam aceitas, para quem ainda não abriu o site novo. Enquanto isso existir, a aprovação de aparelho não vale contra quem fala direto com o banco usando a senha, o 2º passo e a frase-senha da conta. Fecha quando todos os aparelhos em uso estiverem registrados.
+- Mensagens antigas do grupo não passam para um aparelho novo (como na conversa a dois).
 
 ## Trocar o nome de usuário
 Em **Perfil → Trocar nome de usuário**. Regras (todas conferidas no banco, na função `trocar_nome()`; o app só mostra as mensagens):

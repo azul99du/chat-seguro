@@ -76,6 +76,42 @@ export function lotesDm(linhas, cortado = false) {
   return out;
 }
 
+// ---------- Etapa 3: grupos com uma cópia por aparelho ----------
+// Cópia de uma mensagem de GRUPO que outro aparelho meu mandou para este: de mim para mim, com o grupo na linha e no conteúdo cifrado (os dois têm de bater), e sem "para".
+export function copiaGrupoValida(m, content, eu, meuRef) {
+  return !!m && m.sender_id === eu && m.recipient_id === eu && typeof m.grupo_id === "string" && UUID_RE.test(m.grupo_id) && ehRef(m.de_aparelho) && m.de_aparelho !== meuRef && ehRef(m.para_aparelho)
+    && !!content && content.g === m.grupo_id && content.para === undefined;
+}
+// As minhas linhas num grupo (uma por aparelho de cada pessoa, mais as cópias para os meus aparelhos) viram uma mensagem só. "de" = aparelho que enviou;
+// "novo" = formato por aparelho. Uma mensagem nova enviada por OUTRO aparelho meu não se mostra por aqui: quem a mostra é a cópia que ele mandou para este aparelho.
+export function lotesGrupo(linhas, cortado = false) {
+  const m = new Map();
+  for (const l of linhas || []) {
+    const k = l.created_at, a = m.get(k);
+    if (a) { a.id = Math.min(a.id, l.id); a.n++; a.avisar = a.avisar && l.avisar !== false; a.novo = a.novo || !!l.para_aparelho; a.de = a.de || (ehRef(l.de_aparelho) ? l.de_aparelho : null); }
+    else m.set(k, { id: l.id, created_at: l.created_at, avisar: l.avisar !== false, n: 1, novo: !!l.para_aparelho, de: ehRef(l.de_aparelho) ? l.de_aparelho : null });
+  }
+  const out = [...m.values()].sort((a, b) => a.id - b.id);
+  if (cortado && out.length) out.shift();
+  return out;
+}
+export const loteDeOutroAparelho = (l, meuRef) => !!l && l.novo && !!l.de && l.de !== meuRef;
+// Linhas de um envio a várias pessoas: por aparelho para quem já usa aparelhos, uma cópia só (formato antigo) para quem não usa; e as cópias para os meus outros aparelhos.
+// pessoas: [{ id, aparelhos: [{ ref, id, public_key }] }]; devolve [{ pessoaId, a (aparelho ou null), copia }]
+export function trabalhosDeEnvio({ pessoas, meus, meuRef, copias }) {
+  const usaAparelhos = ehRef(meuRef), out = [];
+  for (const p of pessoas || []) {
+    const ap = usaAparelhos ? limpaPrekeys(p.aparelhos) : [];
+    if (ap.length) for (const a of ap) out.push({ pessoaId: p.id, a, copia: false });
+    else out.push({ pessoaId: p.id, a: null, copia: false });
+  }
+  if (usaAparelhos && copias) for (const a of limpaPrekeys(meus)) if (a.ref !== meuRef) out.push({ pessoaId: null, a, copia: true });
+  return out;
+}
+export const MAX_LINHAS_POR_PEDIDO = 100; // (o mesmo limite do banco: grupo de 20 pessoas com 5 aparelhos cada = 19 × 5 + 4 cópias minhas = 99)
+export function emLevas(lista, n = MAX_LINHAS_POR_PEDIDO) { const out = []; for (let i = 0; i < lista.length; i += n) out.push(lista.slice(i, i + n)); return out; }
+
+
 // ---------- Recuperação ("não tenho mais acesso aos outros aparelhos") ----------
 export const RECUPERACAO_HORAS = 24;
 // milissegundos que faltam (relógio do banco: "agora" vem dele; sem ele, o do aparelho)

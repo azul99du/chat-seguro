@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { novoId, idValido, limpa, limpaLista, resumo, textoPendentes, nomeDoAparelho, erroAmigavel, MAX_APARELHOS, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta } from "../dispositivos.js";
+import { novoId, idValido, limpa, limpaLista, resumo, textoPendentes, nomeDoAparelho, erroAmigavel, MAX_APARELHOS, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas, MAX_LINHAS_POR_PEDIDO } from "../dispositivos.js";
 
 const R = (n) => `00000000-0000-4000-8000-00000000000${n}`;
 const L = (n, estado, extra = {}) => ({ ref: R(n), estado, atual: false, criado_em: "2026-01-01T00:00:00Z", visto_em: "2026-01-01T00:00:00Z", aprovado_em: estado === "aprovado" ? "2026-01-01T00:00:00Z" : null, navegador: "Chrome", sistema: "Windows", tipo: "computador", ...extra });
@@ -76,5 +76,49 @@ describe("etapa 2: recuperação", () => {
   test("faltaMs usa a hora do banco; textoFalta fala em minutos ou horas", () => {
     assert.equal(faltaMs("2026-11-11T10:00:00Z", "2026-11-11T09:00:00Z", 0), 3600000); assert.equal(faltaMs("2026-11-11T10:00:00Z", "2026-11-11T11:00:00Z"), 0); assert.equal(faltaMs("lixo", null), null);
     assert.equal(textoFalta(null), ""); assert.equal(textoFalta(0), "agora"); assert.equal(textoFalta(30000), "menos de 1 minuto"); assert.equal(textoFalta(25 * 60000), "25 minutos"); assert.equal(textoFalta(23.5 * 3600000), "23 h 30 min"); assert.equal(textoFalta(2 * 3600000), "2 h");
+  });
+});
+
+describe("etapa 3: grupos com uma cópia por aparelho", () => {
+  const U = (n) => `10000000-0000-4000-8000-00000000000${n}`, G = "20000000-0000-4000-8000-000000000001", EU = U(1);
+  const K = (n) => ({ ref: R(n), id: String(n).repeat(32), public_key: { x: "x" + n, y: "y" + n } });
+  test("linhas do envio: por aparelho para quem usa aparelhos, uma cópia só para quem não usa, e as cópias para os meus outros aparelhos", () => {
+    const pessoas = [{ id: U(2), aparelhos: [K(2), K(3)] }, { id: U(3), aparelhos: [] }, { id: U(4), aparelhos: [K(4)] }];
+    const t = trabalhosDeEnvio({ pessoas, meus: [K(1), K(5)], meuRef: R(1), copias: true });
+    assert.deepEqual(t.map((j) => [j.pessoaId, j.a?.ref ?? null, j.copia]), [[U(2), R(2), false], [U(2), R(3), false], [U(3), null, false], [U(4), R(4), false], [null, R(5), true]]);
+    assert.equal(trabalhosDeEnvio({ pessoas, meus: [K(1), K(5)], meuRef: R(1), copias: false }).some((j) => j.copia), false, "toque sem grupo: sem cópia para mim");
+    assert.deepEqual(trabalhosDeEnvio({ pessoas, meus: [K(1), K(5)], meuRef: null, copias: true }).map((j) => [j.pessoaId, j.a, j.copia]), [[U(2), null, false], [U(3), null, false], [U(4), null, false]], "este aparelho ainda não usa aparelhos: tudo no formato antigo");
+    assert.equal(trabalhosDeEnvio({ pessoas: [{ id: U(2), aparelhos: [{ ref: "lixo" }, null, K(2), K(2)] }], meus: [], meuRef: R(1), copias: true }).length, 1, "lista vinda do servidor é limpa (sem repetir, sem lixo)");
+    assert.deepEqual(trabalhosDeEnvio({ pessoas: [], meus: [K(1)], meuRef: R(1), copias: true }), [], "sozinho: nem cópia para o próprio aparelho");
+  });
+  test("o maior grupo cabe num pedido só; toques a muita gente vão em levas", () => {
+    const pessoas = Array.from({ length: 19 }, (_, i) => ({ id: `10000000-0000-4000-8000-0000000001${String(i).padStart(2, "0")}`, aparelhos: Array.from({ length: 5 }, (_, k) => ({ ref: `30000000-0000-4000-8000-0000000${String(i).padStart(2, "0")}00${k}`, id: "a".repeat(32), public_key: { x: "x", y: "y" } })) }));
+    const meus = Array.from({ length: 5 }, (_, k) => ({ ref: `40000000-0000-4000-8000-00000000000${k}`, id: "b".repeat(32), public_key: { x: "x", y: "y" } }));
+    const t = trabalhosDeEnvio({ pessoas, meus, meuRef: meus[0].ref, copias: true });
+    assert.equal(t.length, 99); assert.ok(t.length <= MAX_LINHAS_POR_PEDIDO);
+    assert.deepEqual(emLevas(Array.from({ length: 250 }, (_, i) => i)).map((l) => l.length), [100, 100, 50]); assert.deepEqual(emLevas([]), []);
+  });
+  test("cópia de grupo vinda de outro aparelho meu: só de mim para mim, de outro aparelho, com o MESMO grupo na linha e no conteúdo", () => {
+    const m = { sender_id: EU, recipient_id: EU, grupo_id: G, de_aparelho: R(2), para_aparelho: R(1) }, c = { type: "text", text: "oi", g: G, mid: "a".repeat(32) };
+    assert.equal(copiaGrupoValida(m, c, EU, R(1)), true);
+    assert.equal(copiaGrupoValida({ ...m, sender_id: U(2) }, c, EU, R(1)), false, "de outra pessoa");
+    assert.equal(copiaGrupoValida({ ...m, de_aparelho: R(1) }, c, EU, R(1)), false, "a que este aparelho mesmo criou");
+    assert.equal(copiaGrupoValida(m, { ...c, g: "20000000-0000-4000-8000-000000000002" }, EU, R(1)), false, "grupo do conteúdo diferente do da linha");
+    assert.equal(copiaGrupoValida(m, { ...c, g: undefined }, EU, R(1)), false); assert.equal(copiaGrupoValida({ ...m, grupo_id: null }, c, EU, R(1)), false);
+    assert.equal(copiaGrupoValida(m, { ...c, para: U(2) }, EU, R(1)), false, "cópia de grupo não leva 'para'");
+    assert.equal(copiaGrupoValida({ ...m, de_aparelho: null }, c, EU, R(1)), false); assert.equal(copiaGrupoValida(null, c, EU, R(1)), false); assert.equal(copiaGrupoValida(m, null, EU, R(1)), false);
+    assert.equal(copiaPropriaValida(m, { ...c, para: U(2) }, EU, R(1)), false, "e a regra da conversa a dois continua recusando linha de grupo");
+  });
+  test("minhas linhas no grupo viram uma mensagem; a enviada por OUTRO aparelho meu não aparece por aqui (aparece pela cópia)", () => {
+    const linhas = [
+      { id: 12, created_at: "t1", avisar: true, para_aparelho: R(3), de_aparelho: R(1) }, { id: 11, created_at: "t1", avisar: true, para_aparelho: R(4), de_aparelho: R(1) }, { id: 13, created_at: "t1", avisar: false, para_aparelho: R(2), de_aparelho: R(1) },
+      { id: 20, created_at: "t2", avisar: true, para_aparelho: R(3), de_aparelho: R(2) }, { id: 21, created_at: "t2", avisar: false, para_aparelho: R(1), de_aparelho: R(2) },
+      { id: 30, created_at: "t3", avisar: true, para_aparelho: null, de_aparelho: R(2) }, { id: 5, created_at: "t0", avisar: true }];
+    const l = lotesGrupo(linhas);
+    assert.deepEqual(l.map((x) => [x.id, x.n, x.novo, x.de]), [[5, 1, false, null], [11, 3, true, R(1)], [20, 2, true, R(2)], [30, 1, false, R(2)]]);
+    assert.deepEqual(l.map((x) => loteDeOutroAparelho(x, R(1))), [false, false, true, false], "formato antigo de outro aparelho continua aparecendo (com o aviso de sempre)");
+    assert.equal(l[1].avisar, false, "(como em lotes(): a leva só 'avisa' se todas as linhas avisam)");
+    assert.deepEqual(lotesGrupo(linhas, true).map((x) => x.id), [11, 20, 30]); assert.deepEqual(lotesGrupo(null), []);
+    assert.equal(loteDeOutroAparelho(null, R(1)), false);
   });
 });
