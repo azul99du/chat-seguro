@@ -119,6 +119,9 @@ describe("etapa 3: grupos com uma cópia por aparelho", () => {
     assert.deepEqual(l.map((x) => loteDeOutroAparelho(x, R(1))), [false, false, true, false], "formato antigo de outro aparelho continua aparecendo (com o aviso de sempre)");
     assert.equal(l[1].avisar, false, "(como em lotes(): a leva só 'avisa' se todas as linhas avisam)");
     assert.deepEqual(lotesGrupo(linhas, true).map((x) => x.id), [11, 20, 30]); assert.deepEqual(lotesGrupo(null), []);
+    // com "eu": cada mensagem leva para quem foi e quando leu (uma pessoa com 2 aparelhos conta uma vez; a cópia para mim não entra)
+    const q = lotesGrupo([{ id: 1, created_at: "t1", recipient_id: "b", read_at: null }, { id: 2, created_at: "t1", recipient_id: "b", read_at: "2026-11-14T10:00:00Z" }, { id: 3, created_at: "t1", recipient_id: "c", read_at: null }, { id: 4, created_at: "t1", recipient_id: "eu", read_at: "2026-11-14T09:00:00Z" }], false, "eu");
+    assert.deepEqual([...q[0].quem], [["b", "2026-11-14T10:00:00Z"], ["c", null]]); assert.equal(q[0].linhas, undefined); assert.equal(lotesGrupo(linhas)[0].quem, undefined, "sem 'eu' continua como antes");
     assert.equal(loteDeOutroAparelho(null, R(1)), false);
   });
 });

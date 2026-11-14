@@ -1,5 +1,6 @@
 // Aparelhos que RECEBEM mensagens da conta (etapa 1 de "vários aparelhos"): funções puras, testáveis sem navegador.
 // O servidor é desconfiável: tudo que vem dele passa por "limpa" antes de ir para a tela.
+import { juntarLeituras } from "./visto.js?v=1315303622";
 export const MAX_APARELHOS = 5;
 export const ID_RE = /^[0-9a-f]{32}$/;
 
@@ -84,14 +85,16 @@ export function copiaGrupoValida(m, content, eu, meuRef) {
 }
 // As minhas linhas num grupo (uma por aparelho de cada pessoa, mais as cópias para os meus aparelhos) viram uma mensagem só. "de" = aparelho que enviou;
 // "novo" = formato por aparelho. Uma mensagem nova enviada por OUTRO aparelho meu não se mostra por aqui: quem a mostra é a cópia que ele mandou para este aparelho.
-export function lotesGrupo(linhas, cortado = false) {
+// Com `eu` (o id de quem enviou), cada mensagem leva também `quem`: para quem foi e quando leu (ver visto.js); sem `eu`, fica como antes.
+export function lotesGrupo(linhas, cortado = false, eu = null) {
   const m = new Map();
   for (const l of linhas || []) {
     const k = l.created_at, a = m.get(k);
-    if (a) { a.id = Math.min(a.id, l.id); a.n++; a.avisar = a.avisar && l.avisar !== false; a.novo = a.novo || !!l.para_aparelho; a.de = a.de || (ehRef(l.de_aparelho) ? l.de_aparelho : null); }
-    else m.set(k, { id: l.id, created_at: l.created_at, avisar: l.avisar !== false, n: 1, novo: !!l.para_aparelho, de: ehRef(l.de_aparelho) ? l.de_aparelho : null });
+    if (a) { a.id = Math.min(a.id, l.id); a.n++; a.avisar = a.avisar && l.avisar !== false; a.novo = a.novo || !!l.para_aparelho; a.de = a.de || (ehRef(l.de_aparelho) ? l.de_aparelho : null); if (eu) a.linhas.push(l); }
+    else m.set(k, { id: l.id, created_at: l.created_at, avisar: l.avisar !== false, n: 1, novo: !!l.para_aparelho, de: ehRef(l.de_aparelho) ? l.de_aparelho : null, linhas: eu ? [l] : null });
   }
   const out = [...m.values()].sort((a, b) => a.id - b.id);
+  for (const x of out) { if (eu) x.quem = juntarLeituras(x.linhas, eu); delete x.linhas; }
   if (cortado && out.length) out.shift();
   return out;
 }

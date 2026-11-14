@@ -1,25 +1,26 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=36efa5ccf7";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=36efa5ccf7";
-import { montarFigurinhas } from "./figurinhas.js?v=36efa5ccf7";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=36efa5ccf7";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=36efa5ccf7";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=36efa5ccf7";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=36efa5ccf7";
-import { acharVideoLink } from "./videolink.js?v=36efa5ccf7";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=36efa5ccf7";
-import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=36efa5ccf7";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=36efa5ccf7";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=36efa5ccf7";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=36efa5ccf7";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=36efa5ccf7";
-import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=36efa5ccf7";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=36efa5ccf7";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=36efa5ccf7";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=36efa5ccf7";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=36efa5ccf7";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=36efa5ccf7";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=36efa5ccf7";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=1315303622";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=1315303622";
+import { montarFigurinhas } from "./figurinhas.js?v=1315303622";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=1315303622";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=1315303622";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=1315303622";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=1315303622";
+import { acharVideoLink } from "./videolink.js?v=1315303622";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=1315303622";
+import { resumoVistos, segmentos, textoVistos, textoLongoVistos, somarLeitura, juntarLeituras } from "./visto.js?v=1315303622";
+import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=1315303622";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=1315303622";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=1315303622";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=1315303622";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=1315303622";
+import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=1315303622";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=1315303622";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=1315303622";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=1315303622";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=1315303622";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=1315303622";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=1315303622";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -240,7 +241,8 @@ async function start() {
   sb.channel("msgs", { config: { private: true } })
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `recipient_id=eq.${uid}` }, (p) => naFila(() => onIncoming(p.new)))
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `sender_id=eq.${uid}` }, (p) => {
-      if (p.new.grupo_id || p.new.recipient_id === me.id) return; // em grupo não há "vista" (cada pessoa recebe a sua cópia); cópias para mim mesmo não contam
+      if (p.new.recipient_id === me.id) return; // cópias para mim mesmo não contam
+      if (p.new.grupo_id) return marcarVistaDoGrupo(p.new); // em grupo cada pessoa tem a sua linha: o selo "quem viu" vai enchendo
       marcarVistaDoEnvio(p.new);
     })
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `recipient_id=eq.${uid}` }, (p) => lidaEmOutroAparelho(p.new)) // li em outro aparelho meu: aqui some a bolinha de não lida
@@ -1076,9 +1078,73 @@ const idDaRef = (re) => (re?.mid ? midParaId.get(re.mid) : re?.id); // a que men
 // "enviada" -> "vista 21:45" (só nas minhas mensagens)
 function setReceipt(e) {
   if (!e.mine) return;
-  const lida = !active?.grupo && !!e.m.read_at; // em grupo não há "vista"
+  if (active?.grupo) return desenharVistos(e); // em grupo: o selo "quem viu" (ou "enviada" enquanto não se sabe para quem foi)
+  const lida = !!e.m.read_at;
   e.rcpt.textContent = lida ? "vista " + hhmm(new Date(e.m.read_at)) : "enviada";
   e.rcpt.classList.toggle("read", lida);
+}
+// ---------- Quem viu a minha mensagem no grupo (design "Lacre com anel") ----------
+// Um selo na linha da hora: um anel com uma parte por pessoa (rosa = viu) e "k/n"; vira verde com "todos" quando todos viram. Tocar mostra quem viu, e quando.
+// Os dados vêm das linhas que EU enviei (uma por aparelho de cada pessoa): o banco guarda quando cada uma foi lida, e eu já podia ler as minhas linhas.
+function anelSvg(k, n, tam, esp = 3) {
+  const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg"), segs = segmentos(k, n), m = segs.length, todos = n > 0 && k >= n;
+  svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("width", tam); svg.setAttribute("height", tam); svg.setAttribute("aria-hidden", "true"); svg.classList.add("anel");
+  const R = 9.5, passo = 360 / (m || 1), folga = m > 1 ? Math.min(34, passo * 0.28) : 0, pt = (g) => `${(12 + R * Math.sin((g * Math.PI) / 180)).toFixed(2)} ${(12 - R * Math.cos((g * Math.PI) / 180)).toFixed(2)}`;
+  segs.forEach((on, i) => {
+    const p = document.createElementNS(ns, "path"), g0 = i * passo + folga / 2, g1 = (i + 1) * passo - folga / 2;
+    p.setAttribute("d", m === 1 ? `M12 ${12 - R}A${R} ${R} 0 1 1 11.99 ${12 - R}` : `M${pt(g0)}A${R} ${R} 0 ${g1 - g0 > 180 ? 1 : 0} 1 ${pt(g1)}`);
+    p.setAttribute("fill", "none"); p.setAttribute("stroke-width", esp); p.setAttribute("stroke-linecap", "round"); p.setAttribute("class", "a" + (on ? " on" : "")); svg.append(p);
+  });
+  const c = document.createElementNS(ns, "circle"); c.setAttribute("cx", 12); c.setAttribute("cy", 12); c.setAttribute("r", 5.2);
+  if (k > 0) { c.setAttribute("class", "miolo"); svg.append(c); } else { c.setAttribute("fill", "none"); c.setAttribute("class", "miolo vazio"); svg.append(c); }
+  if (todos) { const t = document.createElementNS(ns, "path"); t.setAttribute("d", "M9.6 12.2l1.7 1.7 3.2-3.5"); t.setAttribute("fill", "none"); t.setAttribute("class", "tiquinho"); t.setAttribute("stroke-width", 1.7); t.setAttribute("stroke-linecap", "round"); t.setAttribute("stroke-linejoin", "round"); svg.append(t); }
+  return svg;
+}
+let vistoAberto = null;
+function desenharVistos(e) {
+  const r = e.rcpt; r.classList.remove("read");
+  if (!e.quem || !e.quem.size) { r.textContent = "enviada"; r.classList.remove("vistos", "todos"); r.removeAttribute("role"); r.removeAttribute("tabindex"); r.removeAttribute("aria-label"); return; }
+  const { n, k, todos } = resumoVistos(e.quem);
+  r.classList.add("vistos"); r.classList.toggle("todos", todos); r.replaceChildren(anelSvg(k, n, 15), el("span", null, textoVistos(k, n)));
+  r.setAttribute("role", "button"); r.tabIndex = 0; r.setAttribute("aria-label", `${textoLongoVistos(k, n)}. Toque para ver quem`);
+  if (!r.dataset.lig) {
+    r.dataset.lig = "1";
+    r.addEventListener("pointerdown", (ev) => ev.stopPropagation()); // tocar no selo não é "segurar" nem "arrastar para responder"
+    r.addEventListener("click", (ev) => { ev.stopPropagation(); ev.preventDefault(); abrirVistos(e); });
+    r.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); ev.stopPropagation(); abrirVistos(e); } });
+  }
+  if (vistoAberto === e && $("visto-grupo").open) desenharJanelaVistos();
+}
+function abrirVistos(e) { vistoAberto = e; desenharJanelaVistos(); if (!$("visto-grupo").open) $("visto-grupo").showModal(); }
+function desenharJanelaVistos() {
+  const e = vistoAberto; if (!e?.quem?.size) return $("visto-grupo").close();
+  const { n, k, vistos, faltam } = resumoVistos(e.quem), corpo = $("visto-corpo"), todos = n > 0 && k >= n;
+  const topo = el("div", "vt-topo"), tx = el("div"); topo.classList.toggle("todos", todos);
+  tx.append(el("b", null, textoLongoVistos(k, n)), el("small", null, "enviada às " + hhmm(new Date(e.m.created_at)))); topo.append(anelSvg(k, n, 46, 2.6), tx);
+  const barra = el("div", "vt-barra"); segmentos(k, n, 12).forEach((on) => barra.append(el("i", on ? "v" : "")));
+  const pessoa = (id, hora, falta) => {
+    const li = el("div", "vt-pessoa" + (falta ? " falta" : "")), av = el("span", "avatar mini"); pintarAvatar(av, active?.membros?.get(id) || perfis.get(id) || contacts.get(id) || { username: nomeDe(id), avatar: null });
+    li.append(av, el("span", "nm", "@" + nomeDe(id)), el("span", "hr" + (falta ? "" : " ok"), hora)); return li;
+  };
+  const lista = el("div", "vt-lista"); for (const v of vistos) lista.append(pessoa(v.id, rotuloHora(Date.parse(v.t)), false));
+  if (faltam.length) { if (vistos.length) lista.append(el("div", "vt-secao", "Ainda não viram")); for (const id of faltam) lista.append(pessoa(id, "ainda não", true)); }
+  corpo.replaceChildren(topo, barra, lista);
+}
+{ const d = $("visto-grupo"); d.addEventListener("click", (ev) => { const r = d.getBoundingClientRect(); if (ev.clientY < r.top || ev.clientY > r.bottom || ev.clientX < r.left || ev.clientX > r.right) d.close(); }); d.addEventListener("close", () => { vistoAberto = null; }); }
+const entradaPorInstante = (iso) => { const t = Date.parse(iso); if (!Number.isFinite(t)) return null; for (const x of msgs.values()) if (x.mine && Date.parse(x.m.created_at) === t) return x; return null; };
+function marcarVistaDoGrupo(row) { // chegou, em tempo real, a leitura de uma pessoa do grupo
+  if (!active?.grupo || active.id !== row?.grupo_id || !row.read_at || typeof row.recipient_id !== "string" || row.recipient_id === me.id) return;
+  const e = entradaPorInstante(row.created_at); if (!e) return;
+  if (!e.quem) e.quem = new Map(); if (somarLeitura(e.quem, row.recipient_id, row.read_at)) setReceipt(e);
+}
+function aplicarVistosDoGrupo(g, linhas, cortado = false) { // o que o servidor sabe agora (conferência ao abrir e a verificação periódica)
+  if (active !== g) return;
+  for (const l of lotesGrupo(linhas, cortado, me.id)) { const e = msgs.get(l.id) || entradaPorInstante(l.created_at); if (e?.mine && l.quem?.size) { e.quem = l.quem; setReceipt(e); } }
+}
+async function conferirVistasDoGrupo(g) {
+  if (![...msgs.values()].some((e) => e.mine && (!e.quem || resumoVistos(e.quem).faltam.length))) return; // todas já foram vistas por todos: nada a conferir
+  const { data, error } = await sb.from("messages").select("id,created_at,recipient_id,read_at").eq("grupo_id", g.id).eq("sender_id", me.id).order("id", { ascending: false }).limit(400);
+  if (error || active !== g) return; aplicarVistosDoGrupo(g, data, (data || []).length === 400);
 }
 
 // Mensagens novas viajam como texto simples; só viram JSON quando precisam (mídia, ou texto que começa com "{")
@@ -1601,7 +1667,8 @@ function marcarVistaDoEnvio(row) {
 }
 // Rede de segurança das "vistas": se o aviso em tempo real de que o outro leu se perdeu, a conversa aberta confere no servidor o que ainda está sem "vista" (só consulta se há mensagem minha na tela sem ela)
 async function conferirVistas() {
-  const peer = active; if (!peer || peer.grupo || carregandoConversa) return;
+  const peer = active; if (!peer || carregandoConversa) return;
+  if (peer.grupo) return conferirVistasDoGrupo(peer);
   if (![...msgs.values()].some((e) => e.mine && !e.m.read_at)) return;
   const { data, error } = await sb.from("messages").select("id,created_at,read_at").eq("sender_id", me.id).eq("recipient_id", peer.id).not("read_at", "is", null).order("id", { ascending: false }).limit(100);
   if (error || active !== peer) return;
@@ -1837,7 +1904,7 @@ async function enviarAoGrupoJa(g, content) {
   }
   const id = Math.min(...linhas.map((l) => l.id)), at = linhas[0].created_at;
   await commit(me.id, g.id, { entryId: id, entry: { content, at, mine: true, from: me.id } });
-  return { id, created_at: at, sender_id: me.id, recipient_id: null, grupo_id: g.id, read_at: null };
+  return { id, created_at: at, sender_id: me.id, recipient_id: null, grupo_id: g.id, read_at: null, quem: juntarLeituras(linhas, me.id) }; // (quem = para quem foi; ninguém leu ainda)
 }
 // Envia para a conversa aberta, seja uma pessoa ou um grupo. Devolve a "linha" para pôr na tela.
 async function enviar(conv, content) {
@@ -2276,7 +2343,7 @@ async function abrirGrupo(g) {
     if (local) { revelarNoFim(); focoSeMouse(); } // já aparece (nas últimas mensagens) enquanto o servidor confere; no computador o foco já vai para o campo (no celular o teclado só sobe se a pessoa tocar nele)
     const [rec, meus, est] = await Promise.all([
       sb.from("messages").select("*").eq("grupo_id", g.id).eq("recipient_id", me.id).order("id", { ascending: false }).limit(200), // o que os outros mandaram (as 200 mais novas)
-      sb.from("messages").select("id,created_at,avisar,para_aparelho,de_aparelho").eq("grupo_id", g.id).eq("sender_id", me.id).order("id", { ascending: false }).limit(1000), // o que eu mandei (uma linha por aparelho de cada pessoa)
+      sb.from("messages").select("id,created_at,avisar,para_aparelho,de_aparelho,recipient_id,read_at").eq("grupo_id", g.id).eq("sender_id", me.id).order("id", { ascending: false }).limit(1000), // o que eu mandei (uma linha por aparelho de cada pessoa)
       metaGet(me.id, "g:" + g.id).catch(() => null)]);
     if (active !== g) return;
     // (entre as linhas "para mim" vêm também as cópias que ESTE aparelho mandou aos meus outros aparelhos: essas não são para ler aqui)
@@ -2300,6 +2367,7 @@ async function abrirGrupo(g) {
       lembrarAvisosDaTela(g, faltam).catch(() => {});
     } else { for (const it of itens) await colocar(it); lembrarAvisosDaTela(g, itens.filter((it) => !it.aviso)).catch(() => {}); }
     [...msgs.keys()].forEach(renderRx);
+    aplicarVistosDoGrupo(g, meus.data, (meus.data || []).length === 1000);
     carregandoConversa = null; const fila = filaChegando; filaChegando = [];
     for (const m of fila) { if (!maisNovaQueATela(m)) continue; if (m.sender_id === me.id) { const e = await getHistory(me.id, g.id, m.id).catch(() => null); if (e) mostrar(m, e.content, false); } else { const p = await perfilDe(m.sender_id); if (p) await show(m, p, false); } }
     if (!$("messages").childElementCount) {
@@ -3004,7 +3072,7 @@ async function enviarFigurinha(st) {
     if (replyTo) content.re = replyTo;
     const row = await enviar(peer, content);
     if (!mediaCache.has(up.path)) mediaCache.set(up.path, URL.createObjectURL(new Blob([st.bytes], { type: st.mime })));
-    if (active === peer) { $("msgs-empty")?.remove(); addMessage(row, content, { descer: true }); }
+    if (active === peer) { $("msgs-empty")?.remove(); addMessage(row, content, { descer: true }); if (row.quem) { const en = msgs.get(row.id); if (en) { en.quem = row.quem; setReceipt(en); } } }
     cancelarResposta();
   } catch (e) { throw new Error(sendError(e, peer)); }
 }
@@ -3038,7 +3106,7 @@ $("send-form").onsubmit = async (e) => {
       row = await enviar(peer, content);
       mediaCache.set(path, p.url); clearPending(true); // reaproveita a prévia local, sem baixar de novo
     } else { content = { type: "text", text }; if (resp) content.re = resp; row = await enviar(peer, content); }
-    if (active === peer) { $("msgs-empty")?.remove(); addMessage(row, content, { descer: true }); }
+    if (active === peer) { $("msgs-empty")?.remove(); addMessage(row, content, { descer: true }); if (row.quem) { const en = msgs.get(row.id); if (en) { en.quem = row.quem; setReceipt(en); } } }
     btn.classList.add("voou"); setTimeout(() => btn.classList.remove("voou"), 650);
   } catch (e) {
     console.warn("envio:", e?.code, e?.message || e);
