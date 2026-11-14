@@ -1,0 +1,49 @@
+// Subir a tela logo depois de abrir um grupo (ou conversa): a lista não pode ser puxada de volta para o fim enquanto o servidor ainda confere
+// e acrescenta uma mensagem que o aparelho não tinha (antes cada mensagem acrescentada empurrava a tela para o fim, e a pessoa "lutava" com a rolagem por ~1 s).
+import { test, before, after } from "node:test";
+import assert from "node:assert/strict";
+import { chromium } from "playwright";
+import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, chamar } from "./env.mjs";
+
+let skip = configurado ? false : motivoSemConfig, browser, srv, ctxA, A, B, nomeA, nomeB;
+const t = (nome, fn) => test(nome, { timeout: 240000 }, async (c) => (skip ? c.skip(skip) : fn(c)));
+const pronto = (p) => p.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 });
+async function cadastrar(page, usuario) { await page.goto(srv.url); await page.click("#tab-signup"); await page.fill("#username", usuario); await page.fill("#email", novoEmail()); await page.fill("#password", SENHA); await page.click("#auth-submit"); await page.waitForSelector("#ask[open]", { timeout: 30000 }); await page.fill("#ask-input", FRASE); await page.click("#ask button[value=ok]"); await pronto(page); }
+const enviar = async (p, txt) => { await p.fill("#text", txt); await p.click("#send-form .primary"); };
+const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
+const GRUPO = "Rolagem", longo = (n) => `mensagem ${n} ` + "texto comprido para ocupar varias linhas na tela ".repeat(7);
+const rolagem = (p) => p.evaluate(() => { const L = document.getElementById("messages"); return { top: L.scrollTop, max: L.scrollHeight - L.clientHeight }; });
+
+before(async () => {
+  if (skip) return; const s = await cadastroFunciona(); if (!s.ok) { skip = s.motivo; return; }
+  srv = await servir(prepararSite()); browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
+  ctxA = await browser.newContext({ viewport: { width: 1100, height: 700 } }); const ctxB = await browser.newContext({ viewport: { width: 1100, height: 700 } });
+  [A, B] = [await ctxA.newPage(), await ctxB.newPage()]; [nomeA, nomeB] = [novoUsuario("a"), novoUsuario("b")];
+  await cadastrar(A, nomeA); await cadastrar(B, nomeB);
+  await chamar(A, nomeB); await A.waitForSelector(`#conv-title:text-is("@${nomeB}")`);
+  await enviar(A, "oi b"); await B.waitForSelector("#contacts button .unread", { timeout: 30000 }); await B.click("#contacts button"); await B.waitForSelector(".msg:not(.mine) .vis:has-text('oi b')", { timeout: 30000 });
+  await enviar(B, "oi a"); await A.waitForSelector(".msg:not(.mine) .vis:has-text('oi a')", { timeout: 30000 });
+  await A.click("#chamar-fab"); await A.click("#novo-grupo"); await A.waitForSelector("#grupo-novo[open]"); await A.fill("#gn-nome", GRUPO); await A.check(`#gn-lista label:has-text("@${nomeB}") .marca`);
+  await A.click("#gn-criar"); await A.waitForSelector(`#conv-title:text-is("${GRUPO}")`, { timeout: 30000 }); await A.waitForSelector("#messages:not(.carregando)");
+  await B.waitForSelector("#contacts button[data-grupo]", { timeout: 30000 }); await B.click("#contacts button[data-grupo]"); await B.waitForSelector(`#conv-title:text-is("${GRUPO}")`); await B.waitForSelector("#messages:not(.carregando)");
+  for (let i = 1; i <= 6; i++) { // conversa comprida (a lista passa da altura da tela)
+    await enviar(A, longo(i * 2 - 1)); await B.waitForSelector(`.msg:not(.mine) .vis:has-text("mensagem ${i * 2 - 1} ")`, { timeout: 30000 });
+    await enviar(B, longo(i * 2)); await A.waitForSelector(`.msg:not(.mine) .vis:has-text("mensagem ${i * 2} ")`, { timeout: 30000 });
+  }
+});
+after(async () => { if (browser) { await browser.close(); await srv.close(); } });
+
+t("grupo: subir a tela logo ao abrir, enquanto o servidor ainda acrescenta uma mensagem nova, não é puxado de volta para o fim", async () => {
+  // A fica sem tempo real e sem a verificação periódica: a mensagem que B manda agora só chega pelo servidor, durante a abertura
+  await ctxA.addInitScript(() => { try { localStorage.setItem("lacre:poll", "0"); } catch {} });
+  await ctxA.routeWebSocket(/\/realtime\//, (ws) => ws.close());
+  await A.reload(); await pronto(A); await A.waitForTimeout(1500);
+  await enviar(B, "nova do B " + "x".repeat(300)); await B.waitForSelector(".msg.mine .vis:has-text('nova do B')", { timeout: 30000 });
+  await A.route(/\/rest\/v1\/messages\?/, async (route) => { if (route.request().method() !== "GET") return route.continue(); await dorme(1800); route.continue().catch(() => {}); }); // servidor lento: a mensagem nova entra ~2 s depois de abrir
+  await A.click("#contacts button[data-grupo]"); await A.waitForSelector("#messages:not(.carregando) .msg", { timeout: 6000 });
+  const ini = await rolagem(A); assert.ok(ini.max > 300, "a lista precisa ser mais alta que a tela para o teste valer: " + JSON.stringify(ini));
+  await A.evaluate(() => { document.getElementById("messages").scrollTop = 0; }); // a pessoa sobe a tela na hora
+  const picos = []; for (let i = 0; i < 28; i++) { await dorme(100); picos.push((await rolagem(A)).top); } // ~2,8 s: cobre a chegada da mensagem nova
+  await A.waitForSelector(".msg:not(.mine) .vis:has-text('nova do B')", { timeout: 10000 });
+  assert.ok(Math.max(...picos) < 60, "a tela foi puxada de volta para baixo: " + JSON.stringify(picos));
+});
