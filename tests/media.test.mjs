@@ -3,7 +3,7 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { cleanVideo, cleanAudio, sealBytes, openBytes, pcm16ParaWav, floatParaPcm16 } from "../media.js";
+import { cleanVideo, cleanAudio, sealBytes, openBytes, pcm16ParaWav, floatParaPcm16, trechoPcm } from "../media.js";
 import { hasFfmpeg, tmp, makeVideo, makeAudio, probe, decodes } from "./helpers/fixtures.mjs";
 
 const SECRETS = ["SEGREDO"]; // texto simples; GPS e data são guardados em formato próprio e são checados pelo ffprobe e pelo bloco loci
@@ -99,4 +99,20 @@ describe("som extraído de um vídeo (WAV novo)", () => {
     const r = cleanAudio(w.buffer.slice(0)); assert.equal(r.mime, "audio/wav"); assert.ok(r.bytes.length >= 44 + 2205 * 2 - 2, "a limpeza mantém o som");
   });
   test("12 s a 22,05 kHz cabem no limite de 700 KB dos sons", () => { assert.ok(44 + 12 * 22050 * 2 < 700 * 1024); });
+});
+
+describe("trecho de 1 ou 2 segundos para o efeito sonoro", () => {
+  const taxa = 1000, rampa = (n) => Float32Array.from({ length: n }, () => 0.5), outro = (n) => Float32Array.from({ length: n }, () => -0.25);
+  test("recorta no lugar certo e com o tamanho certo (1 s e 2 s)", () => {
+    assert.equal(trechoPcm([rampa(5000)], taxa, 1, 1).length, 1000); assert.equal(trechoPcm([rampa(5000)], taxa, 1, 2).length, 2000);
+    assert.equal(trechoPcm([rampa(5000)], taxa, 4.5, 2).length, 500, "no fim do arquivo vem só o que existe"); assert.equal(trechoPcm([rampa(5000)], taxa, 9, 1).length, 0, "início depois do fim: vazio");
+  });
+  test("mistura os canais em mono e aplica entrada e saída suaves (sem estalo)", () => {
+    const p = trechoPcm([rampa(3000), outro(3000)], taxa, 0, 1, 0.1); const meio = p[500]; assert.equal(meio, Math.round(0.125 * 32767), "média dos canais no meio");
+    assert.equal(p[0], 0, "começa em zero"); assert.equal(p[p.length - 1], 0, "termina em zero"); assert.ok(p[10] < meio && p[10] > 0, "sobe aos poucos");
+  });
+  test("o WAV do trecho tem o tamanho certo e passa pela limpeza de áudio", () => {
+    const w = pcm16ParaWav(trechoPcm([Float32Array.from({ length: 50000 }, (_, i) => Math.sin(i / 20))], 22050, 0, 2), 22050); assert.equal(w.length, 44 + 44100 * 2);
+    const r = cleanAudio(w.buffer.slice(0)); assert.equal(r.mime, "audio/wav"); assert.ok(r.bytes.length > 80000, "o som continua inteiro depois da limpeza");
+  });
 });

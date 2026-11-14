@@ -2215,3 +2215,110 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke all on function public.selo_loja_estado(uuid) from public, anon, authenticated;
 grant execute on function public.selo_loja_estado(uuid) to authenticated;
+
+-- ===== Efeito sonoro na loja de Selos (migração efeito_sonoro) =====
+-- Um membro escolhe outro membro (ou ele mesmo) e um trecho de 1 ou 2 segundos de áudio; a cada mensagem que o alvo manda enquanto o efeito durar, o som toca
+-- no aparelho de todo o grupo (inclusive o do alvo). O comprador escolhe a duração (de 5 em 5 minutos, até 60). Preço = primeiros 5 min + (passos - 1) x preço de cada 5 min a mais
+-- (os dois valores são do admin, em loja_efeito.valor e loja_efeito.extra). O arquivo (WAV mono de 1 a 2 s) é cifrado no aparelho com a chave do grupo e fica na pasta do grupo.
+-- O servidor confere regras, saldo, alvo, passos e arquivo; recusa um efeito novo enquanto o alvo ainda tem um ativo.
+create or replace function public.selo_limpa(novo jsonb, velho jsonb, hoje date) returns jsonb
+language plpgsql stable set search_path = public as $$
+declare r jsonb := '{}'::jsonb; k text; o jsonb; ant jsonb; lig boolean; it jsonb; ms jsonb := '[]'::jsonb; vistos int[] := '{}'; d int; v int; m jsonb;
+begin
+  if novo is null or jsonb_typeof(novo) <> 'object' then raise exception 'regras_invalidas' using errcode = '22023'; end if;
+  foreach k in array array['entrada','dia_ativo','mensagens','arquivos','sequencia','teto','loja_titulo','loja_destaque','loja_silenciar','loja_jumpscare','loja_efeito'] loop
+    o := coalesce(novo -> k, case when k like 'loja\_%' then velho -> k end, '{"on": false}'::jsonb); ant := coalesce(velho -> k, '{}'::jsonb); -- (preços da loja que um site antigo não conhece ficam como estão)
+    if jsonb_typeof(o) <> 'object' or jsonb_typeof(o -> 'on') <> 'boolean' then raise exception 'regras_invalidas' using errcode = '22023', detail = k; end if;
+    lig := (o ->> 'on')::boolean; it := jsonb_build_object('on', lig);
+    if k = 'sequencia' then
+      m := coalesce(o -> 'marcos', '[]'::jsonb);
+      if jsonb_typeof(m) <> 'array' or jsonb_array_length(m) > 10 then raise exception 'regras_invalidas' using errcode = '22023', detail = 'marcos'; end if;
+      for v in select generate_series(0, jsonb_array_length(m) - 1) loop
+        if jsonb_typeof(m -> v) <> 'object' then raise exception 'regras_invalidas' using errcode = '22023', detail = 'marcos'; end if;
+        d := public.selo_int(m -> v, 'dias', 1, 365, 1);
+        if d = any(vistos) then raise exception 'regras_invalidas' using errcode = '22023', detail = 'marcos'; end if;
+        vistos := vistos || d; ms := ms || jsonb_build_array(jsonb_build_object('dias', d, 'valor', public.selo_int(m -> v, 'valor', 1, 999, 1)));
+      end loop;
+      it := it || jsonb_build_object('marcos', (select coalesce(jsonb_agg(e order by (e ->> 'dias')::int), '[]'::jsonb) from jsonb_array_elements(ms) e));
+    else
+      it := it || jsonb_build_object('valor', public.selo_int(o, 'valor', 1, 999, 1));
+      if k = 'dia_ativo' then it := it || jsonb_build_object('min', public.selo_int(o, 'min', 1, 999, 1)); end if;
+      if k in ('mensagens', 'arquivos') then it := it || jsonb_build_object('a_cada', public.selo_int(o, 'a_cada', 1, 999, 1)); end if;
+      if k = 'loja_efeito' then it := it || jsonb_build_object('extra', public.selo_int(o, 'extra', 1, 999, 10)); end if;
+    end if;
+    if k <> 'teto' and k not like 'loja\_%' then -- (o teto e os preços da loja não são ganho: não precisam de data)
+      it := it || jsonb_build_object('desde', case when lig and (not coalesce((ant ->> 'on')::boolean, false) or ant ->> 'desde' is null) then hoje::text else coalesce(ant ->> 'desde', hoje::text) end);
+    end if;
+    r := r || jsonb_build_object(k, it);
+  end loop;
+  return r;
+end $$;
+
+alter table public.selo_compras drop constraint selo_compras_item_check;
+alter table public.selo_compras add constraint selo_compras_item_check check (item in ('titulo', 'destaque', 'silenciar', 'jumpscare', 'efeito'));
+alter table public.selo_compras drop constraint selo_compras_preco_check;
+alter table public.selo_compras add constraint selo_compras_preco_check check (preco between 1 and 12000);
+
+-- Duração de cada "passo" do efeito: 5 minutos (parâmetro interno em push_config; o projeto de TESTE encurta para os testes)
+create or replace function public.efeito_passo() returns interval
+language plpgsql stable security definer set search_path = public as $$
+declare v text;
+begin
+  select valor into v from public.push_config where chave = 'efeito_passo';
+  return coalesce(v::interval, interval '5 minutes');
+exception when others then return interval '5 minutes';
+end $$;
+revoke all on function public.efeito_passo() from public, anon, authenticated;
+
+create table public.selo_efeitos (
+  id bigint generated always as identity primary key,
+  compra_id bigint not null unique references public.selo_compras(id) on delete cascade,
+  grupo_id uuid not null references public.grupos(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  alvo uuid not null references public.profiles(id) on delete cascade,
+  arquivo jsonb not null,
+  criado_em timestamptz not null default now(),
+  ate timestamptz not null
+);
+create index selo_efeitos_alvo on public.selo_efeitos (grupo_id, alvo, ate desc);
+alter table public.selo_efeitos enable row level security;
+revoke all on public.selo_efeitos from anon, authenticated;
+create policy "exige dois passos" on public.selo_efeitos as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+
+create or replace function public.selo_efeito_comprar(p_grupo uuid, p_alvo uuid, p_passos int, p_arquivo jsonb) returns bigint
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); reg jsonb; preco int; saldo bigint; novo bigint; passo interval := public.efeito_passo();
+begin
+  perform public.consome('selo_comprar', 20, 200);
+  if not (select public.mfa_ok()) or not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = u) then raise exception 'nao_esta_no_grupo' using errcode = '42501'; end if;
+  if coalesce(public.aparelho_estado(), 'aprovado') = 'pendente' then raise exception 'aparelho_pendente' using errcode = '42501'; end if;
+  if p_passos is null or p_passos < 1 or p_passos > 12 or p_alvo is null or not public.jumpscare_arquivo_ok(p_arquivo, p_grupo)
+     or p_arquivo ->> 't' is distinct from 'audio/wav' or (p_arquivo ->> 'p') not like (u::text || '/%') then raise exception 'detalhe_invalido' using errcode = '22023'; end if;
+  perform pg_advisory_xact_lock(hashtext('selo:' || p_grupo::text));
+  perform public.selo_apurar(p_grupo);
+  select s.regras -> 'loja_efeito' into reg from public.selo_regras s where s.grupo_id = p_grupo;
+  if reg is null or not coalesce((reg ->> 'on')::boolean, false) then raise exception 'item_desligado' using errcode = 'P0001'; end if;
+  if not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = p_alvo) then raise exception 'alvo_fora' using errcode = 'P0001'; end if;
+  if exists (select 1 from public.selo_efeitos e where e.grupo_id = p_grupo and e.alvo = p_alvo and e.ate > now()) then raise exception 'ja_com_efeito' using errcode = 'P0001'; end if;
+  preco := (reg ->> 'valor')::int + (p_passos - 1) * coalesce((reg ->> 'extra')::int, 10);
+  select coalesce(sum(e.quantidade), 0) into saldo from public.moedas_extrato e where e.grupo_id = p_grupo and e.user_id = u;
+  if saldo < preco then raise exception 'saldo_insuficiente' using errcode = 'P0001'; end if;
+  insert into public.selo_compras (grupo_id, user_id, item, preco, alvo, detalhe) values (p_grupo, u, 'efeito', preco, p_alvo, p_passos::text) returning id into novo;
+  insert into public.moedas_extrato (grupo_id, user_id, quantidade, motivo, ref) values (p_grupo, u, -preco, 'compra', novo::text);
+  insert into public.selo_efeitos (compra_id, grupo_id, user_id, alvo, arquivo, ate) values (novo, p_grupo, u, p_alvo, p_arquivo, now() + passo * p_passos);
+  return novo;
+end $$;
+revoke all on function public.selo_efeito_comprar(uuid, uuid, int, jsonb) from public, anon, authenticated;
+grant execute on function public.selo_efeito_comprar(uuid, uuid, int, jsonb) to authenticated;
+
+-- Efeitos ainda ativos no grupo (todos os membros precisam saber, para tocar o som quando o alvo escreve)
+create or replace function public.selo_efeitos_ativos(p_grupo uuid) returns table (compra bigint, user_id uuid, alvo uuid, arquivo jsonb, criado_em timestamptz, ate timestamptz, agora timestamptz)
+language sql stable security definer set search_path = public as $$
+  select e.compra_id, e.user_id, e.alvo, e.arquivo, e.criado_em, e.ate, now()
+    from public.selo_efeitos e
+   where e.grupo_id = p_grupo and e.ate > now() and (select public.mfa_ok())
+     and exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = (select auth.uid()))
+   order by e.id
+$$;
+revoke all on function public.selo_efeitos_ativos(uuid) from public, anon, authenticated;
+grant execute on function public.selo_efeitos_ativos(uuid) to authenticated;

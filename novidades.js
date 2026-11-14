@@ -5,6 +5,9 @@ export const TEMAS = [["selos", "Selos"], ["mensagens", "Mensagens"], ["grupos",
 const NOME_TEMA = new Map(TEMAS);
 export const temaNome = (t) => NOME_TEMA.get(t) || null;
 export const NOVIDADES = [
+  { id: "2026-11-14-4", data: "2026-11-14", itens: [
+    { tema: "selos", icone: "🔊", titulo: "Efeito sonoro na loja", texto: "Escolha um membro (ou você mesmo) e um trecho de 1 ou 2 segundos de um áudio: a cada mensagem dele, o som toca para o grupo. Você escolhe por quanto tempo, de 5 em 5 minutos; quanto mais tempo, mais Selos." },
+  ] },
   { id: "2026-11-14-3", data: "2026-11-14", itens: [
     { tema: "geral", icone: "⭐", titulo: "Tela de Novidades", texto: "No menu da conta, veja o que mudou em cada atualização, organizado por assunto. Um ponto rosa avisa quando há novidade." },
   ] },

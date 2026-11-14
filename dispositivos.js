@@ -1,6 +1,6 @@
 // Aparelhos que RECEBEM mensagens da conta (etapa 1 de "vários aparelhos"): funções puras, testáveis sem navegador.
 // O servidor é desconfiável: tudo que vem dele passa por "limpa" antes de ir para a tela.
-import { juntarLeituras, juntarRecibo } from "./visto.js?v=a6c3d67ca7";
+import { juntarLeituras, juntarRecibo } from "./visto.js?v=d60020acbb";
 export const MAX_APARELHOS = 5;
 export const ID_RE = /^[0-9a-f]{32}$/;
 

@@ -864,3 +864,15 @@ dialog.susto img{width:100%;height:100%;object-fit:contain;display:block;animati
 .nov-ln b{display:block;font-size:.92rem}.nov-ln small{display:block;margin-top:1px;color:var(--mut);font-size:.8rem;line-height:1.35}
 .nov-mais{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:44px;padding:4px 8px;background:none;border:0;color:var(--mut);font-size:.85rem;text-align:left}
 .nov-vazio{color:var(--mut);text-align:center;padding:18px 0}
+
+/* ----- Efeito sonoro ----- */
+dialog#loja-folha.efeito .lf-corpo{max-height:60dvh}
+.lf-sec{margin:12px 0 6px;font:500 .7rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--seal)}
+.lf-pessoas{display:grid;gap:6px}
+.lf-arq-bt,.lf-ouvir{min-height:44px;padding:8px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);color:var(--texto);font-weight:600;width:100%}
+.lf-info{margin:6px 0 0;color:var(--mut);font-size:.82rem;overflow-wrap:anywhere}
+.lf-trecho{display:grid;gap:8px;margin-top:10px}
+.lf-dur{display:flex;gap:8px}.lf-dur button{flex:1;min-height:40px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);color:var(--texto);font-weight:600}
+.lf-dur button[aria-pressed=true]{border-color:var(--seal);background:rgba(232,51,95,.14)}
+.lf-trecho input[type=range],#lf-passos{width:100%;accent-color:var(--seal)}
+.lf-mono{font:500 .78rem var(--mono);color:var(--mut)}

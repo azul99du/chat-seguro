@@ -24,8 +24,9 @@ t("quem nunca abriu vê o ponto rosa no avatar e no item do menu; abrir a tela a
   const salvo = await P.evaluate(() => localStorage.getItem("lacre:novidades")); assert.match(salvo, /^\d{4}-\d{2}-\d{2}-\d+$/);
 });
 t("cartões por atualização, organizados por assunto: subtítulos em 'Tudo', filtro por assunto e 'Ver atualizações antigas'", async () => {
-  const n = await P.locator("#nov-lista .nov-cd").count(); assert.equal(n, 3, "só as 3 mais novas abertas"); assert.ok((await P.locator("#nov-lista .nov-gr").count()) >= 2, "subtítulos de assunto dentro dos cartões");
-  const mais = P.locator("#nov-mais"); assert.match(await mais.innerText(), /Ver atualizações antigas \(2\)/); await mais.click(); assert.equal(await P.locator("#nov-lista .nov-cd").count(), 5); assert.match(await P.locator("#nov-mais").innerText(), /Mostrar só as mais novas/);
+  assert.ok((await P.locator("#nov-lista .nov-cd").count()) >= 4, "na primeira vez todas são NOVO e todas aparecem"); await P.click("#novidades .pg-volta"); await abrirMenu(P); await P.click("#nov-btn"); await P.waitForSelector("#novidades[open]");
+  const n = await P.locator("#nov-lista .nov-cd").count(); assert.equal(n, 3, "já vista: só as 3 mais novas abertas");
+  const mais = P.locator("#nov-mais"); assert.match(await mais.innerText(), /Ver atualizações antigas \(3\)/); await mais.click(); assert.equal(await P.locator("#nov-lista .nov-cd").count(), 6); assert.match(await P.locator("#nov-mais").innerText(), /Mostrar só as mais novas/); assert.ok((await P.locator("#nov-lista .nov-gr").count()) >= 2, "subtítulos de assunto dentro dos cartões que têm mais de um assunto");
   await P.locator('#nov-chips button[data-tema="selos"]').click(); assert.equal(await P.locator('#nov-chips button[aria-pressed="true"]').getAttribute("data-tema"), "selos");
   const ts = await P.locator("#nov-lista .nov-ln b").allInnerTexts(); assert.ok(ts.includes("Jumpscare na loja") && ts.includes("Loja de Selos"), "só itens de Selos"); assert.ok(!ts.includes("Tela inicial na hora")); assert.equal(await P.locator("#nov-lista .nov-gr").count(), 0, "no filtro não há subtítulo");
   await P.locator('#nov-chips button[data-tema="seguranca"]').click(); assert.deepEqual(await P.locator("#nov-lista .nov-ln b").allInnerTexts(), ["Vários aparelhos na mesma conta"]);
@@ -35,7 +36,7 @@ t("cartões por atualização, organizados por assunto: subtítulos em 'Tudo', f
 t("depois de ver, o ponto não volta; uma atualização mais nova que a última vista traz o ponto de novo e marca só o que é novo", async () => {
   await P.reload(); await pronto(P); assert.equal(await P.locator("#nov-ponto").isVisible(), false); await abrirMenu(P); assert.equal(await P.locator("#nov-aviso").isVisible(), false); await P.keyboard.press("Escape");
   await P.evaluate(() => localStorage.setItem("lacre:novidades", "2026-11-13-1")); await P.reload(); await pronto(P); assert.equal(await P.locator("#nov-ponto").isVisible(), true, "há atualizações depois da última vista");
-  await abrirMenu(P); await P.click("#nov-btn"); await P.waitForSelector("#novidades[open]"); assert.equal(await P.locator("#nov-lista .nov-novo").count(), 3, "só as 3 mais novas são NOVO"); assert.equal(await P.locator("#nov-ponto").isVisible(), false);
+  await abrirMenu(P); await P.click("#nov-btn"); await P.waitForSelector("#novidades[open]"); assert.equal(await P.locator("#nov-lista .nov-novo").count(), 4, "as 4 mais novas são NOVO e todas aparecem, mesmo passando de 3"); assert.equal(await P.locator("#nov-lista .nov-cd").count(), 4); assert.equal(await P.locator("#nov-ponto").isVisible(), false);
   await P.evaluate(() => localStorage.setItem("lacre:novidades", "lixo<script>")); await P.reload(); await pronto(P); assert.equal(await P.locator("#nov-ponto").isVisible(), true, "valor estragado vale como nunca ter visto");
 });
 t("nenhum erro de página", () => assert.deepEqual(erros, []));

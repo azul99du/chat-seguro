@@ -1,28 +1,28 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=a6c3d67ca7";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=a6c3d67ca7";
-import { montarFigurinhas } from "./figurinhas.js?v=a6c3d67ca7";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=a6c3d67ca7";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=a6c3d67ca7";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=a6c3d67ca7";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=a6c3d67ca7";
-import { acharVideoLink } from "./videolink.js?v=a6c3d67ca7";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=a6c3d67ca7";
-import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=a6c3d67ca7";
-import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=a6c3d67ca7";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=a6c3d67ca7";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=a6c3d67ca7";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=a6c3d67ca7";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=a6c3d67ca7";
-import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=a6c3d67ca7";
-import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES } from "./loja.js?v=a6c3d67ca7";
-import { ACOES, LOJA, TITULOS, precoDaLoja, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=a6c3d67ca7";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=a6c3d67ca7";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=a6c3d67ca7";
-import { cleanImage, cleanVideo, cleanAudio, somDoVideo, sealBytes, openBytes } from "./media.js?v=a6c3d67ca7";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=a6c3d67ca7";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=a6c3d67ca7";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=a6c3d67ca7";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=d60020acbb";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=d60020acbb";
+import { montarFigurinhas } from "./figurinhas.js?v=d60020acbb";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=d60020acbb";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=d60020acbb";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=d60020acbb";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=d60020acbb";
+import { acharVideoLink } from "./videolink.js?v=d60020acbb";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=d60020acbb";
+import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=d60020acbb";
+import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=d60020acbb";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=d60020acbb";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=d60020acbb";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=d60020acbb";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=d60020acbb";
+import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=d60020acbb";
+import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente } from "./loja.js?v=d60020acbb";
+import { ACOES, LOJA, TITULOS, precoDaLoja, precoEfeito, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=d60020acbb";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=d60020acbb";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=d60020acbb";
+import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=d60020acbb";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=d60020acbb";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=d60020acbb";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=d60020acbb";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -2222,6 +2222,7 @@ async function chegouDoGrupo(m, peer, aoVivo) {
   if (c.type === "reaction") { if (active === g) applyReaction(c, m); return; }
   if (c.type === "hello") return;
   if (c.type === "delete") { await aplicarApagar(c, m); return; }
+  if (c.type === "text" || c.type === "media") tocarEfeitoDaMensagem(g, m.sender_id, m); // efeito sonoro comprado na loja
   tocaAtiv(g.id, m.created_at); marcaUltima(g.id, m.created_at);
   if (active === g && carregandoConversa === g) filaChegando.push(m);
   else if (active === g) { if (aoVivo || maisNovaQueATela(m)) { $("msgs-empty")?.remove(); await mostrar(m, c, aoVivo); markRead(); } }
@@ -2610,14 +2611,14 @@ function desenharNovidades() {
   $("nov-versao").replaceChildren(...(v ? ["Você está na versão ", el("b", null, v)] : []));
   const chip = (tema, nome) => { const b = el("button", null, nome); b.type = "button"; b.dataset.tema = tema; b.setAttribute("aria-pressed", String(novTema === tema)); b.onclick = () => { novTema = tema; desenharNovidades(); }; return b; };
   $("nov-chips").replaceChildren(chip("tudo", "Tudo"), ...presentes.map((t) => chip(t.tema, t.nome)));
-  const lista = filtrar(NOVIDADES, novTema), visiveis = novTodas ? lista : lista.slice(0, NOV_ABERTAS), cartoes = visiveis.map((e, k) => {
+  const lista = filtrar(NOVIDADES, novTema), visiveis = novTodas ? lista : lista.filter((e, k) => k < NOV_ABERTAS || novNovos.has(e.id)), cartoes = visiveis.map((e, k) => {
     const c = el("div", "nov-cd" + (k > 0 && !novNovos.has(e.id) ? " vel" : "")), tp = el("div", "nov-tp"); c.dataset.id = e.id;
     if (novNovos.has(e.id)) tp.append(el("span", "nov-novo", "NOVO")); tp.append(el("span", null, dataCurta(e.data))); c.append(tp);
     const grupos = agruparPorTema(e.itens), subtitulos = novTema === "tudo" && grupos.length > 1; // (no filtro por assunto não precisa de subtítulo)
     for (const g of grupos) { if (subtitulos) c.append(el("div", "nov-gr", g.nome)); for (const i of g.itens) { const ln = el("div", "nov-ln"), tx = el("div"); tx.append(el("b", null, i.titulo), el("small", null, i.texto)); ln.append(el("span", "nov-em", i.icone), tx); c.append(ln); } }
     return c;
   });
-  const mais = lista.length > NOV_ABERTAS ? [(() => { const b = el("button", "nov-mais"); b.type = "button"; b.id = "nov-mais"; b.append(el("span", null, novTodas ? "Mostrar só as mais novas" : `Ver atualizações antigas (${lista.length - NOV_ABERTAS})`), el("span", null, novTodas ? "‹" : "›")); b.onclick = () => { novTodas = !novTodas; desenharNovidades(); }; return b; })()] : [];
+  const mais = lista.length > visiveis.length || novTodas ? [(() => { const b = el("button", "nov-mais"); b.type = "button"; b.id = "nov-mais"; b.append(el("span", null, novTodas ? "Mostrar só as mais novas" : `Ver atualizações antigas (${lista.length - visiveis.length})`), el("span", null, novTodas ? "‹" : "›")); b.onclick = () => { novTodas = !novTodas; desenharNovidades(); }; return b; })()] : [];
   $("nov-lista").replaceChildren(...(cartoes.length ? cartoes : [el("div", "nov-vazio", "Nada novo neste assunto.")]), ...mais);
 }
 $("nov-btn").onclick = () => {
@@ -2654,7 +2655,7 @@ function aplicarLojaNaTela(g) {
 }
 function avisoLoja(g, est, a) {
   const c = est.compras.find((x) => x.id === a.compra), nome = (id) => g.membros.get(id)?.username || perfis.get(id)?.username || "alguém";
-  return { ...a, nome: nome(a.id), eu: a.id === me.id, ...(a.alvo ? { alvoNome: nome(a.alvo), alvoEu: a.alvo === me.id, min: c ? Math.round(c.silencio_s / 60) || undefined : undefined } : {}) };
+  return { ...a, nome: nome(a.id), eu: a.id === me.id, ...(a.alvo ? { alvoNome: nome(a.alvo), alvoEu: a.alvo === me.id, mesmo: a.alvo === a.id, min: a.tipo === "loja_efeito" ? a.min : c ? Math.round(c.silencio_s / 60) || undefined : undefined } : {}) };
 }
 async function atualizarLoja(g) {
   const { data, error } = await sb.rpc("selo_loja_estado", { p_grupo: g.id }); if (error || !grupos.has(g.id)) return null;
@@ -2665,11 +2666,12 @@ async function atualizarLoja(g) {
     m.lojaVisto = est.ultimo; m.avisos = [...(m.avisos || []), ...novos].slice(-60); await metaPut(me.id, k, m).catch(() => {});
     if (active === g && carregandoConversa !== g) { $("msgs-empty")?.remove(); for (const a of novos) addAviso(textoAviso(a)); }
   });
+  await atualizarEfeitos(g, est).catch(() => {});
   aplicarLojaNaTela(g); if (slGrupo === g && slDados) desenharSelos();
   conferirSustos(g).catch(() => {});
   return est;
 }
-const EMOJI_LOJA = { titulo: "🏷️", destaque: "✨", silenciar: "🔇", jumpscare: "👻" };
+const EMOJI_LOJA = { titulo: "🏷️", destaque: "✨", silenciar: "🔇", jumpscare: "👻", efeito: "🔊" };
 function desenharLojaCartoes(g, meu) {
   $("sl-loja").replaceChildren(...ITENS.map((item) => {
     const preco = precoDaLoja(slDados.regras, item), c = el("div", "lj-cartao" + (preco == null ? " off" : "")), tx = el("div", "lj-tx"), b = el("button", "lj-bt"); c.dataset.item = item; b.type = "button";
@@ -2678,7 +2680,7 @@ function desenharLojaCartoes(g, meu) {
     if (preco == null) { b.textContent = "Desligado pelo admin"; b.disabled = true; }
     else if (item === "destaque") { b.append(seloIcone(16), ` ${preco} · Como usar`); b.onclick = () => choose("Mensagem em destaque", `Custa ${preco} ${preco === 1 ? "Selo" : "Selos"} por mensagem. Segure uma mensagem sua no grupo e toque em “Destacar…”: ela ganha borda e selo dourados para todos.`, [{ label: "Entendi", value: 1 }]); }
     else if (meu < preco) { b.append(seloIcone(16), ` ${preco} · faltam ${preco - meu}`); b.disabled = true; }
-    else { b.append(seloIcone(16), ` Comprar por ${preco}`); b.onclick = () => abrirCompra(g, item).catch(() => {}); }
+    else { b.append(seloIcone(16), item === "efeito" ? ` Comprar · a partir de ${preco}` : ` Comprar por ${preco}`); b.onclick = () => abrirCompra(g, item).catch(() => {}); }
     c.append(el("span", "lj-ic", EMOJI_LOJA[item]), tx); tx.append(b); return c;
   }));
 }
@@ -2689,16 +2691,16 @@ async function dadosLoja(g) {
   return { regras, saldo: (s.data || []).map(saldoLimpo).find((x) => x.id === me.id)?.saldo || 0 };
 }
 async function abrirCompra(g, item, { detalhe = null } = {}) {
-  const dlg = $("loja-folha"); lf = { g, item, sel: detalhe, pronto: false, busy: false, preco: 0, saldo: 0 };
+  const dlg = $("loja-folha"); lf = { g, item, sel: detalhe, pronto: false, busy: false, preco: 0, saldo: 0 }; dlg.classList.toggle("efeito", item === "efeito");
   $("lf-titulo").textContent = INFO[item].nome; $("lf-ctx").textContent = INFO[item].desc; $("lf-msg").textContent = ""; $("lf-corpo").replaceChildren(); $("lf-resumo").hidden = true; $("lf-ok").disabled = true; $("lf-ok").textContent = "Comprar";
   if (!dlg.open) dlg.showModal();
   let d; try { d = await dadosLoja(g); await atualizarLoja(g); } catch { if (lf?.g === g) $("lf-msg").textContent = "Não foi possível abrir a loja agora."; return; }
   if (lf?.g !== g || lf.item !== item) return;
   const preco = precoDaLoja(d.regras, item); if (preco == null) { $("lf-msg").textContent = "O admin desligou esta vantagem."; return; }
-  Object.assign(lf, { preco, saldo: d.saldo, pronto: true }); if (item === "jumpscare") lf.sel = true; desenharCompra();
+  Object.assign(lf, { preco, saldo: d.saldo, pronto: true, regras: d.regras }); if (item === "jumpscare") lf.sel = true; if (item === "efeito") Object.assign(lf, { alvo: null, passos: 1, dur: 1, inicio: 0, fonte: null, montado: false }); desenharCompra();
 }
 function desenharCompra() {
-  if (!lf?.pronto) return; const { g, item, preco, saldo } = lf, est = lojas.get(g.id), corpo = $("lf-corpo");
+  if (!lf?.pronto) return; const { g, item, saldo } = lf, est = lojas.get(g.id), corpo = $("lf-corpo"), preco = item === "efeito" ? precoEfeito(lf.regras, lf.passos) : lf.preco; lf.preco = preco;
   if (item === "titulo") {
     const atual = est?.titulos.get(me.id), grade = el("div", "lf-titulos");
     for (const [id, nome] of TITULOS_LOJA) { const b = el("button", id === atual ? "atual" : null, nome); b.type = "button"; b.dataset.t = id; b.setAttribute("aria-pressed", String(lf.sel === id)); b.disabled = id === atual; b.onclick = () => { lf.sel = id; desenharCompra(); }; grade.append(b); }
@@ -2709,16 +2711,75 @@ function desenharCompra() {
       b.setAttribute("aria-pressed", String(lf.sel === p.id)); b.disabled = !!s; b.append(av, nm); if (s) b.append(el("small", null, "silenciado até " + horaFim(s.ate)));
       b.onclick = () => { lf.sel = p.id; desenharCompra(); }; return b;
     }));
+  } else if (item === "efeito") { if (!lf.montado) { montarEfeito(corpo); lf.montado = true; } atualizarCamposEfeito(); lf.sel = !!(lf.alvo && lf.fonte);
   } else if (item === "destaque") corpo.replaceChildren(el("p", "t", "Esta mensagem vai ganhar borda e selo dourados para todo o grupo."));
   else corpo.replaceChildren(el("p", "t", "O app vai sortear um jumpscare da lista do admin e todos os outros membros levam o mesmo susto. Você não vê qual é, e só descobrem que foi você depois do susto."));
   $("lf-resumo").hidden = false; $("lf-preco").textContent = `${preco} ${preco === 1 ? "Selo" : "Selos"}`; $("lf-depois").textContent = `${saldo} → ${saldo - preco}`;
   const falta = saldo < preco; if (falta) $("lf-msg").textContent = `Faltam ${preco - saldo} ${preco - saldo === 1 ? "Selo" : "Selos"}.`; else if ($("lf-msg").textContent.startsWith("Faltam")) $("lf-msg").textContent = "";
   $("lf-ok").textContent = `Comprar por ${preco}`; $("lf-ok").disabled = lf.busy || falta || !lf.sel;
 }
+
+// ----- Efeito sonoro (item da loja): um som de 1 ou 2 s que toca para todo o grupo a cada mensagem de um membro, enquanto durar -----
+const efeitosPor = new Map(), efeitoSom = new Map(), efeitoTocado = new Set(); // grupo -> efeitos ativos; compra -> URL do som; mensagens que já tocaram
+async function atualizarEfeitos(g, est) { // só pergunta ao servidor se houve compra de efeito na última hora (a duração máxima): quase sempre não há nada
+  const recente = est.agora !== null && est.compras.some((c) => c.item === "efeito" && est.agora - c.t < 61 * 60000);
+  if (!recente) { efeitosPor.set(g.id, []); return; }
+  const { data, error } = await sb.rpc("selo_efeitos_ativos", { p_grupo: g.id }); if (error) return;
+  const lista = limpaEfeitos(data, g.id); efeitosPor.set(g.id, lista); for (const e of lista) urlDoEfeito(g, e); // (o som já fica baixado, para tocar na hora)
+}
+const urlDoEfeito = (g, e) => { if (!efeitoSom.has(e.compra)) efeitoSom.set(e.compra, baixarSusto(g, e.arquivo).catch(() => null)); return efeitoSom.get(e.compra); };
+function tocarEfeitoDaMensagem(g, quem, m) {
+  if (efeitoTocado.has(m.id) || document.hidden || !mensagemRecente(m.created_at)) return;
+  const e = efeitoAtivoDe(efeitosPor.get(g.id), quem, Date.parse(m.created_at)); if (!e) return;
+  efeitoTocado.add(m.id); if (efeitoTocado.size > 500) efeitoTocado.delete(efeitoTocado.values().next().value);
+  urlDoEfeito(g, e).then((url) => { if (url) { const a = new Audio(url); a.volume = 1; a.play().catch(() => {}); } });
+}
+const tempoDe = (s) => `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart(4, "0").replace(".", ",")}`;
+function montarEfeito(corpo) { // folha de compra do efeito: 1) para quem 2) qual som (arquivo + trecho) 3) por quanto tempo
+  const g = lf.g, ui = lf.ui = {}, sec = (t) => el("h4", "lf-sec", t), pessoas = el("div", "lf-pessoas");
+  for (const p of [...g.membros.values()].sort((a, b) => (a.id === me.id ? -1 : b.id === me.id ? 1 : a.username.localeCompare(b.username)))) {
+    const ativo = efeitoAtivoDe(efeitosPor.get(g.id), p.id, Date.now()), b = el("button", "lf-pessoa"), av = el("span", "avatar"); b.type = "button"; b.dataset.id = p.id; pintarAvatar(av, p, false);
+    b.append(av, el("span", "nm", "@" + p.username + (p.id === me.id ? " (você)" : ""))); b.setAttribute("aria-pressed", "false"); if (ativo) { b.disabled = true; b.append(el("small", null, "tem efeito até " + horaFim(ativo.ate))); }
+    b.onclick = () => { lf.alvo = p.id; for (const x of pessoas.children) x.setAttribute("aria-pressed", String(x.dataset.id === p.id)); desenharCompra(); }; pessoas.append(b);
+  }
+  const arq = el("input"); arq.type = "file"; arq.hidden = true; arq.accept = "audio/*,video/mp4,video/quicktime,.mp3,.m4a,.wav,.mp4,.mov"; arq.id = "lf-arq";
+  const escolher = el("button", "lf-arq-bt", "Escolher áudio ou vídeo"); escolher.type = "button"; escolher.id = "lf-escolher"; escolher.onclick = () => arq.click();
+  ui.info = el("p", "lf-info", "MP3, M4A, WAV ou um vídeo MP4 (usa só o som)."); ui.trecho = el("div", "lf-trecho"); ui.trecho.hidden = true;
+  const curto = el("div", "lf-dur"); for (const d of [1, 2]) { const b = el("button", null, d + " segundo" + (d > 1 ? "s" : "")); b.type = "button"; b.dataset.d = String(d); b.onclick = () => { lf.dur = d; lf.inicio = Math.min(lf.inicio, Math.max(0, lf.fonte.duracao - d)); desenharCompra(); }; curto.append(b); } ui.curto = curto;
+  ui.inicio = el("input"); ui.inicio.type = "range"; ui.inicio.id = "lf-inicio"; ui.inicio.min = "0"; ui.inicio.step = "0.05"; ui.inicio.setAttribute("aria-label", "Onde o trecho começa"); ui.inicio.oninput = () => { lf.inicio = Number(ui.inicio.value); atualizarCamposEfeito(); };
+  ui.inicioTxt = el("span", "lf-mono"); ui.ouvir = el("button", "lf-ouvir", "▶ Ouvir o trecho"); ui.ouvir.type = "button"; ui.ouvir.id = "lf-ouvir";
+  ui.ouvir.onclick = () => { const w = pcm16ParaWav(trechoPcm(lf.fonte.canais, lf.fonte.taxa, lf.inicio, lf.dur), lf.fonte.taxa), u = URL.createObjectURL(new Blob([w], { type: "audio/wav" })), a = new Audio(u); a.onended = () => URL.revokeObjectURL(u); a.play().catch(() => {}); };
+  ui.trecho.append(curto, ui.inicio, ui.inicioTxt, ui.ouvir);
+  arq.onchange = async () => {
+    const f = arq.files[0]; arq.value = ""; if (!f || !lf || lf.item !== "efeito") return; const g2 = lf.g;
+    if (f.size > 60 * 1048576) { ui.info.textContent = "Esse arquivo é grande demais (máximo 60 MB)."; return; }
+    ui.info.textContent = "Abrindo o som…";
+    try { const fonte = await decodificarAudio(await f.arrayBuffer()); if (!lf || lf.g !== g2) return; lf.fonte = { ...fonte, nome: f.name }; lf.inicio = 0; lf.dur = fonte.duracao >= 2 ? lf.dur : 1; ui.info.textContent = `${f.name} · ${tempoDe(fonte.duracao)}`; }
+    catch (e) { if (lf) { lf.fonte = null; ui.info.textContent = String(e?.message || "Não consegui abrir esse arquivo."); } }
+    desenharCompra();
+  };
+  ui.passos = el("input"); ui.passos.type = "range"; ui.passos.id = "lf-passos"; ui.passos.min = "1"; ui.passos.max = String(PASSOS_MAX); ui.passos.step = "1"; ui.passos.value = "1"; ui.passos.setAttribute("aria-label", "Por quanto tempo o efeito dura");
+  ui.passos.oninput = () => { lf.passos = Number(ui.passos.value); desenharCompra(); }; ui.passosTxt = el("span", "lf-mono");
+  corpo.replaceChildren(sec("1. Para quem"), pessoas, sec("2. Qual som"), escolher, arq, ui.info, ui.trecho, sec("3. Por quanto tempo"), ui.passos, ui.passosTxt);
+}
+function atualizarCamposEfeito() { // reflete o estado (arquivo, trecho, duração, preço) nos campos da folha
+  const ui = lf.ui; if (!ui) return; const f = lf.fonte, min = minutosDoEfeito(lf.passos);
+  ui.trecho.hidden = !f; if (f) { const max = Math.max(0, f.duracao - lf.dur); ui.inicio.max = String(max); ui.inicio.value = String(Math.min(lf.inicio, max)); lf.inicio = Number(ui.inicio.value); ui.inicioTxt.textContent = `Começa em ${tempoDe(lf.inicio)} · dura ${lf.dur} s`; for (const b of ui.curto.children) b.setAttribute("aria-pressed", String(Number(b.dataset.d) === lf.dur)); }
+  ui.passosTxt.textContent = `${min} minutos · custa ${lf.preco} ${lf.preco === 1 ? "Selo" : "Selos"}`;
+}
+async function comprarEfeito() {
+  const { g, alvo, passos, fonte, dur, inicio } = lf; if (!lf.pronto || lf.busy || !alvo || !fonte) return; lf.busy = true; $("lf-ok").disabled = true; $("lf-msg").textContent = "Enviando o som…";
+  let arq; try { arq = await guardarSusto(g, pcm16ParaWav(trechoPcm(fonte.canais, fonte.taxa, inicio, dur), fonte.taxa), "audio/wav"); } catch { if (lf) { lf.busy = false; $("lf-msg").textContent = "Não foi possível enviar o som agora."; desenharCompra(); } return; }
+  const { error } = await sb.rpc("selo_efeito_comprar", { p_grupo: g.id, p_alvo: alvo, p_passos: passos, p_arquivo: arq });
+  if (error) { sb.storage.from("media").remove([arq.p]).catch(() => {}); }
+  if (!lf || lf.g !== g) return;
+  if (error) { lf.busy = false; const d = await dadosLoja(g).catch(() => null); await atualizarLoja(g).catch(() => {}); if (d && lf) lf.saldo = d.saldo; desenharCompra(); $("lf-msg").textContent = erroLoja(error); return; }
+  $("loja-folha").close(); await atualizarLoja(g).catch(() => {}); avisarMudanca([...g.membros.values()]); if (slGrupo === g) carregarSelos(g).catch(() => {});
+}
 $("lf-cancelar").onclick = () => $("loja-folha").close();
 $("loja-folha").addEventListener("close", () => { lf = null; });
 $("lf-ok").onclick = async () => {
-  if (!lf?.pronto || lf.busy || !lf.sel) return; const { g, item, sel } = lf; lf.busy = true; $("lf-ok").disabled = true; $("lf-msg").textContent = "";
+  if (!lf?.pronto || lf.busy || !lf.sel) return; if (lf.item === "efeito") return comprarEfeito(); const { g, item, sel } = lf; lf.busy = true; $("lf-ok").disabled = true; $("lf-msg").textContent = "";
   const { error } = await sb.rpc("selo_comprar", { p_grupo: g.id, p_item: item, p_alvo: item === "silenciar" ? sel : null, p_detalhe: item === "titulo" || item === "destaque" ? sel : null });
   if (!lf || lf.g !== g) return;
   if (error) { lf.busy = false; $("lf-msg").textContent = erroLoja(error); const d = await dadosLoja(g).catch(() => null); await atualizarLoja(g).catch(() => {}); if (d && lf) lf.saldo = d.saldo; desenharCompra(); $("lf-msg").textContent = erroLoja(error); return; }
@@ -2862,7 +2923,7 @@ function pedirNumero({ titulo, contexto, valor, campo, selos }) {
     dlg.onclose = () => fecha(null); pinta(); dlg.showModal(); inp.focus(); inp.select();
   });
 }
-const TITULO_CAMPO = { valor: "Quantos Selos?", min: "Quantas mensagens, no mínimo?", a_cada: "A cada quantas?", dias: "Quantos dias seguidos?" };
+const TITULO_CAMPO = { extra: "Quantos Selos a cada 5 minutos a mais?", valor: "Quantos Selos?", min: "Quantas mensagens, no mínimo?", a_cada: "A cada quantas?", dias: "Quantos dias seguidos?" };
 async function editarNumero(acao, p) {
   const r = srRascunho, marco = p.marco, ctx = fraseTexto(frase(acao, r, marco));
   const v = await pedirNumero({ titulo: TITULO_CAMPO[p.campo] || "Quanto?", contexto: ctx, valor: p.n, campo: p.campo, selos: p.tipo === "s" }); if (v === null || !srRascunho) return;
@@ -3358,6 +3419,7 @@ async function enviarFigurinha(st) {
     if (replyTo) content.re = replyTo;
     const row = await enviar(peer, content);
     if (!mediaCache.has(up.path)) mediaCache.set(up.path, URL.createObjectURL(new Blob([st.bytes], { type: st.mime })));
+    if (peer.grupo) tocarEfeitoDaMensagem(peer, me.id, row);
     if (active === peer) { $("msgs-empty")?.remove(); addMessage(row, content, { descer: true }); if (row.quem) { const en = msgs.get(row.id); if (en) { en.quem = row.quem; setReceipt(en); } } }
     cancelarResposta();
   } catch (e) { throw new Error(sendError(e, peer)); }
@@ -3392,6 +3454,7 @@ $("send-form").onsubmit = async (e) => {
       row = await enviar(peer, content);
       mediaCache.set(path, p.url); clearPending(true); // reaproveita a prévia local, sem baixar de novo
     } else { content = { type: "text", text }; if (resp) content.re = resp; row = await enviar(peer, content); }
+    if (peer.grupo) tocarEfeitoDaMensagem(peer, me.id, row);
     if (active === peer) { $("msgs-empty")?.remove(); addMessage(row, content, { descer: true }); if (row.quem) { const en = msgs.get(row.id); if (en) { en.quem = row.quem; setReceipt(en); } } }
     btn.classList.add("voou"); setTimeout(() => btn.classList.remove("voou"), 650);
   } catch (e) {

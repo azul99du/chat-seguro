@@ -253,3 +253,20 @@ export async function somDoVideo(input, { maxSeg = 12, taxa = 22050 } = {}) {
   src.buffer = buf; src.connect(out.destination); src.start(0); const r = await out.startRendering(); // (a mistura para mono e a troca da taxa acontecem aqui)
   return { bytes: pcm16ParaWav(floatParaPcm16(r.getChannelData(0)), taxa), mime: "audio/wav", duracao: seg, cortado: buf.duration > maxSeg + 0.3 };
 }
+
+// ---------- Trecho de 1 ou 2 segundos de um áudio ou vídeo (efeito sonoro da loja) ----------
+// O navegador decodifica o áudio inteiro (MP3, M4A, WAV, ou o som de um MP4/MOV) já em 22,05 kHz; a pessoa escolhe onde o trecho começa e se ele dura 1 ou 2 s.
+// O que sai é um WAV novo (mono, 16 bits, com uma entrada e uma saída suaves de 8 ms para não estalar), sem nenhum metadado do arquivo original.
+export async function decodificarAudio(input, taxa = 22050) {
+  const Ctx = globalThis.OfflineAudioContext || globalThis.webkitOfflineAudioContext; if (!Ctx) throw new Error("Este navegador não consegue abrir o som de um arquivo.");
+  let buf; try { buf = await new Ctx(1, 1, taxa).decodeAudioData(input.slice(0)); } catch { throw new Error("Não consegui abrir o som desse arquivo. Use MP3, M4A, WAV ou um vídeo MP4 com som."); }
+  if (!buf || buf.duration < 0.2) throw new Error("Esse som é curto demais (menos de 0,2 segundo).");
+  return { canais: Array.from({ length: buf.numberOfChannels }, (_, i) => buf.getChannelData(i)), taxa: buf.sampleRate, duracao: buf.duration };
+}
+// Pedaço [inicioS, inicioS + durS) de todos os canais misturados em mono, com fade de 8 ms nas pontas. Devolve Int16Array (0 amostras se o início passar do fim).
+export function trechoPcm(canais, taxa, inicioS, durS, fadeS = 0.008) {
+  const total = canais[0]?.length || 0, ini = Math.max(0, Math.min(total, Math.round(inicioS * taxa))), fim = Math.max(ini, Math.min(total, ini + Math.round(durS * taxa))), n = fim - ini, f = new Float32Array(n);
+  for (let i = 0; i < n; i++) { let s = 0; for (const c of canais) s += c[ini + i]; f[i] = s / canais.length; }
+  const fade = Math.min(Math.round(fadeS * taxa), n >> 1); for (let i = 0; i < fade; i++) { const g = i / fade; f[i] *= g; f[n - 1 - i] *= g; }
+  return floatParaPcm16(f);
+}

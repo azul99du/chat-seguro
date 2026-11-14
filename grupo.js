@@ -104,6 +104,13 @@ export function diferencaMembros(antes, agora, eu) {
   for (const [id, nome] of Object.entries(antes)) if (id !== eu && !(id in agora)) sairam.push({ id, nome });
   return { entraram, sairam };
 }
+const minTxt = (m) => `${m || 5} minutos`;
+function textoEfeito(a, n) { // "pôs um efeito sonoro em ..." (o comprador pode ser o próprio alvo)
+  const alvo = `@${a.alvoNome || "alguém"}`;
+  if (a.eu) return a.alvoEu ? `Você pôs um efeito sonoro em você por ${minTxt(a.min)}` : `Você pôs um efeito sonoro em ${alvo} por ${minTxt(a.min)}`;
+  if (a.alvoEu) return `${n} pôs um efeito sonoro em você por ${minTxt(a.min)}`;
+  return a.mesmo ? `${n} pôs um efeito sonoro em si mesmo por ${minTxt(a.min)}` : `${n} pôs um efeito sonoro em ${alvo} por ${minTxt(a.min)}`;
+}
 export function textoAviso(a) {
   const n = "@" + (a.nome || "alguém");
   return a.tipo === "criou" ? "Você criou o grupo" : a.tipo === "adicionado" ? `${n} adicionou você ao grupo` : a.tipo === "entrou" ? `${n} entrou no grupo`
@@ -113,6 +120,7 @@ export function textoAviso(a) {
     : a.tipo === "selos" ? (a.eu ? "Você mudou as regras dos Selos" : `${n} mudou as regras dos Selos`)
     : a.tipo === "loja_titulo" ? `${a.eu ? "Você comprou" : `${n} comprou`} o título “${a.titulo || "novo"}”`
     : a.tipo === "loja_destaque" ? (a.eu ? "Você destacou uma mensagem" : `${n} destacou uma mensagem`)
+    : a.tipo === "loja_efeito" ? textoEfeito(a, n)
     : a.tipo === "loja_jumpscare" ? (a.eu ? "Você comprou um jumpscare" : `${n} comprou um jumpscare`)
     : a.tipo === "loja_silencio" ? (a.eu ? `Você silenciou @${a.alvoNome || "alguém"} por ${a.min || 5} minutos` : a.alvoEu ? `${n} silenciou você por ${a.min || 5} minutos` : `${n} silenciou @${a.alvoNome || "alguém"} por ${a.min || 5} minutos`)
     : a.tipo === "renomeou" ? `@${a.de || "alguém"} agora é @${a.nome || "alguém"}` : "";
