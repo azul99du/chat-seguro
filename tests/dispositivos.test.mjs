@@ -65,6 +65,9 @@ describe("etapa 2: sessão por aparelho", () => {
     const r = lotesDm([{ id: 8, created_at: T2, avisar: true, para_aparelho: null, read_at: null }, { id: 6, created_at: T1, avisar: true, para_aparelho: R(1), read_at: null }, { id: 5, created_at: T1, avisar: true, para_aparelho: R(2), read_at: "2026-11-10T10:01:00+00:00" }]);
     assert.deepEqual(r.map((l) => [l.id, l.n, l.novo, l.read_at]), [[5, 2, true, "2026-11-10T10:01:00+00:00"], [8, 1, false, null]]); assert.deepEqual(r[0].ids.sort(), [5, 6]);
     assert.equal(lotesDm([{ id: 1, created_at: T1, avisar: false }, { id: 2, created_at: T1, avisar: true }])[0].avisar, false);
+    // áudio: o maior trecho ouvido e "ouviu tudo" de qualquer aparelho de quem recebeu
+    const au = lotesDm([{ id: 1, created_at: T1, read_at: "2026-11-10T10:01:00+00:00", ouvido_ate: 5, ouvido_em: "2026-11-10T10:02:00+00:00" }, { id: 2, created_at: T1, read_at: null, ouvido_ate: 30, ouvido_tudo: true, ouvido_em: "2026-11-10T10:03:00+00:00" }])[0];
+    assert.deepEqual([au.read_at, au.ouvido_ate, au.ouvido_tudo, au.ouvido_em], ["2026-11-10T10:01:00+00:00", 30, true, "2026-11-10T10:03:00+00:00"]);
     assert.deepEqual(lotesDm([{ id: 9, created_at: T2 }, { id: 4, created_at: T1 }], true).map((l) => l.id), [9]); assert.deepEqual(lotesDm(null), []);
   });
 });
@@ -121,7 +124,7 @@ describe("etapa 3: grupos com uma cópia por aparelho", () => {
     assert.deepEqual(lotesGrupo(linhas, true).map((x) => x.id), [11, 20, 30]); assert.deepEqual(lotesGrupo(null), []);
     // com "eu": cada mensagem leva para quem foi e quando leu (uma pessoa com 2 aparelhos conta uma vez; a cópia para mim não entra)
     const q = lotesGrupo([{ id: 1, created_at: "t1", recipient_id: "b", read_at: null }, { id: 2, created_at: "t1", recipient_id: "b", read_at: "2026-11-14T10:00:00Z" }, { id: 3, created_at: "t1", recipient_id: "c", read_at: null }, { id: 4, created_at: "t1", recipient_id: "eu", read_at: "2026-11-14T09:00:00Z" }], false, "eu");
-    assert.deepEqual([...q[0].quem], [["b", "2026-11-14T10:00:00Z"], ["c", null]]); assert.equal(q[0].linhas, undefined); assert.equal(lotesGrupo(linhas)[0].quem, undefined, "sem 'eu' continua como antes");
+    assert.deepEqual([...q[0].quem], [["b", { t: "2026-11-14T10:00:00Z", ate: null, tudo: false, em: null }], ["c", { t: null, ate: null, tudo: false, em: null }]]); assert.equal(q[0].linhas, undefined); assert.equal(lotesGrupo(linhas)[0].quem, undefined, "sem 'eu' continua como antes");
     assert.equal(loteDeOutroAparelho(null, R(1)), false);
   });
 });

@@ -1,6 +1,6 @@
 // Aparelhos que RECEBEM mensagens da conta (etapa 1 de "vários aparelhos"): funções puras, testáveis sem navegador.
 // O servidor é desconfiável: tudo que vem dele passa por "limpa" antes de ir para a tela.
-import { juntarLeituras } from "./visto.js?v=1315303622";
+import { juntarLeituras, juntarRecibo } from "./visto.js?v=ccbfb4296a";
 export const MAX_APARELHOS = 5;
 export const ID_RE = /^[0-9a-f]{32}$/;
 
@@ -69,8 +69,8 @@ export function lotesDm(linhas, cortado = false) {
   const m = new Map();
   for (const l of linhas || []) {
     const k = l.created_at, a = m.get(k);
-    if (a) { a.id = Math.min(a.id, l.id); a.ids.push(l.id); a.n++; a.avisar = a.avisar && l.avisar !== false; a.novo = a.novo || !!l.para_aparelho; if (l.read_at && (!a.read_at || l.read_at < a.read_at)) a.read_at = l.read_at; }
-    else m.set(k, { id: l.id, ids: [l.id], created_at: l.created_at, avisar: l.avisar !== false, n: 1, novo: !!l.para_aparelho, read_at: l.read_at || null });
+    if (a) { a.id = Math.min(a.id, l.id); a.ids.push(l.id); a.n++; a.avisar = a.avisar && l.avisar !== false; a.novo = a.novo || !!l.para_aparelho; Object.assign(a, juntarRecibo(a, l)); } // (read_at, ouvido_ate, ouvido_tudo, ouvido_em: o que cada aparelho de quem recebeu já registrou)
+    else m.set(k, { id: l.id, ids: [l.id], created_at: l.created_at, avisar: l.avisar !== false, n: 1, novo: !!l.para_aparelho, ...juntarRecibo(null, l) });
   }
   const out = [...m.values()].sort((a, b) => a.id - b.id);
   if (cortado && out.length) out.shift();

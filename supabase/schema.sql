@@ -1857,3 +1857,31 @@ begin
 end $$;
 revoke all on function public.get_prekeys_grupo(uuid) from public, anon, authenticated;
 grant execute on function public.get_prekeys_grupo(uuid) to authenticated;
+
+-- ===== Ouvir áudios: até onde cada pessoa ouviu (migração ouvir_audios) =====
+-- Quem recebe um áudio registra até onde ouviu (em segundos) e se ouviu tudo; quem enviou lê isso nas PRÓPRIAS linhas (como já lê o read_at).
+-- O servidor não sabe se a mensagem é áudio (o conteúdo é cifrado): quem registra é o app de quem ouve, como no "visto". Ninguém escreve essas colunas direto: só esta função.
+alter table public.messages
+  add column if not exists ouvido_ate integer check (ouvido_ate between 0 and 86400),
+  add column if not exists ouvido_tudo boolean not null default false,
+  add column if not exists ouvido_em timestamptz;
+
+create or replace function public.marcar_ouvida(p_id bigint, p_ate integer, p_tudo boolean) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); x public.messages;
+begin
+  perform public.consome('marcar_ouvida', 90, 1500);
+  if p_id is null or p_ate is null or p_ate < 0 or p_ate > 86400 then raise exception 'valor invalido' using errcode = '22023'; end if;
+  if coalesce(public.aparelho_estado(), 'aprovado') = 'pendente' then return; end if;
+  select * into x from public.messages where id = p_id and recipient_id = u and sender_id <> u;
+  if not found then return; end if;
+  -- vale para todas as cópias desta mensagem que chegaram a mim (uma por aparelho meu); o progresso só avança, e ouvir também conta como ler
+  update public.messages m set
+      ouvido_ate = greatest(coalesce(m.ouvido_ate, 0), p_ate),
+      ouvido_tudo = m.ouvido_tudo or coalesce(p_tudo, false),
+      ouvido_em = case when p_ate > coalesce(m.ouvido_ate, -1) or (coalesce(p_tudo, false) and not m.ouvido_tudo) then now() else m.ouvido_em end,
+      read_at = coalesce(m.read_at, now())
+    where m.recipient_id = u and m.sender_id = x.sender_id and m.created_at = x.created_at;
+end $$;
+revoke all on function public.marcar_ouvida(bigint, integer, boolean) from public, anon, authenticated;
+grant execute on function public.marcar_ouvida(bigint, integer, boolean) to authenticated;

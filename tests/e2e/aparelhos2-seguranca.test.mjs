@@ -135,6 +135,26 @@ t("marcar_lidas: ler em um aparelho marca todas as cópias que recebi; quem envi
   assert.ok(bloqueado(await b1.from("messages").update({ ciphertext: "aGFja2Vk" }).eq("id", pb1).select()));
   assert.ok(bloqueado(await a1.from("messages").update({ read_at: new Date().toISOString() }).eq("id", propria).select()), "nem o dono da cópia própria marca a si mesmo por update");
 });
+t("marcar_ouvida: só quem recebeu registra (em todas as cópias dele); o progresso só avança; valores ruins, outra conta, pendente, quem enviou e sem login não valem; ninguém escreve as colunas direto", async () => {
+  const [a1] = A.cs, [b1, b2, b3] = B.cs;
+  const r = await a1.from("messages").insert([linha(B.id, B.refs[0]), linha(B.id, B.refs[1])]).select("id"); assert.ifError(r.error);
+  const [pb1, pb2] = r.data.map((x) => x.id), col = async (id) => (await a1.from("messages").select("read_at,ouvido_ate,ouvido_tudo,ouvido_em").eq("id", id).single()).data;
+  const vazio = { read_at: null, ouvido_ate: null, ouvido_tudo: false, ouvido_em: null }, ouve = (c, id, ate, tudo = false) => c.rpc("marcar_ouvida", { p_id: id, p_ate: ate, p_tudo: tudo });
+  assert.ifError((await ouve(X.cs[0], pb1, 10)).error); assert.deepEqual(await col(pb1), vazio, "outra conta não registra");
+  assert.ifError((await ouve(b3, pb1, 10)).error); assert.deepEqual(await col(pb1), vazio, "aparelho pendente não registra");
+  assert.ifError((await ouve(a1, pb1, 10)).error); assert.deepEqual(await col(pb1), vazio, "quem enviou não registra por quem recebeu");
+  assert.ok((await ouve(anon, pb1, 10)).error, "sem login");
+  assert.ifError((await ouve(b1, pb1, 12)).error);
+  let c = await col(pb1); assert.equal(c.ouvido_ate, 12); assert.equal(c.ouvido_tudo, false); assert.ok(c.ouvido_em); assert.ok(c.read_at, "ouvir também conta como ler");
+  assert.equal((await col(pb2)).ouvido_ate, 12, "e a cópia do outro aparelho de B (mesma mensagem)");
+  assert.ifError((await ouve(b1, pb1, 5)).error); assert.equal((await col(pb1)).ouvido_ate, 12, "ouvir menos não faz o progresso voltar");
+  assert.ifError((await ouve(b2, pb1, 30, true)).error); c = await col(pb1); assert.equal(c.ouvido_ate, 30); assert.equal(c.ouvido_tudo, true);
+  assert.ifError((await ouve(b1, pb1, 9, false)).error); c = await col(pb1); assert.equal(c.ouvido_tudo, true, "ouviu tudo não desfaz"); assert.equal(c.ouvido_ate, 30);
+  for (const ate of [-1, 90000, null]) assert.ok((await ouve(b1, pb1, ate)).error, "valor ruim: " + ate);
+  assert.ok(bloqueado(await b1.from("messages").update({ ouvido_ate: 1 }).eq("id", pb1).select()), "ninguém escreve a coluna direto");
+  assert.ok(bloqueado(await a1.from("messages").update({ ouvido_tudo: true }).eq("id", pb2).select()), "nem quem enviou");
+});
+
 t("recuperação: só o pendente pede; um pedido por vez; o prazo é do banco (não dá para concluir antes); outra conta não mexe; pendente não aprova a si mesmo", async () => {
   const m = await conta("r", 3); // 1º aprovado; 2º e 3º pendentes
   const [c1, c2, c3] = m.cs;

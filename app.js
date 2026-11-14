@@ -1,26 +1,26 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=1315303622";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=1315303622";
-import { montarFigurinhas } from "./figurinhas.js?v=1315303622";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=1315303622";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=1315303622";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=1315303622";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=1315303622";
-import { acharVideoLink } from "./videolink.js?v=1315303622";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=1315303622";
-import { resumoVistos, segmentos, textoVistos, textoLongoVistos, somarLeitura, juntarLeituras } from "./visto.js?v=1315303622";
-import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=1315303622";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=1315303622";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=1315303622";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=1315303622";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=1315303622";
-import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=1315303622";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=1315303622";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=1315303622";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=1315303622";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=1315303622";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=1315303622";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=1315303622";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=ccbfb4296a";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=ccbfb4296a";
+import { montarFigurinhas } from "./figurinhas.js?v=ccbfb4296a";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=ccbfb4296a";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=ccbfb4296a";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=ccbfb4296a";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=ccbfb4296a";
+import { acharVideoLink } from "./videolink.js?v=ccbfb4296a";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=ccbfb4296a";
+import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=ccbfb4296a";
+import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=ccbfb4296a";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=ccbfb4296a";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=ccbfb4296a";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=ccbfb4296a";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=ccbfb4296a";
+import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=ccbfb4296a";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=ccbfb4296a";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=ccbfb4296a";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=ccbfb4296a";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=ccbfb4296a";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=ccbfb4296a";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=ccbfb4296a";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -1079,34 +1079,40 @@ const idDaRef = (re) => (re?.mid ? midParaId.get(re.mid) : re?.id); // a que men
 function setReceipt(e) {
   if (!e.mine) return;
   if (active?.grupo) return desenharVistos(e); // em grupo: o selo "quem viu" (ou "enviada" enquanto não se sabe para quem foi)
-  const lida = !!e.m.read_at;
-  e.rcpt.textContent = lida ? "vista " + hhmm(new Date(e.m.read_at)) : "enviada";
-  e.rcpt.classList.toggle("read", lida);
+  const r = reciboDm(e.m, ehAudio(e), (t) => hhmm(new Date(t)), mmss); // enviada → vista → "ouviu até 0:12" → "ouvida"
+  e.rcpt.textContent = r.texto; e.rcpt.classList.toggle("read", r.classe === "read"); e.rcpt.classList.toggle("parte", r.classe === "parte");
 }
-// ---------- Quem viu a minha mensagem no grupo (design "Lacre com anel") ----------
-// Um selo na linha da hora: um anel com uma parte por pessoa (rosa = viu) e "k/n"; vira verde com "todos" quando todos viram. Tocar mostra quem viu, e quando.
-// Os dados vêm das linhas que EU enviei (uma por aparelho de cada pessoa): o banco guarda quando cada uma foi lida, e eu já podia ler as minhas linhas.
-function anelSvg(k, n, tam, esp = 3) {
-  const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg"), segs = segmentos(k, n), m = segs.length, todos = n > 0 && k >= n;
+const ehAudio = (e) => e?.content?.type === "media" && e.content.kind === "audio";
+function aplicaRecibo(e, r) { // o que o servidor diz que a outra pessoa já fez com a minha mensagem (leu, ouviu até onde, ouviu tudo)
+  const n = juntarRecibo(e.m, r); let mudou = false;
+  for (const k of ["read_at", "ouvido_ate", "ouvido_tudo", "ouvido_em"]) if (e.m[k] !== n[k]) { e.m[k] = n[k]; mudou = true; }
+  if (mudou) setReceipt(e);
+}
+// ---------- Quem viu (e quem ouviu) a minha mensagem no grupo (design "Lacre com anel") ----------
+// Um selo na linha da hora: um anel com uma parte por pessoa e "k/n". Texto: rosa = viu. Áudio: rosa = só viu, âmbar = ouviu um trecho, verde = ouviu tudo.
+// Fecha em verde com "todos" quando todos viram (texto) ou ouviram tudo (áudio). Tocar mostra quem, e quando (e, no áudio, até onde cada um ouviu).
+// Os dados vêm das linhas que EU enviei (uma por aparelho de cada pessoa): o banco guarda quando cada uma foi lida e, nos áudios, até onde foi ouvida.
+function anelSvg(r, tam, esp = 3) {
+  const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg"), arcos = arcosDoAnel(r), m = arcos.length;
   svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("width", tam); svg.setAttribute("height", tam); svg.setAttribute("aria-hidden", "true"); svg.classList.add("anel");
   const R = 9.5, passo = 360 / (m || 1), folga = m > 1 ? Math.min(34, passo * 0.28) : 0, pt = (g) => `${(12 + R * Math.sin((g * Math.PI) / 180)).toFixed(2)} ${(12 - R * Math.cos((g * Math.PI) / 180)).toFixed(2)}`;
-  segs.forEach((on, i) => {
+  arcos.forEach((est, i) => {
     const p = document.createElementNS(ns, "path"), g0 = i * passo + folga / 2, g1 = (i + 1) * passo - folga / 2;
     p.setAttribute("d", m === 1 ? `M12 ${12 - R}A${R} ${R} 0 1 1 11.99 ${12 - R}` : `M${pt(g0)}A${R} ${R} 0 ${g1 - g0 > 180 ? 1 : 0} 1 ${pt(g1)}`);
-    p.setAttribute("fill", "none"); p.setAttribute("stroke-width", esp); p.setAttribute("stroke-linecap", "round"); p.setAttribute("class", "a" + (on ? " on" : "")); svg.append(p);
+    p.setAttribute("fill", "none"); p.setAttribute("stroke-width", esp); p.setAttribute("stroke-linecap", "round"); p.setAttribute("class", "a " + est); svg.append(p);
   });
   const c = document.createElementNS(ns, "circle"); c.setAttribute("cx", 12); c.setAttribute("cy", 12); c.setAttribute("r", 5.2);
-  if (k > 0) { c.setAttribute("class", "miolo"); svg.append(c); } else { c.setAttribute("fill", "none"); c.setAttribute("class", "miolo vazio"); svg.append(c); }
-  if (todos) { const t = document.createElementNS(ns, "path"); t.setAttribute("d", "M9.6 12.2l1.7 1.7 3.2-3.5"); t.setAttribute("fill", "none"); t.setAttribute("class", "tiquinho"); t.setAttribute("stroke-width", 1.7); t.setAttribute("stroke-linecap", "round"); t.setAttribute("stroke-linejoin", "round"); svg.append(t); }
+  if (r.k > 0) { c.setAttribute("class", "miolo"); svg.append(c); } else { c.setAttribute("fill", "none"); c.setAttribute("class", "miolo vazio"); svg.append(c); }
+  if (r.todos) { const t = document.createElementNS(ns, "path"); t.setAttribute("d", "M9.6 12.2l1.7 1.7 3.2-3.5"); t.setAttribute("fill", "none"); t.setAttribute("class", "tiquinho"); t.setAttribute("stroke-width", 1.7); t.setAttribute("stroke-linecap", "round"); t.setAttribute("stroke-linejoin", "round"); svg.append(t); }
   return svg;
 }
 let vistoAberto = null;
 function desenharVistos(e) {
-  const r = e.rcpt; r.classList.remove("read");
+  const r = e.rcpt; r.classList.remove("read", "parte");
   if (!e.quem || !e.quem.size) { r.textContent = "enviada"; r.classList.remove("vistos", "todos"); r.removeAttribute("role"); r.removeAttribute("tabindex"); r.removeAttribute("aria-label"); return; }
-  const { n, k, todos } = resumoVistos(e.quem);
-  r.classList.add("vistos"); r.classList.toggle("todos", todos); r.replaceChildren(anelSvg(k, n, 15), el("span", null, textoVistos(k, n)));
-  r.setAttribute("role", "button"); r.tabIndex = 0; r.setAttribute("aria-label", `${textoLongoVistos(k, n)}. Toque para ver quem`);
+  const au = ehAudio(e), s = resumoVistos(e.quem, au);
+  r.classList.add("vistos"); r.classList.toggle("todos", s.todos); r.classList.toggle("audio", au); r.replaceChildren(anelSvg(s, 15), el("span", null, textoVistos(s)));
+  r.setAttribute("role", "button"); r.tabIndex = 0; r.setAttribute("aria-label", `${textoLongoVistos(s, au)}. Toque para ver quem`);
   if (!r.dataset.lig) {
     r.dataset.lig = "1";
     r.addEventListener("pointerdown", (ev) => ev.stopPropagation()); // tocar no selo não é "segurar" nem "arrastar para responder"
@@ -1118,32 +1124,40 @@ function desenharVistos(e) {
 function abrirVistos(e) { vistoAberto = e; desenharJanelaVistos(); if (!$("visto-grupo").open) $("visto-grupo").showModal(); }
 function desenharJanelaVistos() {
   const e = vistoAberto; if (!e?.quem?.size) return $("visto-grupo").close();
-  const { n, k, vistos, faltam } = resumoVistos(e.quem), corpo = $("visto-corpo"), todos = n > 0 && k >= n;
-  const topo = el("div", "vt-topo"), tx = el("div"); topo.classList.toggle("todos", todos);
-  tx.append(el("b", null, textoLongoVistos(k, n)), el("small", null, "enviada às " + hhmm(new Date(e.m.created_at)))); topo.append(anelSvg(k, n, 46, 2.6), tx);
-  const barra = el("div", "vt-barra"); segmentos(k, n, 12).forEach((on) => barra.append(el("i", on ? "v" : "")));
-  const pessoa = (id, hora, falta) => {
-    const li = el("div", "vt-pessoa" + (falta ? " falta" : "")), av = el("span", "avatar mini"); pintarAvatar(av, active?.membros?.get(id) || perfis.get(id) || contacts.get(id) || { username: nomeDe(id), avatar: null });
-    li.append(av, el("span", "nm", "@" + nomeDe(id)), el("span", "hr" + (falta ? "" : " ok"), hora)); return li;
+  const au = ehAudio(e), s = resumoVistos(e.quem, au), corpo = $("visto-corpo"), dur = Number(e.content?.dur) || 0;
+  const topo = el("div", "vt-topo"), tx = el("div"); topo.classList.toggle("todos", s.todos);
+  tx.append(el("b", null, textoLongoVistos(s, au)), el("small", null, "enviada às " + hhmm(new Date(e.m.created_at)))); topo.append(anelSvg(s, 46, 2.6), tx);
+  const barra = el("div", "vt-barra"); arcosDoAnel(s, 12).forEach((est) => barra.append(el("i", est)));
+  const pessoa = (id, hora, classe) => {
+    const li = el("div", "vt-pessoa" + (classe === "falta" ? " falta" : "")), av = el("span", "avatar mini"); pintarAvatar(av, active?.membros?.get(id) || perfis.get(id) || contacts.get(id) || { username: nomeDe(id), avatar: null });
+    li.append(av, el("span", "nm", "@" + nomeDe(id)), el("span", "hr " + classe, hora)); return li;
   };
-  const lista = el("div", "vt-lista"); for (const v of vistos) lista.append(pessoa(v.id, rotuloHora(Date.parse(v.t)), false));
-  if (faltam.length) { if (vistos.length) lista.append(el("div", "vt-secao", "Ainda não viram")); for (const id of faltam) lista.append(pessoa(id, "ainda não", true)); }
+  const quando = (t) => (t ? rotuloHora(Date.parse(t)) : "");
+  const lista = el("div", "vt-lista"), secao = (txt) => lista.append(el("div", "vt-secao", txt)); let primeira = true;
+  const bloco = (titulo, itens, fazer) => { if (!itens.length) return; if (titulo) { if (!primeira) secao(titulo); else if (au) secao(titulo); } for (const x of itens) lista.append(fazer(x)); primeira = false; };
+  if (au) { // áudio: ouviram tudo (só diz que ouviu), ouviram um trecho (até onde), só viram, e quem falta
+    bloco("Ouviram", s.tudo, (x) => pessoa(x.id, "ouviu · " + quando(x.t), "tudo"));
+    bloco("Ouviram um trecho", s.parte, (x) => pessoa(x.id, "ouviu até " + mmss(x.ate) + (dur ? " de " + mmss(dur) : ""), "parte"));
+    bloco("Só viram", s.viu, (x) => pessoa(x.id, "viu · " + quando(x.t), "viu"));
+  } else bloco("", s.vistos, (x) => pessoa(x.id, quando(x.t), "tudo"));
+  if (s.faltam.length) { if (!primeira) secao("Ainda não viram"); for (const id of s.faltam) lista.append(pessoa(id, "ainda não", "falta")); }
   corpo.replaceChildren(topo, barra, lista);
 }
 { const d = $("visto-grupo"); d.addEventListener("click", (ev) => { const r = d.getBoundingClientRect(); if (ev.clientY < r.top || ev.clientY > r.bottom || ev.clientX < r.left || ev.clientX > r.right) d.close(); }); d.addEventListener("close", () => { vistoAberto = null; }); }
 const entradaPorInstante = (iso) => { const t = Date.parse(iso); if (!Number.isFinite(t)) return null; for (const x of msgs.values()) if (x.mine && Date.parse(x.m.created_at) === t) return x; return null; };
-function marcarVistaDoGrupo(row) { // chegou, em tempo real, a leitura de uma pessoa do grupo
-  if (!active?.grupo || active.id !== row?.grupo_id || !row.read_at || typeof row.recipient_id !== "string" || row.recipient_id === me.id) return;
+function marcarVistaDoGrupo(row) { // chegou, em tempo real, a leitura (ou a escuta) de uma pessoa do grupo
+  if (!active?.grupo || active.id !== row?.grupo_id || (!row.read_at && !Number.isFinite(row.ouvido_ate)) || typeof row.recipient_id !== "string" || row.recipient_id === me.id) return;
   const e = entradaPorInstante(row.created_at); if (!e) return;
-  if (!e.quem) e.quem = new Map(); if (somarLeitura(e.quem, row.recipient_id, row.read_at)) setReceipt(e);
+  if (!e.quem) e.quem = new Map(); if (somarLinha(e.quem, row, me.id)) setReceipt(e);
 }
 function aplicarVistosDoGrupo(g, linhas, cortado = false) { // o que o servidor sabe agora (conferência ao abrir e a verificação periódica)
   if (active !== g) return;
   for (const l of lotesGrupo(linhas, cortado, me.id)) { const e = msgs.get(l.id) || entradaPorInstante(l.created_at); if (e?.mine && l.quem?.size) { e.quem = l.quem; setReceipt(e); } }
 }
 async function conferirVistasDoGrupo(g) {
-  if (![...msgs.values()].some((e) => e.mine && (!e.quem || resumoVistos(e.quem).faltam.length))) return; // todas já foram vistas por todos: nada a conferir
-  const { data, error } = await sb.from("messages").select("id,created_at,recipient_id,read_at").eq("grupo_id", g.id).eq("sender_id", me.id).order("id", { ascending: false }).limit(400);
+  const recente = (e) => Date.now() - Date.parse(e.m.created_at) < 7 * 864e5; // (mensagens de mais de uma semana não são mais conferidas a cada 30 s)
+  if (![...msgs.values()].some((e) => e.mine && recente(e) && (!e.quem || !resumoVistos(e.quem, ehAudio(e)).todos))) return; // tudo já visto (ou ouvido) por todos: nada a conferir
+  const { data, error } = await sb.from("messages").select("id,created_at,recipient_id,read_at,ouvido_ate,ouvido_tudo,ouvido_em").eq("grupo_id", g.id).eq("sender_id", me.id).order("id", { ascending: false }).limit(400);
   if (error || active !== g) return; aplicarVistosDoGrupo(g, data, (data || []).length === 400);
 }
 
@@ -1191,7 +1205,8 @@ function botaoSalvarFigurinha(path) {
   return b;
 }
 // ---------- Tocador de áudio (próprio: a duração vem da mensagem, porque gravações do navegador não trazem duração) ----------
-let tocando = null;
+let tocando = null, relatarTocando = null;
+addEventListener("pagehide", () => { try { relatarTocando?.(); } catch {} }); // fechou a página ouvindo: avisa até onde chegou
 const mmss = (n) => { n = Math.max(0, Math.round(Number(n) || 0)); return `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`; };
 // O próximo áudio logo ABAIXO (mensagens de áudio seguidas, de quem for): ao terminar um, o seguinte toca sozinho; um texto, foto etc. no meio encerra a sequência.
 // Quem o aparelho não toca (formato sem suporte) é pulado. Devolve o botão "Ouvir áudio" (ainda não baixado) ou o player já pronto.
@@ -1205,12 +1220,23 @@ function proximoAudio(box) {
   }
   return null;
 }
-function playerAudio(url, dur, { auto = false } = {}) {
+function playerAudio(url, dur, { auto = false, msgId = null } = {}) {
   const box = el("div", "player"), btn = el("button", "play"), barra = el("div", "barra"), prog = el("i"), tempo = el("span", "tempo", `0:00 / ${mmss(dur)}`);
   btn.type = "button"; btn.setAttribute("aria-label", "Tocar áudio");
   barra.append(prog); box.append(btn, barra, tempo);
   barra.tabIndex = 0; barra.setAttribute("role", "slider"); barra.setAttribute("aria-label", "Posição do áudio"); barra.setAttribute("aria-valuemin", "0");
   const a = new Audio(url); a.preload = "metadata";
+  // Escuta: só para áudio de OUTRA pessoa (msgId): conta o que a pessoa realmente ouviu (seguido, sem pular) e avisa o servidor, para quem enviou ver "ouviu até…" / "ouviu".
+  const esc = msgId != null ? new Escuta(dur) : null; let ultRel = null, ultEnvio = 0;
+  const relatar = (forcar = false) => {
+    const r = esc?.relato(); if (!r) return;
+    if (!forcar && ultRel && r.ate - ultRel.ate < 5 && r.tudo === ultRel.tudo) return; // (só avisa a cada 5 s de avanço, ou quando termina)
+    if (!forcar && Date.now() - ultEnvio < 4000) return;
+    if (ultRel && r.ate === ultRel.ate && r.tudo === ultRel.tudo) return;
+    const antes = ultRel; ultRel = r; ultEnvio = Date.now();
+    Promise.resolve(sb.rpc("marcar_ouvida", { p_id: msgId, p_ate: r.ate, p_tudo: r.tudo })).then(({ error }) => { if (error) ultRel = antes; }).catch(() => { ultRel = antes; }); // (se falhar, tenta de novo no próximo aviso)
+  };
+  if (esc) a.addEventListener("playing", () => { relatarTocando = () => relatar(true); });
   const total = () => (Number.isFinite(a.duration) && a.duration > 0 ? a.duration : dur) || 0;
   let arrasta = null; // posição (em segundos) enquanto o dedo está arrastando a barra
   const pinta = () => {
@@ -1218,11 +1244,13 @@ function playerAudio(url, dur, { auto = false } = {}) {
     prog.style.width = t ? Math.min(100, (atual / t) * 100) + "%" : "0%"; tempo.textContent = `${mmss(atual)} / ${mmss(t)}`;
     barra.setAttribute("aria-valuemax", String(Math.round(t))); barra.setAttribute("aria-valuenow", String(Math.round(atual))); barra.setAttribute("aria-valuetext", `${mmss(atual)} de ${mmss(t)}`);
   };
-  a.ontimeupdate = () => { if (arrasta === null) pinta(); };
+  a.ontimeupdate = () => { if (arrasta === null) pinta(); if (esc) { esc.tempo(a.currentTime); relatar(); } };
+  a.onseeking = () => esc?.salto(); // (pular na barra não conta como ouvir)
   let preparou = false;
   a.onplay = () => { btn.classList.add("on"); btn.setAttribute("aria-label", "Pausar áudio"); if (!preparou) { preparou = true; proximoAudio(box)?.btn?.preparar?.(); } }; // (enquanto este toca, o próximo já é baixado e aberto: sem pausa entre eles)
-  a.onpause = () => { btn.classList.remove("on"); btn.setAttribute("aria-label", "Tocar áudio"); };
+  a.onpause = () => { btn.classList.remove("on"); btn.setAttribute("aria-label", "Tocar áudio"); if (esc && !a.ended) { esc.salto(); relatar(true); } };
   a.onended = () => {
+    if (esc) { esc.fim(); relatar(true); }
     a.currentTime = 0; pinta(); if (tocando === a) tocando = null;
     const prox = proximoAudio(box); if (!prox) return;
     if (prox.play) { if (!prox.play.classList.contains("on")) prox.play.click(); } else if (!prox.btn.disabled) prox.btn.click(); // o seguinte começa sozinho
@@ -1260,7 +1288,7 @@ function playerAudio(url, dur, { auto = false } = {}) {
   return box;
 }
 
-function mediaBlock(c, mine) {
+function mediaBlock(c, mine, msgId = null) {
   const box = el("div", "media");
   const w = Number(c.w), h = Number(c.h), okDims = w > 0 && h > 0 && w < 20000 && h < 20000;
   box.style.setProperty("--ar", c.kind === "video" ? "16/9" : okDims ? `${Math.round(w)}/${Math.round(h)}` : "4/3");
@@ -1283,17 +1311,17 @@ function mediaBlock(c, mine) {
     box.classList.add("audio");
     const dur = Math.min(3600, Math.max(0, Number(c.dur) || 0));
     if (!new Audio().canPlayType(safeMime(c))) box.append(el("div", "ph audio-ph", "Este aparelho não toca este formato de áudio."));
-    else if (mediaCache.has(c.path)) box.append(playerAudio(mediaCache.get(c.path), dur));
+    else if (mediaCache.has(c.path)) box.append(playerAudio(mediaCache.get(c.path), dur, { msgId }));
     else {
       const btn = el("button", "ph audio-ph", `Ouvir áudio · ${mmss(dur)} · ${sizeLabel(Number(c.size) || 0)}`); btn.type = "button";
       btn.preparar = () => { if (typeof c.path === "string" && OK_PATH.test(c.path)) loadMedia(c).catch(() => {}); }; // (baixa e abre o arquivo antes, para o encadeamento sem pausa)
       btn.onclick = async () => {
         btn.disabled = true; btn.textContent = "Carregando áudio…";
-        try { box.replaceChildren(playerAudio(await loadMedia(c), dur, { auto: true })); } catch { fail(); }
+        try { box.replaceChildren(playerAudio(await loadMedia(c), dur, { auto: true, msgId })); } catch { fail(); }
       };
       box.append(btn);
       // se o áudio já está guardado neste aparelho, o player aparece pronto: é só tocar (nada para baixar)
-      if (typeof c.path === "string" && OK_PATH.test(c.path)) hasBlob(me.id, c.path).then(async (ok) => { if (ok && btn.isConnected) { try { const u = await loadMedia(c); if (btn.isConnected) box.replaceChildren(playerAudio(u, dur)); } catch {} } }).catch(() => {});
+      if (typeof c.path === "string" && OK_PATH.test(c.path)) hasBlob(me.id, c.path).then(async (ok) => { if (ok && btn.isConnected) { try { const u = await loadMedia(c); if (btn.isConnected) box.replaceChildren(playerAudio(u, dur, { msgId })); } catch {} } }).catch(() => {});
     }
   } else {
     const tam = sizeLabel(Number(c.size) || 0), btn = el("button", "ph", `Tocar para carregar o vídeo · ${tam}`); btn.type = "button";
@@ -1400,7 +1428,7 @@ function addMessage(m, content, { err = false, animate = false, em = null, desce
     b.append(q);
   }
   if (autor) { autor.setAttribute("aria-hidden", "true"); b.prepend(autor); }
-  if (media) b.append(mediaBlock(content, mine));
+  if (media) b.append(mediaBlock(content, mine, mine ? null : m.id));
   b.append(sr, vis, meta); line.append(b);
   if (!err && !apagada && content.type === "text") { const vl = acharVideoLink(content.text); if (vl) { b.classList.add("has-video"); b.insertBefore(cartaoVideo(vl), meta); } } // link de Shorts/Reels/TikTok: cartão que abre o vídeo aqui
   if (!err) { // botão "⌄" ao passar o mouse (só em aparelhos com mouse); fica fora do balão e não ocupa espaço
@@ -1660,17 +1688,17 @@ async function markRead() {
 }
 // "vista" de uma mensagem minha (uma linha por aparelho de quem recebeu: vale a primeira leitura de qualquer um). Cópias para mim mesmo não entram.
 function marcarVistaDoEnvio(row) {
-  if (!row.read_at) return;
+  if (!row.read_at && !Number.isFinite(row.ouvido_ate)) return;
   let e = msgs.get(linhaParaMsg.get(row.id) ?? row.id);
   if (!e) { const t = Date.parse(row.created_at); for (const x of msgs.values()) if (x.mine && Date.parse(x.m.created_at) === t) { e = x; break; } } // (mensagem que veio de outro aparelho meu: acha pelo instante do envio)
-  if (e && e.mine && !e.m.read_at) { e.m.read_at = row.read_at; setReceipt(e); }
+  if (e && e.mine) aplicaRecibo(e, row);
 }
 // Rede de segurança das "vistas": se o aviso em tempo real de que o outro leu se perdeu, a conversa aberta confere no servidor o que ainda está sem "vista" (só consulta se há mensagem minha na tela sem ela)
 async function conferirVistas() {
   const peer = active; if (!peer || carregandoConversa) return;
   if (peer.grupo) return conferirVistasDoGrupo(peer);
-  if (![...msgs.values()].some((e) => e.mine && !e.m.read_at)) return;
-  const { data, error } = await sb.from("messages").select("id,created_at,read_at").eq("sender_id", me.id).eq("recipient_id", peer.id).not("read_at", "is", null).order("id", { ascending: false }).limit(100);
+  if (![...msgs.values()].some((e) => e.mine && (!e.m.read_at || (ehAudio(e) && !e.m.ouvido_tudo)))) return;
+  const { data, error } = await sb.from("messages").select("id,created_at,read_at,ouvido_ate,ouvido_tudo,ouvido_em").eq("sender_id", me.id).eq("recipient_id", peer.id).not("read_at", "is", null).order("id", { ascending: false }).limit(100);
   if (error || active !== peer) return;
   for (const r of data || []) marcarVistaDoEnvio(r);
 }
@@ -1999,8 +2027,7 @@ async function lembrarAvisosDaTela(conv, itens) {
 function atualizaNaTela(id, m, lote) {
   const ex = msgs.get(id); if (!ex) return false;
   if (lote?.ids) for (const l of lote.ids) linhaParaMsg.set(l, id); // (só as da conversa a dois têm a lista de linhas; no grupo não há "vista")
-  const lida = lote ? lote.read_at : m?.read_at;
-  if (lida && !ex.m.read_at) { ex.m.read_at = lida; setReceipt(ex); }
+  const r = lote || m; if (r && ex.mine) aplicaRecibo(ex, r);
   return true;
 }
 // Uma mensagem minha sem texto guardado aqui (enviada de outro aparelho, no formato antigo) entra no lugar certo pela hora, sem refazer a lista
@@ -2048,7 +2075,7 @@ async function open(peer) {
   const [antigas, recebidas, minhas, proprias] = await Promise.all([
     base("*").or(`and(sender_id.eq.${me.id},recipient_id.eq.${peer.id}),and(sender_id.eq.${peer.id},recipient_id.eq.${me.id})`).is("para_aparelho", null).order("id", { ascending: false }).limit(200), // formato antigo (as 200 mais NOVAS; depois ficam em ordem de envio)
     base("*").eq("sender_id", peer.id).eq("recipient_id", me.id).not("para_aparelho", "is", null).order("id", { ascending: false }).limit(200), // cópias endereçadas a ESTE aparelho (o servidor só deixa ler as dele)
-    base("id,created_at,avisar,para_aparelho,read_at").eq("sender_id", me.id).eq("recipient_id", peer.id).not("para_aparelho", "is", null).order("id", { ascending: false }).limit(1000), // o que EU enviei (uma linha por aparelho de quem recebeu)
+    base("id,created_at,avisar,para_aparelho,read_at,ouvido_ate,ouvido_tudo,ouvido_em").eq("sender_id", me.id).eq("recipient_id", peer.id).not("para_aparelho", "is", null).order("id", { ascending: false }).limit(1000), // o que EU enviei (uma linha por aparelho de quem recebeu)
     base("id,created_at").eq("sender_id", me.id).eq("recipient_id", me.id).order("id", { ascending: false }).limit(200)]); // o que outro aparelho meu enviou (cópias para mim)
   if (active !== peer) return;
   const linhas = (antigas.data || []).reverse();
@@ -2059,7 +2086,7 @@ async function open(peer) {
     ...linhas.map((m) => ({ t: Date.parse(m.created_at), id: m.id, m })),
     ...(recebidas.data || []).reverse().map((m) => ({ t: Date.parse(m.created_at), id: m.id, m })),
     ...meusLotes.map((l) => ({ t: Date.parse(l.created_at), id: l.id, lote: l })),
-    ...donas.map((r) => { const l = lotePorT.get(r.created_at); if (l) for (const id of l.ids) linhaParaMsg.set(id, r.id); return { t: Date.parse(r.created_at), id: r.id, m: { id: r.id, sender_id: me.id, recipient_id: peer.id, grupo_id: null, created_at: r.created_at, read_at: l?.read_at || null, v: 2 } }; })].sort((a, b) => a.t - b.t || a.id - b.id);
+    ...donas.map((r) => { const l = lotePorT.get(r.created_at); if (l) for (const id of l.ids) linhaParaMsg.set(id, r.id); return { t: Date.parse(r.created_at), id: r.id, m: { id: r.id, sender_id: me.id, recipient_id: peer.id, grupo_id: null, created_at: r.created_at, read_at: l?.read_at || null, ouvido_ate: l?.ouvido_ate ?? null, ouvido_tudo: !!l?.ouvido_tudo, ouvido_em: l?.ouvido_em || null, v: 2 } }; })].sort((a, b) => a.t - b.t || a.id - b.id);
   { // o que este aparelho guarda mas o servidor não deixa listar (ex.: histórico importado de outro aparelho: as mensagens recebidas eram endereçadas àquele aparelho): entra no lugar certo, dentro do período já listado
     const vistos = new Set(itens.flatMap((it) => (it.lote ? [it.id, ...it.lote.ids] : [it.id]))), minT = itens.length ? Math.min(...itens.map((it) => it.t)) : 0;
     for (const { id, entry } of await ultimosDoHistorico(me.id, peer.id, 600).catch(() => [])) {
@@ -2308,7 +2335,7 @@ function atualizarGrupos(fresco = false) {
 async function mostrarMeuLoteDm(peer, l) {
   for (const id of l.ids) linhaParaMsg.set(id, l.id);
   const e = await getHistory(me.id, peer.id, l.id).catch(() => null); if (!e) return;
-  mostrar({ id: l.id, sender_id: me.id, recipient_id: peer.id, grupo_id: null, created_at: l.created_at, read_at: l.read_at }, e.content, false);
+  mostrar({ id: l.id, sender_id: me.id, recipient_id: peer.id, grupo_id: null, created_at: l.created_at, read_at: l.read_at, ouvido_ate: l.ouvido_ate, ouvido_tudo: l.ouvido_tudo, ouvido_em: l.ouvido_em }, e.content, false);
 }
 async function mostrarMeuLote(g, l) { // uma mensagem MINHA no grupo (no servidor ela é uma linha por pessoa)
   const m = { id: l.id, sender_id: me.id, recipient_id: null, grupo_id: g.id, created_at: l.created_at, read_at: null };
@@ -2343,7 +2370,7 @@ async function abrirGrupo(g) {
     if (local) { revelarNoFim(); focoSeMouse(); } // já aparece (nas últimas mensagens) enquanto o servidor confere; no computador o foco já vai para o campo (no celular o teclado só sobe se a pessoa tocar nele)
     const [rec, meus, est] = await Promise.all([
       sb.from("messages").select("*").eq("grupo_id", g.id).eq("recipient_id", me.id).order("id", { ascending: false }).limit(200), // o que os outros mandaram (as 200 mais novas)
-      sb.from("messages").select("id,created_at,avisar,para_aparelho,de_aparelho,recipient_id,read_at").eq("grupo_id", g.id).eq("sender_id", me.id).order("id", { ascending: false }).limit(1000), // o que eu mandei (uma linha por aparelho de cada pessoa)
+      sb.from("messages").select("id,created_at,avisar,para_aparelho,de_aparelho,recipient_id,read_at,ouvido_ate,ouvido_tudo,ouvido_em").eq("grupo_id", g.id).eq("sender_id", me.id).order("id", { ascending: false }).limit(1000), // o que eu mandei (uma linha por aparelho de cada pessoa)
       metaGet(me.id, "g:" + g.id).catch(() => null)]);
     if (active !== g) return;
     // (entre as linhas "para mim" vêm também as cópias que ESTE aparelho mandou aos meus outros aparelhos: essas não são para ler aqui)
