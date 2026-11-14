@@ -75,7 +75,8 @@ jobs:
         if: failure()
         run: |
           docker ps --format '{{.Names}}'
-          for c in supabase_realtime_lacre-teste supabase_auth_lacre-teste; do echo "=== $c"; docker logs "$c" 2>&1 | grep -v "Billing metrics\|api/ping" | tail -80; done
+          echo "=== Kong: respostas 5xx"; docker logs supabase_kong_lacre-teste 2>&1 | grep -E '" 50[0-9] |upstream|error' | head -40
+          for c in supabase_kong_lacre-teste supabase_rest_lacre-teste supabase_realtime_lacre-teste; do echo "=== $c"; docker logs "$c" 2>&1 | grep -v "Billing metrics\|api/ping" | tail -80; done
 
   e2e-funcoes:
     name: Ponta a ponta com as Edge Functions (projeto de teste, só 2 arquivos)
