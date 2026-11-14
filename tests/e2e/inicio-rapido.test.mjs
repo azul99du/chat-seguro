@@ -18,6 +18,8 @@ before(async () => {
   srv = await servir(prepararSite()); browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
   const ca = await browser.newContext({ viewport: { width: 1000, height: 700 } }), cb = await browser.newContext({ viewport: { width: 1000, height: 700 } });
   // vigia a lista a cada abertura: depois de ter conversas na tela, ela nunca pode ficar vazia nem mostrar "Ninguém por aqui"
+  await ca.addInitScript(() => { try { const f = localStorage.getItem("__injetar"); if (f) { localStorage.removeItem("__injetar"); const { uid, mini } = JSON.parse(f), k = "lacre:snap:" + uid, s = JSON.parse(localStorage.getItem(k)); s.eu.a = "x/eu.jpg"; s.eu.th = mini; for (const i of s.itens) if (!i.g) { i.a = "x/dm.jpg"; i.th = mini; } localStorage.setItem(k, JSON.stringify(s)); } } catch {} }); // (injeta miniaturas na foto guardada DEPOIS de a página antiga ter salvo a dela ao recarregar)
+  await ca.addInitScript(() => { try { const f = localStorage.getItem("__snap"); if (f) { localStorage.removeItem("__snap"); const { uid, valor } = JSON.parse(f); if (valor === null) localStorage.removeItem("lacre:snap:" + uid); else localStorage.setItem("lacre:snap:" + uid, valor); } } catch {} }); // (troca ou apaga a foto guardada DEPOIS de a página antiga ter salvo a dela ao recarregar)
   await ca.addInitScript(() => { window.__vigia = { vazia: 0, ninguem: 0, viu: false }; const L = () => document.getElementById("contacts"), E = () => document.getElementById("inbox-empty");
     const quadro = () => { const l = L(), e = E(); if (l) { if (l.childElementCount) window.__vigia.viu = true; else if (window.__vigia.viu) window.__vigia.vazia++; if (window.__vigia.viu && e && getComputedStyle(e).display !== "none") window.__vigia.ninguem++; } requestAnimationFrame(quadro); }; requestAnimationFrame(quadro); });
   [A, B] = [await ca.newPage(), await cb.newPage()]; [nomeA, nomeB] = [novoUsuario("a"), novoUsuario("b")];
@@ -40,7 +42,7 @@ t("o aparelho guarda a lista (nomes, horário, não lidas) e os pontos vermelhos
 t("ao abrir com o servidor LENTO (4 s), a lista, a não lida, a foto de perfil e o ponto vermelho já estão na tela em menos de 1,5 s", async () => {
   // põe uma foto de teste (miniatura) na foto guardada do aparelho e na da conversa a dois, como se elas tivessem foto
   const mini = await A.evaluate(() => { const c = document.createElement("canvas"); c.width = c.height = 40; const x = c.getContext("2d"); x.fillStyle = "#d22"; x.fillRect(0, 0, 40, 40); return c.toDataURL("image/jpeg", 0.8); });
-  await A.evaluate(({ uid, mini }) => { const k = "lacre:snap:" + uid, s = JSON.parse(localStorage.getItem(k)); s.eu.a = "x/eu.jpg"; s.eu.th = mini; for (const i of s.itens) if (!i.g) { i.a = "x/dm.jpg"; i.th = mini; } localStorage.setItem(k, JSON.stringify(s)); }, { uid: uidA, mini });
+  await A.evaluate(({ uid, mini }) => localStorage.setItem("__injetar", JSON.stringify({ uid, mini })), { uid: uidA, mini });
   await A.route(/\/rest\/v1\//, async (route) => { await dorme(4000); route.continue().catch(() => {}); });
   const t0 = Date.now(); await A.reload({ waitUntil: "domcontentloaded" });
   await A.waitForSelector("#contacts li", { timeout: 1500 }); const ms = Date.now() - t0;
@@ -55,7 +57,7 @@ t("ao abrir com o servidor LENTO (4 s), a lista, a não lida, a foto de perfil e
 });
 
 t("sem lista guardada (primeiro acesso neste aparelho): não aparece 'Ninguém por aqui' enquanto as conversas carregam", async () => {
-  await A.evaluate((uid) => localStorage.removeItem("lacre:snap:" + uid), uidA);
+  await A.evaluate((uid) => localStorage.setItem("__snap", JSON.stringify({ uid, valor: null })), uidA);
   await A.route(/\/rest\/v1\//, async (route) => { await dorme(2500); route.continue().catch(() => {}); });
   await A.reload({ waitUntil: "domcontentloaded" }); await A.waitForSelector("#chat.preparando", { timeout: 5000 });
   assert.equal(await A.locator("#inbox-empty").isVisible(), false, "enquanto carrega, o aviso de lista vazia fica escondido"); assert.equal(await A.locator("#contacts li").count(), 0);
@@ -63,7 +65,7 @@ t("sem lista guardada (primeiro acesso neste aparelho): não aparece 'Ninguém p
 });
 
 t("uma lista guardada adulterada (fora do formato) é ignorada: nada de HTML, e a lista vem do servidor", async () => {
-  await A.evaluate((uid) => localStorage.setItem("lacre:snap:" + uid, JSON.stringify({ v: 1, eu: { u: "<img src=x onerror=window.__x=1>" }, ponto: {}, itens: [{ id: "<b>x</b>", n: "<img src=x onerror=window.__x=1>" }] })), uidA);
+  await A.evaluate((uid) => localStorage.setItem("__snap", JSON.stringify({ uid, valor: JSON.stringify({ v: 1, eu: { u: "<img src=x onerror=window.__x=1>" }, ponto: {}, itens: [{ id: "<b>x</b>", n: "<img src=x onerror=window.__x=1>" }] }) })), uidA);
   await A.reload({ waitUntil: "domcontentloaded" }); await pronto(A); await A.waitForSelector("#contacts li", { timeout: 15000 });
   assert.equal(await A.evaluate(() => window.__x), undefined, "nenhum script rodou"); assert.equal(await A.locator("#contacts li").count(), 2);
 });
