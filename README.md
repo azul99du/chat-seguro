@@ -301,3 +301,8 @@ Quem compra não escolhe: o **servidor sorteia** um da lista do admin (`selo_com
 - **Aviso no chat:** o comprador vê "Você comprou um jumpscare" na hora; cada outro membro só vê "@x comprou um jumpscare" DEPOIS do próprio susto (o servidor esconde a compra de quem ainda não levou o susto).
 - **Sem saída por pessoa:** vale para todos (decisão do dono). Os testes usam `localStorage lacre:susto` (atraso em ms) e `lacre:susto_vivo` (segundos que definem "ao vivo").
 - **Testes:** `tests/e2e/jumpscare.test.mjs` (lista, compra, susto ao vivo, susto ao entrar no grupo, travas do banco) e a seção "jumpscare" de `tests/loja.test.mjs`.
+
+## Novidades (o que mudou em cada atualização)
+No menu da conta, "Novidades" abre uma tela com um cartão por atualização (a mais nova primeiro; as 3 mais novas abertas e um "Ver atualizações antigas"), com os itens agrupados por assunto (Selos, Mensagens, Grupos, Segurança, Geral) e botões de filtro por assunto. Um ponto rosa no avatar e no item do menu avisa enquanto a atualização mais nova for diferente da última que a pessoa abriu (`localStorage lacre:novidades`, só neste aparelho; sem servidor e sem banco). Os cartões mais novos que a última visita ficam marcados com NOVO.
+- **A lista é escrita à mão em `novidades.js`:** a cada publicação com algo visível para as pessoas, ponha uma entrada nova NO TOPO de `NOVIDADES` (`id` = data + número, maior que o da anterior; itens com `tema`, `icone`, `titulo` e `texto` curtos, em português simples). `tests/novidades.test.mjs` confere ordem, ids, datas e assuntos.
+- **Testes:** `tests/novidades.test.mjs` (puro) e `tests/e2e/novidades.test.mjs`.

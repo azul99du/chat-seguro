@@ -1,27 +1,28 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=d8e6f2851d";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=d8e6f2851d";
-import { montarFigurinhas } from "./figurinhas.js?v=d8e6f2851d";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=d8e6f2851d";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=d8e6f2851d";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=d8e6f2851d";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=d8e6f2851d";
-import { acharVideoLink } from "./videolink.js?v=d8e6f2851d";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=d8e6f2851d";
-import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=d8e6f2851d";
-import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=d8e6f2851d";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=d8e6f2851d";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=d8e6f2851d";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=d8e6f2851d";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=d8e6f2851d";
-import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES } from "./loja.js?v=d8e6f2851d";
-import { ACOES, LOJA, TITULOS, precoDaLoja, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=d8e6f2851d";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=d8e6f2851d";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=d8e6f2851d";
-import { cleanImage, cleanVideo, cleanAudio, somDoVideo, sealBytes, openBytes } from "./media.js?v=d8e6f2851d";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=d8e6f2851d";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=d8e6f2851d";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=d8e6f2851d";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=a6c3d67ca7";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=a6c3d67ca7";
+import { montarFigurinhas } from "./figurinhas.js?v=a6c3d67ca7";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=a6c3d67ca7";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=a6c3d67ca7";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=a6c3d67ca7";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=a6c3d67ca7";
+import { acharVideoLink } from "./videolink.js?v=a6c3d67ca7";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=a6c3d67ca7";
+import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=a6c3d67ca7";
+import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=a6c3d67ca7";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=a6c3d67ca7";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=a6c3d67ca7";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=a6c3d67ca7";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=a6c3d67ca7";
+import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=a6c3d67ca7";
+import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES } from "./loja.js?v=a6c3d67ca7";
+import { ACOES, LOJA, TITULOS, precoDaLoja, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=a6c3d67ca7";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=a6c3d67ca7";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=a6c3d67ca7";
+import { cleanImage, cleanVideo, cleanAudio, somDoVideo, sealBytes, openBytes } from "./media.js?v=a6c3d67ca7";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=a6c3d67ca7";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=a6c3d67ca7";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=a6c3d67ca7";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -2597,6 +2598,33 @@ function desenharSelos() {
 $("gi-selos").onclick = () => { if (giGrupo) abrirSelos(giGrupo).catch(() => msgSelos("Não foi possível abrir agora.")); };
 $("selos").addEventListener("close", () => { slGrupo = null; slDados = null; });
 $("sl-editar").onclick = () => { if (slGrupo?.admin && slDados) abrirRegras(slGrupo); };
+
+// ---------- Novidades: o que mudou em cada atualização ----------
+// A lista fica em novidades.js. O ponto rosa no menu da conta some quando a pessoa abre a tela (o último id visto fica só neste aparelho).
+const NOV_CHAVE = "lacre:novidades", NOV_ABERTAS = 3;
+const lerNovVisto = () => { try { return limpaVisto(localStorage.getItem(NOV_CHAVE)); } catch { return null; } };
+function pintarPontoNovidades() { const tem = novosDesde(NOVIDADES, lerNovVisto()).length > 0; $("nov-ponto").hidden = !tem; $("nov-aviso").hidden = !tem; }
+let novTema = "tudo", novTodas = false, novNovos = new Set();
+function desenharNovidades() {
+  const presentes = temasPresentes(NOVIDADES), v = new URL(import.meta.url).searchParams.get("v");
+  $("nov-versao").replaceChildren(...(v ? ["Você está na versão ", el("b", null, v)] : []));
+  const chip = (tema, nome) => { const b = el("button", null, nome); b.type = "button"; b.dataset.tema = tema; b.setAttribute("aria-pressed", String(novTema === tema)); b.onclick = () => { novTema = tema; desenharNovidades(); }; return b; };
+  $("nov-chips").replaceChildren(chip("tudo", "Tudo"), ...presentes.map((t) => chip(t.tema, t.nome)));
+  const lista = filtrar(NOVIDADES, novTema), visiveis = novTodas ? lista : lista.slice(0, NOV_ABERTAS), cartoes = visiveis.map((e, k) => {
+    const c = el("div", "nov-cd" + (k > 0 && !novNovos.has(e.id) ? " vel" : "")), tp = el("div", "nov-tp"); c.dataset.id = e.id;
+    if (novNovos.has(e.id)) tp.append(el("span", "nov-novo", "NOVO")); tp.append(el("span", null, dataCurta(e.data))); c.append(tp);
+    const grupos = agruparPorTema(e.itens), subtitulos = novTema === "tudo" && grupos.length > 1; // (no filtro por assunto não precisa de subtítulo)
+    for (const g of grupos) { if (subtitulos) c.append(el("div", "nov-gr", g.nome)); for (const i of g.itens) { const ln = el("div", "nov-ln"), tx = el("div"); tx.append(el("b", null, i.titulo), el("small", null, i.texto)); ln.append(el("span", "nov-em", i.icone), tx); c.append(ln); } }
+    return c;
+  });
+  const mais = lista.length > NOV_ABERTAS ? [(() => { const b = el("button", "nov-mais"); b.type = "button"; b.id = "nov-mais"; b.append(el("span", null, novTodas ? "Mostrar só as mais novas" : `Ver atualizações antigas (${lista.length - NOV_ABERTAS})`), el("span", null, novTodas ? "‹" : "›")); b.onclick = () => { novTodas = !novTodas; desenharNovidades(); }; return b; })()] : [];
+  $("nov-lista").replaceChildren(...(cartoes.length ? cartoes : [el("div", "nov-vazio", "Nada novo neste assunto.")]), ...mais);
+}
+$("nov-btn").onclick = () => {
+  novNovos = new Set(novosDesde(NOVIDADES, lerNovVisto()).map((e) => e.id)); novTema = "tudo"; novTodas = false; desenharNovidades(); $("novidades").showModal();
+  try { localStorage.setItem(NOV_CHAVE, maisNovaId(NOVIDADES)); } catch {} pintarPontoNovidades(); // (o ponto some ao abrir; os cartões "NOVO" ficam marcados enquanto a tela está aberta)
+};
+pintarPontoNovidades();
 
 // ---------- Loja de Selos ----------
 // Vantagens que se compram com Selos (título, mensagem em destaque, silenciar). O servidor confere saldo e regras e faz valer o silêncio; aqui se mostra e se pede a compra.

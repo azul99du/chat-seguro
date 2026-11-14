@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=d8e6f2851d">
+  <link rel="stylesheet" href="style.css?v=a6c3d67ca7">
 </head>
 <body>
 
@@ -86,6 +86,7 @@
             <button id="eu-foto" class="avatar peq" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-conta" aria-label="Minha conta: foto, nome e configurações"></button>
             <span id="ap-ponto" class="ponto" role="img" aria-label="Há um aparelho novo na sua conta para conferir" hidden></span>
             <span id="mfa-nudge" class="ponto" role="img" aria-label="Falta ativar a verificação em dois passos" hidden></span>
+            <span id="nov-ponto" class="ponto" role="img" aria-label="Há novidades do Lacre para ver" hidden></span>
           </span>
         </div>
       </header>
@@ -103,6 +104,9 @@
         </button>
         <button id="tema-btn" class="mi" type="button" role="menuitem" aria-label="Aparência: automática. Tocar para trocar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Aparência<span id="tema-estado" class="est">automática</span></button>
         <button id="arm-btn" class="mi" type="button" role="menuitem"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg><span class="tx2">Armazenamento<small id="arm-resumo">neste aparelho</small></span></button>
+        <button id="nov-btn" class="mi" type="button" role="menuitem" aria-label="Novidades: o que mudou em cada atualização">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg><span class="tx2">Novidades<small id="nov-aviso" class="aviso" hidden>● há novidades para ver</small></span>
+        </button>
         <button id="sec-btn" class="mi" type="button" role="menuitem" aria-label="Segurança da conta (verificação em dois passos)">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg><span class="tx2">Segurança da conta<small id="sec-aviso" class="aviso" hidden>● ative a verificação em 2 passos</small><small id="sec-aviso-ap" class="aviso" hidden>● aparelho novo para conferir</small></span>
         </button>
@@ -403,6 +407,17 @@
     <div class="btns"><button type="button" id="sn-ok" class="btn-rosa">Pronto</button></div>
   </dialog>
 
+  <dialog id="novidades" class="pagina">
+    <form method="dialog">
+      <header class="pg-bar"><button value="cancel" class="pg-volta" aria-label="Voltar" formnovalidate><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><h2>Novidades</h2></header>
+      <div class="pg-corpo">
+        <p id="nov-versao" class="nov-versao"></p>
+        <div id="nov-chips" class="nov-chips" role="group" aria-label="Filtrar por assunto"></div>
+        <div id="nov-lista" class="nov-lista"></div>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="js-lista" class="pagina">
     <form method="dialog">
       <header class="pg-bar"><button value="cancel" class="pg-volta" aria-label="Voltar" formnovalidate><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><h2>Jumpscares do grupo</h2></header>
@@ -527,6 +542,6 @@
 
   <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
 
-  <script src="guarda.js?v=d8e6f2851d"></script>
+  <script src="guarda.js?v=a6c3d67ca7"></script>
 </body>
 </html>

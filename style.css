@@ -846,3 +846,21 @@ dialog.susto::backdrop{background:#000}
 dialog.susto img{width:100%;height:100%;object-fit:contain;display:block;animation:susto-pula .9s ease-out both}
 @keyframes susto-pula{0%{transform:scale(.4);opacity:0}12%{transform:scale(1.18);opacity:1}30%{transform:scale(1.04) translate(-1.5%,1%)}50%{transform:scale(1.12) translate(1.5%,-1%)}70%{transform:scale(1.06) translate(-1%,.5%)}100%{transform:scale(1.1)}}
 @media (prefers-reduced-motion:reduce){dialog.susto img{animation:none}}
+
+/* ----- Novidades ----- */
+.nov-versao{margin:14px 16px 12px;font:500 .78rem var(--mono);color:var(--mut)}.nov-versao b{color:var(--texto)}
+.nov-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 16px 12px}
+.nov-chips button{min-height:36px;padding:6px 12px;border-radius:99px;border:1.5px solid var(--line);background:none;color:var(--texto);font-weight:600;font-size:.82rem}
+.nov-chips button[aria-pressed=true]{background:var(--seal);border-color:var(--seal);color:#fff}
+.nov-lista{padding:0 16px 24px}
+.nov-cd{border:1px solid var(--line);border-radius:16px;background:var(--paper);padding:12px 14px;margin-bottom:12px}
+.nov-cd.vel{opacity:.88}
+.nov-tp{display:flex;align-items:center;gap:8px;margin-bottom:2px;font:500 .75rem var(--mono);color:var(--mut)}
+.nov-novo{background:var(--seal);color:#fff;font:500 .62rem var(--mono);padding:2px 8px;border-radius:99px}
+.nov-gr{margin:10px 0 0;font:500 .68rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--seal)}
+.nov-ln{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line)}
+.nov-ln:first-of-type,.nov-gr+.nov-ln,.nov-tp+.nov-ln{border-top:0}
+.nov-em{flex:none;width:34px;height:34px;border-radius:10px;background:var(--ink-2);display:grid;place-items:center;font-size:1.05rem}
+.nov-ln b{display:block;font-size:.92rem}.nov-ln small{display:block;margin-top:1px;color:var(--mut);font-size:.8rem;line-height:1.35}
+.nov-mais{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:44px;padding:4px 8px;background:none;border:0;color:var(--mut);font-size:.85rem;text-align:left}
+.nov-vazio{color:var(--mut);text-align:center;padding:18px 0}
