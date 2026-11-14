@@ -1,24 +1,24 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=430a8b3126";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=430a8b3126";
-import { montarFigurinhas } from "./figurinhas.js?v=430a8b3126";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=430a8b3126";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=430a8b3126";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=430a8b3126";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=430a8b3126";
-import { acharVideoLink } from "./videolink.js?v=430a8b3126";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=430a8b3126";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=430a8b3126";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=430a8b3126";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=430a8b3126";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=430a8b3126";
-import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=430a8b3126";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=430a8b3126";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=430a8b3126";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=430a8b3126";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=430a8b3126";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=430a8b3126";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=430a8b3126";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=06cf423629";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=06cf423629";
+import { montarFigurinhas } from "./figurinhas.js?v=06cf423629";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=06cf423629";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=06cf423629";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=06cf423629";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=06cf423629";
+import { acharVideoLink } from "./videolink.js?v=06cf423629";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=06cf423629";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=06cf423629";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=06cf423629";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=06cf423629";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=06cf423629";
+import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=06cf423629";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=06cf423629";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=06cf423629";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=06cf423629";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=06cf423629";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=06cf423629";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=06cf423629";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -1792,9 +1792,18 @@ $("safety-btn").onclick = async () => {
 async function pintarDoAparelho(conv, avisos) {
   const ult = await recentesDoHistorico(me.id, conv.id, 200).catch(() => []);
   const itens = ult.filter(({ entry }) => entry?.content && !["hidden", "hello", "reaction"].includes(entry.content.type) && Number.isFinite(Date.parse(entry.at)))
-    .map(({ id, entry }) => ({ t: Date.parse(entry.at), id, entry })).sort((a, b) => a.t - b.t || a.id - b.id);
+    .map(({ id, entry }) => ({ t: Date.parse(entry.at), id, entry }));
+  // balões de aviso que o aparelho já mostrou antes ("não foi possível decifrar", "enviada de outro aparelho"): não ficam no histórico, então são lembrados à parte para entrarem junto com o resto
+  const guardados = new Set(ult.map((u) => u.id));
+  for (const x of ((await metaGet(me.id, "ph:" + conv.id).catch(() => null))?.itens || [])) {
+    if (!Number.isSafeInteger(x?.id) || guardados.has(x.id) || typeof x.text !== "string" || typeof x.at !== "string" || !Number.isFinite(Date.parse(x.at))) continue;
+    if (conv.grupo && !x.mine && typeof x.from !== "string") continue;
+    itens.push({ t: Date.parse(x.at), id: x.id, entry: { content: { type: "unreadable", text: x.text.slice(0, 400) }, at: x.at, mine: !!x.mine, from: x.mine ? me.id : (conv.grupo ? x.from : conv.id) } });
+  }
+  itens.sort((a, b) => a.t - b.t || a.id - b.id);
   if (!itens.length) return null;
   const av = (avisos || []).filter((x) => ult.length < 200 || x.t >= itens[0].t); let tMax = 0, pintou = 0;
+  const conhecidos = new Set([...ult.map((u) => u.id), ...itens.map((i) => i.id)]); // tudo o que o aparelho já decifrou (inclusive reações e toques que não viram balão): o servidor não precisa reler
   for (const it of itens) {
     const e = it.entry, minha = !!e.mine || e.from === me.id, quem = conv.grupo ? (minha ? me.id : e.from) : (minha ? me.id : conv.id);
     if (typeof quem !== "string") continue; // (grupo sem o autor guardado: fica para o servidor)
@@ -1803,7 +1812,24 @@ async function pintarDoAparelho(conv, avisos) {
     mostrar(m, e.content, false); tMax = Math.max(tMax, it.t); pintou++;
   }
   for (const x of av) addAviso(textoAviso(x));
-  return pintou ? { tMax } : null;
+  // reações guardadas: os chips já aparecem junto com as mensagens (em ordem, a última de cada pessoa vale)
+  for (const { id, entry } of ult) {
+    if (entry?.content?.type !== "reaction") continue; const minha = !!entry.mine || entry.from === me.id, quem = conv.grupo ? (minha ? me.id : entry.from) : (minha ? me.id : conv.id);
+    if (typeof quem === "string" && Number.isFinite(Date.parse(entry.at))) applyReaction(entry.content, { id, sender_id: quem, recipient_id: minha ? null : me.id, grupo_id: conv.grupo ? conv.id : null, created_at: entry.at, v: 2 });
+  }
+  if (pintou) [...msgs.keys()].forEach(renderRx);
+  return pintou ? { tMax, conhecidos } : null;
+}
+// Lembra os balões de aviso que a conferência do servidor acabou de mostrar (a próxima abertura já os pinta junto com o resto, sem entrarem no meio da lista depois)
+async function lembrarAvisosDaTela(conv, itens) {
+  const novos = [];
+  for (const it of itens) {
+    const e = msgs.get(it.id); if (!e || e.content !== null || e.wrap.classList.contains("apagada")) continue; // (balão de aviso = mensagem com erro, sem conteúdo)
+    novos.push({ id: it.id, at: e.m.created_at, mine: e.mine, from: e.m.sender_id, text: (e.wrap.querySelector(".vis")?.textContent || "").slice(0, 400) });
+  }
+  if (!novos.length) return;
+  const velho = (await metaGet(me.id, "ph:" + conv.id).catch(() => null))?.itens || [], ids = new Set(novos.map((n) => n.id));
+  await metaPut(me.id, "ph:" + conv.id, { itens: [...velho.filter((x) => !ids.has(x?.id)), ...novos].slice(-80) }).catch(() => {});
 }
 // O que já está na tela só atualiza "vista" (minhas) e "lida" (recebidas) com o que o servidor sabe; devolve se a mensagem já estava na tela
 function atualizaNaTela(id, m, lote) {
@@ -1820,6 +1846,16 @@ function posicionarPelaHora(id) {
     if (c === e.wrap || !c.classList.contains("msg")) continue;
     const o = todas.find((x) => x.wrap === c); if (!o) continue; const ot = Date.parse(o.m.created_at);
     if (ot > t || (ot === t && o.m.id > id)) { $("messages").insertBefore(e.wrap, c); return; }
+  }
+}
+// Em grupo, depois de pôr uma mensagem no meio da lista: o nome de quem escreve só aparece na 1ª de uma sequência, e a foto só na última
+function ajustarAutores(...wraps) {
+  if (!active?.grupo) return;
+  for (const w of wraps) {
+    if (!w?.classList?.contains("msg") || w.classList.contains("mine")) continue;
+    const prev = w.previousElementSibling, deve = !(prev?.classList.contains("msg") && prev.dataset.de === w.dataset.de), b = w.querySelector(".bubble"), tem = b?.querySelector(":scope > .autor");
+    if (deve && !tem && b) { const x = el("span", "autor", "@" + nomeDe(w.dataset.de)); x.setAttribute("aria-hidden", "true"); b.prepend(x); } else if (!deve && tem) tem.remove();
+    reavaliarAvatar(w);
   }
 }
 const pertoDoFim = () => { const L = $("messages"); return L.scrollHeight - L.scrollTop - L.clientHeight < 140; };
@@ -1868,16 +1904,12 @@ async function open(peer) {
     itens.sort((a, b) => a.t - b.t || a.id - b.id);
   }
   const faltam = [];
-  if (local) { // o servidor só confere: o que já está na tela é atualizado, e só se acrescenta o que faltou
-    for (const it of itens) if (!atualizaNaTela(it.id, it.m, it.lote)) faltam.push(it);
-    if (faltam.some((it) => !it.lote && it.t <= local.tMax)) { // algo recebido, mais antigo que o já pintado, ainda não estava decifrado aqui: refaz a lista na ordem certa (raro)
-      $("messages").classList.add("carregando"); $("messages").replaceChildren(); msgs.clear(); midParaId.clear(); local = null; faltam.length = 0;
-    }
-  }
-  if (local) {
+  if (local) { // o servidor só confere: o que já está na tela é atualizado, e só entra o que o aparelho ainda não tinha (nunca se apaga nem se refaz a lista)
+    for (const it of itens) { if (atualizaNaTela(it.id, it.m, it.lote)) continue; if (!it.lote && local.conhecidos.has(it.id)) continue; faltam.push(it); }
     const perto = pertoDoFim();
-    for (const it of faltam) { if (it.lote) await mostrarMeuLoteDm(peer, it.lote); else await show(it.m, peer, false); if (it.t <= local.tMax) posicionarPelaHora(it.id); }
+    for (const it of faltam) { if (it.lote) await mostrarMeuLoteDm(peer, it.lote); else await show(it.m, peer, false); if (it.t <= local.tMax) posicionarPelaHora(it.id); } // (mais antiga que a já pintada: entra no lugar certo pela hora)
     if (perto && faltam.length) $("messages").scrollTop = $("messages").scrollHeight;
+    lembrarAvisosDaTela(peer, faltam).catch(() => {});
   } else {
     const avisosDm = ((await metaGet(me.id, "d:" + peer.id).catch(() => null))?.avisos || []).slice(); // avisos como "@antigo agora é @novo", cada um no seu lugar da conversa
     for (const it of itens) {
@@ -1885,6 +1917,7 @@ async function open(peer) {
       if (it.lote) await mostrarMeuLoteDm(peer, it.lote); else await show(it.m, peer, false);
     }
     for (const a of avisosDm) addAviso(textoAviso(a));
+    lembrarAvisosDaTela(peer, itens).catch(() => {});
   }
   [...msgs.keys()].forEach(renderRx);
   carregandoConversa = null; const fila = filaChegando; filaChegando = [];
@@ -2156,17 +2189,13 @@ async function abrirGrupo(g) {
       else { const p = await perfilDe(it.m.sender_id); if (p) await show(it.m, p, false); }
     };
     const faltam = [];
-    if (local) { // o servidor só confere: o que já está na tela é atualizado, e só se acrescenta o que faltou
-      for (const it of itens) if (!it.aviso && !atualizaNaTela(it.id, it.m, it.lote)) faltam.push(it);
-      if (faltam.some((it) => !it.lote && it.t <= local.tMax)) { // algo recebido, mais antigo que o já pintado, ainda não estava decifrado aqui: refaz a lista na ordem certa (raro)
-        $("messages").classList.add("carregando"); $("messages").replaceChildren(); msgs.clear(); midParaId.clear(); local = null; faltam.length = 0;
-      }
-    }
-    if (local) {
+    if (local) { // o servidor só confere: o que já está na tela é atualizado, e só entra o que o aparelho ainda não tinha (nunca se apaga nem se refaz a lista)
+      for (const it of itens) { if (it.aviso || atualizaNaTela(it.id, it.m, it.lote)) continue; if (!it.lote && local.conhecidos.has(it.id)) continue; faltam.push(it); }
       const perto = pertoDoFim();
-      for (const it of faltam) { await colocar(it); if (it.t <= local.tMax) posicionarPelaHora(it.id); } // (minha mensagem sem texto guardado aqui: entra no lugar certo pela hora)
+      for (const it of faltam) { await colocar(it); if (it.t <= local.tMax) { posicionarPelaHora(it.id); const e = msgs.get(it.id); if (e) ajustarAutores(e.wrap.previousElementSibling, e.wrap, e.wrap.nextElementSibling); } } // (mais antiga que a já pintada: entra no lugar certo pela hora)
       if (perto && faltam.length) $("messages").scrollTop = $("messages").scrollHeight;
-    } else for (const it of itens) await colocar(it);
+      lembrarAvisosDaTela(g, faltam).catch(() => {});
+    } else { for (const it of itens) await colocar(it); lembrarAvisosDaTela(g, itens.filter((it) => !it.aviso)).catch(() => {}); }
     [...msgs.keys()].forEach(renderRx);
     carregandoConversa = null; const fila = filaChegando; filaChegando = [];
     for (const m of fila) { if (!maisNovaQueATela(m)) continue; if (m.sender_id === me.id) { const e = await getHistory(me.id, g.id, m.id).catch(() => null); if (e) mostrar(m, e.content, false); } else { const p = await perfilDe(m.sender_id); if (p) await show(m, p, false); } }
