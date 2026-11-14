@@ -1,24 +1,25 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=f2023cbe37";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=f2023cbe37";
-import { montarFigurinhas } from "./figurinhas.js?v=f2023cbe37";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=f2023cbe37";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=f2023cbe37";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=f2023cbe37";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=f2023cbe37";
-import { acharVideoLink } from "./videolink.js?v=f2023cbe37";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=f2023cbe37";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=f2023cbe37";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=f2023cbe37";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=f2023cbe37";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=f2023cbe37";
-import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=f2023cbe37";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=f2023cbe37";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=f2023cbe37";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=f2023cbe37";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=f2023cbe37";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=f2023cbe37";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=f2023cbe37";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=d30b4e70be";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=d30b4e70be";
+import { montarFigurinhas } from "./figurinhas.js?v=d30b4e70be";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=d30b4e70be";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=d30b4e70be";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=d30b4e70be";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=d30b4e70be";
+import { acharVideoLink } from "./videolink.js?v=d30b4e70be";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=d30b4e70be";
+import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=d30b4e70be";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=d30b4e70be";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=d30b4e70be";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=d30b4e70be";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=d30b4e70be";
+import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=d30b4e70be";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=d30b4e70be";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=d30b4e70be";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=d30b4e70be";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=d30b4e70be";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=d30b4e70be";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=d30b4e70be";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -48,8 +49,8 @@ function carregarLista() {
   const nl = lerLS("nl"); if (nl && typeof nl === "object") for (const [k, v] of Object.entries(nl)) if (Array.isArray(v)) { const ids = v.filter(Number.isSafeInteger).slice(-100); if (ids.length) naoLidas.set(k, ids); }
   const u = lerLS("ult"); if (u && typeof u === "object") for (const [k, v] of Object.entries(u)) if (Number.isFinite(v)) { ultima.set(k, v); ultimaCerta.add(k); }
 }
-function contarNova(conv, msgId) { const l = naoLidas.get(conv) || []; if (l.includes(msgId)) return; l.push(msgId); naoLidas.set(conv, l.slice(-100)); salvaNL(); }
-function limparNaoLidas(conv) { if (naoLidas.delete(conv)) salvaNL(); }
+function contarNova(conv, msgId) { const l = naoLidas.get(conv) || []; if (l.includes(msgId)) return; l.push(msgId); naoLidas.set(conv, l.slice(-100)); salvaNL(); agendaSnapshot(); }
+function limparNaoLidas(conv) { if (naoLidas.delete(conv)) { salvaNL(); agendaSnapshot(); } }
 function marcaUltima(conv, quando) { // uma mensagem que de fato apareceu (ou chegou) aqui
   const t = typeof quando === "number" ? quando : Date.parse(quando); if (!(t > 0)) return;
   if (!ultimaCerta.has(conv)) { ultimaCerta.add(conv); ultima.set(conv, t); } else if (t > ultima.get(conv)) ultima.set(conv, t); else return;
@@ -153,6 +154,7 @@ $("logout").onclick = async () => {
     { label: "Sair e apagar chaves deste aparelho", value: "wipe", cls: "ghost" },
     { label: "Cancelar", value: "", cls: "ghost" }]);
   if (!r) return;
+  try { localStorage.removeItem(chaveSnap(me.id)); } catch {} // a lista guardada para abrir rápido não fica num aparelho que saiu da conta
   await removerRegistroPush(); // este aparelho deixa de receber avisos desta conta
   if (r === "wipe" && me) { const ref = dispResumo.eu?.ref; if (ref) { try { await sb.rpc("remover_dispositivo", { p_ref: ref }); } catch {} } await deleteLocalKeys(me.id); await wipeLocal(me.id); } // apagar as chaves também tira este aparelho da lista da conta
   await sb.auth.signOut({ scope: "local" }); location.reload(); // só ESTE aparelho sai (antes o "Sair" desconectava a conta em todos os aparelhos)
@@ -169,6 +171,7 @@ async function start() {
   // já estava logado: vai direto para a lista de contatos (sem piscar a tela de login)
   try { const n = localStorage.getItem("lacre:eu:" + session.user.id); if (n) { $("me").textContent = n; $("nome-txt").textContent = n; $("eu-foto").textContent = n.replace("@", "")[0] || ""; } } catch {}
   mostrarChat();
+  pintarListaRapida(session.user.id); // a lista, a foto e os pontos da última vez já aparecem (os dados novos entram em seguida, sem piscar)
   // conferimos no servidor, em segundo plano, se a sessão ainda vale (ex.: a senha foi trocada em outro aparelho)
   sb.auth.getUser().then(({ error }) => { if (error && [401, 403].includes(error.status)) sb.auth.signOut({ scope: "local" }).finally(() => location.reload()); }).catch(() => {});
   const uid = session.user.id;
@@ -292,7 +295,7 @@ async function pedirCodigoLogin() {
 }
 let pendente2fa = null; // fator cadastrado mas ainda não confirmado
 async function ativo2fa() { return (await sb.auth.mfa.listFactors()).data?.totp?.[0] ?? null; }
-async function atualizarAviso2fa() { const falta = !(await ativo2fa()); $("mfa-nudge").hidden = !falta; $("sec-aviso").hidden = !falta; }
+async function atualizarAviso2fa() { const falta = !(await ativo2fa()); $("mfa-nudge").hidden = !falta; $("sec-aviso").hidden = !falta; agendaSnapshot(); }
 async function desenharSeguranca() {
   const ativo = await ativo2fa(), msg = $("mfa-msg"); msg.textContent = ""; msg.className = "";
   $("mfa-enroll").hidden = !pendente2fa; $("mfa-off").hidden = !ativo || !!pendente2fa;
@@ -521,7 +524,7 @@ async function conferirAparelhos(mostrar = true, forcaRegistro = false) {
     await registrarAparelho(forcaRegistro);
     const { data } = await sb.rpc("meus_aparelhos"); if (!data) return;
     const pend = pendentesAparelhos(data), novos = pend.filter((a) => a.decisao === null);
-    $("ap-ponto").hidden = !pend.length; $("sec-aviso-ap").hidden = !pend.length;
+    $("ap-ponto").hidden = !pend.length; $("sec-aviso-ap").hidden = !pend.length; agendaSnapshot();
     const t = $("mfa-ap-txt"); t.textContent = pend.length ? `● ${pend.length === 1 ? "1 aparelho para conferir" : pend.length + " aparelhos para conferir"}` : "Veja onde e quando sua conta entrou"; t.classList.toggle("aviso", pend.length > 0);
     const alvo = novos.find((a) => !dispensados.has(a.session_id));
     if (mostrar && alvo && !document.querySelector("dialog[open]")) mostrarAparelhoNovo(alvo, novos, data);
@@ -782,13 +785,14 @@ function pintarAvatar(node, p, abrivel = false) {
   node.replaceChildren(); node.textContent = p.username[0]; node.dataset.foto = p.avatar || "";
   if (abrivel) { node.onclick = null; node.classList.remove("abre"); node.removeAttribute("title"); if (node.tagName === "BUTTON") node.disabled = true; }
   if (!p.avatar) return;
+  const mini = miniaturas.get(p.avatar); if (mini) { const im0 = el("img"); im0.alt = ""; im0.src = mini; im0.draggable = false; node.replaceChildren(im0); } // (a miniatura da última vez já aparece; a foto inteira troca por ela quando carregar)
   if (abrivel) { // tocar na foto abre ela grande (na lista, sem abrir a conversa junto)
     node.classList.add("abre"); node.title = "Ver a foto de @" + p.username; if (node.tagName === "BUTTON") node.disabled = false;
     node.onclick = (e) => { e.stopPropagation(); e.preventDefault(); abrirFoto(p, node); };
   }
   fotoUrl(p.avatar).then((url) => {
     if (!url || node.dataset.foto !== p.avatar) return;
-    const im = el("img"); im.alt = ""; im.src = url; im.draggable = false; node.replaceChildren(im);
+    const im = el("img"); im.alt = ""; im.src = url; im.draggable = false; node.replaceChildren(im); agendaSnapshot();
   }).catch(() => {});
 }
 // ---------- Foto ampliada (com animação: a foto "voa" do lugar onde está até o centro, e volta ao fechar) ----------
@@ -830,7 +834,8 @@ function pintarAvatarGrupo(node, g, abreDados = false) {
   node.replaceChildren(); node.dataset.foto = g.foto?.p || ""; node.classList.add("grupo"); node.classList.remove("abre"); node.removeAttribute("title");
   node.textContent = [...(g.nome || "G")][0];
   if (node.tagName === "BUTTON") { node.disabled = !abreDados; node.onclick = abreDados ? () => abrirInfoGrupo(g) : null; }
-  if (g.foto) fotoDoGrupo(g).then((url) => { if (!url || node.dataset.foto !== g.foto?.p) return; const im = el("img"); im.alt = ""; im.src = url; im.draggable = false; node.replaceChildren(im); }).catch(() => {});
+  const mini = g.foto && miniaturas.get(g.foto.p); if (mini) { const im0 = el("img"); im0.alt = ""; im0.src = mini; im0.draggable = false; node.replaceChildren(im0); }
+  if (g.foto) fotoDoGrupo(g).then((url) => { if (!url || node.dataset.foto !== g.foto?.p) return; const im = el("img"); im.alt = ""; im.src = url; im.draggable = false; node.replaceChildren(im); agendaSnapshot(); }).catch(() => {});
 }
 function svgIcone(caminhos, tam = 22) {
   const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg");
@@ -934,6 +939,63 @@ $("perfil-remover").onclick = async () => {
   b.disabled = false;
 };
 
+// ---------- Tela inicial na hora: a lista, a foto de perfil e os pontos vermelhos da última vez ----------
+// Ao abrir o site, antes de qualquer consulta ao servidor, pinta o que o aparelho viu da última vez (nomes, horários, não lidas, miniaturas das fotos).
+// Os dados de verdade entram depois e trocam isso sem piscar (as miniaturas guardadas também valem na lista nova). Fica só neste navegador.
+const chaveSnap = (uid) => "lacre:snap:" + uid;
+const miniaturas = new Map(); // caminho da foto -> miniatura pequena (data: URL)
+let listaReal = false, snapT = 0;
+function miniDe(img) { // desenha a foto já carregada num quadrado pequeno (cortando o excesso) e devolve como texto
+  try {
+    const w = img.naturalWidth, h = img.naturalHeight; if (!(w > 0 && h > 0)) return null;
+    const L = Math.min(w, h), c = document.createElement("canvas"); c.width = c.height = 96;
+    c.getContext("2d").drawImage(img, (w - L) / 2, (h - L) / 2, L, L, 0, 0, 96, 96);
+    return c.toDataURL("image/jpeg", 0.8);
+  } catch { return null; }
+}
+function miniaturaDe(caminho, no) { // a guardada, ou a gerada agora a partir da foto que está desenhada em `no`
+  if (!caminho) return null; if (miniaturas.has(caminho)) return miniaturas.get(caminho);
+  const im = no?.querySelector("img"); if (!im || !im.complete) return null;
+  const m = miniDe(im); if (m) miniaturas.set(caminho, m); return m;
+}
+const agendaSnapshot = () => { clearTimeout(snapT); snapT = setTimeout(salvarSnapshot, 700); };
+addEventListener("pagehide", () => { clearTimeout(snapT); salvarSnapshot(); }); // fechar ou recarregar logo depois de ler: a foto guardada já sai atualizada
+function salvarSnapshot() {
+  if (!me || !listaReal) return; // só guarda quando a lista é a de verdade
+  try {
+    const nos = new Map([...document.querySelectorAll("#contacts button")].map((b) => [b.dataset.grupo || b.dataset.id || "", b.querySelector(".avatar")]));
+    const itens = listaConversas().slice(0, SNAP_MAX).map((c) => {
+      const a = c.grupo ? c.foto?.p || null : c.avatar || null;
+      return { id: c.id, g: !!c.grupo, n: nomeConv(c), m: c.grupo ? c.membros.size : 0, a, th: miniaturaDe(a, nos.get(c.id)), t: ultima.get(c.id) || 0, nl: naoLidas.get(c.id)?.length || 0 };
+    });
+    const eu = { u: me.username, a: me.avatar || null, th: miniaturaDe(me.avatar || null, $("eu-foto")) };
+    const t = textoDoSnapshot({ eu, itens, ponto: { ap: !$("ap-ponto").hidden, mfa: !$("mfa-nudge").hidden } }); if (t) localStorage.setItem(chaveSnap(me.id), t);
+  } catch {}
+}
+function pintarListaRapida(uid) {
+  let s = null; try { s = lerSnapshot(localStorage.getItem(chaveSnap(uid))); } catch {}
+  if (!s || !s.itens.length) return false;
+  for (const x of s.itens) if (x.a && x.th) miniaturas.set(x.a, x.th);
+  if (s.eu.a && s.eu.th) miniaturas.set(s.eu.a, s.eu.th);
+  const mini = (th, ini) => { const av = el("span", "avatar"); av.textContent = ini; if (th) { const im = el("img"); im.alt = ""; im.src = th; im.draggable = false; av.replaceChildren(im); } return av; };
+  $("contacts").dataset.rapido = "1"; $("inbox-empty").hidden = true; $("busca-box").hidden = s.itens.length < 6;
+  $("contacts").replaceChildren(...s.itens.map((x) => {
+    const li = document.createElement("li"), b = document.createElement("button"), nm = el("span", "who");
+    const av = mini(x.th, [...x.n.replace(/^@/, "")][0] || "");
+    if (x.g) { av.classList.add("grupo"); if (!x.th) av.textContent = [...x.n][0] || ""; nm.textContent = x.n; const st = el("small", "sub", "grupo · " + contagem(x.m)); nm.append(st); b.dataset.grupo = x.id; }
+    else { nm.textContent = "@" + x.n.replace(/^@/, ""); b.dataset.id = x.id; }
+    b.append(av, nm);
+    const lado = el("span", "lado");
+    if (x.t) { const h = el("time", "hora", rotuloHora(x.t)); h.dateTime = new Date(x.t).toISOString(); lado.append(h); }
+    if (x.nl) { const u = el("i", "unread num", rotuloNovas(x.nl)); u.title = textoNovas(x.nl); u.setAttribute("aria-label", textoNovas(x.nl)); lado.append(u); b.classList.add("tem-novas"); }
+    if (lado.childNodes.length) b.append(lado);
+    li.append(b); return li;
+  }));
+  const f = $("eu-foto"); f.textContent = [...s.eu.u.replace(/^@/, "")][0] || ""; if (s.eu.th) { const im = el("img"); im.alt = ""; im.src = s.eu.th; im.draggable = false; f.replaceChildren(im); }
+  $("ap-ponto").hidden = !s.ponto.ap; $("mfa-nudge").hidden = !s.ponto.mfa;
+  return true;
+}
+
 // ---------- Contatos ----------
 function tocaAtiv(id, quando) { const t = typeof quando === "number" ? quando : Date.parse(quando); if (t > (ativ.get(id) || 0)) ativ.set(id, t); }
 async function loadContacts() {
@@ -951,6 +1013,7 @@ async function loadContacts() {
     guardaNomes();
   }
   await atualizarGrupos().catch(() => {});
+  delete $("contacts").dataset.rapido; listaReal = true;
   renderContacts();
 }
 $("busca").oninput = () => renderContacts();
@@ -958,6 +1021,7 @@ const nomeConv = (c) => (c.grupo ? c.nome : c.username);
 const listaConversas = () => [...contacts.values(), ...grupos.values()].map((c, i) => ({ c, i, t: ativ.get(c.id) || 0 })).sort((a, b) => b.t - a.t || a.i - b.i).map((x) => x.c); // a mais recente primeiro
 function renderContacts() {
   const total = contacts.size + grupos.size;
+  if ($("contacts").dataset.rapido && !total) return; // (a lista da última vez continua na tela até as conversas de verdade chegarem: nada de "Ninguém por aqui" no meio do caminho)
   $("inbox-empty").hidden = total > 0;
   $("busca-box").hidden = total < 6; // a busca só aparece quando a lista já é grande
   const q = $("busca-box").hidden ? "" : $("busca").value.trim().replace(/^@/, "").toLowerCase();
@@ -971,7 +1035,7 @@ function renderContacts() {
       const on = contaOnline([...p.membros.keys()], me.id, online); if (on) st.append(el("span", "on", ` · ${on} online`)); // quantos do grupo estão online agora
       nm.append(st);
     } else {
-      av.className = "avatar" + (online.has(p.id) ? " on" : ""); pintarAvatar(av, p, true);
+      av.className = "avatar" + (online.has(p.id) ? " on" : ""); pintarAvatar(av, p, true); b.dataset.id = p.id;
       nm.textContent = "@" + p.username;
       if (online.has(p.id)) { const st = document.createElement("small"); st.textContent = "online"; nm.append(st); }
     }
@@ -984,6 +1048,7 @@ function renderContacts() {
     b.onclick = () => open(p);
     li.append(b); return li;
   }));
+  agendaSnapshot();
 }
 $("add-form").onsubmit = async (e) => {
   e.preventDefault();
