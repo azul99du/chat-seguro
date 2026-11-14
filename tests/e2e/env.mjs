@@ -36,6 +36,7 @@ export function prepararSite() {
     t = t.replaceAll(host(PROD_URL), host(SUPABASE_URL)).replaceAll(PROD_KEY, SUPABASE_KEY).replaceAll(PROD_URL, SUPABASE_URL);
     // banco local (só 127.0.0.1, sem https): o CSP precisa liberar http/ws no lugar de https/wss
     if (new URL(SUPABASE_URL).protocol === "http:") t = t.replaceAll(`https://${host(SUPABASE_URL)}`, `http://${host(SUPABASE_URL)}`).replaceAll(`wss://${host(SUPABASE_URL)}`, `ws://${host(SUPABASE_URL)}`);
+    if (f === "config.js") t += `\ntry { if (localStorage.getItem("lacre:poll") === null) localStorage.setItem("lacre:poll", "4000"); } catch {} // testes: a verificação periódica de chegada a cada 4 s (o normal é 30 s)\n`;
     writeFileSync(p, t);
   }
   return dir;

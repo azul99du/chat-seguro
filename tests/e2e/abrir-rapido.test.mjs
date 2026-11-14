@@ -20,7 +20,7 @@ const GRUPO = "Rapido";
 // atrasa as respostas do servidor sobre mensagens (leitura) em "ms"; devolve o controle para saber se já responderam
 async function atrasar(p, ms) {
   const c = { liberou: false, n: 0 };
-  await p.route(/\/rest\/v1\/messages\?/, async (route) => { if (route.request().method() !== "GET") return route.continue(); c.n++; await dorme(ms); c.liberou = true; route.continue().catch(() => {}); });
+  await p.route(/\/rest\/v1\/messages\?/, async (route) => { if (route.request().method() !== "GET" || /[?&]id=gt\./.test(route.request().url())) return route.continue(); /* (a verificação periódica de chegada não é atrasada nem contada) */ c.n++; await dorme(ms); c.liberou = true; route.continue().catch(() => {}); });
   return c;
 }
 // "Piscar": depois que a lista já está na tela, nenhuma mensagem pode ser APAGADA dela e ela não pode voltar a ficar escondida (era o que acontecia: aparecia, sumia por 1 s e reaparecia)
@@ -33,7 +33,7 @@ const recarregar = async (p) => { await p.unroute(/\/rest\/v1\/messages\?/).catc
 before(async () => {
   if (skip) return; const s = await cadastroFunciona(); if (!s.ok) { skip = s.motivo; return; }
   srv = await servir(prepararSite()); browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
-  const novo = async (n) => { const ctx = await browser.newContext({ viewport: { width: 1100, height: 800 } }); await ctx.addInitScript(() => { try { localStorage.setItem("lacre:poll", "0"); } catch {} }); const p = await ctx.newPage(); p.on("pageerror", (e) => erros.push(n + ": " + e.message)); if (n === "A") p.on("console", (m) => logsA.push(m.type() + ": " + m.text().slice(0, 200))); return p; };
+  const novo = async (n) => { const ctx = await browser.newContext({ viewport: { width: 1100, height: 800 } }); await ctx.addInitScript(() => { try { localStorage.setItem("lacre:poll", "3000"); } catch {} }); const p = await ctx.newPage(); p.on("pageerror", (e) => erros.push(n + ": " + e.message)); if (n === "A") p.on("console", (m) => logsA.push(m.type() + ": " + m.text().slice(0, 200))); return p; };
   [A, B] = [await novo("A"), await novo("B")]; [nomeA, nomeB] = [novoUsuario("a"), novoUsuario("b")];
   await cadastrar(A, nomeA); await cadastrar(B, nomeB);
 });
