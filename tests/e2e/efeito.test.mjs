@@ -93,6 +93,7 @@ t("não dá para pôr outro efeito em quem já tem um ativo; depois que acaba, v
 });
 t("o comprador pode pôr o efeito nele mesmo: toca para todos quando ELE escreve", async () => {
   await comprar(B, nomeB, { passos: 3, dur: 1, inicio: 3 }); assert.match(await B.locator("#lf-depois").innerText(), /210 → 140/); await B.click("#lf-ok"); await B.waitForFunction(() => !document.querySelector("#loja-folha").open, null, { timeout: 30000 }); await sair(B);
+  await B.waitForTimeout(1500); assert.equal(await B.evaluate(() => document.querySelector("#send-form").classList.contains("silenciado")), false, "o efeito não silencia ninguém: o campo de escrever continua aí"); assert.equal(await B.locator("#text").isVisible(), true);
   await B.waitForSelector(`#messages .aviso-linha:has-text("Você pôs um efeito sonoro em você por 15 minutos")`, { timeout: 30000 }); await A.waitForSelector(`#messages .aviso-linha:has-text("@${nomeB} pôs um efeito sonoro em si mesmo")`, { timeout: 30000 }); await A.waitForTimeout(1500);
   for (const p of [A, B, C]) await zerar(p); await enviar(B, "mensagem de quem comprou"); for (const p of [A, B, C]) await esperaTocar(p, 1);
   for (const p of [A, B, C]) await zerar(p); await enviar(C, "C de novo, sem efeito"); await A.waitForSelector(".msg.grupo-msg .vis:text-is('C de novo, sem efeito')", { timeout: 30000 }); await A.waitForTimeout(1500); assert.equal(await tocou(A), 0, "C já não tem efeito");

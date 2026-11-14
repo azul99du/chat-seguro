@@ -89,6 +89,11 @@ describe("jumpscare", () => {
     assert.deepEqual(avisosNovos(est, 0, U(3)).map((a) => a.tipo), ["loja_destaque"], "outra pessoa: sem aviso do jumpscare"); assert.deepEqual(avisosNovos(est, 0).map((a) => a.tipo), ["loja_destaque"]);
     assert.equal(limpaCompras([L(1, 1, "jumpscare", { detalhe: "5" })])[0].detalhe, null, "o número sorteado nunca fica no estado");
   });
+  test("só a compra de SILENCIAR silencia: efeito sonoro e jumpscare (que também têm alvo/compra) nunca escondem o campo de escrever", () => {
+    const agora = Date.parse(T(30)), est = estadoDaLoja([L(1, 1, "efeito", { alvo: U(2), detalhe: "2" }), L(2, 1, "efeito", { alvo: U(1), detalhe: "1" }), L(3, 1, "jumpscare")], agora);
+    for (const u of [1, 2, 3]) assert.equal(silenciadoAte(est, U(u), agora), null, "ninguém está silenciado"); assert.equal(est.silencios.size, 0);
+    const est2 = estadoDaLoja([L(1, 1, "efeito", { alvo: U(2), detalhe: "2" }), L(2, 3, "silenciar", { alvo: U(2) })], agora); assert.ok(silenciadoAte(est2, U(2), agora), "o silêncio de verdade continua valendo");
+  });
   test("erros do servidor viram frases", () => {
     for (const [m, re] of [["sem_jumpscares", /não pôs jumpscares/], ["sem_alvos", /ninguém/], ["lista_cheia", /10 jumpscares/]]) assert.match(erroLoja({ message: m }), re);
   });

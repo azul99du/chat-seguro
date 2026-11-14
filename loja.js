@@ -38,7 +38,7 @@ export function estadoDaLoja(linhas, recebidoEm = Date.now()) {
   for (const c of compras) {
     if (c.item === "titulo") titulos.set(c.user, c.detalhe);
     else if (c.item === "destaque") destaques.set(c.detalhe, { por: c.user, id: c.id });
-    else { const ate = c.t + c.silencio_s * 1000 - desvio; const ant = silencios.get(c.alvo); if (!ant || c.id > ant.id) silencios.set(c.alvo, { ate, por: c.user, id: c.id }); }
+    else if (c.item === "silenciar") { const ate = c.t + c.silencio_s * 1000 - desvio; const ant = silencios.get(c.alvo); if (!ant || c.id > ant.id) silencios.set(c.alvo, { ate, por: c.user, id: c.id }); }
   }
   return { compras, titulos, destaques, silencios, agora: agoraServ, ultimo: compras.length ? compras.at(-1).id : 0 };
 }
