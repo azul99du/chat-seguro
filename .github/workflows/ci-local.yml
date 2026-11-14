@@ -23,9 +23,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        grupo: [1]
+        grupo: [1, 2, 3, 4, 5, 6, 7, 8]
     env:
-      GRUPOS: 1
+      GRUPOS: 8
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -55,11 +55,9 @@ jobs:
           echo "SUPABASE_KEY=$k" >> "$GITHUB_ENV"
       - name: Testes do grupo
         run: |
-          arquivos="${E2E_SO:-$(node scripts/e2e-grupo.mjs ${{ matrix.grupo }} $GRUPOS --sem-funcoes)}"
+          arquivos="$(node scripts/e2e-grupo.mjs ${{ matrix.grupo }} $GRUPOS --sem-funcoes)"
           echo "Arquivos: $arquivos"
           node --test --test-concurrency=1 $arquivos
-        env:
-          E2E_SO: tests/e2e/chaves.test.mjs tests/e2e/inicio.test.mjs
       - name: Se falhou, os logs do banco local
         if: failure()
         run: docker ps --format '{{.Names}}' | head -20; docker logs supabase_auth_lacre-teste 2>&1 | tail -40 || true
