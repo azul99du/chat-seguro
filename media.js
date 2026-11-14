@@ -233,3 +233,23 @@ export function cleanAudio(input, { gravado = false } = {}) {
   if (ascii(b, 0, 3) === "ID3" || (b[0] === 0xff && (b[1] & 0xe0) === 0xe0)) return { bytes: cleanMp3(b), mime: "audio/mpeg" };
   throw new Error("Formato não suportado. Use um arquivo MP3, M4A ou WAV, ou grave pelo microfone.");
 }
+
+// ---------- Som de um VÍDEO (MP4/MOV): só o áudio, regravado do zero ----------
+// Usado nos sons do jumpscare. O navegador decodifica o áudio do vídeo; o que sai é um WAV novo (mono, 22,05 kHz, 16 bits, no máximo `maxSeg` segundos),
+// sem imagem e sem nenhum metadado do vídeo original (GPS, data, aparelho...). Vídeo sem som, ou cujo som o navegador não abre, vira um erro claro.
+export function pcm16ParaWav(pcm, taxa) {
+  const n = pcm.length, b = new Uint8Array(44 + n * 2), v = new DataView(b.buffer), s = (o, t) => { for (let i = 0; i < t.length; i++) b[o + i] = t.charCodeAt(i); };
+  s(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); s(8, "WAVE"); s(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, taxa, true); v.setUint32(28, taxa * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); s(36, "data"); v.setUint32(40, n * 2, true);
+  for (let i = 0; i < n; i++) v.setInt16(44 + i * 2, pcm[i], true);
+  return b;
+}
+export const floatParaPcm16 = (f) => { const o = new Int16Array(f.length); for (let i = 0; i < f.length; i++) { const x = Math.max(-1, Math.min(1, f[i])); o[i] = x < 0 ? Math.round(x * 32768) : Math.round(x * 32767); } return o; };
+export async function somDoVideo(input, { maxSeg = 12, taxa = 22050 } = {}) {
+  const Ctx = globalThis.OfflineAudioContext || globalThis.webkitOfflineAudioContext; if (!Ctx) throw new Error("Este navegador não consegue extrair o som de um vídeo.");
+  let buf; try { buf = await new Ctx(1, 1, taxa).decodeAudioData(input.slice(0)); } catch { throw new Error("Não achei um som que eu consiga abrir nesse vídeo. Ele pode estar sem áudio."); }
+  if (!buf || buf.duration < 0.05) throw new Error("Esse vídeo está sem som.");
+  const seg = Math.min(buf.duration, maxSeg), out = new Ctx(1, Math.max(1, Math.ceil(seg * taxa)), taxa), src = out.createBufferSource();
+  src.buffer = buf; src.connect(out.destination); src.start(0); const r = await out.startRendering(); // (a mistura para mono e a troca da taxa acontecem aqui)
+  return { bytes: pcm16ParaWav(floatParaPcm16(r.getChannelData(0)), taxa), mime: "audio/wav", duracao: seg, cortado: buf.duration > maxSeg + 0.3 };
+}

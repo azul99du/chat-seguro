@@ -1,27 +1,27 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=52b1a3dfd7";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=52b1a3dfd7";
-import { montarFigurinhas } from "./figurinhas.js?v=52b1a3dfd7";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=52b1a3dfd7";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=52b1a3dfd7";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=52b1a3dfd7";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=52b1a3dfd7";
-import { acharVideoLink } from "./videolink.js?v=52b1a3dfd7";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=52b1a3dfd7";
-import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=52b1a3dfd7";
-import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=52b1a3dfd7";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=52b1a3dfd7";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=52b1a3dfd7";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=52b1a3dfd7";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=52b1a3dfd7";
-import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES } from "./loja.js?v=52b1a3dfd7";
-import { ACOES, LOJA, TITULOS, precoDaLoja, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=52b1a3dfd7";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=52b1a3dfd7";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=52b1a3dfd7";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=52b1a3dfd7";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=52b1a3dfd7";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=52b1a3dfd7";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=52b1a3dfd7";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=d8e6f2851d";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=d8e6f2851d";
+import { montarFigurinhas } from "./figurinhas.js?v=d8e6f2851d";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=d8e6f2851d";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=d8e6f2851d";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=d8e6f2851d";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=d8e6f2851d";
+import { acharVideoLink } from "./videolink.js?v=d8e6f2851d";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=d8e6f2851d";
+import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=d8e6f2851d";
+import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=d8e6f2851d";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=d8e6f2851d";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=d8e6f2851d";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=d8e6f2851d";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=d8e6f2851d";
+import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES } from "./loja.js?v=d8e6f2851d";
+import { ACOES, LOJA, TITULOS, precoDaLoja, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=d8e6f2851d";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=d8e6f2851d";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=d8e6f2851d";
+import { cleanImage, cleanVideo, cleanAudio, somDoVideo, sealBytes, openBytes } from "./media.js?v=d8e6f2851d";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=d8e6f2851d";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=d8e6f2851d";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=d8e6f2851d";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -2783,12 +2783,12 @@ async function guardarSusto(g, bytes, tipo) { // cifra com a chave do grupo e en
   const up = await sb.storage.from("media").upload(p, new Blob([data], { type: "application/octet-stream" }), { contentType: "application/octet-stream" }); if (up.error) throw up.error;
   return { p, iv, t: tipo };
 }
-async function concluirJumpscare(g, img, som) {
+async function concluirJumpscare(g, img, som, nota = "") {
   msgJs("Enviando…", true); const enviados = [];
   try {
     const a = await guardarSusto(g, img.bytes, img.mime); enviados.push(a.p); const s = som ? await guardarSusto(g, som.bytes, som.mime) : null; if (s) enviados.push(s.p);
     const { error } = await sb.rpc("jumpscare_novo", { p_grupo: g.id, p_img: a, p_som: s }); if (error) throw error;
-    msgJs("Jumpscare adicionado ✓", true); await desenharJumpscares(g);
+    msgJs("Jumpscare adicionado ✓" + (nota ? " " + nota : ""), true); await desenharJumpscares(g);
   } catch (e) { if (enviados.length) sb.storage.from("media").remove(enviados).catch(() => {}); msgJs(erroLoja(e)); }
 }
 $("js-img").onchange = async () => {
@@ -2801,18 +2801,20 @@ $("js-img").onchange = async () => {
     jsPend = { g, img };
     const r = await choose("Som do jumpscare", "Quer juntar um som curto (até 12 segundos)?", [{ label: "Escolher um som", value: "som" }, { label: "Adicionar sem som", value: "nao" }, { label: "Cancelar", value: "cancela" }]);
     if (!jsPend || jsGrupo !== g) return;
-    if (r === "som") { msgJs("Escolha o arquivo de som (MP3, M4A ou WAV)."); $("js-som").click(); }
+    if (r === "som") { msgJs("Escolha o som: MP3, M4A, WAV ou um vídeo MP4 (uso só o som dele)."); $("js-som").click(); }
     else if (r === "nao") { jsPend = null; await concluirJumpscare(g, img, null); } else jsPend = null;
   } catch (e) { msgJs(String(e?.message || "Não foi possível preparar essa imagem.")); }
 };
 const duracaoDe = (bytes, mime) => new Promise((ok) => { const u = URL.createObjectURL(new Blob([bytes], { type: mime })), a = new Audio(); a.preload = "metadata"; a.onloadedmetadata = () => { URL.revokeObjectURL(u); ok(a.duration); }; a.onerror = () => { URL.revokeObjectURL(u); ok(NaN); }; a.src = u; });
 $("js-som").onchange = async () => {
   const f = $("js-som").files[0]; $("js-som").value = ""; const pend = jsPend; if (!f || !pend || jsGrupo !== pend.g) return; jsPend = null;
-  if (f.size > 700 * 1024) return msgJs("Esse som é grande demais (máximo 700 KB, uns 12 segundos).");
+  const video = f.type === "video/mp4" || f.type === "video/quicktime" || /\.(mp4|mov)$/i.test(f.name);
+  if (video ? f.size > 60 * 1048576 : f.size > 700 * 1024) return msgJs(video ? "Esse vídeo é grande demais (máximo 60 MB)." : "Esse som é grande demais (máximo 700 KB, uns 12 segundos).");
   try {
-    const som = cleanAudio(await f.arrayBuffer()), dur = await duracaoDe(som.bytes, som.mime);
+    if (video) msgJs("Extraindo o som do vídeo…", true);
+    const som = video ? await somDoVideo(await f.arrayBuffer()) : cleanAudio(await f.arrayBuffer()), dur = await duracaoDe(som.bytes, som.mime);
     if (!Number.isFinite(dur) || dur > 12.5) return msgJs(Number.isFinite(dur) ? "Esse som é longo demais (máximo 12 segundos)." : "Não consegui abrir esse som.");
-    await concluirJumpscare(pend.g, pend.img, som);
+    await concluirJumpscare(pend.g, pend.img, som, som.cortado ? "(o vídeo era mais longo: usei só os primeiros 12 segundos do som)" : "");
   } catch (e) { msgJs(String(e?.message || "Não foi possível usar esse som.")); }
 };
 

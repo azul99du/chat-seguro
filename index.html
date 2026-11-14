@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=52b1a3dfd7">
+  <link rel="stylesheet" href="style.css?v=d8e6f2851d">
 </head>
 <body>
 
@@ -411,9 +411,9 @@
         <div id="js-grade" class="js-grade"></div>
         <button type="button" id="js-add" class="btn-rosa sr-salvar">Adicionar jumpscare</button>
         <input id="js-img" type="file" accept="image/jpeg,image/png,image/webp" hidden>
-        <input id="js-som" type="file" accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,.mp3,.m4a,.wav" hidden>
+        <input id="js-som" type="file" accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,video/mp4,video/quicktime,.mp3,.m4a,.wav,.mp4,.mov" hidden>
         <p id="js-msg" class="pg-msg" role="status"></p>
-        <p class="pg-dica sem-recuo">A imagem e o som são cifrados no seu aparelho com a chave do grupo antes de irem para o servidor, como a foto do grupo. Imagens são reduzidas (até 1280 px) e sons podem ter até 12 segundos.</p>
+        <p class="pg-dica sem-recuo">A imagem e o som são cifrados no seu aparelho com a chave do grupo antes de irem para o servidor, como a foto do grupo. Imagens são reduzidas (até 1280 px) e sons podem ter até 12 segundos. Se escolher um vídeo MP4, só o som dele é usado (a imagem do vídeo não vai para lugar nenhum; se o som passar de 12 s, ficam os primeiros 12).</p>
       </div>
     </form>
   </dialog>
@@ -527,6 +527,6 @@
 
   <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
 
-  <script src="guarda.js?v=52b1a3dfd7"></script>
+  <script src="guarda.js?v=d8e6f2851d"></script>
 </body>
 </html>

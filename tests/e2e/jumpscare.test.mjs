@@ -11,7 +11,7 @@ import { createClient } from "../../vendor/supabase.js";
 import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, SUPABASE_URL, SUPABASE_KEY, chamar } from "./env.mjs";
 import { hasFfmpeg, tmp } from "../helpers/fixtures.mjs";
 
-let skip = configurado ? false : motivoSemConfig, browser, srv, A, B, C, nomeA, nomeB, nomeC, png1, png2, mp3; const erros = [];
+let skip = configurado ? false : motivoSemConfig, browser, srv, A, B, C, nomeA, nomeB, nomeC, png1, png2, mp3, mp4; const erros = [];
 const t = (nome, fn) => test(nome, { timeout: 280000 }, async (c) => (skip ? c.skip(skip) : fn(c)));
 const pronto = (p) => p.waitForSelector("#chat:not([hidden]):not(.preparando)", { timeout: 30000 });
 async function cadastrar(page, usuario) { await page.goto(srv.url); await page.click("#tab-signup"); await page.fill("#username", usuario); await page.fill("#email", novoEmail()); await page.fill("#password", SENHA); await page.click("#auth-submit"); await page.waitForSelector("#ask[open]", { timeout: 30000 }); await page.fill("#ask-input", FRASE); await page.click("#ask button[value=ok]"); await pronto(page); }
@@ -42,7 +42,8 @@ const comprarJumpscare = async (p) => { await abrirSelos(p); await p.locator('#s
 before(async () => {
   if (skip) return; const s = await cadastroFunciona(); if (!s.ok) { skip = s.motivo; return; }
   const d = tmp(); png1 = join(d, "um.png"); png2 = join(d, "dois.png"); writeFileSync(png1, png(100, 100)); writeFileSync(png2, png(200, 120));
-  if (hasFfmpeg()) { mp3 = join(d, "grito.mp3"); execFileSync("ffmpeg", ["-v", "error", "-f", "lavfi", "-i", "sine=frequency=880:duration=1", "-c:a", "libmp3lame", "-y", mp3]); }
+  if (hasFfmpeg()) { mp3 = join(d, "grito.mp3"); execFileSync("ffmpeg", ["-v", "error", "-f", "lavfi", "-i", "sine=frequency=880:duration=1", "-c:a", "libmp3lame", "-y", mp3]);
+    mp4 = join(d, "video.mp4"); execFileSync("ffmpeg", ["-v", "error", "-f", "lavfi", "-i", "testsrc=size=160x120:rate=10:duration=20", "-f", "lavfi", "-i", "sine=frequency=330:duration=20", "-c:v", "mpeg4", "-c:a", "libmp3lame", "-shortest", "-y", mp4]); } // (vídeo de 20 s: o som deve ser cortado em 12 s; áudio em MP3 dentro do MP4 porque o Chromium de teste não traz AAC)
   srv = await servir(prepararSite()); browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ["--autoplay-policy=no-user-gesture-required"] });
   const novo = async (n, vivo) => { const ctx = await browser.newContext({ viewport: { width: 1000, height: 760 } }); await ctx.addInitScript((v) => { try { localStorage.setItem("lacre:susto", "400"); localStorage.setItem("lacre:susto_vivo", v); } catch {} }, vivo); const p = await ctx.newPage(); p.on("pageerror", (e) => erros.push(n + ": " + e.message)); return p; };
   [A, B, C] = [await novo("A", "30"), await novo("B", "30"), await novo("C", "2")]; [nomeA, nomeB, nomeC] = [novoUsuario("a"), novoUsuario("b"), novoUsuario("c")];
@@ -77,7 +78,11 @@ t("só o admin gerencia a lista: imagens (e som) entram cifradas, aparecem como 
   await A.setInputFiles("#js-img", png2); await A.waitForSelector("#choice[open]");
   if (mp3) { await A.click('#choice-actions button[value="som"]'); await A.setInputFiles("#js-som", mp3); } else await A.click('#choice-actions button[value="nao"]');
   await A.waitForFunction(() => document.querySelectorAll("#js-grade .js-item").length === 2, null, { timeout: 30000 }); if (mp3) assert.equal(await A.locator("#js-grade .js-som").count(), 1, "um deles tem som");
-  await A.setInputFiles("#js-img", png1); await A.waitForSelector("#choice[open]"); await A.click('#choice-actions button[value="nao"]'); await A.waitForFunction(() => document.querySelectorAll("#js-grade .js-item").length === 3, null, { timeout: 30000 });
+  await A.setInputFiles("#js-img", png1); await A.waitForSelector("#choice[open]");
+  if (mp4) { await A.click('#choice-actions button[value="som"]'); await A.setInputFiles("#js-som", mp4); await A.waitForFunction(() => /primeiros 12 segundos/.test(document.querySelector("#js-msg").textContent), null, { timeout: 60000 }); }
+  else { await A.click('#choice-actions button[value="nao"]'); }
+  await A.waitForFunction(() => document.querySelectorAll("#js-grade .js-item").length === 3, null, { timeout: 30000 });
+  if (mp4) assert.equal(await A.locator("#js-grade .js-som").count(), 2, "o som do vídeo MP4 entrou (cortado em 12 s, sem a imagem)");
   await A.locator("#js-grade .js-item").nth(2).locator(".js-x").click(); await A.waitForSelector("#choice[open]"); await A.click('#choice-actions button[value="sim"]'); await A.waitForFunction(() => document.querySelectorAll("#js-grade .js-item").length === 2, null, { timeout: 30000 });
   await A.click("#js-lista .pg-volta"); await A.click("#selos-regras .pg-volta"); await sair(A);
   const lista = await rpc(B, "jumpscare_lista", {}); assert.equal(lista.data?.length || 0, 0, "quem não é admin não vê a lista (vem vazia)"); assert.equal((await rpc(A, "jumpscare_lista", {})).data.length, 2, "o admin vê as duas"); assert.equal((await rpc(B, "jumpscare_novo", { p_img: { p: "x", iv: "y" } })).code, "42501", "nem põe jumpscare");

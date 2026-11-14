@@ -3,7 +3,7 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { cleanVideo, cleanAudio, sealBytes, openBytes } from "../media.js";
+import { cleanVideo, cleanAudio, sealBytes, openBytes, pcm16ParaWav, floatParaPcm16 } from "../media.js";
 import { hasFfmpeg, tmp, makeVideo, makeAudio, probe, decodes } from "./helpers/fixtures.mjs";
 
 const SECRETS = ["SEGREDO"]; // texto simples; GPS e data são guardados em formato próprio e são checados pelo ffprobe e pelo bloco loci
@@ -86,4 +86,17 @@ describe("limpeza de áudio", { skip }, () => {
     assert.throws(() => cleanAudio(new TextEncoder().encode("isto não é um áudio de verdade, só texto comprido").buffer), /Formato não suportado|limpar/);
     assert.throws(() => cleanAudio(new Uint8Array(4).buffer), /limpar/);
   });
+});
+
+describe("som extraído de um vídeo (WAV novo)", () => {
+  test("float -> 16 bits com limites certos (sem estourar)", () => {
+    assert.deepEqual([...floatParaPcm16(new Float32Array([0, 1, -1, 2, -2, 0.5]))], [0, 32767, -32768, 32767, -32768, 16384]);
+  });
+  test("o WAV tem cabeçalho certo (mono, 16 bits, taxa pedida, tamanho certo) e passa pela limpeza de áudio", () => {
+    const w = pcm16ParaWav(floatParaPcm16(new Float32Array(2205)), 22050), v = new DataView(w.buffer);
+    assert.equal(String.fromCharCode(...w.slice(0, 4)), "RIFF"); assert.equal(String.fromCharCode(...w.slice(8, 12)), "WAVE"); assert.equal(w.length, 44 + 2205 * 2); assert.equal(v.getUint32(4, true), w.length - 8);
+    assert.equal(v.getUint16(22, true), 1, "mono"); assert.equal(v.getUint32(24, true), 22050); assert.equal(v.getUint16(34, true), 16); assert.equal(v.getUint32(40, true), 2205 * 2);
+    const r = cleanAudio(w.buffer.slice(0)); assert.equal(r.mime, "audio/wav"); assert.ok(r.bytes.length >= 44 + 2205 * 2 - 2, "a limpeza mantém o som");
+  });
+  test("12 s a 22,05 kHz cabem no limite de 700 KB dos sons", () => { assert.ok(44 + 12 * 22050 * 2 < 700 * 1024); });
 });
