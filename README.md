@@ -54,7 +54,8 @@ Os testes criam contas e mensagens de verdade, então **nunca** rodam contra o b
 1. Crie um projeto Supabase só para testes e aplique `supabase/schema.sql` (o schema recria exatamente o banco real; já foi conferido catálogo a catálogo).
 2. No painel desse projeto, em **Authentication → Providers → Email**, desligue **Confirm email**. Sem isso o cadastro de teste não devolve sessão e os testes se pulam com um aviso.
 3. `SUPABASE_URL=... SUPABASE_KEY=<chave publishable> npm run test:e2e` (use `CHROMIUM_PATH` para apontar um Chromium já instalado).
-No GitHub Actions (`.github/workflows/ci.yml`) isso roda a cada push, usando o projeto de teste `chat-seguro-teste`. Os usuários de teste ficam no banco de teste e não afetam o real.
+No GitHub Actions (`.github/workflows/ci.yml`) a ponta a ponta **não usa um projeto hospedado**: cada um de 8 grupos de testes (divididos por `scripts/e2e-grupo.mjs`) sobe o **seu próprio Supabase local e descartável** (Supabase CLI + Docker, configurado em `supabase/config.toml`), aplica `supabase/schema.sql` do zero (então o próprio schema é testado a cada rodada) e roda ao mesmo tempo que os outros 7. Só os 2 arquivos que usam as Edge Functions (`aparelhos` e `notificacoes`, que o banco local não tem) rodam num job curto no projeto de teste hospedado `chat-seguro-teste`, um de cada vez. Resultado: uns **5 minutos** em vez de 27 a 30. Para rodar um grupo localmente: `supabase start`, aplicar o schema, `SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_KEY=<chave do supabase status> node --test $(node scripts/e2e-grupo.mjs 1 8 --sem-funcoes)` (o endereço sem https só é aceito para 127.0.0.1).
+O Realtime do Supabase não garante entregar todo aviso (no banco local isso aparecia a cada poucas rodadas), então o app também **confere o servidor a cada 30 s com a tela à vista**, sempre que o canal reconecta e de novo se a busca falhar; nos testes esse intervalo é de 3 a 4 s (`lacre:poll` no armazenamento do navegador; `0` desliga). Teste: `tests/e2e/chegada.test.mjs` (sem tempo real nenhum, a mensagem chega mesmo assim).
 
 ## Limites de uso e monitoramento
 **Limites no banco** (todos devolvem HTTP 429 "espere um pouco"; o site mostra uma mensagem clara):
@@ -232,9 +233,9 @@ Um link desses três (só nos endereços exatos: `youtube.com/shorts/ID`, `insta
 - **Teclado:** ao abrir uma conversa, o teclado **não sobe sozinho** no celular (aparelhos de toque); só aparece quando a pessoa toca no campo de mensagem. No computador, com mouse, o foco continua indo direto para o campo. Depois de enviar, o teclado só fica aberto se já estava aberto (enviar áudio ou figurinha não o abre).
 
 ## Como publicar (CI em duas etapas)
-A suíte completa (unitários + ~250 testes de navegador, uns 12 minutos) roda **uma vez só**, no GitHub, **antes** de o código chegar na `main` (que publica o site):
+A suíte completa (unitários + ~320 testes de navegador, uns 5 minutos) roda **uma vez só**, no GitHub, **antes** de o código chegar na `main` (que publica o site):
 1. `scripts/publicar.sh teste`: envia o commit para a branch `ci/teste` e espera o CI terminar. Antes disso, só se roda localmente os testes do que mudou (1 a 3 minutos), como verificação rápida.
-2. Se houve mudança de banco: aplicar no projeto de teste antes da etapa 1 e no banco real **depois** de o CI passar (banco primeiro, depois o código).
+2. Se houve mudança de banco: o CI local já aplica o `supabase/schema.sql` (atualize esse arquivo junto); aplicar também no projeto de teste hospedado antes da etapa 1 (os 2 arquivos das Edge Functions usam ele) e no banco real **depois** de o CI passar (banco primeiro, depois o código).
 3. `scripts/publicar.sh main`: leva o **mesmo commit** (mesmo hash) para a `main`. O script recusa se aquele hash não tem um CI completo e bem-sucedido em outra branch. Na `main`, o CI só confere isso e **pula os testes** (o hash identifica o conteúdo exato, então não há o que repetir). Um envio direto à `main` sem ter passado antes roda tudo normalmente.
 O CI continua só com permissão de leitura de conteúdo (mais `actions: read`, para conferir o hash). Sem mudança nos testes nem nas regras de segurança: só muda **onde e quando** eles rodam. O arquivo do ffmpeg deixou de rodar `apt-get update` antes de instalar quando não precisa (uns 15 s a menos por trabalho).
 

@@ -2,10 +2,12 @@ name: CI
 
 # Fluxo de publicação (scripts/publicar.sh): o commit é enviado primeiro a uma branch de teste ("ci/teste"), onde esta suíte roda INTEIRA uma vez.
 # Quando passa, o MESMO commit (mesmo hash) vai para a main, que publica o site. Na main este fluxo só confere que aquele hash já passou
-# e pula os testes (não repete 12 minutos); um envio direto à main, sem ter passado antes, roda tudo normalmente.
+# e pula os testes (não repete); um envio direto à main, sem ter passado antes, roda tudo normalmente.
+# Ponta a ponta: 8 grupos em paralelo, cada um com o PRÓPRIO Supabase local e descartável (Supabase CLI + Docker, schema.sql aplicado do zero),
+# mais um job curto no projeto Supabase de teste só para os 2 arquivos que usam as Edge Functions (aparelhos, notificacoes). Dura uns 5 minutos.
 on:
   push:
-    branches-ignore: ["ci/local"]
+    branches: ["**"]
   pull_request:
   workflow_dispatch:
 
@@ -54,18 +56,81 @@ jobs:
       - run: npm ci
       - run: npm run test:unit
 
-  e2e:
-    name: Ponta a ponta (navegador + projeto Supabase de teste)
+  e2e-local:
+    name: Ponta a ponta local, grupo ${{ matrix.grupo }} de 8
     needs: ja-testado
     if: needs.ja-testado.outputs.pular != 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    # um de cada vez: todos usam o mesmo projeto de teste
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        grupo: [1, 2, 3, 4, 5, 6, 7, 8]
+    env:
+      GRUPOS: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 3.1.0
+      - name: Instalar ffmpeg
+        run: sudo apt-get install -y --no-install-recommends ffmpeg || (sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg)
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Subir o Supabase local (só o que o app usa)
+        run: |
+          # 8 jobs baixando as imagens ao mesmo tempo às vezes levam "Rate exceeded" do registro ou erro de rede do Docker: tenta de novo
+          for t in 1 2 3 4; do
+            supabase start -x studio,imgproxy,mailpit,postgres-meta,edge-runtime,logflare,vector,supavisor && exit 0
+            echo "Tentativa $t falhou"; supabase stop --no-backup || true; sleep $((t * 15))
+          done
+          exit 1
+      - name: Criar o banco (schema.sql) e o prazo curto de recuperação
+        run: |
+          export PGPASSWORD=postgres
+          psql -v ON_ERROR_STOP=1 -q -h 127.0.0.1 -p 54322 -U postgres -d postgres -f supabase/schema.sql
+          psql -v ON_ERROR_STOP=1 -q -h 127.0.0.1 -p 54322 -U postgres -d postgres -c "insert into public.push_config (chave, valor) values ('recuperacao_prazo', '8 seconds') on conflict (chave) do update set valor = excluded.valor"
+      - name: Limites do Realtime local (o padrão é bem menor que o do projeto hospedado)
+        run: |
+          export PGPASSWORD=postgres
+          psql -h 127.0.0.1 -p 54322 -U supabase_admin -d postgres -c "select * from _realtime.tenants" -x | grep -E "max_|external_id" || true
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 54322 -U supabase_admin -d postgres -c "update _realtime.tenants set max_events_per_second=100000, max_joins_per_second=100000, max_concurrent_users=100000, max_channels_per_client=1000, max_bytes_per_second=100000000"
+          docker restart supabase_realtime_lacre-teste
+          for i in $(seq 1 30); do curl -sf -o /dev/null http://127.0.0.1:54321/realtime/v1/api/ping -H "apikey: $(grep -E '^ANON_KEY=' <(supabase status -o env) | cut -d= -f2- | tr -d '"')" && break; sleep 2; done
+      - name: Endereço e chave do banco local
+        run: |
+          supabase status -o env > /tmp/sb.env
+          sed 's/=.*/=…/' /tmp/sb.env
+          echo "SUPABASE_URL=http://127.0.0.1:54321" >> "$GITHUB_ENV"
+          k=$(grep -E '^(ANON_KEY|PUBLISHABLE_KEY)=' /tmp/sb.env | head -1 | cut -d= -f2- | tr -d '"')
+          echo "SUPABASE_KEY=$k" >> "$GITHUB_ENV"
+      - name: Testes do grupo
+        run: |
+          arquivos="$(node scripts/e2e-grupo.mjs ${{ matrix.grupo }} $GRUPOS --sem-funcoes)"
+          echo "Arquivos: $arquivos"
+          node --test --test-concurrency=1 $arquivos
+      - name: Se falhou, os logs do banco local
+        if: failure()
+        run: |
+          docker ps --format '{{.Names}}'
+          echo "=== Kong: respostas 5xx"; docker logs supabase_kong_lacre-teste 2>&1 | grep -E '" 50[0-9] |upstream|error' | head -40
+          for c in supabase_kong_lacre-teste supabase_rest_lacre-teste supabase_realtime_lacre-teste; do echo "=== $c"; docker logs "$c" 2>&1 | grep -v "Billing metrics\|api/ping" | tail -80; done
+
+  e2e-funcoes:
+    name: Ponta a ponta com as Edge Functions (projeto de teste, só 2 arquivos)
+    needs: ja-testado
+    if: needs.ja-testado.outputs.pular != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # o único passo que usa o projeto Supabase de teste hospedado: um de cada vez
     concurrency:
       group: e2e-projeto-de-teste
       cancel-in-progress: false
     env:
-      # Projeto Supabase SÓ de testes (nunca o que as pessoas usam). A chave publishable é pública por natureza.
       SUPABASE_URL: https://ggcohoewsqsdasovsuxl.supabase.co
       SUPABASE_KEY: sb_publishable_WyNuVIqK39YZ_EXjqdqdbw_J8_FH3hF
     steps:
@@ -78,4 +143,4 @@ jobs:
         run: sudo apt-get install -y --no-install-recommends ffmpeg || (sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg)
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+      - run: node --test --test-concurrency=1 tests/e2e/aparelhos.test.mjs tests/e2e/notificacoes.test.mjs

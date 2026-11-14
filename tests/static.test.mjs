@@ -241,7 +241,7 @@ describe("fluxo de publicação (CI em duas etapas)", () => {
   test("na main os testes só são pulados se ESTE hash já passou, por completo, em OUTRA branch", () => {
     assert.match(ci, /refs\/heads\/main/); assert.match(ci, /status=success/); assert.match(ci, /head_branch!="main"/); assert.match(ci, /head_sha=="\$\{\{ github\.sha \}\}"/); assert.match(ci, /event=="push"/);
     assert.match(ci, /actions: read/); assert.doesNotMatch(ci, /contents: write|id-token: write|pull-requests: write/, "o CI continua só com permissão de leitura de conteúdo");
-    assert.equal((ci.match(/needs\.ja-testado\.outputs\.pular != 'true'/g) || []).length, 2, "os dois grupos de testes dependem da conferência");
+    assert.equal((ci.match(/needs\.ja-testado\.outputs\.pular != 'true'/g) || []).length, 3, "os três grupos de testes (rápidos, ponta a ponta local e Edge Functions) dependem da conferência");
   });
   test("um envio direto à main (sem ter passado antes) roda tudo: pular começa falso", () => assert.match(ci, /pular=false\n/));
   test("o script só leva à main um hash com CI bem-sucedido e nunca força a main", () => {

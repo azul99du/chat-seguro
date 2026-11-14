@@ -14,7 +14,7 @@ case "$fase" in
     id=""; for i in $(seq 1 24); do id=$(gh run list --commit "$sha" --workflow CI --branch ci/teste --json databaseId --jq '.[0].databaseId // empty'); [ -n "$id" ] && break; sleep 10; done
     [ -n "$id" ] || { echo "ERRO: o GitHub não iniciou o CI para $sha (fila ou queda: veja https://www.githubstatus.com)."; exit 2; }
     echo "CI: https://github.com/$repo/actions/runs/$id"
-    if timeout 50m gh run watch "$id" --exit-status > /dev/null; then echo "CI PASSOU para $sha. Próximo: scripts/publicar.sh main"; else echo "CI FALHOU (ou passou do tempo) para $sha."; gh run view "$id" --json jobs --jq '.jobs[] | "\(.name): \(.conclusion)"'; exit 3; fi ;;
+    if timeout 25m gh run watch "$id" --exit-status > /dev/null; then echo "CI PASSOU para $sha. Próximo: scripts/publicar.sh main"; else echo "CI FALHOU (ou passou do tempo) para $sha."; gh run view "$id" --json jobs --jq '.jobs[] | "\(.name): \(.conclusion)"'; exit 3; fi ;;
   main)
     [ "$(ci_passou)" -gt 0 ] || { echo "ERRO: não há CI completo e bem-sucedido para $sha em outra branch. Rode: scripts/publicar.sh teste"; exit 1; }
     git push origin "$sha:refs/heads/main"
