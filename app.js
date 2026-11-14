@@ -1,25 +1,25 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=d30b4e70be";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=d30b4e70be";
-import { montarFigurinhas } from "./figurinhas.js?v=d30b4e70be";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=d30b4e70be";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=d30b4e70be";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=d30b4e70be";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=d30b4e70be";
-import { acharVideoLink } from "./videolink.js?v=d30b4e70be";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=d30b4e70be";
-import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=d30b4e70be";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=d30b4e70be";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=d30b4e70be";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=d30b4e70be";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=d30b4e70be";
-import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=d30b4e70be";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=d30b4e70be";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=d30b4e70be";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=d30b4e70be";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=d30b4e70be";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=d30b4e70be";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=d30b4e70be";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=36efa5ccf7";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=36efa5ccf7";
+import { montarFigurinhas } from "./figurinhas.js?v=36efa5ccf7";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=36efa5ccf7";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=36efa5ccf7";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=36efa5ccf7";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=36efa5ccf7";
+import { acharVideoLink } from "./videolink.js?v=36efa5ccf7";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=36efa5ccf7";
+import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=36efa5ccf7";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=36efa5ccf7";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=36efa5ccf7";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=36efa5ccf7";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=36efa5ccf7";
+import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=36efa5ccf7";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=36efa5ccf7";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=36efa5ccf7";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=36efa5ccf7";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=36efa5ccf7";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=36efa5ccf7";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=36efa5ccf7";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -1127,6 +1127,18 @@ function botaoSalvarFigurinha(path) {
 // ---------- Tocador de áudio (próprio: a duração vem da mensagem, porque gravações do navegador não trazem duração) ----------
 let tocando = null;
 const mmss = (n) => { n = Math.max(0, Math.round(Number(n) || 0)); return `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`; };
+// O próximo áudio logo ABAIXO (mensagens de áudio seguidas, de quem for): ao terminar um, o seguinte toca sozinho; um texto, foto etc. no meio encerra a sequência.
+// Quem o aparelho não toca (formato sem suporte) é pulado. Devolve o botão "Ouvir áudio" (ainda não baixado) ou o player já pronto.
+function proximoAudio(box) {
+  let w = box.closest(".msg")?.nextElementSibling;
+  while (w?.classList.contains("msg")) {
+    const m = w.querySelector(".media.audio"); if (!m) return null;
+    const btn = m.querySelector("button.audio-ph"), play = m.querySelector(".player .play");
+    if (btn || play) return { btn, play };
+    w = w.nextElementSibling;
+  }
+  return null;
+}
 function playerAudio(url, dur, { auto = false } = {}) {
   const box = el("div", "player"), btn = el("button", "play"), barra = el("div", "barra"), prog = el("i"), tempo = el("span", "tempo", `0:00 / ${mmss(dur)}`);
   btn.type = "button"; btn.setAttribute("aria-label", "Tocar áudio");
@@ -1141,9 +1153,14 @@ function playerAudio(url, dur, { auto = false } = {}) {
     barra.setAttribute("aria-valuemax", String(Math.round(t))); barra.setAttribute("aria-valuenow", String(Math.round(atual))); barra.setAttribute("aria-valuetext", `${mmss(atual)} de ${mmss(t)}`);
   };
   a.ontimeupdate = () => { if (arrasta === null) pinta(); };
-  a.onplay = () => { btn.classList.add("on"); btn.setAttribute("aria-label", "Pausar áudio"); };
+  let preparou = false;
+  a.onplay = () => { btn.classList.add("on"); btn.setAttribute("aria-label", "Pausar áudio"); if (!preparou) { preparou = true; proximoAudio(box)?.btn?.preparar?.(); } }; // (enquanto este toca, o próximo já é baixado e aberto: sem pausa entre eles)
   a.onpause = () => { btn.classList.remove("on"); btn.setAttribute("aria-label", "Tocar áudio"); };
-  a.onended = () => { a.currentTime = 0; pinta(); if (tocando === a) tocando = null; };
+  a.onended = () => {
+    a.currentTime = 0; pinta(); if (tocando === a) tocando = null;
+    const prox = proximoAudio(box); if (!prox) return;
+    if (prox.play) { if (!prox.play.classList.contains("on")) prox.play.click(); } else if (!prox.btn.disabled) prox.btn.click(); // o seguinte começa sozinho
+  };
   a.onerror = () => { tempo.textContent = "Este aparelho não toca este formato"; };
   const toca = () => { if (tocando && tocando !== a) tocando.pause(); tocando = a; return a.play().catch(() => { tempo.textContent = "Toque de novo para ouvir"; }); };
   btn.onclick = () => (a.paused ? toca() : a.pause());
@@ -1203,6 +1220,7 @@ function mediaBlock(c, mine) {
     else if (mediaCache.has(c.path)) box.append(playerAudio(mediaCache.get(c.path), dur));
     else {
       const btn = el("button", "ph audio-ph", `Ouvir áudio · ${mmss(dur)} · ${sizeLabel(Number(c.size) || 0)}`); btn.type = "button";
+      btn.preparar = () => { if (typeof c.path === "string" && OK_PATH.test(c.path)) loadMedia(c).catch(() => {}); }; // (baixa e abre o arquivo antes, para o encadeamento sem pausa)
       btn.onclick = async () => {
         btn.disabled = true; btn.textContent = "Carregando áudio…";
         try { box.replaceChildren(playerAudio(await loadMedia(c), dur, { auto: true })); } catch { fail(); }
