@@ -61,3 +61,26 @@ jobs:
       - name: Se falhou, os logs do banco local
         if: failure()
         run: docker ps --format '{{.Names}}' | head -20; docker logs supabase_auth_lacre-teste 2>&1 | tail -40 || true
+
+  e2e-funcoes:
+    name: Ponta a ponta com as Edge Functions (projeto de teste, só 2 arquivos)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # o único passo que usa o projeto Supabase de teste hospedado: um de cada vez
+    concurrency:
+      group: e2e-projeto-de-teste
+      cancel-in-progress: false
+    env:
+      SUPABASE_URL: https://ggcohoewsqsdasovsuxl.supabase.co
+      SUPABASE_KEY: sb_publishable_WyNuVIqK39YZ_EXjqdqdbw_J8_FH3hF
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Instalar ffmpeg
+        run: sudo apt-get install -y --no-install-recommends ffmpeg || (sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg)
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: node --test --test-concurrency=1 tests/e2e/aparelhos.test.mjs tests/e2e/notificacoes.test.mjs
