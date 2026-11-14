@@ -2322,3 +2322,77 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke all on function public.selo_efeitos_ativos(uuid) from public, anon, authenticated;
 grant execute on function public.selo_efeitos_ativos(uuid) to authenticated;
+
+-- ===== Coleta diária da loja (migração coleta_diaria) =====
+-- Regra nova "coleta" (só liga/desliga, começa desligada): uma vez por dia (dia de Brasília, como as outras regras dos Selos), cada membro pode coletar
+-- a MÉDIA dos preços dos itens da loja que estão ligados naquele momento, arredondada (round: meio para cima). Itens desligados não entram.
+-- Do efeito sonoro conta o preço dos primeiros 5 minutos. A garantia de "uma vez por dia" é a restrição única do extrato (grupo, pessoa, motivo 'coleta', ref = a data).
+create or replace function public.selo_limpa(novo jsonb, velho jsonb, hoje date) returns jsonb
+language plpgsql stable set search_path = public as $$
+declare r jsonb := '{}'::jsonb; k text; o jsonb; ant jsonb; lig boolean; it jsonb; ms jsonb := '[]'::jsonb; vistos int[] := '{}'; d int; v int; m jsonb;
+begin
+  if novo is null or jsonb_typeof(novo) <> 'object' then raise exception 'regras_invalidas' using errcode = '22023'; end if;
+  foreach k in array array['entrada','dia_ativo','mensagens','arquivos','sequencia','teto','coleta','loja_titulo','loja_destaque','loja_silenciar','loja_jumpscare','loja_efeito'] loop
+    o := coalesce(novo -> k, case when k like 'loja\_%' or k = 'coleta' then velho -> k end, '{"on": false}'::jsonb); ant := coalesce(velho -> k, '{}'::jsonb); -- (preços e coleta que um site antigo não conhece ficam como estão)
+    if jsonb_typeof(o) <> 'object' or jsonb_typeof(o -> 'on') <> 'boolean' then raise exception 'regras_invalidas' using errcode = '22023', detail = k; end if;
+    lig := (o ->> 'on')::boolean; it := jsonb_build_object('on', lig);
+    if k = 'sequencia' then
+      m := coalesce(o -> 'marcos', '[]'::jsonb);
+      if jsonb_typeof(m) <> 'array' or jsonb_array_length(m) > 10 then raise exception 'regras_invalidas' using errcode = '22023', detail = 'marcos'; end if;
+      for v in select generate_series(0, jsonb_array_length(m) - 1) loop
+        if jsonb_typeof(m -> v) <> 'object' then raise exception 'regras_invalidas' using errcode = '22023', detail = 'marcos'; end if;
+        d := public.selo_int(m -> v, 'dias', 1, 365, 1);
+        if d = any(vistos) then raise exception 'regras_invalidas' using errcode = '22023', detail = 'marcos'; end if;
+        vistos := vistos || d; ms := ms || jsonb_build_array(jsonb_build_object('dias', d, 'valor', public.selo_int(m -> v, 'valor', 1, 999, 1)));
+      end loop;
+      it := it || jsonb_build_object('marcos', (select coalesce(jsonb_agg(e order by (e ->> 'dias')::int), '[]'::jsonb) from jsonb_array_elements(ms) e));
+    else
+      if k <> 'coleta' then it := it || jsonb_build_object('valor', public.selo_int(o, 'valor', 1, 999, 1)); end if; -- (a coleta não tem valor: ele vem dos preços da loja)
+      if k = 'dia_ativo' then it := it || jsonb_build_object('min', public.selo_int(o, 'min', 1, 999, 1)); end if;
+      if k in ('mensagens', 'arquivos') then it := it || jsonb_build_object('a_cada', public.selo_int(o, 'a_cada', 1, 999, 1)); end if;
+      if k = 'loja_efeito' then it := it || jsonb_build_object('extra', public.selo_int(o, 'extra', 1, 999, 10)); end if;
+    end if;
+    if k <> 'teto' and k <> 'coleta' and k not like 'loja\_%' then -- (o teto, a coleta e os preços da loja não são ganho por atividade: não precisam de data)
+      it := it || jsonb_build_object('desde', case when lig and (not coalesce((ant ->> 'on')::boolean, false) or ant ->> 'desde' is null) then hoje::text else coalesce(ant ->> 'desde', hoje::text) end);
+    end if;
+    r := r || jsonb_build_object(k, it);
+  end loop;
+  return r;
+end $$;
+
+-- Média arredondada dos preços dos itens ligados (null se não há nenhum)
+create or replace function public.selo_coleta_valor(reg jsonb) returns int
+language sql immutable set search_path = public as $$
+  select round(avg((reg -> k ->> 'valor')::numeric))::int
+    from unnest(array['loja_titulo', 'loja_destaque', 'loja_silenciar', 'loja_jumpscare', 'loja_efeito']) k
+   where coalesce((reg -> k ->> 'on')::boolean, false) and (reg -> k ->> 'valor') is not null
+$$;
+revoke all on function public.selo_coleta_valor(jsonb) from public, anon, authenticated;
+
+create or replace function public.selo_coletar(p_grupo uuid) returns int
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); hoje date := (now() at time zone 'America/Sao_Paulo')::date; reg jsonb; qtd int;
+begin
+  perform public.consome('selo_coletar', 10, 60);
+  if not (select public.mfa_ok()) or not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = u) then raise exception 'nao_esta_no_grupo' using errcode = '42501'; end if;
+  if coalesce(public.aparelho_estado(), 'aprovado') = 'pendente' then raise exception 'aparelho_pendente' using errcode = '42501'; end if;
+  perform pg_advisory_xact_lock(hashtext('selo:' || p_grupo::text));
+  select s.regras into reg from public.selo_regras s where s.grupo_id = p_grupo;
+  if reg is null or not coalesce((reg -> 'coleta' ->> 'on')::boolean, false) then raise exception 'coleta_desligada' using errcode = 'P0001'; end if;
+  qtd := public.selo_coleta_valor(reg);
+  if qtd is null or qtd < 1 then raise exception 'sem_itens' using errcode = 'P0001'; end if;
+  insert into public.moedas_extrato (grupo_id, user_id, quantidade, motivo, ref) values (p_grupo, u, qtd, 'coleta', hoje::text) on conflict (grupo_id, user_id, motivo, ref) do nothing;
+  if not found then raise exception 'ja_coletou' using errcode = 'P0001'; end if;
+  return qtd;
+end $$;
+revoke all on function public.selo_coletar(uuid) from public, anon, authenticated;
+grant execute on function public.selo_coletar(uuid) to authenticated;
+
+-- Já coletei hoje neste grupo? (para o botão)
+create or replace function public.selo_coleta_hoje(p_grupo uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select (select public.mfa_ok()) and exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = (select auth.uid()))
+     and exists (select 1 from public.moedas_extrato e where e.grupo_id = p_grupo and e.user_id = (select auth.uid()) and e.motivo = 'coleta' and e.ref = ((now() at time zone 'America/Sao_Paulo')::date)::text)
+$$;
+revoke all on function public.selo_coleta_hoje(uuid) from public, anon, authenticated;
+grant execute on function public.selo_coleta_hoje(uuid) to authenticated;

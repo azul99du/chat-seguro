@@ -7,6 +7,7 @@ export const TITULOS = {
   arquivos: ["Arquivos enviados", "Fotos, vídeos e áudios"], sequencia: ["Sequência de dias", "Bônus uma vez por marco"],
   loja_titulo: ["Título ao lado do nome", "Compra única: a pessoa escolhe um título"], loja_destaque: ["Mensagem em destaque", "Paga a cada mensagem destacada"],
   loja_silenciar: ["Silenciar um membro", "5 minutos sem poder escrever no grupo"], loja_jumpscare: ["Jumpscare", "Susto sorteado da lista do grupo, para os outros membros"], loja_efeito: ["Efeito sonoro", "Som de 1 a 2 s que toca a cada mensagem de um membro"],
+  coleta: ["Coleta diária da loja", "Uma vez por dia, cada membro coleta a média dos preços dos itens ligados"],
 };
 // Preços da loja: ficam junto das regras. Começam desligados; o admin liga e põe o preço (1 a 999).
 export const LOJA = ["loja_titulo", "loja_destaque", "loja_silenciar", "loja_jumpscare", "loja_efeito"];
@@ -20,7 +21,7 @@ const pl = (n, um, varios) => (n === 1 ? um : varios);
 // Tudo desligado: cada grupo começa sem nenhuma regra e o admin liga o que quiser
 export const regrasVazias = () => ({
   entrada: { on: false, valor: 1 }, dia_ativo: { on: false, valor: 1, min: 1 }, mensagens: { on: false, valor: 1, a_cada: 1 },
-  arquivos: { on: false, valor: 1, a_cada: 1 }, sequencia: { on: false, marcos: [] }, teto: { on: false, valor: 1 },
+  arquivos: { on: false, valor: 1, a_cada: 1 }, sequencia: { on: false, marcos: [] }, teto: { on: false, valor: 1 }, coleta: { on: false },
   loja_titulo: { on: false, valor: PRECO_PADRAO.loja_titulo }, loja_destaque: { on: false, valor: PRECO_PADRAO.loja_destaque }, loja_silenciar: { on: false, valor: PRECO_PADRAO.loja_silenciar }, loja_jumpscare: { on: false, valor: PRECO_PADRAO.loja_jumpscare }, loja_efeito: { on: false, valor: PRECO_PADRAO.loja_efeito, extra: EXTRA_PADRAO },
 });
 // O que vem do servidor (ou de uma versão antiga) é desconfiável: só chaves conhecidas, números inteiros nos limites
@@ -33,6 +34,7 @@ export function limpaRegras(r) {
     if (k === "loja_efeito") v[k].extra = inteiro(o.extra, "extra", EXTRA_PADRAO);
     if (k === "mensagens" || k === "arquivos") v[k].a_cada = inteiro(o.a_cada, "a_cada", 1);
   }
+  if (r.coleta && typeof r.coleta === "object") v.coleta.on = r.coleta.on === true; // (a coleta só liga/desliga: o valor vem dos preços da loja)
   const s = r.sequencia;
   if (s && typeof s === "object") {
     v.sequencia.on = s.on === true; const vistos = new Set();
@@ -45,6 +47,12 @@ export function limpaRegras(r) {
   return v;
 }
 export const igualRegras = (a, b) => JSON.stringify(limpaRegras(a)) === JSON.stringify(limpaRegras(b));
+// Coleta diária: média dos preços (dos primeiros 5 minutos, no caso do efeito sonoro) dos itens da loja que estão LIGADOS, arredondada (meio para cima, como no servidor). null se nenhum está ligado.
+export function mediaDaLoja(r) {
+  const x = limpaRegras(r), v = LOJA.filter((k) => x[k].on).map((k) => x[k].valor);
+  return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null;
+}
+export const coletaLigada = (r) => limpaRegras(r).coleta.on === true;
 export const lojaLigada = (r, item) => limpaRegras(r)["loja_" + item]?.on === true;
 // Efeito sonoro: de 5 em 5 minutos, de 1 a 12 passos (5 a 60 minutos). Preço = primeiros 5 minutos + (passos - 1) x preço de cada 5 minutos a mais.
 export const PASSO_MIN = 5, PASSOS_MAX = 12;

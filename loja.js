@@ -76,6 +76,9 @@ export const erroLoja = (e) => {
   if (/item_desligado/.test(m)) return "O admin desligou esta vantagem.";
   if (/ja_silenciado/.test(m)) return "Essa pessoa já está silenciada. Espere acabar.";
   if (/ja_destacada/.test(m)) return "Essa mensagem já está em destaque.";
+  if (/ja_coletou/.test(m)) return "Você já coletou hoje. Volte amanhã.";
+  if (/coleta_desligada/.test(m)) return "O admin desligou a coleta diária.";
+  if (/sem_itens/.test(m)) return "Não há itens ligados na loja para coletar agora.";
   if (/ja_com_efeito/.test(m)) return "Essa pessoa já tem um efeito sonoro ativo. Espere acabar.";
   if (/sem_jumpscares/.test(m)) return "O admin ainda não pôs jumpscares na lista do grupo.";
   if (/sem_alvos/.test(m)) return "Não há mais ninguém no grupo para levar o susto.";

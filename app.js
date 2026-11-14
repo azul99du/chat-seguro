@@ -1,28 +1,28 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=b01e152019";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=b01e152019";
-import { montarFigurinhas } from "./figurinhas.js?v=b01e152019";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=b01e152019";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=b01e152019";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=b01e152019";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=b01e152019";
-import { acharVideoLink } from "./videolink.js?v=b01e152019";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=b01e152019";
-import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=b01e152019";
-import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=b01e152019";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=b01e152019";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=b01e152019";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=b01e152019";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=b01e152019";
-import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=b01e152019";
-import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente } from "./loja.js?v=b01e152019";
-import { ACOES, LOJA, TITULOS, precoDaLoja, precoEfeito, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=b01e152019";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=b01e152019";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=b01e152019";
-import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=b01e152019";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=b01e152019";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=b01e152019";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=b01e152019";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=eb39133610";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=eb39133610";
+import { montarFigurinhas } from "./figurinhas.js?v=eb39133610";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=eb39133610";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=eb39133610";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=eb39133610";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=eb39133610";
+import { acharVideoLink } from "./videolink.js?v=eb39133610";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=eb39133610";
+import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=eb39133610";
+import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=eb39133610";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=eb39133610";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=eb39133610";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=eb39133610";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=eb39133610";
+import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=eb39133610";
+import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente } from "./loja.js?v=eb39133610";
+import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=eb39133610";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=eb39133610";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=eb39133610";
+import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=eb39133610";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=eb39133610";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=eb39133610";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=eb39133610";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -2575,10 +2575,10 @@ async function abrirSelos(g) {
   await carregarSelos(g);
 }
 async function carregarSelos(g) {
-  const [s, r] = await Promise.all([sb.rpc("selo_saldo", { p_grupo: g.id }), sb.rpc("selo_regras_ver", { p_grupo: g.id }), atualizarLoja(g).catch(() => null)]);
+  const [s, r, col] = await Promise.all([sb.rpc("selo_saldo", { p_grupo: g.id }), sb.rpc("selo_regras_ver", { p_grupo: g.id }), sb.rpc("selo_coleta_hoje", { p_grupo: g.id }), atualizarLoja(g).catch(() => null)]);
   if (slGrupo !== g) return;
   if (s.error || r.error) { msgSelos("Não foi possível carregar os Selos agora."); $("sl-meu").replaceChildren(); return; }
-  lojaRegras.set(g.id, limpaRegras(r.data?.[0]?.regras)); slDados = { regras: limpaRegras(r.data?.[0]?.regras), saldo: new Map((s.data || []).map(saldoLimpo).map((x) => [x.id, x])) }; desenharSelos();
+  lojaRegras.set(g.id, limpaRegras(r.data?.[0]?.regras)); slDados = { coletou: col?.data === true, regras: limpaRegras(r.data?.[0]?.regras), saldo: new Map((s.data || []).map(saldoLimpo).map((x) => [x.id, x])) }; desenharSelos();
 }
 function desenharSelos() {
   const g = slGrupo && grupos.get(slGrupo.id); if (!g || !slDados) return;
@@ -2591,7 +2591,7 @@ function desenharSelos() {
     pintarAvatar(av, p, false); nm.append(el("b", null, "@" + p.username + (eu ? " (você)" : ""))); { const t = tituloTexto(lojas.get(g.id)?.titulos.get(p.id)); if (t) nm.append(el("small", "titulo-loja", t)); }
     sal.append(seloIcone(22), String(tem(p.id))); row.append(av, nm, sal); return row;
   }));
-  desenharLojaCartoes(g, meu);
+  desenharColeta(g); desenharLojaCartoes(g, meu);
   const fs = frasesLigadas(slDados.regras);
   $("sl-regras").replaceChildren(...(fs.length ? fs.map((f) => el("li", null, f.texto)) : [el("li", "vazio", g.admin ? "Ainda não há regras. Toque em “Editar regras” para escolher como ganhar Selos." : "O admin ainda não definiu como ganhar Selos.")]));
   $("sl-editar").hidden = !g.admin;
@@ -2626,6 +2626,23 @@ $("nov-btn").onclick = () => {
   try { localStorage.setItem(NOV_CHAVE, maisNovaId(NOVIDADES)); } catch {} pintarPontoNovidades(); // (o ponto some ao abrir; os cartões "NOVO" ficam marcados enquanto a tela está aberta)
 };
 pintarPontoNovidades();
+
+// Coleta diária: uma vez por dia (dia de Brasília) cada membro coleta a média arredondada dos preços dos itens ligados na loja (regra do admin)
+function desenharColeta(g) {
+  const box = $("sl-coleta"), r = slDados.regras, ligada = coletaLigada(r), media = mediaDaLoja(r); box.hidden = !ligada; if (!ligada) { box.replaceChildren(); return; }
+  const tx = el("div", "sl-col-tx"), b = el("button", "lj-bt"); b.type = "button"; b.id = "sl-coletar"; tx.append(el("b", null, "Coleta diária"));
+  if (media === null) { tx.append(el("small", null, "Ainda não há itens ligados na loja, então não há o que coletar.")); b.textContent = "Sem itens"; b.disabled = true; }
+  else if (slDados.coletou) { tx.append(el("small", null, `Você já coletou hoje. Volte amanhã para coletar mais ${media} ${media === 1 ? "Selo" : "Selos"}.`)); b.textContent = "Coletado hoje ✓"; b.disabled = true; }
+  else { tx.append(el("small", null, `Média dos preços dos itens ligados: ${media} ${media === 1 ? "Selo" : "Selos"} por dia.`)); b.append(seloIcone(16), ` Coletar ${media}`); b.onclick = () => coletarSelos(g).catch(() => msgSelos("Não foi possível coletar agora.")); }
+  box.replaceChildren(tx, b);
+}
+async function coletarSelos(g) {
+  const b = $("sl-coletar"); if (b) b.disabled = true; msgSelos("");
+  const { data, error } = await sb.rpc("selo_coletar", { p_grupo: g.id });
+  if (slGrupo !== g) return;
+  if (error) { msgSelos(erroLoja(error)); await carregarSelos(g).catch(() => {}); return; }
+  await carregarSelos(g).catch(() => {}); msgSelos(`Você coletou ${data} ${data === 1 ? "Selo" : "Selos"} ✓`);
+}
 
 // ---------- Loja de Selos ----------
 // Vantagens que se compram com Selos (título, mensagem em destaque, silenciar). O servidor confere saldo e regras e faz valer o silêncio; aqui se mostra e se pede a compra.
@@ -2961,7 +2978,8 @@ function desenharRegras() {
   })));
   const teto = el("div", "sr-card"), top = el("div", "sr-top"), tx = el("div"); tx.append(el("b", null, "Limite de Selos por dia"), el("small", null, r.teto.on ? "Por pessoa, somando as regras do dia" : "Sem limite"));
   top.append(tx, interruptor(r.teto.on, "Limite de Selos por dia", () => { r.teto.on = !r.teto.on; desenharRegras(); })); teto.append(top); if (r.teto.on) teto.append(fraseEl("teto", frase("teto", r)));
-  $("sr-mais").replaceChildren(teto);
+  const media = mediaDaLoja(r), txtColeta = media === null ? "Ligue algum item na loja para ter o que coletar." : `Hoje cada membro coletaria ${media} ${media === 1 ? "Selo" : "Selos"} (média dos preços dos itens ligados, arredondada).`;
+  $("sr-mais").replaceChildren(teto, cartao("coleta", TITULOS.coleta[0], TITULOS.coleta[1], () => [el("div", "sr-frase", "Uma vez por dia, cada membro pode coletar a média dos preços dos itens ligados na loja. " + txtColeta)]));
   $("sr-loja").replaceChildren(...LOJA.map((acao) => cartao(acao, TITULOS[acao][0], TITULOS[acao][1], () => [fraseEl(acao, frase(acao, r))])));
   const p = previa(r, 20); $("sr-previa").replaceChildren(...(p.total ? [seloIcone(18), " ", el("b", null, textoSelos(p.total)), " em um dia comum (20 mensagens enviadas)"] : ["Com estas regras, um dia comum (20 mensagens enviadas) não rende Selos."]));
   $("sr-salvar").disabled = igualRegras(r, srAntes);

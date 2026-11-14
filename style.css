@@ -876,3 +876,9 @@ dialog#loja-folha.efeito .lf-corpo{max-height:60dvh}
 .lf-dur button[aria-pressed=true]{border-color:var(--seal);background:rgba(232,51,95,.14)}
 .lf-trecho input[type=range],#lf-passos{width:100%;accent-color:var(--seal)}
 .lf-mono{font:500 .78rem var(--mono);color:var(--mut)}
+
+/* ----- Coleta diária ----- */
+.sl-coleta{margin:0 16px 12px;display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:16px;border:1px solid var(--line);background:var(--paper)}
+.sl-coleta[hidden]{display:none}
+.sl-col-tx{min-width:0}.sl-col-tx b{display:block}.sl-col-tx small{display:block;margin-top:2px;color:var(--mut);font-size:.82rem;line-height:1.35}
+.sl-coleta .lj-bt{flex:none}

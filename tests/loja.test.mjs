@@ -2,7 +2,7 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { limpaEfeitos, efeitoAtivoDe, mensagemRecente, atrasoSusto, limpaPendentes, limpaArquivoSusto, SUSTO_VIVO_S, SUSTOS_MAX, limpaCompras, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, tituloTexto, TITULOS_LOJA, ITENS } from "../loja.js";
 import { textoAviso } from "../grupo.js";
-import { precoEfeito, minutosDoEfeito, passosOk, PASSOS_MAX, limpaRegras, regrasVazias, igualRegras, frase, fraseTexto, precoDaLoja, lojaLigada, LOJA } from "../selos.js";
+import { mediaDaLoja, coletaLigada, precoEfeito, minutosDoEfeito, passosOk, PASSOS_MAX, limpaRegras, regrasVazias, igualRegras, frase, fraseTexto, precoDaLoja, lojaLigada, LOJA } from "../selos.js";
 
 const U = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`, MID = (n) => String(n).padStart(32, "0").replace(/0/g, "a");
 const T = (s) => `2026-11-14T12:00:${String(s).padStart(2, "0")}.000Z`;
@@ -134,4 +134,22 @@ describe("efeito sonoro", () => {
   test("só toca para mensagem de agora (não de histórico)", () => {
     const agora = Date.parse("2026-11-14T12:00:30.000Z"); assert.equal(mensagemRecente("2026-11-14T12:00:20.000Z", agora), true); assert.equal(mensagemRecente("2026-11-14T11:59:00.000Z", agora), false); assert.equal(mensagemRecente("lixo", agora), false); assert.equal(mensagemRecente("2026-11-14T12:05:00.000Z", agora), false, "do futuro distante não");
   });
+});
+
+describe("coleta diária da loja", () => {
+  const R = (o) => Object.fromEntries(Object.entries(o).map(([k, [on, valor]]) => ["loja_" + k, { on, valor, ...(k === "efeito" ? { extra: 10 } : {}) }]));
+  test("a regra começa desligada e só liga/desliga (sem valor próprio); lixo vira desligada; site antigo (sem a chave) não liga nada", () => {
+    assert.deepEqual(regrasVazias().coleta, { on: false }); assert.deepEqual(limpaRegras({ coleta: { on: true, valor: 999 } }).coleta, { on: true }); assert.equal(limpaRegras({ coleta: { on: "sim" } }).coleta.on, false); assert.equal(limpaRegras({ coleta: 5 }).coleta.on, false); assert.equal(coletaLigada({ coleta: { on: true } }), true); assert.equal(coletaLigada({}), false);
+    assert.equal(igualRegras({ coleta: { on: true } }, { coleta: { on: false } }), false, "ligar a coleta conta como mudança nas regras");
+  });
+  test("média dos preços dos itens LIGADOS, arredondada (meio para cima); desligados não entram; nenhum ligado = null", () => {
+    assert.equal(mediaDaLoja(R({ titulo: [true, 50], destaque: [true, 30], silenciar: [true, 80], jumpscare: [true, 60] })), 55, "inteira");
+    assert.equal(mediaDaLoja(R({ titulo: [true, 50], destaque: [true, 55] })), 53, "52,5 sobe para 53");
+    assert.equal(mediaDaLoja(R({ titulo: [true, 10], destaque: [true, 10], silenciar: [true, 11] })), 10, "10,33 desce para 10");
+    assert.equal(mediaDaLoja(R({ titulo: [true, 10], destaque: [true, 11] })), 11, "10,5 sobe para 11");
+    assert.equal(mediaDaLoja(R({ titulo: [true, 50], destaque: [false, 999] })), 50, "item desligado não entra na conta");
+    assert.equal(mediaDaLoja(R({ titulo: [false, 50] })), null); assert.equal(mediaDaLoja({}), null); assert.equal(mediaDaLoja(null), null);
+    assert.equal(mediaDaLoja({ loja_efeito: { on: true, valor: 30, extra: 500 }, loja_titulo: { on: true, valor: 50 } }), 40, "do efeito sonoro conta só o preço dos primeiros 5 minutos");
+  });
+  test("erros do servidor viram frases", () => { for (const [m, re] of [["ja_coletou", /já coletou hoje/], ["coleta_desligada", /desligou a coleta/], ["sem_itens", /Não há itens ligados/]]) assert.match(erroLoja({ message: m }), re); });
 });

@@ -316,3 +316,11 @@ Um membro escolhe OUTRO membro (ou ele mesmo), um trecho de **1 ou 2 segundos** 
 - **Aviso no chat:** "@x pôs um efeito sonoro em @y por N minutos" (ou "em você" / "em si mesmo"), igual aos outros itens.
 - **Limites conhecidos:** sem opção de silenciar para quem ouve (como o jumpscare); os arquivos de efeitos acabados continuam no armazenamento (WAV de até ~88 KB cada) até a pessoa que comprou limpar; navegador em segundo plano ou que bloqueia autoplay não toca.
 - **Testes:** seção "efeito sonoro" de `tests/loja.test.mjs`, `trechoPcm` em `tests/media.test.mjs` e `tests/e2e/efeito.test.mjs` (compra, toque para todos, só o alvo, expirar, a si mesmo, travas do banco).
+
+## Coleta diária da loja
+Regra nova dos Selos (`coleta`, só liga/desliga, **começa desligada**; fica em "Mais opções" do editor de regras, ao lado do limite por dia). Quando o admin liga, uma vez por dia cada membro toca em **Coletar** na tela de Selos e recebe a **média arredondada dos preços dos itens da loja que estão ligados naquele momento** (meio para cima: 52,5 vira 53; itens desligados não entram; do efeito sonoro conta o preço dos primeiros 5 minutos). Sem item ligado, não há o que coletar.
+- **Servidor:** `selo_coletar(grupo)` confere regra ligada e membro, calcula `selo_coleta_valor` (média com `round`, o mesmo que `Math.round` no app para números positivos) e grava uma linha no extrato (`motivo 'coleta'`, `ref` = a data de Brasília). "Uma vez por dia" é garantido pela restrição única do extrato (grupo, pessoa, motivo, ref), então dois toques seguidos ou dois aparelhos nunca coletam duas vezes (`ja_coletou`). `selo_coleta_hoje(grupo)` diz se já coletou hoje (para o botão). O dia vira à meia-noite de Brasília, como as outras regras.
+- **O valor é calculado na hora:** se o admin mudar um preço ou ligar/desligar um item, o valor da coleta de quem ainda não coletou hoje muda junto. Quem já coletou fica com o que coletou.
+- **Fora do limite por dia:** a coleta não conta no "limite de Selos por dia" (que só vale para os ganhos por atividade).
+- **Site antigo:** um site sem a chave `coleta` que salve regras não desliga a coleta (`selo_limpa` preserva).
+- **Testes:** seção "coleta diária" de `tests/loja.test.mjs` (média e arredondamento) e `tests/e2e/coleta.test.mjs`.

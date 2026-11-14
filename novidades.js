@@ -5,6 +5,9 @@ export const TEMAS = [["selos", "Selos"], ["mensagens", "Mensagens"], ["grupos",
 const NOME_TEMA = new Map(TEMAS);
 export const temaNome = (t) => NOME_TEMA.get(t) || null;
 export const NOVIDADES = [
+  { id: "2026-11-14-6", data: "2026-11-14", itens: [
+    { tema: "selos", icone: "🎁", titulo: "Coleta diária de Selos", texto: "Uma vez por dia, cada membro pode coletar na tela de Selos a média dos preços dos itens ligados na loja. O admin liga a coleta nas regras." },
+  ] },
   { id: "2026-11-14-5", data: "2026-11-14", itens: [
     { tema: "selos", icone: "🛠️", titulo: "Correção no efeito sonoro", texto: "Quem recebia um efeito sonoro aparecia como silenciado e ficava sem o campo de escrever por alguns minutos. Isso não acontece mais." },
   ] },
