@@ -3,7 +3,7 @@
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
-import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, chamar } from "./env.mjs";
+import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, chamar, menuConta } from "./env.mjs";
 
 let skip = configurado ? false : motivoSemConfig, browser, srv, ctxA, A, B, nomeA, nomeB;
 const t = (nome, fn) => test(nome, { timeout: 240000 }, async (c) => (skip ? c.skip(skip) : fn(c)));
@@ -65,4 +65,8 @@ t("grupo: subir a tela logo ao abrir, enquanto o servidor ainda acrescenta uma m
   const picos = []; for (let i = 0; i < 28; i++) { await dorme(100); picos.push((await rolagem(A)).top); } // ~2,8 s: cobre a chegada da mensagem nova
   await A.waitForSelector(".msg:not(.mine) .vis:has-text('nova do B')", { timeout: 10000 });
   assert.ok(Math.max(...picos) < 60, "a tela foi puxada de volta para baixo: " + JSON.stringify(picos));
+});
+
+t("o menu da conta mostra a versão do site que está rodando (para conferir se o navegador pegou a atualização)", async () => {
+  await menuConta(A); assert.match(await A.locator("#versao-site").innerText(), /^Versão do site: [0-9a-f]{10}$/);
 });

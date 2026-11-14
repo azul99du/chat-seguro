@@ -1,24 +1,24 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=5fd5270bfb";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=5fd5270bfb";
-import { montarFigurinhas } from "./figurinhas.js?v=5fd5270bfb";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=5fd5270bfb";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=5fd5270bfb";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=5fd5270bfb";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=5fd5270bfb";
-import { acharVideoLink } from "./videolink.js?v=5fd5270bfb";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=5fd5270bfb";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=5fd5270bfb";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=5fd5270bfb";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=5fd5270bfb";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=5fd5270bfb";
-import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=5fd5270bfb";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=5fd5270bfb";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=5fd5270bfb";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=5fd5270bfb";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=5fd5270bfb";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=5fd5270bfb";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=5fd5270bfb";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=855a04f979";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=855a04f979";
+import { montarFigurinhas } from "./figurinhas.js?v=855a04f979";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=855a04f979";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=855a04f979";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=855a04f979";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=855a04f979";
+import { acharVideoLink } from "./videolink.js?v=855a04f979";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=855a04f979";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=855a04f979";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=855a04f979";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=855a04f979";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=855a04f979";
+import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=855a04f979";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=855a04f979";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=855a04f979";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=855a04f979";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=855a04f979";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=855a04f979";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=855a04f979";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -2591,6 +2591,7 @@ $("novo-grupo").onclick = () => { $("chamar").close(); abrirSeletor({ tipo: "nov
 
 // ---------- Notificações (push) ----------
 // O aviso é um toque sem texto: o servidor não vê nome nem conteúdo, e o navegador mostra "Você tem uma nova mensagem". Nada aparece com o Lacre aberto na tela.
+{ const v = new URL(import.meta.url).searchParams.get("v"); const vs = document.getElementById("versao-site"); if (vs) vs.textContent = v ? "Versão do site: " + v : ""; } // (para saber qual versão está rodando, já que o navegador pode guardar a página por alguns minutos)
 const FN_URL = SUPABASE_URL + "/functions/v1/notificar", FN_APARELHO = SUPABASE_URL + "/functions/v1/aparelho";
 const suportaPush = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
 const b64uBytes = (t) => Uint8Array.from(atob(t.replaceAll("-", "+").replaceAll("_", "/").padEnd(Math.ceil(t.length / 4) * 4, "=")), (c) => c.charCodeAt(0));

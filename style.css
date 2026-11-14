@@ -782,3 +782,5 @@ button.sn-bt{padding:0}
 .espera-cartao button:disabled{opacity:.55}
 .disp-caixa.alto{border-color:var(--seal);font-weight:600}
 #dispositivos-lista .recup{color:var(--seal-dk);font-weight:600}
+
+.menu-versao{margin:6px 12px 2px;font:400 .7rem var(--mono);color:var(--mut);text-align:center;user-select:text}
