@@ -1,26 +1,27 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=ccbfb4296a";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=ccbfb4296a";
-import { montarFigurinhas } from "./figurinhas.js?v=ccbfb4296a";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=ccbfb4296a";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=ccbfb4296a";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=ccbfb4296a";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=ccbfb4296a";
-import { acharVideoLink } from "./videolink.js?v=ccbfb4296a";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=ccbfb4296a";
-import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=ccbfb4296a";
-import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=ccbfb4296a";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=ccbfb4296a";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=ccbfb4296a";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=ccbfb4296a";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=ccbfb4296a";
-import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=ccbfb4296a";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=ccbfb4296a";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=ccbfb4296a";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=ccbfb4296a";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=ccbfb4296a";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=ccbfb4296a";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=ccbfb4296a";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=3db2de6243";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=3db2de6243";
+import { montarFigurinhas } from "./figurinhas.js?v=3db2de6243";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=3db2de6243";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=3db2de6243";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=3db2de6243";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=3db2de6243";
+import { acharVideoLink } from "./videolink.js?v=3db2de6243";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=3db2de6243";
+import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=3db2de6243";
+import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=3db2de6243";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=3db2de6243";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=3db2de6243";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=3db2de6243";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=3db2de6243";
+import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim } from "./loja.js?v=3db2de6243";
+import { ACOES, LOJA, TITULOS, precoDaLoja, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=3db2de6243";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=3db2de6243";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=3db2de6243";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=3db2de6243";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=3db2de6243";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=3db2de6243";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=3db2de6243";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -265,7 +266,7 @@ async function start() {
   // Rede de segurança: o tempo real do servidor não garante entregar todo aviso (uma conexão que oscila, um evento perdido). De tempos em tempos
   // (e só com a tela à vista) busca o que chegou desde a última conferência; quase sempre não há nada e é uma consulta pequena.
   let pollMs = 30000; try { const v = localStorage.getItem("lacre:poll"); if (v !== null && Number.isFinite(Number(v))) pollMs = Number(v); } catch {} // (os testes ajustam ou desligam)
-  if (pollMs > 0) setInterval(() => { if (!document.hidden && !carregandoConversa) { sincronizar(); conferirVistas().catch(() => {}); } }, pollMs);
+  if (pollMs > 0) setInterval(() => { if (!document.hidden && !carregandoConversa) { sincronizar(); conferirVistas().catch(() => {}); if (active?.grupo) atualizarLoja(active).catch(() => {}); } }, pollMs);
 }
 
 // ---------- Verificação em dois passos (código de app autenticador, TOTP) ----------
@@ -1415,7 +1416,7 @@ function addMessage(m, content, { err = false, animate = false, em = null, desce
   const citado = re ? exibir(re, original, { me: me.id, peer: emGrupo ? (re.from && re.from !== me.id ? re.from : undefined) : active?.id }) : null;
   const quemCitado = citado?.autor === "mine" ? "Você" : citado?.autor === "theirs" ? "@" + (emGrupo ? nomeDe(original?.m.sender_id ?? re.from) : active.username) : "Mensagem";
   let autor = null; // em grupo: quem escreveu (só na primeira de uma sequência da mesma pessoa)
-  if (emGrupo && !mine) { const ant = em ? em.previousElementSibling : $("messages").lastElementChild; if (!(ant?.classList.contains("msg") && ant.dataset.de === m.sender_id)) autor = el("span", "autor", "@" + nomeDe(m.sender_id)); }
+  if (emGrupo && !mine) { const ant = em ? em.previousElementSibling : $("messages").lastElementChild; if (!(ant?.classList.contains("msg") && ant.dataset.de === m.sender_id)) autor = autorEl(m.sender_id); }
   const sr = el("span", "sr", (emGrupo && !mine ? `@${nomeDe(m.sender_id)}: ` : "") + (citado ? `Em resposta a ${quemCitado}: ${citado.rotulo}. ` : "") + label + text), vis = el("span", "vis", text), meta = el("div", "meta");
   vis.setAttribute("aria-hidden", "true");
   const tm = el("time", null, hhmm(at)); tm.dateTime = at.toISOString();
@@ -1448,6 +1449,7 @@ function addMessage(m, content, { err = false, animate = false, em = null, desce
   }
   if (emGrupo) { reavaliarAvatar(wrap); if (wrap.previousElementSibling) reavaliarAvatar(wrap.previousElementSibling); }
   const e = { m, mine, rcpt, rx, wrap, content: err ? null : content }; msgs.set(m.id, e); if (!apagada) setReceipt(e);
+  if (emGrupo && !err && !apagada) marcarDestaque(wrap, content.mid, m.sender_id);
   if (emGrupo && !err && !apagada && text) { // em grupo: "@nome" de quem está no grupo fica em destaque (o seu, mais forte)
     if (animate) { b.classList.add("deciphering"); reveal(vis, text, () => { b.classList.remove("deciphering"); pintaMencoes(vis, text); }); } else pintaMencoes(vis, text);
   } else if (animate && !err && text) { b.classList.add("deciphering"); reveal(vis, text, () => b.classList.remove("deciphering")); }
@@ -1500,6 +1502,9 @@ function abrirPicker(wrap, id) {
   if (citavel(id)) { const r = el("button", "responder", "Responder"); r.type = "button"; r.onclick = () => { fecharPicker(); responder(id); }; acoes.append(r); }
   const texto = e?.content?.type === "text" ? e.content.text : e?.content?.type === "media" ? e.content.caption : "";
   if (texto && navigator.clipboard?.writeText) { const c = el("button", "copiar", "Copiar"); c.type = "button"; c.onclick = () => { fecharPicker(); navigator.clipboard.writeText(String(texto)).catch(() => {}); }; acoes.append(c); }
+  if (e && e.mine && active?.grupo && !apagada && ["text", "media"].includes(e.content?.type) && ehMid(e.content.mid) && !lojas.get(active.id)?.destaques.has(e.content.mid) && lojaRegras.get(active.id)?.loja_destaque?.on !== false) {
+    const d = el("button", "destacar", "Destacar…"); d.type = "button"; const g = active, mid = e.content.mid; d.onclick = () => { fecharPicker(); abrirCompra(g, "destaque", { detalhe: mid }).catch(() => {}); }; acoes.append(d);
+  }
   const ap = el("button", "apagar", "Apagar…"); ap.type = "button"; ap.onclick = () => { fecharPicker(); perguntarApagar(id); }; acoes.append(ap);
   fundo.onclick = (ev) => { if (ev.pointerType === "mouse" || Date.now() - aberturaMenu > 700) fecharPicker(); }; // (o dedo que acabou de segurar a mensagem não fecha o menu ao levantar)
   p.append(fundo, foco); if (!apagada) p.append(linha); p.append(acoes);
@@ -1942,7 +1947,8 @@ async function enviar(conv, content) {
 }
 const limitado = (e) => e?.code === "PT429" || e?.status === 429 || /limite de/i.test(e?.message || "");
 const sendError = (e, conv) => { const quem = "@" + ((e?.peer || conv)?.username ?? "alguém");
-  return limitado(e) ? "Você fez muitas coisas em pouco tempo. Espere cerca de um minuto e tente de novo."
+  return eSilenciado(e) ? "Você está silenciado neste grupo. Espere acabar para enviar de novo."
+  : limitado(e) ? "Você fez muitas coisas em pouco tempo. Espere cerca de um minuto e tente de novo."
   : e?.code === "NO_PREKEY" ? `${quem} ainda não abriu a versão nova do Lacre, então não dá para enviar com sigilo futuro. Peça para essa pessoa recarregar o site.`
   : e?.code === "PIN" ? (conv?.grupo ? `A chave de ${quem} mudou. Abra a conversa com ${quem}, confira o código de segurança e envie de novo.` : `A chave de ${quem} mudou. Abra o código de segurança, confira com ela e reabra a conversa.`)
   : e?.code === "SOZINHO" ? "Não há mais ninguém neste grupo."
@@ -2045,7 +2051,7 @@ function ajustarAutores(...wraps) {
   for (const w of wraps) {
     if (!w?.classList?.contains("msg") || w.classList.contains("mine")) continue;
     const prev = w.previousElementSibling, deve = !(prev?.classList.contains("msg") && prev.dataset.de === w.dataset.de), b = w.querySelector(".bubble"), tem = b?.querySelector(":scope > .autor");
-    if (deve && !tem && b) { const x = el("span", "autor", "@" + nomeDe(w.dataset.de)); x.setAttribute("aria-hidden", "true"); b.prepend(x); } else if (!deve && tem) tem.remove();
+    if (deve && !tem && b) { const x = autorEl(w.dataset.de); x.setAttribute("aria-hidden", "true"); b.prepend(x); } else if (!deve && tem) tem.remove();
     reavaliarAvatar(w);
   }
 }
@@ -2057,7 +2063,7 @@ async function open(peer) {
   if (peer.grupo) return abrirGrupo(peer);
   bandeja(false); fecharMencoes();
   if (!(await checkPin(peer))) return;
-  active = peer; limparNaoLidas(peer.id); renderContacts(); updateStatus();
+  active = peer; limparNaoLidas(peer.id); renderContacts(); updateStatus(); pintarSilencio();
   pintarAvatar($("conv-av"), peer, true); $("conv-av").setAttribute("aria-label", "Ver foto de perfil"); atualizaFotoDe(peer).catch(() => {});
   $("chat").classList.add("in-conv");
   $("conv-title").textContent = "@" + peer.username;
@@ -2259,7 +2265,7 @@ function sairDaConversa(aviso) { // fecha a conversa aberta e volta para a tela 
   $("chat").classList.remove("in-conv"); active = null; carregandoConversa = null; filaChegando = [];
   $("messages").replaceChildren(); msgs.clear(); reactions.clear(); midParaId.clear(); cancelarResposta(); clearPending(); setBg(null);
   $("conv-title").textContent = "Escolha um amigo"; $("conv-av").replaceChildren(); $("conv-av").disabled = true; $("conv-av").classList.remove("grupo");
-  $("send-form").hidden = true; $("conv-empty").hidden = false; for (const id of ["badge", "bg-btn", "safety-btn", "grupo-btn"]) $(id).hidden = true;
+  $("send-form").hidden = true; $("send-form").classList.remove("silenciado"); $("conv-empty").hidden = false; for (const id of ["badge", "bg-btn", "safety-btn", "grupo-btn"]) $(id).hidden = true;
   if ($("grupo-info").open) $("grupo-info").close();
   renderContacts(); updateStatus(); if (aviso) note(aviso);
 }
@@ -2273,7 +2279,8 @@ async function chaveDoGrupo(n) {
   chavesGrupo.set(n.id, { ref, gk }); return gk;
 }
 // Este aparelho anota quem estava em cada grupo: se a lista mudar, aparece um aviso na conversa (ninguém entra num grupo sem os outros verem).
-async function anotarMudancas(g, n) {
+function anotarMudancas(g, n) { return emFila(() => anotarMudancasJa(g, n)); }
+async function anotarMudancasJa(g, n) {
   const k = "g:" + g.id, agora = Object.fromEntries(n.membros.map((p) => [p.id, p.username])), cargos = Object.fromEntries(n.membros.map((p) => [p.id, cargoDe(p)])), foto = g.foto?.p || null, avisos = [];
   let est = await metaGet(me.id, k).catch(() => null), t = Date.now();
   if (!est) { // primeira vez que este aparelho vê o grupo
@@ -2326,7 +2333,9 @@ function atualizarGrupos(fresco = false) {
       if (active?.grupo) { $("conv-title").textContent = active.nome; updateStatus(); repintarCoresGrupo(); }
       if ($("cor-folha").open) desenharCor();
       if ($("grupo-info").open) desenharInfoGrupo();
+      pintarSilencio();
       renderContacts();
+      for (const g of grupos.values()) atualizarLoja(g).catch(() => {}); // (a loja de cada grupo: título, destaques, silêncio e avisos de compra; sem segurar a atualização da tela)
     } finally { carregandoGrupos = null; }
   })());
 }
@@ -2353,7 +2362,7 @@ async function mostrarCopiaDoGrupo(g, m) {
 }
 async function abrirGrupo(g) {
   bandeja(false); fecharMencoes();
-  active = g; limparNaoLidas(g.id); renderContacts(); updateStatus();
+  active = g; limparNaoLidas(g.id); renderContacts(); updateStatus(); pintarSilencio();
   pintarAvatarGrupo($("conv-av"), g, true); $("conv-av").setAttribute("aria-label", "Dados do grupo");
   $("chat").classList.add("in-conv");
   $("conv-title").textContent = g.nome;
@@ -2564,10 +2573,10 @@ async function abrirSelos(g) {
   await carregarSelos(g);
 }
 async function carregarSelos(g) {
-  const [s, r] = await Promise.all([sb.rpc("selo_saldo", { p_grupo: g.id }), sb.rpc("selo_regras_ver", { p_grupo: g.id })]);
+  const [s, r] = await Promise.all([sb.rpc("selo_saldo", { p_grupo: g.id }), sb.rpc("selo_regras_ver", { p_grupo: g.id }), atualizarLoja(g).catch(() => null)]);
   if (slGrupo !== g) return;
   if (s.error || r.error) { msgSelos("Não foi possível carregar os Selos agora."); $("sl-meu").replaceChildren(); return; }
-  slDados = { regras: limpaRegras(r.data?.[0]?.regras), saldo: new Map((s.data || []).map(saldoLimpo).map((x) => [x.id, x])) }; desenharSelos();
+  lojaRegras.set(g.id, limpaRegras(r.data?.[0]?.regras)); slDados = { regras: limpaRegras(r.data?.[0]?.regras), saldo: new Map((s.data || []).map(saldoLimpo).map((x) => [x.id, x])) }; desenharSelos();
 }
 function desenharSelos() {
   const g = slGrupo && grupos.get(slGrupo.id); if (!g || !slDados) return;
@@ -2577,9 +2586,10 @@ function desenharSelos() {
   const ordem = [...g.membros.values()].sort((a, b) => tem(b.id) - tem(a.id) || a.username.localeCompare(b.username));
   $("sl-lista").replaceChildren(...ordem.map((p) => {
     const eu = p.id === me.id, row = el("div", "sl-pessoa" + (eu ? " eu" : "")), av = el("span", "avatar"), nm = el("span", "nm"), sal = el("span", "sal");
-    pintarAvatar(av, p, false); nm.append(el("b", null, "@" + p.username + (eu ? " (você)" : "")));
+    pintarAvatar(av, p, false); nm.append(el("b", null, "@" + p.username + (eu ? " (você)" : ""))); { const t = tituloTexto(lojas.get(g.id)?.titulos.get(p.id)); if (t) nm.append(el("small", "titulo-loja", t)); }
     sal.append(seloIcone(22), String(tem(p.id))); row.append(av, nm, sal); return row;
   }));
+  desenharLojaCartoes(g, meu);
   const fs = frasesLigadas(slDados.regras);
   $("sl-regras").replaceChildren(...(fs.length ? fs.map((f) => el("li", null, f.texto)) : [el("li", "vazio", g.admin ? "Ainda não há regras. Toque em “Editar regras” para escolher como ganhar Selos." : "O admin ainda não definiu como ganhar Selos.")]));
   $("sl-editar").hidden = !g.admin;
@@ -2587,6 +2597,103 @@ function desenharSelos() {
 $("gi-selos").onclick = () => { if (giGrupo) abrirSelos(giGrupo).catch(() => msgSelos("Não foi possível abrir agora.")); };
 $("selos").addEventListener("close", () => { slGrupo = null; slDados = null; });
 $("sl-editar").onclick = () => { if (slGrupo?.admin && slDados) abrirRegras(slGrupo); };
+
+// ---------- Loja de Selos ----------
+// Vantagens que se compram com Selos (título, mensagem em destaque, silenciar). O servidor confere saldo e regras e faz valer o silêncio; aqui se mostra e se pede a compra.
+const lojas = new Map(), lojaRegras = new Map(); // grupo -> estado da loja / regras (para os preços)
+let filaMeta = Promise.resolve();
+function emFila(fn) { const p = filaMeta.then(fn); filaMeta = p.catch(() => {}); return p; } // (quem grava o estado "g:<id>" do aparelho entra na fila: assim um não apaga o que o outro acabou de gravar)
+function tituloDe(id) { const est = active?.grupo ? lojas.get(active.id) : null; return est ? tituloTexto(est.titulos.get(id)) : null; }
+function autorEl(id) { const x = el("span", "autor", "@" + nomeDe(id)), t = tituloDe(id); if (t) x.append(el("span", "titulo-loja", t)); return x; }
+function marcarDestaque(wrap, mid, remetente) {
+  const est = active?.grupo ? lojas.get(active.id) : null, on = !!est && emDestaque(est, mid, remetente);
+  wrap.classList.toggle("destaque-loja", on); const tem = wrap.querySelector(":scope > .selo-destaque");
+  if (on && !tem) { const s = el("span", "selo-destaque"); s.setAttribute("aria-hidden", "true"); s.append(seloIcone(26)); wrap.append(s); } else if (!on && tem) tem.remove();
+}
+let silTimer = null;
+function pintarSilencio() { // quem está silenciado continua lendo, mas o campo de escrever dá lugar a um aviso
+  clearTimeout(silTimer); const f = $("send-form"), s = active?.grupo ? silenciadoAte(lojas.get(active.id), me.id) : null;
+  f.classList.toggle("silenciado", !!s); $("silencio-aviso").hidden = !s;
+  if (s) { $("silencio-aviso").textContent = `Você está silenciado neste grupo até ${horaFim(s.ate)}. Você continua vendo as mensagens.`; silTimer = setTimeout(pintarSilencio, Math.max(500, s.ate - Date.now() + 300)); }
+}
+function aplicarLojaNaTela(g) {
+  if (active !== g) return;
+  for (const a of $("messages").querySelectorAll(".msg:not(.mine) > .line .autor, .msg:not(.mine) .bubble > .autor")) {
+    const w = a.closest(".msg"), t = tituloDe(w.dataset.de); a.replaceChildren("@" + nomeDe(w.dataset.de)); if (t) a.append(el("span", "titulo-loja", t));
+  }
+  for (const e of msgs.values()) if (e.content) marcarDestaque(e.wrap, e.content.mid, e.m.sender_id);
+  pintarSilencio();
+}
+function avisoLoja(g, est, a) {
+  const c = est.compras.find((x) => x.id === a.compra), nome = (id) => g.membros.get(id)?.username || perfis.get(id)?.username || "alguém";
+  return { ...a, nome: nome(a.id), eu: a.id === me.id, ...(a.alvo ? { alvoNome: nome(a.alvo), alvoEu: a.alvo === me.id, min: c ? Math.round(c.silencio_s / 60) || undefined : undefined } : {}) };
+}
+async function atualizarLoja(g) {
+  const { data, error } = await sb.rpc("selo_loja_estado", { p_grupo: g.id }); if (error || !grupos.has(g.id)) return null;
+  const est = estadoDaLoja(data, Date.now()); lojas.set(g.id, est);
+  await emFila(async () => { // os avisos de compras novas ficam na conversa (a primeira vez que este aparelho vê a loja só anota, sem avisar do passado)
+    const k = "g:" + g.id, m = await metaGet(me.id, k).catch(() => null); if (!m || m.lojaVisto === est.ultimo) return;
+    const novos = m.lojaVisto === undefined ? [] : avisosNovos(est, m.lojaVisto).map((a) => avisoLoja(g, est, a));
+    m.lojaVisto = est.ultimo; m.avisos = [...(m.avisos || []), ...novos].slice(-60); await metaPut(me.id, k, m).catch(() => {});
+    if (active === g && carregandoConversa !== g) { $("msgs-empty")?.remove(); for (const a of novos) addAviso(textoAviso(a)); }
+  });
+  aplicarLojaNaTela(g); if (slGrupo === g && slDados) desenharSelos();
+  return est;
+}
+const EMOJI_LOJA = { titulo: "🏷️", destaque: "✨", silenciar: "🔇" };
+function desenharLojaCartoes(g, meu) {
+  $("sl-loja").replaceChildren(...ITENS.map((item) => {
+    const preco = precoDaLoja(slDados.regras, item), c = el("div", "lj-cartao" + (preco == null ? " off" : "")), tx = el("div", "lj-tx"), b = el("button", "lj-bt"); c.dataset.item = item; b.type = "button";
+    tx.append(el("b", null, INFO[item].nome), el("small", null, INFO[item].desc));
+    const atual = item === "titulo" ? tituloTexto(lojas.get(g.id)?.titulos.get(me.id)) : null; if (atual) tx.append(el("small", "titulo-atual", "Seu título agora: " + atual));
+    if (preco == null) { b.textContent = "Desligado pelo admin"; b.disabled = true; }
+    else if (item === "destaque") { b.append(seloIcone(16), ` ${preco} · Como usar`); b.onclick = () => choose("Mensagem em destaque", `Custa ${preco} ${preco === 1 ? "Selo" : "Selos"} por mensagem. Segure uma mensagem sua no grupo e toque em “Destacar…”: ela ganha borda e selo dourados para todos.`, [{ label: "Entendi", value: 1 }]); }
+    else if (meu < preco) { b.append(seloIcone(16), ` ${preco} · faltam ${preco - meu}`); b.disabled = true; }
+    else { b.append(seloIcone(16), ` Comprar por ${preco}`); b.onclick = () => abrirCompra(g, item).catch(() => {}); }
+    c.append(el("span", "lj-ic", EMOJI_LOJA[item]), tx); tx.append(b); return c;
+  }));
+}
+let lf = null;
+async function dadosLoja(g) {
+  const [s, r] = await Promise.all([sb.rpc("selo_saldo", { p_grupo: g.id }), sb.rpc("selo_regras_ver", { p_grupo: g.id })]); if (s.error || r.error) throw s.error || r.error;
+  const regras = limpaRegras(r.data?.[0]?.regras); lojaRegras.set(g.id, regras);
+  return { regras, saldo: (s.data || []).map(saldoLimpo).find((x) => x.id === me.id)?.saldo || 0 };
+}
+async function abrirCompra(g, item, { detalhe = null } = {}) {
+  const dlg = $("loja-folha"); lf = { g, item, sel: detalhe, pronto: false, busy: false, preco: 0, saldo: 0 };
+  $("lf-titulo").textContent = INFO[item].nome; $("lf-ctx").textContent = INFO[item].desc; $("lf-msg").textContent = ""; $("lf-corpo").replaceChildren(); $("lf-resumo").hidden = true; $("lf-ok").disabled = true; $("lf-ok").textContent = "Comprar";
+  if (!dlg.open) dlg.showModal();
+  let d; try { d = await dadosLoja(g); await atualizarLoja(g); } catch { if (lf?.g === g) $("lf-msg").textContent = "Não foi possível abrir a loja agora."; return; }
+  if (lf?.g !== g || lf.item !== item) return;
+  const preco = precoDaLoja(d.regras, item); if (preco == null) { $("lf-msg").textContent = "O admin desligou esta vantagem."; return; }
+  Object.assign(lf, { preco, saldo: d.saldo, pronto: true }); desenharCompra();
+}
+function desenharCompra() {
+  if (!lf?.pronto) return; const { g, item, preco, saldo } = lf, est = lojas.get(g.id), corpo = $("lf-corpo");
+  if (item === "titulo") {
+    const atual = est?.titulos.get(me.id), grade = el("div", "lf-titulos");
+    for (const [id, nome] of TITULOS_LOJA) { const b = el("button", id === atual ? "atual" : null, nome); b.type = "button"; b.dataset.t = id; b.setAttribute("aria-pressed", String(lf.sel === id)); b.disabled = id === atual; b.onclick = () => { lf.sel = id; desenharCompra(); }; grade.append(b); }
+    corpo.replaceChildren(grade);
+  } else if (item === "silenciar") {
+    corpo.replaceChildren(...[...g.membros.values()].filter((p) => p.id !== me.id).sort((a, b) => a.username.localeCompare(b.username)).map((p) => {
+      const s = silenciadoAte(est, p.id), b = el("button", "lf-pessoa"), av = el("span", "avatar"), nm = el("span", "nm", "@" + p.username); b.type = "button"; b.dataset.id = p.id; pintarAvatar(av, p, false);
+      b.setAttribute("aria-pressed", String(lf.sel === p.id)); b.disabled = !!s; b.append(av, nm); if (s) b.append(el("small", null, "silenciado até " + horaFim(s.ate)));
+      b.onclick = () => { lf.sel = p.id; desenharCompra(); }; return b;
+    }));
+  } else corpo.replaceChildren(el("p", "t", "Esta mensagem vai ganhar borda e selo dourados para todo o grupo."));
+  $("lf-resumo").hidden = false; $("lf-preco").textContent = `${preco} ${preco === 1 ? "Selo" : "Selos"}`; $("lf-depois").textContent = `${saldo} → ${saldo - preco}`;
+  const falta = saldo < preco; if (falta) $("lf-msg").textContent = `Faltam ${preco - saldo} ${preco - saldo === 1 ? "Selo" : "Selos"}.`; else if ($("lf-msg").textContent.startsWith("Faltam")) $("lf-msg").textContent = "";
+  $("lf-ok").textContent = `Comprar por ${preco}`; $("lf-ok").disabled = lf.busy || falta || !lf.sel;
+}
+$("lf-cancelar").onclick = () => $("loja-folha").close();
+$("loja-folha").addEventListener("close", () => { lf = null; });
+$("lf-ok").onclick = async () => {
+  if (!lf?.pronto || lf.busy || !lf.sel) return; const { g, item, sel } = lf; lf.busy = true; $("lf-ok").disabled = true; $("lf-msg").textContent = "";
+  const { error } = await sb.rpc("selo_comprar", { p_grupo: g.id, p_item: item, p_alvo: item === "silenciar" ? sel : null, p_detalhe: item === "silenciar" ? null : sel });
+  if (!lf || lf.g !== g) return;
+  if (error) { lf.busy = false; $("lf-msg").textContent = erroLoja(error); const d = await dadosLoja(g).catch(() => null); await atualizarLoja(g).catch(() => {}); if (d && lf) lf.saldo = d.saldo; desenharCompra(); $("lf-msg").textContent = erroLoja(error); return; }
+  $("loja-folha").close(); await atualizarLoja(g).catch(() => {}); avisarMudanca([...g.membros.values()]); if (slGrupo === g) carregarSelos(g).catch(() => {});
+};
 
 // Editor das regras (só admin): cada regra é uma frase; os números são tocáveis e abrem a folha de edição
 function pedirNumero({ titulo, contexto, valor, campo, selos }) {
@@ -2643,6 +2750,7 @@ function desenharRegras() {
   const teto = el("div", "sr-card"), top = el("div", "sr-top"), tx = el("div"); tx.append(el("b", null, "Limite de Selos por dia"), el("small", null, r.teto.on ? "Por pessoa, somando as regras do dia" : "Sem limite"));
   top.append(tx, interruptor(r.teto.on, "Limite de Selos por dia", () => { r.teto.on = !r.teto.on; desenharRegras(); })); teto.append(top); if (r.teto.on) teto.append(fraseEl("teto", frase("teto", r)));
   $("sr-mais").replaceChildren(teto);
+  $("sr-loja").replaceChildren(...LOJA.map((acao) => cartao(acao, TITULOS[acao][0], TITULOS[acao][1], () => [fraseEl(acao, frase(acao, r))])));
   const p = previa(r, 20); $("sr-previa").replaceChildren(...(p.total ? [seloIcone(18), " ", el("b", null, textoSelos(p.total)), " em um dia comum (20 mensagens enviadas)"] : ["Com estas regras, um dia comum (20 mensagens enviadas) não rende Selos."]));
   $("sr-salvar").disabled = igualRegras(r, srAntes);
 }

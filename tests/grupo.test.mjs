@@ -102,7 +102,9 @@ describe("participantes", () => {
   });
   test("textos dos avisos, resumo de quem participa e contagem", () => {
     assert.equal(textoAviso({ tipo: "criou" }), "Você criou o grupo"); assert.equal(textoAviso({ tipo: "adicionado", nome: "ana" }), "@ana adicionou você ao grupo");
-    assert.equal(textoAviso({ tipo: "entrou", nome: "beto" }), "@beto entrou no grupo"); assert.equal(textoAviso({ tipo: "saiu", nome: "beto" }), "@beto saiu do grupo");
+    assert.equal(textoAviso({ tipo: "entrou", nome: "beto" }), "@beto entrou no grupo"); assert.equal(textoAviso({ tipo: "loja_titulo", nome: "ana", titulo: "Lenda" }), "@ana comprou o título “Lenda”"); assert.equal(textoAviso({ tipo: "loja_titulo", eu: true, titulo: "Chefe" }), "Você comprou o título “Chefe”");
+    assert.equal(textoAviso({ tipo: "loja_destaque", nome: "bia" }), "@bia destacou uma mensagem"); assert.equal(textoAviso({ tipo: "loja_destaque", eu: true }), "Você destacou uma mensagem");
+    assert.equal(textoAviso({ tipo: "loja_silencio", nome: "caio", alvoNome: "bia" }), "@caio silenciou @bia por 5 minutos"); assert.equal(textoAviso({ tipo: "loja_silencio", nome: "caio", alvoEu: true }), "@caio silenciou você por 5 minutos"); assert.equal(textoAviso({ tipo: "loja_silencio", eu: true, alvoNome: "bia" }), "Você silenciou @bia por 5 minutos"); assert.equal(textoAviso({ tipo: "saiu", nome: "beto" }), "@beto saiu do grupo");
     assert.equal(textoAviso({ tipo: "nome", nome: "Novo" }), "O grupo agora se chama “Novo”"); assert.equal(textoAviso({ tipo: "outro" }), "");
     const ms = [{ id: EU, username: "eu" }, { id: ANA, username: "ana" }, { id: BETO, username: "beto" }, { id: G, username: "caio" }, { id: G2, username: "duda" }];
     assert.equal(resumoMembros(ms, EU), "você, @ana, @beto, @caio e mais 1"); assert.equal(resumoMembros(ms.slice(0, 2), EU), "você, @ana"); assert.equal(resumoMembros([ms[0]], EU), "você");

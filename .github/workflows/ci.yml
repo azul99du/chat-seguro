@@ -93,7 +93,7 @@ jobs:
         run: |
           export PGPASSWORD=postgres
           psql -v ON_ERROR_STOP=1 -q -h 127.0.0.1 -p 54322 -U postgres -d postgres -f supabase/schema.sql
-          psql -v ON_ERROR_STOP=1 -q -h 127.0.0.1 -p 54322 -U postgres -d postgres -c "insert into public.push_config (chave, valor) values ('recuperacao_prazo', '8 seconds') on conflict (chave) do update set valor = excluded.valor"
+          psql -v ON_ERROR_STOP=1 -q -h 127.0.0.1 -p 54322 -U postgres -d postgres -c "insert into public.push_config (chave, valor) values ('recuperacao_prazo', '8 seconds'), ('silencio_duracao', '8 seconds') on conflict (chave) do update set valor = excluded.valor"
       - name: Limites do Realtime local (o padrão é bem menor que o do projeto hospedado)
         run: |
           export PGPASSWORD=postgres

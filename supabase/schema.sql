@@ -1885,3 +1885,129 @@ begin
 end $$;
 revoke all on function public.marcar_ouvida(bigint, integer, boolean) from public, anon, authenticated;
 grant execute on function public.marcar_ouvida(bigint, integer, boolean) to authenticated;
+
+-- ===== Loja de Selos (migração loja_selos) =====
+-- O admin põe preço (1 a 999) em 3 vantagens, dentro das próprias regras dos Selos (chaves loja_titulo, loja_destaque, loja_silenciar; começam desligadas).
+-- Quem compra gasta Selos do extrato (linha negativa, motivo 'compra'): confere o saldo e desconta tudo de uma vez, com o mesmo cadeado do cálculo dos Selos, então ninguém gasta o mesmo Selo duas vezes.
+-- Compra definitiva (sem devolução). Título: um da lista fixa do app (t01..t12), vale até comprar outro. Destaque: uma mensagem (o "mid" dela), uma vez. Silenciar: 5 minutos sem poder enviar ao grupo (vale contra qualquer membro, até admin).
+-- O servidor faz valer o silêncio (recusa os envios ao grupo de quem está silenciado) e confere o saldo; título e destaque ele só registra, e os outros apps os mostram só se baterem com quem comprou.
+create or replace function public.selo_limpa(novo jsonb, velho jsonb, hoje date) returns jsonb
+language plpgsql stable set search_path = public as $$
+declare r jsonb := '{}'::jsonb; k text; o jsonb; ant jsonb; lig boolean; it jsonb; ms jsonb := '[]'::jsonb; vistos int[] := '{}'; d int; v int; m jsonb;
+begin
+  if novo is null or jsonb_typeof(novo) <> 'object' then raise exception 'regras_invalidas' using errcode = '22023'; end if;
+  foreach k in array array['entrada','dia_ativo','mensagens','arquivos','sequencia','teto','loja_titulo','loja_destaque','loja_silenciar'] loop
+    o := coalesce(novo -> k, case when k like 'loja\_%' then velho -> k end, '{"on": false}'::jsonb); ant := coalesce(velho -> k, '{}'::jsonb); -- (preços da loja que um site antigo não conhece ficam como estão)
+    if jsonb_typeof(o) <> 'object' or jsonb_typeof(o -> 'on') <> 'boolean' then raise exception 'regras_invalidas' using errcode = '22023', detail = k; end if;
+    lig := (o ->> 'on')::boolean; it := jsonb_build_object('on', lig);
+    if k = 'sequencia' then
+      m := coalesce(o -> 'marcos', '[]'::jsonb);
+      if jsonb_typeof(m) <> 'array' or jsonb_array_length(m) > 10 then raise exception 'regras_invalidas' using errcode = '22023', detail = 'marcos'; end if;
+      for v in select generate_series(0, jsonb_array_length(m) - 1) loop
+        if jsonb_typeof(m -> v) <> 'object' then raise exception 'regras_invalidas' using errcode = '22023', detail = 'marcos'; end if;
+        d := public.selo_int(m -> v, 'dias', 1, 365, 1);
+        if d = any(vistos) then raise exception 'regras_invalidas' using errcode = '22023', detail = 'marcos'; end if;
+        vistos := vistos || d; ms := ms || jsonb_build_array(jsonb_build_object('dias', d, 'valor', public.selo_int(m -> v, 'valor', 1, 999, 1)));
+      end loop;
+      it := it || jsonb_build_object('marcos', (select coalesce(jsonb_agg(e order by (e ->> 'dias')::int), '[]'::jsonb) from jsonb_array_elements(ms) e));
+    else
+      it := it || jsonb_build_object('valor', public.selo_int(o, 'valor', 1, 999, 1));
+      if k = 'dia_ativo' then it := it || jsonb_build_object('min', public.selo_int(o, 'min', 1, 999, 1)); end if;
+      if k in ('mensagens', 'arquivos') then it := it || jsonb_build_object('a_cada', public.selo_int(o, 'a_cada', 1, 999, 1)); end if;
+    end if;
+    if k <> 'teto' and k not like 'loja\_%' then -- (o teto e os preços da loja não são ganho: não precisam de data)
+      it := it || jsonb_build_object('desde', case when lig and (not coalesce((ant ->> 'on')::boolean, false) or ant ->> 'desde' is null) then hoje::text else coalesce(ant ->> 'desde', hoje::text) end);
+    end if;
+    r := r || jsonb_build_object(k, it);
+  end loop;
+  return r;
+end $$;
+
+-- Duração do silêncio: 5 minutos (parâmetro interno em push_config, que ninguém logado lê; o projeto de TESTE encurta para os testes)
+create or replace function public.silencio_duracao() returns interval
+language plpgsql stable security definer set search_path = public as $$
+declare v text;
+begin
+  select valor into v from public.push_config where chave = 'silencio_duracao';
+  return coalesce(v::interval, interval '5 minutes');
+exception when others then return interval '5 minutes';
+end $$;
+revoke all on function public.silencio_duracao() from public, anon, authenticated;
+
+create table public.selo_compras (
+  id bigint generated always as identity primary key,
+  grupo_id uuid not null references public.grupos(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  item text not null check (item in ('titulo', 'destaque', 'silenciar')),
+  preco int not null check (preco between 1 and 999),
+  alvo uuid references public.profiles(id) on delete set null,
+  detalhe text check (length(detalhe) <= 40),
+  criado_em timestamptz not null default now()
+);
+create index selo_compras_grupo on public.selo_compras (grupo_id, id);
+create index selo_compras_silencio on public.selo_compras (grupo_id, alvo, criado_em desc) where item = 'silenciar';
+create unique index selo_compras_destaque_unico on public.selo_compras (grupo_id, detalhe) where item = 'destaque';
+alter table public.selo_compras enable row level security;
+revoke all on public.selo_compras from anon, authenticated;
+create policy "exige dois passos" on public.selo_compras as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+
+create or replace function public.selo_comprar(p_grupo uuid, p_item text, p_alvo uuid default null, p_detalhe text default null) returns bigint
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); reg jsonb; preco int; saldo bigint; novo bigint; dur interval := public.silencio_duracao();
+begin
+  perform public.consome('selo_comprar', 20, 200);
+  if not (select public.mfa_ok()) or not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = u) then raise exception 'nao_esta_no_grupo' using errcode = '42501'; end if;
+  if coalesce(public.aparelho_estado(), 'aprovado') = 'pendente' then raise exception 'aparelho_pendente' using errcode = '42501'; end if;
+  if p_item is null or p_item not in ('titulo', 'destaque', 'silenciar') then raise exception 'item_invalido' using errcode = '22023'; end if;
+  perform pg_advisory_xact_lock(hashtext('selo:' || p_grupo::text));
+  perform public.selo_apurar(p_grupo);
+  select s.regras -> ('loja_' || p_item) into reg from public.selo_regras s where s.grupo_id = p_grupo;
+  if reg is null or not coalesce((reg ->> 'on')::boolean, false) then raise exception 'item_desligado' using errcode = 'P0001'; end if;
+  preco := (reg ->> 'valor')::int;
+  if p_item = 'titulo' then
+    if p_detalhe is null or p_detalhe !~ '^t(0[1-9]|1[0-2])$' or p_alvo is not null then raise exception 'detalhe_invalido' using errcode = '22023'; end if;
+  elsif p_item = 'destaque' then
+    if p_detalhe is null or p_detalhe !~ '^[0-9a-f]{32}$' or p_alvo is not null then raise exception 'detalhe_invalido' using errcode = '22023'; end if;
+    if exists (select 1 from public.selo_compras c where c.grupo_id = p_grupo and c.item = 'destaque' and c.detalhe = p_detalhe) then raise exception 'ja_destacada' using errcode = 'P0001'; end if;
+  else
+    if p_alvo is null or p_detalhe is not null then raise exception 'detalhe_invalido' using errcode = '22023'; end if;
+    if p_alvo = u then raise exception 'si_mesmo' using errcode = 'P0001'; end if;
+    if not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = p_alvo) then raise exception 'alvo_fora' using errcode = 'P0001'; end if;
+    if exists (select 1 from public.selo_compras c where c.grupo_id = p_grupo and c.item = 'silenciar' and c.alvo = p_alvo and c.criado_em > now() - dur) then raise exception 'ja_silenciado' using errcode = 'P0001'; end if;
+  end if;
+  select coalesce(sum(e.quantidade), 0) into saldo from public.moedas_extrato e where e.grupo_id = p_grupo and e.user_id = u;
+  if saldo < preco then raise exception 'saldo_insuficiente' using errcode = 'P0001'; end if;
+  insert into public.selo_compras (grupo_id, user_id, item, preco, alvo, detalhe) values (p_grupo, u, p_item, preco, p_alvo, p_detalhe) returning id into novo;
+  insert into public.moedas_extrato (grupo_id, user_id, quantidade, motivo, ref) values (p_grupo, u, -preco, 'compra', novo::text);
+  return novo;
+end $$;
+revoke all on function public.selo_comprar(uuid, text, uuid, text) from public, anon, authenticated;
+grant execute on function public.selo_comprar(uuid, text, uuid, text) to authenticated;
+
+-- O que os membros precisam ver: o título atual de cada pessoa, os destaques e as compras recentes (para os avisos e para quem está silenciado).
+-- "agora" e "silencio_s" são do relógio do servidor (o aparelho não precisa acertar a hora).
+create or replace function public.selo_loja_estado(p_grupo uuid) returns table (id bigint, user_id uuid, item text, alvo uuid, detalhe text, criado_em timestamptz, agora timestamptz, silencio_s int)
+language sql stable security definer set search_path = public as $$
+  select c.id, c.user_id, c.item, c.alvo, c.detalhe, c.criado_em, now(), extract(epoch from public.silencio_duracao())::int
+    from public.selo_compras c
+   where c.grupo_id = p_grupo and (select public.mfa_ok())
+     and exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = (select auth.uid()))
+     and (c.id in (select max(x.id) from public.selo_compras x where x.grupo_id = p_grupo and x.item = 'titulo' group by x.user_id)
+          or c.id in (select x.id from public.selo_compras x where x.grupo_id = p_grupo order by x.id desc limit 300)
+          or c.id in (select x.id from public.selo_compras x where x.grupo_id = p_grupo and x.item = 'destaque' order by x.id desc limit 500))
+   order by c.id
+$$;
+revoke all on function public.selo_loja_estado(uuid) from public, anon, authenticated;
+grant execute on function public.selo_loja_estado(uuid) to authenticated;
+
+-- Silenciado: o servidor recusa os envios ao grupo (mensagens visíveis, que têm "avisar"; os avisos automáticos do app passam)
+create or replace function public.bloqueia_silenciado() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.grupo_id is not null and new.avisar and exists (select 1 from public.selo_compras c where c.grupo_id = new.grupo_id and c.item = 'silenciar' and c.alvo = new.sender_id and c.criado_em > now() - public.silencio_duracao()) then
+    raise exception 'silenciado' using errcode = 'P0001', hint = 'silenciado';
+  end if;
+  return new;
+end $$;
+revoke all on function public.bloqueia_silenciado() from public, anon, authenticated;
+create trigger bloqueia_silenciado before insert on public.messages for each row execute function public.bloqueia_silenciado();

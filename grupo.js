@@ -111,6 +111,9 @@ export function textoAviso(a) {
     : a.tipo === "sub" ? `${n} agora é sub-admin` : a.tipo === "semsub" ? `${n} deixou de ser sub-admin` : a.tipo === "admin" ? `${n} agora é admin`
     : a.tipo === "foto" ? (a.removida ? "A foto do grupo foi removida" : "A foto do grupo foi alterada")
     : a.tipo === "selos" ? (a.eu ? "Você mudou as regras dos Selos" : `${n} mudou as regras dos Selos`)
+    : a.tipo === "loja_titulo" ? `${a.eu ? "Você comprou" : `${n} comprou`} o título “${a.titulo || "novo"}”`
+    : a.tipo === "loja_destaque" ? (a.eu ? "Você destacou uma mensagem" : `${n} destacou uma mensagem`)
+    : a.tipo === "loja_silencio" ? (a.eu ? `Você silenciou @${a.alvoNome || "alguém"} por ${a.min || 5} minutos` : a.alvoEu ? `${n} silenciou você por ${a.min || 5} minutos` : `${n} silenciou @${a.alvoNome || "alguém"} por ${a.min || 5} minutos`)
     : a.tipo === "renomeou" ? `@${a.de || "alguém"} agora é @${a.nome || "alguém"}` : "";
 }
 

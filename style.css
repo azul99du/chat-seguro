@@ -806,3 +806,29 @@ dialog#visto-grupo::backdrop{background:rgba(5,6,24,.58)}
 .vt-pessoa{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line)}.vt-pessoa:first-child{border-top:0}
 .vt-pessoa .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}.vt-pessoa .hr{font:400 .72rem var(--mono);color:var(--mut)}.vt-pessoa .hr.tudo{color:var(--verde)}.vt-pessoa .hr.parte{color:var(--a3)}.vt-pessoa .hr.viu{color:var(--seal-dk)}.vt-pessoa.falta .nm{opacity:.75}
 .vt-secao{font:500 .66rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin:8px 0 0}
+
+/* ----- Loja de Selos ----- */
+.sl-loja{display:grid;gap:10px;padding:0 16px}
+.lj-cartao{display:flex;gap:12px;padding:14px;border-radius:16px;background:var(--paper);border:1px solid var(--line)}
+.lj-cartao.off{opacity:.6}
+.lj-ic{flex:none;width:48px;height:48px;border-radius:14px;background:var(--ink-2);color:#F2B766;display:grid;place-items:center}
+.lj-tx{flex:1;min-width:0}.lj-tx b{display:block}.lj-tx small{display:block;margin:2px 0 10px;color:var(--mut);font-size:.82rem;line-height:1.35}
+.lj-bt{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:8px 14px;border-radius:12px;border:0;background:var(--seal);color:#fff;font-weight:700}
+.lj-bt:disabled{background:var(--ink-2);color:var(--mut);opacity:.85;cursor:not-allowed}
+.lj-nota{margin:2px 16px 0;color:var(--mut);font-size:.8rem}
+dialog#loja-folha .lf-corpo{margin:12px 0 4px;display:grid;gap:4px;max-height:46dvh;overflow:auto}
+.lf-titulos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.lf-titulos button,.lf-pessoa{min-height:44px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);color:var(--texto);font-weight:600}
+.lf-titulos button[aria-pressed=true],.lf-pessoa[aria-pressed=true]{border-color:var(--seal);background:rgba(232,51,95,.14)}
+.lf-titulos button.atual::after{content:" ✓";color:var(--verde)}
+.lf-pessoa{display:flex;align-items:center;gap:10px;padding:6px 10px;text-align:left;width:100%}
+.lf-pessoa .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lf-pessoa small{font:400 .68rem var(--mono);color:var(--mut)}
+.lf-pessoa:disabled{opacity:.45;cursor:not-allowed}
+.lf-resumo{display:grid;gap:6px;margin:12px 0 4px}.lf-resumo>div{display:flex;justify-content:space-between;padding:10px 12px;border-radius:12px;background:var(--paper);border:1px solid var(--line);font-size:.9rem}.lf-resumo b{font-family:var(--mono)}
+.lf-botoes{display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-top:10px}
+.titulo-loja{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:99px;background:rgba(242,183,102,.16);border:1px solid rgba(242,183,102,.5);color:#C98A1B;font:500 .66rem var(--mono);vertical-align:1px}
+:root[data-tema="escuro"] .titulo-loja{color:#F2B766}
+.msg.destaque-loja .bubble{border:2px solid #F2B766;box-shadow:0 0 0 3px rgba(242,183,102,.18),0 6px 18px rgba(242,183,102,.15);background-image:linear-gradient(160deg,rgba(242,183,102,.10),transparent)}
+.msg.destaque-loja{position:relative}.msg.destaque-loja .selo-destaque{position:absolute;right:-6px;top:-10px;z-index:2;pointer-events:none}
+.silencio-aviso{display:none;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:10px 14px;color:var(--mut);text-align:center;font-size:.9rem}
+#send-form.silenciado>:not(#silencio-aviso){display:none!important}#send-form.silenciado .silencio-aviso{display:flex}

@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=ccbfb4296a">
+  <link rel="stylesheet" href="style.css?v=3db2de6243">
 </head>
 <body>
 
@@ -171,6 +171,7 @@
           <button type="button" id="mic" class="redondo" aria-label="Gravar áudio: segure o botão"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg></button>
           <button class="primary redondo" aria-label="Enviar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
         </div>
+              <div id="silencio-aviso" class="silencio-aviso" role="status" hidden></div>
       </form>
     </section>
   </div>
@@ -361,6 +362,8 @@
       <header class="pg-bar"><button value="cancel" class="pg-volta" aria-label="Voltar" formnovalidate><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><h2>Selos do grupo</h2></header>
       <div class="pg-corpo">
         <div id="sl-meu" class="sl-meu" role="status"></div>
+        <h3 class="pg-grupo">Loja</h3>
+        <div id="sl-loja" class="sl-loja"></div>
         <h3 class="pg-grupo">Selos de cada pessoa</h3>
         <div id="sl-lista" class="sl-lista"></div>
         <h3 class="pg-grupo">Como ganhar Selos</h3>
@@ -381,7 +384,8 @@
         <div id="sr-cards"></div>
         <h3 class="pg-grupo">Mais opções</h3>
         <div id="sr-mais"></div>
-        <div class="sr-linha-fixa"><div class="sr-card sr-soon"><div class="sr-top"><div><b>Preços da loja</b><small>Em breve: quanto custa cada item</small></div></div></div></div>
+        <h3 class="pg-grupo">Preços da loja</h3>
+        <div id="sr-loja"></div>
         <p id="sr-previa" class="sr-previa" role="status"></p>
         <p id="sr-msg" class="pg-msg" role="status"></p>
         <button type="button" id="sr-salvar" class="btn-rosa sr-salvar" disabled>Salvar regras</button>
@@ -396,6 +400,16 @@
     <div class="sn-ed"><button type="button" id="sn-menos" class="sn-bt" aria-label="Diminuir">−</button><label class="sn-campo"><span id="sn-ico" class="sn-ico" aria-hidden="true"></span><input id="sn-valor" type="text" inputmode="numeric" autocomplete="off" maxlength="4" aria-label="Valor"></label><button type="button" id="sn-mais" class="sn-bt" aria-label="Aumentar">+</button></div>
     <div id="sn-atalhos" class="sn-atalhos"></div>
     <div class="btns"><button type="button" id="sn-ok" class="btn-rosa">Pronto</button></div>
+  </dialog>
+
+  <dialog id="loja-folha" class="folha-seg" aria-labelledby="lf-titulo">
+    <div class="grab"></div>
+    <h2 id="lf-titulo"></h2>
+    <p id="lf-ctx"></p>
+    <div id="lf-corpo" class="lf-corpo"></div>
+    <div id="lf-resumo" class="lf-resumo" hidden><div><span>Custa</span><b id="lf-preco"></b></div><div><span>Seu saldo depois</span><b id="lf-depois"></b></div></div>
+    <p id="lf-msg" class="pg-msg" role="status"></p>
+    <div class="lf-botoes"><button type="button" id="lf-cancelar" class="btn-limpa">Cancelar</button><button type="button" id="lf-ok" class="btn-rosa" disabled>Comprar</button></div>
   </dialog>
 
   <dialog id="visto-grupo" aria-label="Quem viu a mensagem"><div id="visto-corpo"></div></dialog>
@@ -495,6 +509,6 @@
 
   <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
 
-  <script src="guarda.js?v=ccbfb4296a"></script>
+  <script src="guarda.js?v=3db2de6243"></script>
 </body>
 </html>

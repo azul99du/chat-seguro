@@ -5,7 +5,12 @@ export const ACOES = ["entrada", "dia_ativo", "mensagens", "arquivos", "sequenci
 export const TITULOS = {
   entrada: ["Entrar no grupo", "Uma vez por pessoa"], dia_ativo: ["Dia ativo", "Por aparecer no dia"], mensagens: ["Mensagens enviadas", "Por conversar"],
   arquivos: ["Arquivos enviados", "Fotos, vídeos e áudios"], sequencia: ["Sequência de dias", "Bônus uma vez por marco"],
+  loja_titulo: ["Título ao lado do nome", "Compra única: a pessoa escolhe um título"], loja_destaque: ["Mensagem em destaque", "Paga a cada mensagem destacada"],
+  loja_silenciar: ["Silenciar um membro", "5 minutos sem poder escrever no grupo"],
 };
+// Preços da loja: ficam junto das regras. Começam desligados; o admin liga e põe o preço (1 a 999).
+export const LOJA = ["loja_titulo", "loja_destaque", "loja_silenciar"];
+const PRECO_PADRAO = { loja_titulo: 50, loja_destaque: 30, loja_silenciar: 80 };
 const FAIXAS = { valor: [1, MAX_SELOS], min: [1, 999], a_cada: [1, 999], dias: [1, MAX_DIAS] };
 export const faixa = (campo) => FAIXAS[campo] || [1, MAX_SELOS];
 const inteiro = (v, campo, padrao) => (Number.isInteger(v) && v >= faixa(campo)[0] && v <= faixa(campo)[1] ? v : padrao);
@@ -15,13 +20,14 @@ const pl = (n, um, varios) => (n === 1 ? um : varios);
 export const regrasVazias = () => ({
   entrada: { on: false, valor: 1 }, dia_ativo: { on: false, valor: 1, min: 1 }, mensagens: { on: false, valor: 1, a_cada: 1 },
   arquivos: { on: false, valor: 1, a_cada: 1 }, sequencia: { on: false, marcos: [] }, teto: { on: false, valor: 1 },
+  loja_titulo: { on: false, valor: PRECO_PADRAO.loja_titulo }, loja_destaque: { on: false, valor: PRECO_PADRAO.loja_destaque }, loja_silenciar: { on: false, valor: PRECO_PADRAO.loja_silenciar },
 });
 // O que vem do servidor (ou de uma versão antiga) é desconfiável: só chaves conhecidas, números inteiros nos limites
 export function limpaRegras(r) {
   const v = regrasVazias(); if (!r || typeof r !== "object") return v;
-  for (const k of ["entrada", "dia_ativo", "mensagens", "arquivos", "teto"]) {
+  for (const k of ["entrada", "dia_ativo", "mensagens", "arquivos", "teto", ...LOJA]) {
     const o = r[k]; if (!o || typeof o !== "object") continue;
-    v[k].on = o.on === true; v[k].valor = inteiro(o.valor, "valor", 1);
+    v[k].on = o.on === true; v[k].valor = inteiro(o.valor, "valor", LOJA.includes(k) ? PRECO_PADRAO[k] : 1);
     if (k === "dia_ativo") v[k].min = inteiro(o.min, "min", 1);
     if (k === "mensagens" || k === "arquivos") v[k].a_cada = inteiro(o.a_cada, "a_cada", 1);
   }
@@ -37,6 +43,8 @@ export function limpaRegras(r) {
   return v;
 }
 export const igualRegras = (a, b) => JSON.stringify(limpaRegras(a)) === JSON.stringify(limpaRegras(b));
+export const lojaLigada = (r, item) => limpaRegras(r)["loja_" + item]?.on === true;
+export const precoDaLoja = (r, item) => (lojaLigada(r, item) ? limpaRegras(r)["loja_" + item].valor : null);
 export const algumaLigada = (r) => { const x = limpaRegras(r); return ACOES.some((k) => x[k].on); };
 
 // Um marco novo com um número de dias que ainda não existe (null se já há 10 ou nenhum sobrou)
@@ -59,6 +67,7 @@ export function frase(acao, r, marco) {
   if (acao === "dia_ativo") return ["Ganha ", S(a.valor), ` ${pl(a.valor, "Selo", "Selos")} em cada dia com pelo menos `, Q(a.min, "min"), ` ${pl(a.min, "mensagem", "mensagens")}`];
   if (acao === "mensagens") return ["Ganha ", S(a.valor), ` ${pl(a.valor, "Selo", "Selos")} a cada `, Q(a.a_cada, "a_cada"), a.a_cada === 1 ? " mensagem enviada" : " mensagens enviadas"];
   if (acao === "arquivos") return ["Ganha ", S(a.valor), ` ${pl(a.valor, "Selo", "Selos")} a cada `, Q(a.a_cada, "a_cada"), a.a_cada === 1 ? " arquivo enviado" : " arquivos enviados"];
+  if (LOJA.includes(acao)) return ["Custa ", S(a.valor), ` ${pl(a.valor, "Selo", "Selos")}`];
   if (acao === "teto") return ["No máximo ", S(a.valor), ` ${pl(a.valor, "Selo", "Selos")} por pessoa em cada dia`];
   if (acao === "sequencia") { const m = a.marcos[marco]; if (!m) return []; return ["Com ", Q(m.dias, "dias", marco), m.dias === 1 ? " dia seguido, ganha " : " dias seguidos, ganha ", S(m.valor, marco), ` ${pl(m.valor, "Selo", "Selos")}`]; }
   return [];
