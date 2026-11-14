@@ -45,7 +45,7 @@ const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; cha
 export function servir(dir) {
   return new Promise((ok) => {
     const s = createServer((req, res) => {
-      const f = join(dir, req.url === "/" ? "index.html" : decodeURIComponent(req.url.split("?")[0]));
+      const caminho = req.url.split("?")[0], f = join(dir, caminho === "/" ? "index.html" : decodeURIComponent(caminho)); // (o endereço pode vir com ?parametros)
       if (!f.startsWith(dir) || !existsSync(f)) { res.writeHead(404).end(); return; }
       res.writeHead(200, { "content-type": MIME[extname(f)] || "application/octet-stream" }).end(readFileSync(f));
     }).listen(0, "127.0.0.1", () => ok({ url: `http://127.0.0.1:${s.address().port}/`, close: () => new Promise((r) => s.close(r)) }));

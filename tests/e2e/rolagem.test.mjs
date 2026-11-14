@@ -70,3 +70,10 @@ t("grupo: subir a tela logo ao abrir, enquanto o servidor ainda acrescenta uma m
 t("o menu da conta mostra a versão do site que está rodando (para conferir se o navegador pegou a atualização)", async () => {
   await menuConta(A); assert.match(await A.locator("#versao-site").innerText(), /^Versão do site: [0-9a-f]{10}$/);
 });
+
+t("modo de diagnóstico (?diag): só aparece com o parâmetro e mostra quem mexe na rolagem da lista", async () => {
+  assert.equal(await A.locator(".diag").count(), 0, "sem o parâmetro não aparece nada");
+  await A.goto(srv.url + "?diag=1"); await pronto(A); await A.waitForSelector(".diag");
+  await A.click("#contacts button[data-grupo]"); await A.waitForSelector("#messages:not(.carregando) .msg", { timeout: 10000 });
+  await A.waitForFunction(() => /scrollTop=\d+ \(era/.test(document.querySelector(".diag pre").textContent) && /app\.js:\d+/.test(document.querySelector(".diag pre").textContent), null, { timeout: 10000 });
+});
