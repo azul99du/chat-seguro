@@ -28,6 +28,7 @@ before(async () => {
   srv = await servir(prepararSite()); dir = tmp();
   browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
   const [ca, cb] = [await browser.newContext({ viewport: { width: 1100, height: 760 } }), await browser.newContext({ viewport: { width: 1100, height: 760 } })];
+  for (const c of [ca, cb]) await c.addInitScript(() => { try { localStorage.setItem("lacre:poll", "0"); } catch {} }); // (sem a verificação periódica: este teste conta e atrasa as consultas ao servidor)
   A = await ca.newPage(); B = await cb.newPage(); vigiar("A", A); vigiar("B", B);
   nomeA = novoUsuario("a"); nomeB = novoUsuario("b"); await cadastrar(A, nomeA); await cadastrar(B, nomeB);
   await chamar(A, nomeB); await A.waitForSelector(`#conv-title:has-text("@${nomeB}")`);

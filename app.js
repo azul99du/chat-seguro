@@ -1,24 +1,24 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=cc7d945f41";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=cc7d945f41";
-import { montarFigurinhas } from "./figurinhas.js?v=cc7d945f41";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=cc7d945f41";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=cc7d945f41";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=cc7d945f41";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=cc7d945f41";
-import { acharVideoLink } from "./videolink.js?v=cc7d945f41";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=cc7d945f41";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=cc7d945f41";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=cc7d945f41";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=cc7d945f41";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=cc7d945f41";
-import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=cc7d945f41";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=cc7d945f41";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=cc7d945f41";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=cc7d945f41";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=cc7d945f41";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=cc7d945f41";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=cc7d945f41";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=ad7ce95e64";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=ad7ce95e64";
+import { montarFigurinhas } from "./figurinhas.js?v=ad7ce95e64";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=ad7ce95e64";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=ad7ce95e64";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=ad7ce95e64";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=ad7ce95e64";
+import { acharVideoLink } from "./videolink.js?v=ad7ce95e64";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=ad7ce95e64";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=ad7ce95e64";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=ad7ce95e64";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=ad7ce95e64";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=ad7ce95e64";
+import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=ad7ce95e64";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=ad7ce95e64";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=ad7ce95e64";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=ad7ce95e64";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=ad7ce95e64";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=ad7ce95e64";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=ad7ce95e64";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -257,6 +257,10 @@ async function start() {
   $("chat").classList.remove("preparando"); document.body.dataset.pronto = "1";
   sincronizarNotificacoes(); conferirAparelhos(true, true); conferirDispositivos(true);
   setInterval(() => { if (!document.hidden) { conferirAparelhos(true); conferirDispositivos(); } }, 60000);
+  // Rede de segurança: o tempo real do servidor não garante entregar todo aviso (uma conexão que oscila, um evento perdido). De tempos em tempos
+  // (e só com a tela à vista) busca o que chegou desde a última conferência; quase sempre não há nada e é uma consulta pequena.
+  let pollMs = 30000; try { const v = localStorage.getItem("lacre:poll"); if (v !== null && Number.isFinite(Number(v))) pollMs = Number(v); } catch {} // (os testes ajustam ou desligam)
+  if (pollMs > 0) setInterval(() => { if (!document.hidden && !carregandoConversa) sincronizar(); }, pollMs);
 }
 
 // ---------- Verificação em dois passos (código de app autenticador, TOTP) ----------
