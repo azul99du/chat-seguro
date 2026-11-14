@@ -60,7 +60,9 @@ jobs:
           node --test --test-concurrency=1 $arquivos
       - name: Se falhou, os logs do banco local
         if: failure()
-        run: docker ps --format '{{.Names}}' | head -20; docker logs supabase_auth_lacre-teste 2>&1 | tail -40 || true
+        run: |
+          docker ps --format '{{.Names}}'
+          for c in supabase_realtime_lacre-teste supabase_auth_lacre-teste supabase_db_lacre-teste; do echo "=== $c"; docker logs "$c" 2>&1 | tail -60; done
 
   e2e-funcoes:
     name: Ponta a ponta com as Edge Functions (projeto de teste, só 2 arquivos)
