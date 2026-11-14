@@ -33,6 +33,25 @@ before(async () => {
 });
 after(async () => { if (browser) { await browser.close(); await srv.close(); } });
 
+const altura = (p) => p.evaluate(() => document.getElementById("messages").scrollHeight);
+t("figurinhas recebidas: o espaço do botão 'Salvar figurinha' e a proporção da imagem já estão reservados, então a lista não muda de altura quando a figurinha termina de carregar", async () => {
+  // (era assim que a tela "balançava" ao rolar logo depois de abrir: cada figurinha ganhava um botão e a lista andava ~30 px quadro a quadro)
+  await B.route(/\/storage\/v1\/object\//, async (route) => { if (route.request().method() !== "GET") return route.continue(); await dorme(1500); route.continue().catch(() => {}); }); // B demora para baixar o arquivo
+  const png = Buffer.from(await A.evaluate(() => { const c = document.createElement("canvas"); c.width = 120; c.height = 80; const x = c.getContext("2d"); x.fillStyle = "#d22"; x.fillRect(40, 20, 40, 40); return c.toDataURL("image/png").split(",")[1]; }), "base64"); // 120x80 com fundo transparente (não quadrada)
+  await A.click("#mais"); await A.click("#sticker"); await A.waitForSelector("#stk[open]");
+  await A.setInputFiles("#stk-file", { name: "pronta.png", mimeType: "image/png", buffer: png }); await A.waitForSelector("#stk-mine .stk-item", { timeout: 30000 });
+  await A.click("#stk-mine .stk-item"); await A.waitForSelector("#stk", { state: "hidden" });
+  await B.waitForSelector(".msg:not(.mine) .bubble.sticker", { timeout: 30000 }); // chegou (ainda com "…", a imagem demora 1,5 s)
+  assert.equal(await B.locator(".msg:not(.mine) .bubble.sticker img").count(), 0, "o teste precisa pegar a figurinha ainda sem a imagem");
+  const medidas = () => B.evaluate(() => { const b = document.querySelector(".msg:not(.mine) .bubble.sticker"), m = b.querySelector(".media"), alvo = [...b.querySelectorAll(".ph, img, .stk-save, .meta")].map((e) => `${e.className || e.tagName}:${Math.round(e.getBoundingClientRect().width)}x${Math.round(e.getBoundingClientRect().height)}:${getComputedStyle(e).display}:${getComputedStyle(e.parentElement).display}`); return { lista: document.getElementById("messages").scrollHeight, balao: Math.round(b.getBoundingClientRect().height), alvo, ar: m.style.getPropertyValue("--ar") }; });
+  const antes = await medidas();
+  await B.waitForSelector(".msg:not(.mine) .bubble.sticker img", { timeout: 30000 }); await B.waitForTimeout(300);
+  const depois = await medidas();
+  assert.equal(depois.lista, antes.lista, "a lista mudou de altura quando a figurinha carregou: " + JSON.stringify({ antes, depois }));
+  assert.equal(await B.locator(".bubble.sticker .stk-save").isVisible(), true, "o botão de salvar aparece quando a figurinha carrega");
+  await B.unroute(/\/storage\/v1\/object\//);
+});
+
 t("grupo: subir a tela logo ao abrir, enquanto o servidor ainda acrescenta uma mensagem nova, não é puxado de volta para o fim", async () => {
   // A fica sem tempo real e sem a verificação periódica: a mensagem que B manda agora só chega pelo servidor, durante a abertura
   await ctxA.addInitScript(() => { try { localStorage.setItem("lacre:poll", "0"); } catch {} });
