@@ -1,27 +1,27 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=3db2de6243";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=3db2de6243";
-import { montarFigurinhas } from "./figurinhas.js?v=3db2de6243";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=3db2de6243";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=3db2de6243";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=3db2de6243";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=3db2de6243";
-import { acharVideoLink } from "./videolink.js?v=3db2de6243";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=3db2de6243";
-import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=3db2de6243";
-import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=3db2de6243";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=3db2de6243";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=3db2de6243";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=3db2de6243";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=3db2de6243";
-import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim } from "./loja.js?v=3db2de6243";
-import { ACOES, LOJA, TITULOS, precoDaLoja, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=3db2de6243";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=3db2de6243";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=3db2de6243";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=3db2de6243";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=3db2de6243";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=3db2de6243";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=3db2de6243";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=52b1a3dfd7";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=52b1a3dfd7";
+import { montarFigurinhas } from "./figurinhas.js?v=52b1a3dfd7";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=52b1a3dfd7";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=52b1a3dfd7";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=52b1a3dfd7";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=52b1a3dfd7";
+import { acharVideoLink } from "./videolink.js?v=52b1a3dfd7";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=52b1a3dfd7";
+import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=52b1a3dfd7";
+import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=52b1a3dfd7";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=52b1a3dfd7";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=52b1a3dfd7";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=52b1a3dfd7";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=52b1a3dfd7";
+import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES } from "./loja.js?v=52b1a3dfd7";
+import { ACOES, LOJA, TITULOS, precoDaLoja, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=52b1a3dfd7";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=52b1a3dfd7";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=52b1a3dfd7";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=52b1a3dfd7";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=52b1a3dfd7";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=52b1a3dfd7";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=52b1a3dfd7";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -2063,7 +2063,7 @@ async function open(peer) {
   if (peer.grupo) return abrirGrupo(peer);
   bandeja(false); fecharMencoes();
   if (!(await checkPin(peer))) return;
-  active = peer; limparNaoLidas(peer.id); renderContacts(); updateStatus(); pintarSilencio();
+  active = peer; limparNaoLidas(peer.id); renderContacts(); updateStatus(); pintarSilencio(); desarmarSustosDeFora();
   pintarAvatar($("conv-av"), peer, true); $("conv-av").setAttribute("aria-label", "Ver foto de perfil"); atualizaFotoDe(peer).catch(() => {});
   $("chat").classList.add("in-conv");
   $("conv-title").textContent = "@" + peer.username;
@@ -2262,7 +2262,7 @@ function sincronizar(tentativa = 0) {
 function addAviso(texto) { if (!texto) return; const d = el("div", "aviso-linha"); d.append(el("span", null, texto)); const colar = !semPuxar && ($("messages").classList.contains("carregando") || pertoDoFim()); $("messages").append(d); if (colar) $("messages").scrollTop = 1e9; }
 function sairDaConversa(aviso) { // fecha a conversa aberta e volta para a tela inicial
   fecharMencoes();
-  $("chat").classList.remove("in-conv"); active = null; carregandoConversa = null; filaChegando = [];
+  $("chat").classList.remove("in-conv"); active = null; carregandoConversa = null; filaChegando = []; desarmarSustosDeFora();
   $("messages").replaceChildren(); msgs.clear(); reactions.clear(); midParaId.clear(); cancelarResposta(); clearPending(); setBg(null);
   $("conv-title").textContent = "Escolha um amigo"; $("conv-av").replaceChildren(); $("conv-av").disabled = true; $("conv-av").classList.remove("grupo");
   $("send-form").hidden = true; $("send-form").classList.remove("silenciado"); $("conv-empty").hidden = false; for (const id of ["badge", "bg-btn", "safety-btn", "grupo-btn"]) $(id).hidden = true;
@@ -2362,7 +2362,7 @@ async function mostrarCopiaDoGrupo(g, m) {
 }
 async function abrirGrupo(g) {
   bandeja(false); fecharMencoes();
-  active = g; limparNaoLidas(g.id); renderContacts(); updateStatus(); pintarSilencio();
+  active = g; limparNaoLidas(g.id); renderContacts(); updateStatus(); pintarSilencio(); desarmarSustosDeFora(); armarSustos();
   pintarAvatarGrupo($("conv-av"), g, true); $("conv-av").setAttribute("aria-label", "Dados do grupo");
   $("chat").classList.add("in-conv");
   $("conv-title").textContent = g.nome;
@@ -2633,14 +2633,15 @@ async function atualizarLoja(g) {
   const est = estadoDaLoja(data, Date.now()); lojas.set(g.id, est);
   await emFila(async () => { // os avisos de compras novas ficam na conversa (a primeira vez que este aparelho vê a loja só anota, sem avisar do passado)
     const k = "g:" + g.id, m = await metaGet(me.id, k).catch(() => null); if (!m || m.lojaVisto === est.ultimo) return;
-    const novos = m.lojaVisto === undefined ? [] : avisosNovos(est, m.lojaVisto).map((a) => avisoLoja(g, est, a));
+    const novos = m.lojaVisto === undefined ? [] : avisosNovos(est, m.lojaVisto, me.id).map((a) => avisoLoja(g, est, a));
     m.lojaVisto = est.ultimo; m.avisos = [...(m.avisos || []), ...novos].slice(-60); await metaPut(me.id, k, m).catch(() => {});
     if (active === g && carregandoConversa !== g) { $("msgs-empty")?.remove(); for (const a of novos) addAviso(textoAviso(a)); }
   });
   aplicarLojaNaTela(g); if (slGrupo === g && slDados) desenharSelos();
+  conferirSustos(g).catch(() => {});
   return est;
 }
-const EMOJI_LOJA = { titulo: "🏷️", destaque: "✨", silenciar: "🔇" };
+const EMOJI_LOJA = { titulo: "🏷️", destaque: "✨", silenciar: "🔇", jumpscare: "👻" };
 function desenharLojaCartoes(g, meu) {
   $("sl-loja").replaceChildren(...ITENS.map((item) => {
     const preco = precoDaLoja(slDados.regras, item), c = el("div", "lj-cartao" + (preco == null ? " off" : "")), tx = el("div", "lj-tx"), b = el("button", "lj-bt"); c.dataset.item = item; b.type = "button";
@@ -2666,7 +2667,7 @@ async function abrirCompra(g, item, { detalhe = null } = {}) {
   let d; try { d = await dadosLoja(g); await atualizarLoja(g); } catch { if (lf?.g === g) $("lf-msg").textContent = "Não foi possível abrir a loja agora."; return; }
   if (lf?.g !== g || lf.item !== item) return;
   const preco = precoDaLoja(d.regras, item); if (preco == null) { $("lf-msg").textContent = "O admin desligou esta vantagem."; return; }
-  Object.assign(lf, { preco, saldo: d.saldo, pronto: true }); desenharCompra();
+  Object.assign(lf, { preco, saldo: d.saldo, pronto: true }); if (item === "jumpscare") lf.sel = true; desenharCompra();
 }
 function desenharCompra() {
   if (!lf?.pronto) return; const { g, item, preco, saldo } = lf, est = lojas.get(g.id), corpo = $("lf-corpo");
@@ -2680,7 +2681,8 @@ function desenharCompra() {
       b.setAttribute("aria-pressed", String(lf.sel === p.id)); b.disabled = !!s; b.append(av, nm); if (s) b.append(el("small", null, "silenciado até " + horaFim(s.ate)));
       b.onclick = () => { lf.sel = p.id; desenharCompra(); }; return b;
     }));
-  } else corpo.replaceChildren(el("p", "t", "Esta mensagem vai ganhar borda e selo dourados para todo o grupo."));
+  } else if (item === "destaque") corpo.replaceChildren(el("p", "t", "Esta mensagem vai ganhar borda e selo dourados para todo o grupo."));
+  else corpo.replaceChildren(el("p", "t", "O app vai sortear um jumpscare da lista do admin e todos os outros membros levam o mesmo susto. Você não vê qual é, e só descobrem que foi você depois do susto."));
   $("lf-resumo").hidden = false; $("lf-preco").textContent = `${preco} ${preco === 1 ? "Selo" : "Selos"}`; $("lf-depois").textContent = `${saldo} → ${saldo - preco}`;
   const falta = saldo < preco; if (falta) $("lf-msg").textContent = `Faltam ${preco - saldo} ${preco - saldo === 1 ? "Selo" : "Selos"}.`; else if ($("lf-msg").textContent.startsWith("Faltam")) $("lf-msg").textContent = "";
   $("lf-ok").textContent = `Comprar por ${preco}`; $("lf-ok").disabled = lf.busy || falta || !lf.sel;
@@ -2689,10 +2691,129 @@ $("lf-cancelar").onclick = () => $("loja-folha").close();
 $("loja-folha").addEventListener("close", () => { lf = null; });
 $("lf-ok").onclick = async () => {
   if (!lf?.pronto || lf.busy || !lf.sel) return; const { g, item, sel } = lf; lf.busy = true; $("lf-ok").disabled = true; $("lf-msg").textContent = "";
-  const { error } = await sb.rpc("selo_comprar", { p_grupo: g.id, p_item: item, p_alvo: item === "silenciar" ? sel : null, p_detalhe: item === "silenciar" ? null : sel });
+  const { error } = await sb.rpc("selo_comprar", { p_grupo: g.id, p_item: item, p_alvo: item === "silenciar" ? sel : null, p_detalhe: item === "titulo" || item === "destaque" ? sel : null });
   if (!lf || lf.g !== g) return;
   if (error) { lf.busy = false; $("lf-msg").textContent = erroLoja(error); const d = await dadosLoja(g).catch(() => null); await atualizarLoja(g).catch(() => {}); if (d && lf) lf.saldo = d.saldo; desenharCompra(); $("lf-msg").textContent = erroLoja(error); return; }
   $("loja-folha").close(); await atualizarLoja(g).catch(() => {}); avisarMudanca([...g.membros.values()]); if (slGrupo === g) carregarSelos(g).catch(() => {});
+};
+
+// ---------- Jumpscare (item da loja) ----------
+// Quem compra não escolhe: o servidor sorteia um da lista do admin. Cada outro membro leva o susto UMA vez: 3 a 10 s depois da compra se estava com o app aberto,
+// ou 3 a 10 s depois de entrar no grupo se não estava. O aviso "@x comprou um jumpscare" só aparece para a pessoa depois do susto dela.
+const susto = { itens: new Map(), fila: Promise.resolve() }; // compra -> { g, compra, de, jumpscare, vivo, timer, pronto, disparando }
+function atrasoDoSusto() { try { const v = localStorage.getItem("lacre:susto"); if (v !== null && Number.isFinite(Number(v))) return Math.max(0, Number(v)); } catch {} return atrasoSusto(); } // (os testes encurtam)
+function vivoMaxS() { try { const v = localStorage.getItem("lacre:susto_vivo"); if (v !== null && Number.isFinite(Number(v))) return Math.max(0, Number(v)); } catch {} return undefined; } // (os testes ajustam: a partir de quantos segundos de compra o susto espera a pessoa entrar no grupo)
+async function conferirSustos(g) {
+  const { data, error } = await sb.rpc("jumpscare_pendentes", { p_grupo: g.id }); if (error || !grupos.has(g.id)) return;
+  for (const p of limpaPendentes(data, vivoMaxS())) if (!susto.itens.has(p.compra)) susto.itens.set(p.compra, { g, ...p, timer: null, pronto: null, disparando: false });
+  armarSustos();
+}
+function armarSustos() { // "vivo": a compra acabou de acontecer, então conta a partir de agora; senão só conta quando a pessoa está dentro do grupo
+  for (const it of susto.itens.values()) {
+    if (it.timer || it.disparando || document.hidden || (!it.vivo && active?.id !== it.g.id)) continue;
+    it.pronto ??= prepararSusto(it.g, it.jumpscare).catch(() => null);
+    it.timer = setTimeout(() => dispararSusto(it), atrasoDoSusto());
+  }
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) armarSustos(); });
+function desarmarSustosDeFora() { for (const it of susto.itens.values()) if (!it.vivo && it.timer && active?.id !== it.g.id) { clearTimeout(it.timer); it.timer = null; } }
+function dispararSusto(it) {
+  it.timer = null; if (!susto.itens.has(it.compra) || it.disparando) return;
+  if (document.hidden || (!it.vivo && active?.id !== it.g.id)) { it.vivo = false; return; } // não deu (tela escondida ou saiu do grupo): espera a pessoa entrar no grupo
+  it.disparando = true; susto.fila = susto.fila.then(() => executarSusto(it)).catch(() => {});
+}
+async function executarSusto(it) {
+  const { error } = await sb.rpc("jumpscare_visto", { p_compra: it.compra }); // marca ANTES de mostrar: o susto nunca se repete
+  if (error) { it.disparando = false; it.vivo = false; return; }
+  susto.itens.delete(it.compra);
+  const prep = await it.pronto?.catch(() => null); if (prep?.img) await mostrarSusto(prep);
+  for (const u of [prep?.img, prep?.som]) if (u) URL.revokeObjectURL(u);
+  const g = it.g, a = { tipo: "loja_jumpscare", id: it.de, nome: g.membros.get(it.de)?.username || perfis.get(it.de)?.username || "alguém", eu: false, t: Date.now(), compra: it.compra };
+  await emFila(async () => { const k = "g:" + g.id, m = await metaGet(me.id, k).catch(() => null); if (!m) return; m.avisos = [...(m.avisos || []), a].slice(-60); await metaPut(me.id, k, m).catch(() => {}); });
+  if (active?.id === g.id && carregandoConversa !== g) { $("msgs-empty")?.remove(); addAviso(textoAviso(a)); }
+}
+function mostrarSusto(prep) {
+  return new Promise((ok) => {
+    const d = $("susto"), im = $("susto-img"); let aud = null, fim = false, tm = null;
+    const fecha = () => { if (fim) return; fim = true; clearTimeout(tm); try { aud?.pause(); } catch {} im.removeAttribute("src"); if (d.open) d.close(); ok(); };
+    im.src = prep.img; d.showModal(); try { navigator.vibrate?.([220, 90, 220]); } catch {}
+    if (prep.som) { aud = new Audio(prep.som); aud.onended = () => setTimeout(fecha, 400); aud.play().catch(() => {}); }
+    tm = setTimeout(fecha, aud ? 7000 : 3000); setTimeout(() => d.addEventListener("click", fecha, { once: true }), 1200); d.addEventListener("close", fecha, { once: true });
+  });
+}
+async function baixarSusto(g, f) { // arquivo cifrado -> URL local
+  const { data, error } = await sb.storage.from("media").download(f.p); if (error) return null;
+  const enc = new Uint8Array(await data.arrayBuffer()); if (enc.byteLength > 3 * 1048576) return null;
+  const bytes = await abrirFotoCifrada(g.gk, g.id, enc, f.iv).catch(() => null); return bytes ? URL.createObjectURL(new Blob([bytes], { type: f.t })) : null;
+}
+async function prepararSusto(g, id) {
+  if (!g.gk) return null; const { data } = await sb.rpc("jumpscare_obter", { p_grupo: g.id, p_id: id }), r = data?.[0]; if (!r) return null;
+  const img = limpaArquivoSusto(r.img, g.id, "image"), som = limpaArquivoSusto(r.som, g.id, "audio"); if (!img) return null;
+  const [u, s] = await Promise.all([baixarSusto(g, img), som ? baixarSusto(g, som) : null]); return u ? { img: u, som: s } : null;
+}
+// Lista do admin (só ele vê): imagens + som opcionais, cifrados com a chave do grupo
+let jsGrupo = null, jsPend = null; const jsThumbs = new Map();
+const msgJs = (t, ok = false) => { $("js-msg").textContent = t; $("js-msg").classList.toggle("ok", ok); };
+$("sr-jumpscares").onclick = () => { if (slGrupo?.admin) abrirJumpscares(slGrupo).catch(() => msgJs("Não foi possível abrir agora.")); };
+async function abrirJumpscares(g) { jsGrupo = g; jsPend = null; msgJs(""); $("js-grade").replaceChildren(el("div", "js-vazio", "Carregando…")); $("js-lista").showModal(); await desenharJumpscares(g); }
+async function desenharJumpscares(g) {
+  const { data, error } = await sb.rpc("jumpscare_lista", { p_grupo: g.id }); if (jsGrupo !== g) return;
+  if (error) { msgJs("Não foi possível carregar a lista."); return; }
+  const itens = (data || []).map((x) => ({ id: x.id, img: limpaArquivoSusto(x.img, g.id, "image"), som: limpaArquivoSusto(x.som, g.id, "audio") })).filter((x) => x.img);
+  $("js-add").disabled = itens.length >= MAX_JUMPSCARES;
+  const cartoes = await Promise.all(itens.map(async (x) => {
+    if (!jsThumbs.has(x.img.p)) jsThumbs.set(x.img.p, await baixarSusto(g, x.img).catch(() => null));
+    const c = el("div", "js-item"), url = jsThumbs.get(x.img.p), b = el("button", "js-x", "×"); c.dataset.id = String(x.id); b.type = "button"; b.setAttribute("aria-label", "Apagar este jumpscare");
+    if (url) { const im = el("img"); im.src = url; im.alt = "Jumpscare " + x.id; c.append(im); }
+    if (x.som) c.append(el("span", "js-som", "🔊"));
+    b.onclick = () => apagarJumpscare(g, x).catch(() => msgJs("Não foi possível apagar agora.")); c.append(b); return c;
+  }));
+  if (jsGrupo !== g) return; $("js-grade").replaceChildren(...(cartoes.length ? cartoes : [el("div", "js-vazio", "Nenhum jumpscare ainda.")]));
+}
+async function apagarJumpscare(g, x) {
+  if (await choose("Apagar este jumpscare?", "Ele sai do sorteio. Compras já feitas que o sorteiaram ficam sem susto.", [{ label: "Apagar", value: "sim", cls: "danger" }, { label: "Cancelar", value: "nao" }]) !== "sim") return;
+  const { error } = await sb.rpc("jumpscare_apagar", { p_grupo: g.id, p_id: x.id }); if (error) return msgJs("Não foi possível apagar agora.");
+  const velhos = [x.img.p, x.som?.p].filter((p) => p?.startsWith(me.id + "/")); if (velhos.length) sb.storage.from("media").remove(velhos).catch(() => {});
+  jsThumbs.delete(x.img.p); await desenharJumpscares(g);
+}
+$("js-lista").addEventListener("close", () => { jsGrupo = null; jsPend = null; });
+$("js-add").onclick = () => { if (!jsGrupo || $("js-add").disabled) return; msgJs(""); $("js-img").click(); };
+async function guardarSusto(g, bytes, tipo) { // cifra com a chave do grupo e envia para a pasta do grupo
+  const { data, iv } = await cifrarFoto(g.gk, g.id, bytes), p = `${me.id}/${g.id}/${crypto.randomUUID()}`;
+  const up = await sb.storage.from("media").upload(p, new Blob([data], { type: "application/octet-stream" }), { contentType: "application/octet-stream" }); if (up.error) throw up.error;
+  return { p, iv, t: tipo };
+}
+async function concluirJumpscare(g, img, som) {
+  msgJs("Enviando…", true); const enviados = [];
+  try {
+    const a = await guardarSusto(g, img.bytes, img.mime); enviados.push(a.p); const s = som ? await guardarSusto(g, som.bytes, som.mime) : null; if (s) enviados.push(s.p);
+    const { error } = await sb.rpc("jumpscare_novo", { p_grupo: g.id, p_img: a, p_som: s }); if (error) throw error;
+    msgJs("Jumpscare adicionado ✓", true); await desenharJumpscares(g);
+  } catch (e) { if (enviados.length) sb.storage.from("media").remove(enviados).catch(() => {}); msgJs(erroLoja(e)); }
+}
+$("js-img").onchange = async () => {
+  const f = $("js-img").files[0]; $("js-img").value = ""; const g = jsGrupo; if (!f || !g?.gk) return;
+  if (!/^image\/(jpeg|png|webp)$/.test(f.type)) return msgJs("Escolha uma imagem (JPG, PNG ou WebP).");
+  if (f.size > 20 * 1048576) return msgJs("Essa imagem é grande demais (máximo 20 MB).");
+  try {
+    let img = await cleanImage(f, 1280); for (const lado of [960, 720, 520]) { if (img.bytes.length <= 700 * 1024) break; img = await cleanImage(f, lado); }
+    if (img.bytes.length > 700 * 1024) return msgJs("Essa imagem ficou pesada demais. Tente outra.");
+    jsPend = { g, img };
+    const r = await choose("Som do jumpscare", "Quer juntar um som curto (até 12 segundos)?", [{ label: "Escolher um som", value: "som" }, { label: "Adicionar sem som", value: "nao" }, { label: "Cancelar", value: "cancela" }]);
+    if (!jsPend || jsGrupo !== g) return;
+    if (r === "som") { msgJs("Escolha o arquivo de som (MP3, M4A ou WAV)."); $("js-som").click(); }
+    else if (r === "nao") { jsPend = null; await concluirJumpscare(g, img, null); } else jsPend = null;
+  } catch (e) { msgJs(String(e?.message || "Não foi possível preparar essa imagem.")); }
+};
+const duracaoDe = (bytes, mime) => new Promise((ok) => { const u = URL.createObjectURL(new Blob([bytes], { type: mime })), a = new Audio(); a.preload = "metadata"; a.onloadedmetadata = () => { URL.revokeObjectURL(u); ok(a.duration); }; a.onerror = () => { URL.revokeObjectURL(u); ok(NaN); }; a.src = u; });
+$("js-som").onchange = async () => {
+  const f = $("js-som").files[0]; $("js-som").value = ""; const pend = jsPend; if (!f || !pend || jsGrupo !== pend.g) return; jsPend = null;
+  if (f.size > 700 * 1024) return msgJs("Esse som é grande demais (máximo 700 KB, uns 12 segundos).");
+  try {
+    const som = cleanAudio(await f.arrayBuffer()), dur = await duracaoDe(som.bytes, som.mime);
+    if (!Number.isFinite(dur) || dur > 12.5) return msgJs(Number.isFinite(dur) ? "Esse som é longo demais (máximo 12 segundos)." : "Não consegui abrir esse som.");
+    await concluirJumpscare(pend.g, pend.img, som);
+  } catch (e) { msgJs(String(e?.message || "Não foi possível usar esse som.")); }
 };
 
 // Editor das regras (só admin): cada regra é uma frase; os números são tocáveis e abrem a folha de edição

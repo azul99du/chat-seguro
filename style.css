@@ -832,3 +832,17 @@ dialog#loja-folha .lf-corpo{margin:12px 0 4px;display:grid;gap:4px;max-height:46
 .msg.destaque-loja{position:relative}.msg.destaque-loja .selo-destaque{position:absolute;right:-6px;top:-10px;z-index:2;pointer-events:none}
 .silencio-aviso{display:none;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:10px 14px;color:var(--mut);text-align:center;font-size:.9rem}
 #send-form.silenciado>:not(#silencio-aviso){display:none!important}#send-form.silenciado .silencio-aviso{display:flex}
+
+/* ----- Jumpscare ----- */
+.sr-js{margin:10px 16px 0;width:calc(100% - 32px)}
+.js-grade{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 16px 12px}
+.js-item{position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;background:var(--ink-2);border:1px solid var(--line)}
+.js-item img{width:100%;height:100%;object-fit:cover;display:block}
+.js-item .js-som{position:absolute;left:6px;bottom:6px;font-size:.9rem;padding:2px 6px;border-radius:99px;background:rgba(0,0,0,.6);color:#fff}
+.js-item .js-x{position:absolute;right:6px;top:6px;width:32px;height:32px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font-size:1.1rem;line-height:1}
+.js-vazio{grid-column:1/-1;color:var(--mut);text-align:center;padding:18px 0}
+dialog.susto{position:fixed;inset:0;width:100vw;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border:0;background:#000;overflow:hidden}
+dialog.susto::backdrop{background:#000}
+dialog.susto img{width:100%;height:100%;object-fit:contain;display:block;animation:susto-pula .9s ease-out both}
+@keyframes susto-pula{0%{transform:scale(.4);opacity:0}12%{transform:scale(1.18);opacity:1}30%{transform:scale(1.04) translate(-1.5%,1%)}50%{transform:scale(1.12) translate(1.5%,-1%)}70%{transform:scale(1.06) translate(-1%,.5%)}100%{transform:scale(1.1)}}
+@media (prefers-reduced-motion:reduce){dialog.susto img{animation:none}}

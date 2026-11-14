@@ -1,6 +1,7 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { limpaCompras, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, tituloTexto, TITULOS_LOJA, ITENS } from "../loja.js";
+import { atrasoSusto, limpaPendentes, limpaArquivoSusto, SUSTO_VIVO_S, SUSTOS_MAX, limpaCompras, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, tituloTexto, TITULOS_LOJA, ITENS } from "../loja.js";
+import { textoAviso } from "../grupo.js";
 import { limpaRegras, regrasVazias, igualRegras, frase, fraseTexto, precoDaLoja, lojaLigada, LOJA } from "../selos.js";
 
 const U = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`, MID = (n) => String(n).padStart(32, "0").replace(/0/g, "a");
@@ -49,11 +50,46 @@ describe("loja de Selos: o que o servidor diz", () => {
     assert.deepEqual(avisosNovos(e, 0).map((a) => a.tipo), ["loja_titulo", "loja_destaque", "loja_silencio"]); assert.deepEqual(avisosNovos(e, 2).map((a) => a.compra), [3]); assert.equal(avisosNovos(e, 3).length, 0); assert.equal(avisosNovos(e, 0)[0].titulo, "Lenda"); assert.equal(avisosNovos(e, 0)[2].alvo, U(1));
   });
   test("catálogo: 12 títulos com ids t01 a t12 e textos diferentes", () => {
-    assert.equal(TITULOS_LOJA.length, 12); assert.deepEqual(TITULOS_LOJA.map(([i]) => i), Array.from({ length: 12 }, (_, i) => "t" + String(i + 1).padStart(2, "0"))); assert.equal(new Set(TITULOS_LOJA.map(([, t]) => t)).size, 12); assert.deepEqual(ITENS, ["titulo", "destaque", "silenciar"]);
+    assert.equal(TITULOS_LOJA.length, 12); assert.deepEqual(TITULOS_LOJA.map(([i]) => i), Array.from({ length: 12 }, (_, i) => "t" + String(i + 1).padStart(2, "0"))); assert.equal(new Set(TITULOS_LOJA.map(([, t]) => t)).size, 12); assert.deepEqual(ITENS, ["titulo", "destaque", "silenciar", "jumpscare"]);
   });
   test("erros do servidor viram frases em português", () => {
     for (const [m, re] of [["saldo_insuficiente", /Selos suficientes/], ["item_desligado", /desligou/], ["ja_silenciado", /já está silenciada/], ["ja_destacada", /já está em destaque/], ["si_mesmo", /outra pessoa/], ["alvo_fora", /não está mais/]]) assert.match(erroLoja({ message: m }), re);
     assert.match(erroLoja({ code: "PT429" }), /Muitas compras/); assert.match(erroLoja({ code: "42501" }), /neste grupo/); assert.match(erroLoja(null), /Não foi possível/);
     assert.equal(eSilenciado({ message: "silenciado" }), true); assert.equal(eSilenciado({ hint: "silenciado" }), true); assert.equal(eSilenciado({ message: "outro" }), false); assert.equal(eSilenciado(null), false);
+  });
+});
+
+describe("jumpscare", () => {
+  test("o preço sugerido é 60 e o item começa desligado; o aviso do jumpscare existe", () => {
+    const r = regrasVazias(); assert.equal(r.loja_jumpscare.on, false); assert.equal(r.loja_jumpscare.valor, 60); assert.ok(LOJA.includes("loja_jumpscare"));
+    assert.equal(limpaRegras({ loja_jumpscare: { on: true, valor: 9999 } }).loja_jumpscare.valor, 60, "valor fora do limite volta ao padrão");
+    assert.equal(textoAviso({ tipo: "loja_jumpscare", nome: "ana" }), "@ana comprou um jumpscare"); assert.equal(textoAviso({ tipo: "loja_jumpscare", eu: true }), "Você comprou um jumpscare");
+  });
+  test("o atraso do susto fica entre 3 e 10 segundos", () => {
+    assert.equal(atrasoSusto(() => 0), 3000); assert.equal(atrasoSusto(() => 1), 10000); assert.equal(atrasoSusto(() => 0.5), 6500);
+    for (let i = 0; i < 200; i++) { const v = atrasoSusto(); assert.ok(v >= 3000 && v <= 10000, String(v)); }
+  });
+  test("pendentes: só linhas de forma certa; 'vivo' = compra recente; os 5 mais novos, em ordem", () => {
+    const lin = (compra, idade, extra = {}) => ({ compra, user_id: U(compra), jumpscare: 7, criado_em: T(1), idade_s: idade, ...extra });
+    assert.deepEqual(limpaPendentes([lin(3, 2), lin(1, SUSTO_VIVO_S + 1)]).map((x) => [x.compra, x.vivo]), [[1, false], [3, true]]);
+    assert.deepEqual(limpaPendentes([null, 5, {}, lin(0, 1), lin(2, 1, { jumpscare: 0 }), lin(3, 1, { user_id: "x" }), lin(4, NaN)]).map((x) => [x.compra, x.vivo]), [[4, false]], "sem idade confiável não é 'vivo'");
+    assert.equal(limpaPendentes(Array.from({ length: 9 }, (_, i) => lin(i + 1, 1))).length, SUSTOS_MAX); assert.deepEqual(limpaPendentes(null), []);
+  });
+  test("o arquivo cifrado só vale com caminho da pasta do grupo, iv curto e tipo permitido", () => {
+    const g = "11111111-2222-4333-8444-555555555555", p = `${U(1)}/${g}/${U(2)}`;
+    assert.deepEqual(limpaArquivoSusto({ p, iv: "abc", t: "image/png" }, g, "image"), { p, iv: "abc", t: "image/png" });
+    assert.equal(limpaArquivoSusto({ p, iv: "abc", t: "audio/mpeg" }, g, "image"), null, "som onde se espera imagem");
+    assert.equal(limpaArquivoSusto({ p, iv: "abc", t: "image/svg+xml" }, g, "image"), null, "svg não");
+    assert.equal(limpaArquivoSusto({ p: `${U(1)}/${U(9)}/${U(2)}`, iv: "abc", t: "image/png" }, g, "image"), null, "pasta de outro grupo");
+    assert.equal(limpaArquivoSusto({ p, iv: "x".repeat(41), t: "image/png" }, g, "image"), null); assert.equal(limpaArquivoSusto(null, g, "image"), null);
+  });
+  test("aviso da compra: quem comprou vê na hora; os outros não (só depois do susto deles); o servidor não diz qual foi sorteado", () => {
+    const est = estadoDaLoja([L(1, 1, "jumpscare"), L(2, 2, "destaque", { detalhe: MID(2) })]);
+    assert.deepEqual(avisosNovos(est, 0, U(1)).map((a) => [a.tipo, a.id === U(1)]), [["loja_jumpscare", true], ["loja_destaque", false]]);
+    assert.deepEqual(avisosNovos(est, 0, U(3)).map((a) => a.tipo), ["loja_destaque"], "outra pessoa: sem aviso do jumpscare"); assert.deepEqual(avisosNovos(est, 0).map((a) => a.tipo), ["loja_destaque"]);
+    assert.equal(limpaCompras([L(1, 1, "jumpscare", { detalhe: "5" })])[0].detalhe, null, "o número sorteado nunca fica no estado");
+  });
+  test("erros do servidor viram frases", () => {
+    for (const [m, re] of [["sem_jumpscares", /não pôs jumpscares/], ["sem_alvos", /ninguém/], ["lista_cheia", /10 jumpscares/]]) assert.match(erroLoja({ message: m }), re);
   });
 });

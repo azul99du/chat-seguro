@@ -6,11 +6,11 @@ export const TITULOS = {
   entrada: ["Entrar no grupo", "Uma vez por pessoa"], dia_ativo: ["Dia ativo", "Por aparecer no dia"], mensagens: ["Mensagens enviadas", "Por conversar"],
   arquivos: ["Arquivos enviados", "Fotos, vídeos e áudios"], sequencia: ["Sequência de dias", "Bônus uma vez por marco"],
   loja_titulo: ["Título ao lado do nome", "Compra única: a pessoa escolhe um título"], loja_destaque: ["Mensagem em destaque", "Paga a cada mensagem destacada"],
-  loja_silenciar: ["Silenciar um membro", "5 minutos sem poder escrever no grupo"],
+  loja_silenciar: ["Silenciar um membro", "5 minutos sem poder escrever no grupo"], loja_jumpscare: ["Jumpscare", "Susto sorteado da lista do grupo, para os outros membros"],
 };
 // Preços da loja: ficam junto das regras. Começam desligados; o admin liga e põe o preço (1 a 999).
-export const LOJA = ["loja_titulo", "loja_destaque", "loja_silenciar"];
-const PRECO_PADRAO = { loja_titulo: 50, loja_destaque: 30, loja_silenciar: 80 };
+export const LOJA = ["loja_titulo", "loja_destaque", "loja_silenciar", "loja_jumpscare"];
+const PRECO_PADRAO = { loja_titulo: 50, loja_destaque: 30, loja_silenciar: 80, loja_jumpscare: 60 };
 const FAIXAS = { valor: [1, MAX_SELOS], min: [1, 999], a_cada: [1, 999], dias: [1, MAX_DIAS] };
 export const faixa = (campo) => FAIXAS[campo] || [1, MAX_SELOS];
 const inteiro = (v, campo, padrao) => (Number.isInteger(v) && v >= faixa(campo)[0] && v <= faixa(campo)[1] ? v : padrao);
@@ -20,7 +20,7 @@ const pl = (n, um, varios) => (n === 1 ? um : varios);
 export const regrasVazias = () => ({
   entrada: { on: false, valor: 1 }, dia_ativo: { on: false, valor: 1, min: 1 }, mensagens: { on: false, valor: 1, a_cada: 1 },
   arquivos: { on: false, valor: 1, a_cada: 1 }, sequencia: { on: false, marcos: [] }, teto: { on: false, valor: 1 },
-  loja_titulo: { on: false, valor: PRECO_PADRAO.loja_titulo }, loja_destaque: { on: false, valor: PRECO_PADRAO.loja_destaque }, loja_silenciar: { on: false, valor: PRECO_PADRAO.loja_silenciar },
+  loja_titulo: { on: false, valor: PRECO_PADRAO.loja_titulo }, loja_destaque: { on: false, valor: PRECO_PADRAO.loja_destaque }, loja_silenciar: { on: false, valor: PRECO_PADRAO.loja_silenciar }, loja_jumpscare: { on: false, valor: PRECO_PADRAO.loja_jumpscare },
 });
 // O que vem do servidor (ou de uma versão antiga) é desconfiável: só chaves conhecidas, números inteiros nos limites
 export function limpaRegras(r) {

@@ -42,13 +42,13 @@ const cartao = (p, item) => p.locator(`#sl-loja .lj-cartao[data-item="${item}"]`
 
 t("o admin liga a loja e põe os preços (itens começam desligados); o saldo vem da regra de entrada", async () => {
   await abrirSelos(A); await A.click("#sl-editar"); await A.waitForSelector("#selos-regras[open]");
-  assert.equal(await A.locator("#sr-loja .sr-card").count(), 3); assert.equal(await A.locator("#sr-loja .sr-n").count(), 0, "tudo desligado");
+  assert.equal(await A.locator("#sr-loja .sr-card").count(), 4); assert.equal(await A.locator("#sr-loja .sr-n").count(), 0, "tudo desligado");
   await chave(A, "Entrar no grupo").click(); await mudar(A, "Entrar no grupo", 0, 200);
   for (const nome of ["Título ao lado do nome", "Mensagem em destaque", "Silenciar um membro"]) await A.locator(`#sr-loja button.sr-sw[aria-label="${nome}"]`).click();
   assert.match(await A.locator('#sr-loja .sr-card:has(b:text-is("Silenciar um membro")) .sr-frase').innerText(), /Custa 80 Selos/);
   await A.click("#sr-salvar"); await A.waitForFunction(() => !document.querySelector("#selos-regras").open, null, { timeout: 30000 });
   await A.waitForFunction(() => document.querySelector("#sl-meu .n")?.textContent === "200", null, { timeout: 30000 });
-  assert.equal(await A.locator("#sl-loja .lj-cartao").count(), 3); assert.equal(await cartao(A, "titulo").locator(".lj-bt").isDisabled(), false);
+  assert.equal(await A.locator("#sl-loja .lj-cartao").count(), 4); assert.equal(await cartao(A, "titulo").locator(".lj-bt").isDisabled(), false);
   await sair(A);
 });
 t("comprar um título: aparece ao lado do nome para todos, o grupo é avisado e o saldo cai", async () => {

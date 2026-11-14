@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3db2de6243">
+  <link rel="stylesheet" href="style.css?v=52b1a3dfd7">
 </head>
 <body>
 
@@ -386,6 +386,7 @@
         <div id="sr-mais"></div>
         <h3 class="pg-grupo">Preços da loja</h3>
         <div id="sr-loja"></div>
+        <button type="button" id="sr-jumpscares" class="btn-limpa sr-js">Lista de jumpscares do grupo</button>
         <p id="sr-previa" class="sr-previa" role="status"></p>
         <p id="sr-msg" class="pg-msg" role="status"></p>
         <button type="button" id="sr-salvar" class="btn-rosa sr-salvar" disabled>Salvar regras</button>
@@ -401,6 +402,23 @@
     <div id="sn-atalhos" class="sn-atalhos"></div>
     <div class="btns"><button type="button" id="sn-ok" class="btn-rosa">Pronto</button></div>
   </dialog>
+
+  <dialog id="js-lista" class="pagina">
+    <form method="dialog">
+      <header class="pg-bar"><button value="cancel" class="pg-volta" aria-label="Voltar" formnovalidate><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><h2>Jumpscares do grupo</h2></header>
+      <div class="pg-corpo">
+        <p class="sr-nota">Quando alguém compra um jumpscare, o app sorteia UM desta lista e todos os outros membros levam o mesmo susto. Só o admin vê a lista. Até 10 (imagem e, se quiser, um som curto).</p>
+        <div id="js-grade" class="js-grade"></div>
+        <button type="button" id="js-add" class="btn-rosa sr-salvar">Adicionar jumpscare</button>
+        <input id="js-img" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+        <input id="js-som" type="file" accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,.mp3,.m4a,.wav" hidden>
+        <p id="js-msg" class="pg-msg" role="status"></p>
+        <p class="pg-dica sem-recuo">A imagem e o som são cifrados no seu aparelho com a chave do grupo antes de irem para o servidor, como a foto do grupo. Imagens são reduzidas (até 1280 px) e sons podem ter até 12 segundos.</p>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="susto" class="susto" aria-label="Jumpscare"><img id="susto-img" alt=""></dialog>
 
   <dialog id="loja-folha" class="folha-seg" aria-labelledby="lf-titulo">
     <div class="grab"></div>
@@ -509,6 +527,6 @@
 
   <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
 
-  <script src="guarda.js?v=3db2de6243"></script>
+  <script src="guarda.js?v=52b1a3dfd7"></script>
 </body>
 </html>

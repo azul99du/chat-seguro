@@ -2011,3 +2011,207 @@ begin
 end $$;
 revoke all on function public.bloqueia_silenciado() from public, anon, authenticated;
 create trigger bloqueia_silenciado before insert on public.messages for each row execute function public.bloqueia_silenciado();
+
+-- ===== Jumpscare na loja de Selos (migração jumpscare) =====
+-- O admin escolhe uma lista de até 10 jumpscares (uma imagem e, se quiser, um som, cifrados com a chave do grupo, como a foto do grupo).
+-- Quem compra NÃO escolhe: o servidor sorteia um da lista na hora da compra, e é o mesmo para todos os outros membros.
+-- Cada membro (menos quem comprou) leva o susto uma vez: na hora (3 a 10 s depois, se estava com o app aberto) ou ao entrar no grupo. O aviso "@x comprou um jumpscare"
+-- só aparece para cada pessoa DEPOIS do susto dela: por isso o servidor esconde de cada membro a compra até ele marcar que viu (jumpscare_visto).
+create or replace function public.selo_limpa(novo jsonb, velho jsonb, hoje date) returns jsonb
+language plpgsql stable set search_path = public as $$
+declare r jsonb := '{}'::jsonb; k text; o jsonb; ant jsonb; lig boolean; it jsonb; ms jsonb := '[]'::jsonb; vistos int[] := '{}'; d int; v int; m jsonb;
+begin
+  if novo is null or jsonb_typeof(novo) <> 'object' then raise exception 'regras_invalidas' using errcode = '22023'; end if;
+  foreach k in array array['entrada','dia_ativo','mensagens','arquivos','sequencia','teto','loja_titulo','loja_destaque','loja_silenciar','loja_jumpscare'] loop
+    o := coalesce(novo -> k, case when k like 'loja\_%' then velho -> k end, '{"on": false}'::jsonb); ant := coalesce(velho -> k, '{}'::jsonb); -- (preços da loja que um site antigo não conhece ficam como estão)
+    if jsonb_typeof(o) <> 'object' or jsonb_typeof(o -> 'on') <> 'boolean' then raise exception 'regras_invalidas' using errcode = '22023', detail = k; end if;
+    lig := (o ->> 'on')::boolean; it := jsonb_build_object('on', lig);
+    if k = 'sequencia' then
+      m := coalesce(o -> 'marcos', '[]'::jsonb);
+      if jsonb_typeof(m) <> 'array' or jsonb_array_length(m) > 10 then raise exception 'regras_invalidas' using errcode = '22023', detail = 'marcos'; end if;
+      for v in select generate_series(0, jsonb_array_length(m) - 1) loop
+        if jsonb_typeof(m -> v) <> 'object' then raise exception 'regras_invalidas' using errcode = '22023', detail = 'marcos'; end if;
+        d := public.selo_int(m -> v, 'dias', 1, 365, 1);
+        if d = any(vistos) then raise exception 'regras_invalidas' using errcode = '22023', detail = 'marcos'; end if;
+        vistos := vistos || d; ms := ms || jsonb_build_array(jsonb_build_object('dias', d, 'valor', public.selo_int(m -> v, 'valor', 1, 999, 1)));
+      end loop;
+      it := it || jsonb_build_object('marcos', (select coalesce(jsonb_agg(e order by (e ->> 'dias')::int), '[]'::jsonb) from jsonb_array_elements(ms) e));
+    else
+      it := it || jsonb_build_object('valor', public.selo_int(o, 'valor', 1, 999, 1));
+      if k = 'dia_ativo' then it := it || jsonb_build_object('min', public.selo_int(o, 'min', 1, 999, 1)); end if;
+      if k in ('mensagens', 'arquivos') then it := it || jsonb_build_object('a_cada', public.selo_int(o, 'a_cada', 1, 999, 1)); end if;
+    end if;
+    if k <> 'teto' and k not like 'loja\_%' then -- (o teto e os preços da loja não são ganho: não precisam de data)
+      it := it || jsonb_build_object('desde', case when lig and (not coalesce((ant ->> 'on')::boolean, false) or ant ->> 'desde' is null) then hoje::text else coalesce(ant ->> 'desde', hoje::text) end);
+    end if;
+    r := r || jsonb_build_object(k, it);
+  end loop;
+  return r;
+end $$;
+
+alter table public.selo_compras drop constraint selo_compras_item_check;
+alter table public.selo_compras add constraint selo_compras_item_check check (item in ('titulo', 'destaque', 'silenciar', 'jumpscare'));
+
+create table public.jumpscares (
+  id bigint generated always as identity primary key,
+  grupo_id uuid not null references public.grupos(id) on delete cascade,
+  img jsonb not null,
+  som jsonb,
+  por uuid references public.profiles(id) on delete set null,
+  criado_em timestamptz not null default now()
+);
+create index jumpscares_grupo on public.jumpscares (grupo_id, id);
+alter table public.jumpscares enable row level security;
+revoke all on public.jumpscares from anon, authenticated;
+create policy "exige dois passos" on public.jumpscares as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+
+create table public.jumpscare_vistos (
+  compra_id bigint not null references public.selo_compras(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  visto_em timestamptz not null default now(),
+  primary key (compra_id, user_id)
+);
+alter table public.jumpscare_vistos enable row level security;
+revoke all on public.jumpscare_vistos from anon, authenticated;
+create policy "exige dois passos" on public.jumpscare_vistos as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+
+-- Arquivo cifrado do jumpscare: { p: caminho na pasta DESTE grupo, iv }
+create or replace function public.jumpscare_arquivo_ok(a jsonb, p_grupo uuid) returns boolean
+language sql immutable set search_path = public as $$
+  select jsonb_typeof(a) = 'object' and length(a::text) < 400 and jsonb_typeof(a -> 'iv') = 'string' and length(a ->> 'iv') <= 40
+     and coalesce(a ->> 'p', '') ~ ('^[0-9a-f-]{36}/' || p_grupo::text || '/[0-9a-f-]{36}$')
+$$;
+revoke all on function public.jumpscare_arquivo_ok(jsonb, uuid) from public, anon, authenticated;
+
+create or replace function public.jumpscare_novo(p_grupo uuid, p_img jsonb, p_som jsonb default null) returns bigint
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); novo bigint;
+begin
+  perform public.consome('jumpscare_mudar', 20, 100);
+  if not (select public.mfa_ok()) or not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = u and gm.admin) then raise exception 'so_admin' using errcode = '42501'; end if;
+  if coalesce(public.aparelho_estado(), 'aprovado') = 'pendente' then raise exception 'aparelho_pendente' using errcode = '42501'; end if;
+  if not public.jumpscare_arquivo_ok(p_img, p_grupo) or (p_som is not null and not public.jumpscare_arquivo_ok(p_som, p_grupo)) then raise exception 'arquivo_invalido' using errcode = '22023'; end if;
+  perform pg_advisory_xact_lock(hashtext('jumpscare:' || p_grupo::text));
+  if (select count(*) from public.jumpscares j where j.grupo_id = p_grupo) >= 10 then raise exception 'lista_cheia' using errcode = 'P0001'; end if;
+  insert into public.jumpscares (grupo_id, img, som, por) values (p_grupo, p_img, p_som, u) returning id into novo;
+  return novo;
+end $$;
+revoke all on function public.jumpscare_novo(uuid, jsonb, jsonb) from public, anon, authenticated;
+grant execute on function public.jumpscare_novo(uuid, jsonb, jsonb) to authenticated;
+
+create or replace function public.jumpscare_apagar(p_grupo uuid, p_id bigint) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid());
+begin
+  perform public.consome('jumpscare_mudar', 20, 100);
+  if not (select public.mfa_ok()) or not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = u and gm.admin) then raise exception 'so_admin' using errcode = '42501'; end if;
+  delete from public.jumpscares j where j.grupo_id = p_grupo and j.id = p_id;
+end $$;
+revoke all on function public.jumpscare_apagar(uuid, bigint) from public, anon, authenticated;
+grant execute on function public.jumpscare_apagar(uuid, bigint) to authenticated;
+
+-- A lista inteira só o admin vê (os outros só descobrem o jumpscare quando ele acontece)
+create or replace function public.jumpscare_lista(p_grupo uuid) returns table (id bigint, img jsonb, som jsonb, criado_em timestamptz)
+language sql stable security definer set search_path = public as $$
+  select j.id, j.img, j.som, j.criado_em from public.jumpscares j
+   where j.grupo_id = p_grupo and (select public.mfa_ok())
+     and exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = (select auth.uid()) and gm.admin)
+   order by j.id
+$$;
+revoke all on function public.jumpscare_lista(uuid) from public, anon, authenticated;
+grant execute on function public.jumpscare_lista(uuid) to authenticated;
+
+-- O arquivo de UM jumpscare já comprado por outra pessoa do grupo (para quem vai levar o susto)
+create or replace function public.jumpscare_obter(p_grupo uuid, p_id bigint) returns table (img jsonb, som jsonb)
+language sql stable security definer set search_path = public as $$
+  select j.img, j.som from public.jumpscares j
+   where j.grupo_id = p_grupo and j.id = p_id and (select public.mfa_ok())
+     and exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = (select auth.uid()))
+     and exists (select 1 from public.selo_compras c where c.grupo_id = p_grupo and c.item = 'jumpscare' and c.detalhe = p_id::text and c.user_id <> (select auth.uid()))
+$$;
+revoke all on function public.jumpscare_obter(uuid, bigint) from public, anon, authenticated;
+grant execute on function public.jumpscare_obter(uuid, bigint) to authenticated;
+
+-- Sustos que ainda faltam para MIM neste grupo (compras de outras pessoas, depois de eu entrar, dos últimos 7 dias; os 5 mais novos)
+-- idade_s vem do relógio do servidor: pouca idade = a compra acabou de acontecer (susto "na hora"); muita idade = eu não estava vendo (susto ao entrar no grupo)
+create or replace function public.jumpscare_pendentes(p_grupo uuid) returns table (compra bigint, user_id uuid, jumpscare bigint, criado_em timestamptz, idade_s int)
+language sql stable security definer set search_path = public as $$
+  select * from (
+    select c.id, c.user_id, c.detalhe::bigint, c.criado_em, extract(epoch from now() - c.criado_em)::int
+      from public.selo_compras c
+      join public.grupo_membros gm on gm.grupo_id = c.grupo_id and gm.user_id = (select auth.uid())
+     where c.grupo_id = p_grupo and (select public.mfa_ok()) and c.item = 'jumpscare' and c.user_id <> (select auth.uid())
+       and c.criado_em >= gm.entrou_em and c.criado_em > now() - interval '7 days'
+       and not exists (select 1 from public.jumpscare_vistos v where v.compra_id = c.id and v.user_id = (select auth.uid()))
+     order by c.id desc limit 5) x
+  order by 1
+$$;
+revoke all on function public.jumpscare_pendentes(uuid) from public, anon, authenticated;
+grant execute on function public.jumpscare_pendentes(uuid) to authenticated;
+
+create or replace function public.jumpscare_visto(p_compra bigint) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); g uuid;
+begin
+  perform public.consome('jumpscare_visto', 30, 300);
+  select c.grupo_id into g from public.selo_compras c where c.id = p_compra and c.item = 'jumpscare' and c.user_id <> u;
+  if g is null or not (select public.mfa_ok()) or not exists (select 1 from public.grupo_membros gm where gm.grupo_id = g and gm.user_id = u) then raise exception 'nao_encontrada' using errcode = '42501'; end if;
+  insert into public.jumpscare_vistos (compra_id, user_id) values (p_compra, u) on conflict do nothing;
+end $$;
+revoke all on function public.jumpscare_visto(bigint) from public, anon, authenticated;
+grant execute on function public.jumpscare_visto(bigint) to authenticated;
+
+-- selo_comprar: agora também o jumpscare (sem alvo e sem detalhe: o servidor sorteia um da lista do grupo e guarda o número dele)
+create or replace function public.selo_comprar(p_grupo uuid, p_item text, p_alvo uuid default null, p_detalhe text default null) returns bigint
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); reg jsonb; preco int; saldo bigint; novo bigint; dur interval := public.silencio_duracao(); sorteado bigint;
+begin
+  perform public.consome('selo_comprar', 20, 200);
+  if not (select public.mfa_ok()) or not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = u) then raise exception 'nao_esta_no_grupo' using errcode = '42501'; end if;
+  if coalesce(public.aparelho_estado(), 'aprovado') = 'pendente' then raise exception 'aparelho_pendente' using errcode = '42501'; end if;
+  if p_item is null or p_item not in ('titulo', 'destaque', 'silenciar', 'jumpscare') then raise exception 'item_invalido' using errcode = '22023'; end if;
+  perform pg_advisory_xact_lock(hashtext('selo:' || p_grupo::text));
+  perform public.selo_apurar(p_grupo);
+  select s.regras -> ('loja_' || p_item) into reg from public.selo_regras s where s.grupo_id = p_grupo;
+  if reg is null or not coalesce((reg ->> 'on')::boolean, false) then raise exception 'item_desligado' using errcode = 'P0001'; end if;
+  preco := (reg ->> 'valor')::int;
+  if p_item = 'titulo' then
+    if p_detalhe is null or p_detalhe !~ '^t(0[1-9]|1[0-2])$' or p_alvo is not null then raise exception 'detalhe_invalido' using errcode = '22023'; end if;
+  elsif p_item = 'destaque' then
+    if p_detalhe is null or p_detalhe !~ '^[0-9a-f]{32}$' or p_alvo is not null then raise exception 'detalhe_invalido' using errcode = '22023'; end if;
+    if exists (select 1 from public.selo_compras c where c.grupo_id = p_grupo and c.item = 'destaque' and c.detalhe = p_detalhe) then raise exception 'ja_destacada' using errcode = 'P0001'; end if;
+  elsif p_item = 'jumpscare' then
+    if p_alvo is not null or p_detalhe is not null then raise exception 'detalhe_invalido' using errcode = '22023'; end if;
+    if not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id <> u) then raise exception 'sem_alvos' using errcode = 'P0001'; end if;
+    select j.id into sorteado from public.jumpscares j where j.grupo_id = p_grupo order by random() limit 1;
+    if sorteado is null then raise exception 'sem_jumpscares' using errcode = 'P0001'; end if;
+  else
+    if p_alvo is null or p_detalhe is not null then raise exception 'detalhe_invalido' using errcode = '22023'; end if;
+    if p_alvo = u then raise exception 'si_mesmo' using errcode = 'P0001'; end if;
+    if not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = p_alvo) then raise exception 'alvo_fora' using errcode = 'P0001'; end if;
+    if exists (select 1 from public.selo_compras c where c.grupo_id = p_grupo and c.item = 'silenciar' and c.alvo = p_alvo and c.criado_em > now() - dur) then raise exception 'ja_silenciado' using errcode = 'P0001'; end if;
+  end if;
+  select coalesce(sum(e.quantidade), 0) into saldo from public.moedas_extrato e where e.grupo_id = p_grupo and e.user_id = u;
+  if saldo < preco then raise exception 'saldo_insuficiente' using errcode = 'P0001'; end if;
+  insert into public.selo_compras (grupo_id, user_id, item, preco, alvo, detalhe) values (p_grupo, u, p_item, preco, p_alvo, case when p_item = 'jumpscare' then sorteado::text else p_detalhe end) returning id into novo;
+  insert into public.moedas_extrato (grupo_id, user_id, quantidade, motivo, ref) values (p_grupo, u, -preco, 'compra', novo::text);
+  return novo;
+end $$;
+revoke all on function public.selo_comprar(uuid, text, uuid, text) from public, anon, authenticated;
+grant execute on function public.selo_comprar(uuid, text, uuid, text) to authenticated;
+
+-- selo_loja_estado: a compra de jumpscare só aparece para quem comprou e para quem já levou o susto; e ninguém (nem quem comprou) vê QUAL foi sorteado
+create or replace function public.selo_loja_estado(p_grupo uuid) returns table (id bigint, user_id uuid, item text, alvo uuid, detalhe text, criado_em timestamptz, agora timestamptz, silencio_s int)
+language sql stable security definer set search_path = public as $$
+  select c.id, c.user_id, c.item, c.alvo, case when c.item = 'jumpscare' then null else c.detalhe end, c.criado_em, now(), extract(epoch from public.silencio_duracao())::int
+    from public.selo_compras c
+   where c.grupo_id = p_grupo and (select public.mfa_ok())
+     and exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = (select auth.uid()))
+     and (c.item <> 'jumpscare' or c.user_id = (select auth.uid()) or exists (select 1 from public.jumpscare_vistos v where v.compra_id = c.id and v.user_id = (select auth.uid())))
+     and (c.id in (select max(x.id) from public.selo_compras x where x.grupo_id = p_grupo and x.item = 'titulo' group by x.user_id)
+          or c.id in (select x.id from public.selo_compras x where x.grupo_id = p_grupo order by x.id desc limit 300)
+          or c.id in (select x.id from public.selo_compras x where x.grupo_id = p_grupo and x.item = 'destaque' order by x.id desc limit 500))
+   order by c.id
+$$;
+revoke all on function public.selo_loja_estado(uuid) from public, anon, authenticated;
+grant execute on function public.selo_loja_estado(uuid) to authenticated;
