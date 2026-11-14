@@ -40,12 +40,25 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - name: Subir o Supabase local (só o que o app usa)
-        run: supabase start -x studio,imgproxy,mailpit,postgres-meta,edge-runtime,logflare,vector,supavisor
+        run: |
+          # 8 jobs baixando as imagens ao mesmo tempo às vezes levam "Rate exceeded" do registro ou erro de rede do Docker: tenta de novo
+          for t in 1 2 3 4; do
+            supabase start -x studio,imgproxy,mailpit,postgres-meta,edge-runtime,logflare,vector,supavisor && exit 0
+            echo "Tentativa $t falhou"; supabase stop --no-backup || true; sleep $((t * 15))
+          done
+          exit 1
       - name: Criar o banco (schema.sql) e o prazo curto de recuperação
         run: |
           export PGPASSWORD=postgres
           psql -v ON_ERROR_STOP=1 -q -h 127.0.0.1 -p 54322 -U postgres -d postgres -f supabase/schema.sql
           psql -v ON_ERROR_STOP=1 -q -h 127.0.0.1 -p 54322 -U postgres -d postgres -c "insert into public.push_config (chave, valor) values ('recuperacao_prazo', '8 seconds') on conflict (chave) do update set valor = excluded.valor"
+      - name: Limites do Realtime local (o padrão é bem menor que o do projeto hospedado)
+        run: |
+          export PGPASSWORD=postgres
+          psql -h 127.0.0.1 -p 54322 -U supabase_admin -d postgres -c "select * from _realtime.tenants" -x | grep -E "max_|external_id" || true
+          psql -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 54322 -U supabase_admin -d postgres -c "update _realtime.tenants set max_events_per_second=100000, max_joins_per_second=100000, max_concurrent_users=100000, max_channels_per_client=1000, max_bytes_per_second=100000000"
+          docker restart supabase_realtime_lacre-teste
+          for i in $(seq 1 30); do curl -sf -o /dev/null http://127.0.0.1:54321/realtime/v1/api/ping -H "apikey: $(grep -E '^ANON_KEY=' <(supabase status -o env) | cut -d= -f2- | tr -d '"')" && break; sleep 2; done
       - name: Endereço e chave do banco local
         run: |
           supabase status -o env > /tmp/sb.env
@@ -62,7 +75,7 @@ jobs:
         if: failure()
         run: |
           docker ps --format '{{.Names}}'
-          for c in supabase_realtime_lacre-teste supabase_auth_lacre-teste supabase_db_lacre-teste; do echo "=== $c"; docker logs "$c" 2>&1 | tail -60; done
+          for c in supabase_realtime_lacre-teste supabase_auth_lacre-teste; do echo "=== $c"; docker logs "$c" 2>&1 | grep -v "Billing metrics\|api/ping" | tail -80; done
 
   e2e-funcoes:
     name: Ponta a ponta com as Edge Functions (projeto de teste, só 2 arquivos)
