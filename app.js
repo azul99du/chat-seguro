@@ -1,24 +1,24 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=55e49bd046";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=55e49bd046";
-import { montarFigurinhas } from "./figurinhas.js?v=55e49bd046";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=55e49bd046";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=55e49bd046";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=55e49bd046";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=55e49bd046";
-import { acharVideoLink } from "./videolink.js?v=55e49bd046";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=55e49bd046";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=55e49bd046";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=55e49bd046";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=55e49bd046";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=55e49bd046";
-import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=55e49bd046";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=55e49bd046";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=55e49bd046";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=55e49bd046";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=55e49bd046";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=55e49bd046";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=55e49bd046";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=f2023cbe37";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=f2023cbe37";
+import { montarFigurinhas } from "./figurinhas.js?v=f2023cbe37";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=f2023cbe37";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=f2023cbe37";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=f2023cbe37";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=f2023cbe37";
+import { acharVideoLink } from "./videolink.js?v=f2023cbe37";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=f2023cbe37";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=f2023cbe37";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=f2023cbe37";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=f2023cbe37";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=f2023cbe37";
+import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=f2023cbe37";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=f2023cbe37";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=f2023cbe37";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=f2023cbe37";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=f2023cbe37";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=f2023cbe37";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=f2023cbe37";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -1263,7 +1263,7 @@ function addMessage(m, content, { err = false, animate = false, em = null, desce
   const rx = el("div", "rx");
   wrap.append(line, rx);
   if (!err) gestosMensagem(wrap, line, b, m.id);
-  const colar = !em && (descer || $("messages").classList.contains("carregando") || pertoDoFim()); // (medido ANTES de entrar: a própria mensagem nova já aumentaria a lista)
+  const colar = !em && !semPuxar && (descer || $("messages").classList.contains("carregando") || pertoDoFim()); // (medido ANTES de entrar: a própria mensagem nova já aumentaria a lista)
   if (em) em.replaceWith(wrap); else $("messages").append(wrap);
   if (emGrupo && !mine) { // em grupo: a foto de quem escreveu fica ao lado da ÚLTIMA mensagem de cada sequência, e o balão leva a cor da pessoa
     wrap.classList.add("grupo-msg"); const slot = el("span", "ava-slot oculto"), av = el("span", "avatar mini");
@@ -1872,6 +1872,7 @@ function ajustarAutores(...wraps) {
     reavaliarAvatar(w);
   }
 }
+let semPuxar = false; // ligado enquanto uma mensagem ANTIGA entra no meio da lista (a conferência do servidor): ela nunca empurra a rolagem, senão cada uma puxava a tela de volta para o fim
 const pertoDoFim = () => { const L = $("messages"); return L.scrollHeight - L.scrollTop - L.clientHeight < 140; };
 function revelarNoFim() { const L = $("messages"); L.scrollTop = L.scrollHeight; requestAnimationFrame(() => { L.scrollTop = L.scrollHeight; L.classList.remove("carregando"); }); }
 
@@ -1921,7 +1922,7 @@ async function open(peer) {
   if (local) { // o servidor só confere: o que já está na tela é atualizado, e só entra o que o aparelho ainda não tinha (nunca se apaga nem se refaz a lista)
     for (const it of itens) { if (atualizaNaTela(it.id, it.m, it.lote)) continue; if (!it.lote && local.conhecidos.has(it.id)) continue; faltam.push(it); }
     const perto = pertoDoFim(), topoAntes = $("messages").scrollTop;
-    for (const it of faltam) { if (it.lote) await mostrarMeuLoteDm(peer, it.lote); else await show(it.m, peer, false); if (it.t <= local.tMax) posicionarPelaHora(it.id); } // (mais antiga que a já pintada: entra no lugar certo pela hora)
+    for (const it of faltam) { const antiga = it.t <= local.tMax; semPuxar = antiga; try { if (it.lote) await mostrarMeuLoteDm(peer, it.lote); else await show(it.m, peer, false); } finally { semPuxar = false; } if (antiga) posicionarPelaHora(it.id); } // (mais antiga que a já pintada: entra no lugar certo pela hora)
     if (perto && faltam.length && Math.abs($("messages").scrollTop - topoAntes) < 4) $("messages").scrollTop = $("messages").scrollHeight; // (só se a pessoa não mexeu na tela nesse meio-tempo)
     lembrarAvisosDaTela(peer, faltam).catch(() => {});
   } else {
@@ -2075,7 +2076,7 @@ function sincronizar(tentativa = 0) {
 
 // ---------- Grupos ----------
 // Aviso no meio da conversa ("@ana entrou no grupo")
-function addAviso(texto) { if (!texto) return; const d = el("div", "aviso-linha"); d.append(el("span", null, texto)); const colar = $("messages").classList.contains("carregando") || pertoDoFim(); $("messages").append(d); if (colar) $("messages").scrollTop = 1e9; }
+function addAviso(texto) { if (!texto) return; const d = el("div", "aviso-linha"); d.append(el("span", null, texto)); const colar = !semPuxar && ($("messages").classList.contains("carregando") || pertoDoFim()); $("messages").append(d); if (colar) $("messages").scrollTop = 1e9; }
 function sairDaConversa(aviso) { // fecha a conversa aberta e volta para a tela inicial
   fecharMencoes();
   $("chat").classList.remove("in-conv"); active = null; carregandoConversa = null; filaChegando = [];
@@ -2211,7 +2212,7 @@ async function abrirGrupo(g) {
     if (local) { // o servidor só confere: o que já está na tela é atualizado, e só entra o que o aparelho ainda não tinha (nunca se apaga nem se refaz a lista)
       for (const it of itens) { if (it.aviso || atualizaNaTela(it.id, it.m, it.lote)) continue; if (!it.lote && local.conhecidos.has(it.id)) continue; faltam.push(it); }
       const perto = pertoDoFim(), topoAntes = $("messages").scrollTop;
-      for (const it of faltam) { await colocar(it); if (it.t <= local.tMax) { posicionarPelaHora(it.id); const e = msgs.get(it.id); if (e) ajustarAutores(e.wrap.previousElementSibling, e.wrap, e.wrap.nextElementSibling); } } // (mais antiga que a já pintada: entra no lugar certo pela hora)
+      for (const it of faltam) { const antiga = it.t <= local.tMax; semPuxar = antiga; try { await colocar(it); } finally { semPuxar = false; } if (antiga) { posicionarPelaHora(it.id); const e = msgs.get(it.id); if (e) ajustarAutores(e.wrap.previousElementSibling, e.wrap, e.wrap.nextElementSibling); } } // (mais antiga que a já pintada: entra no lugar certo pela hora)
       if (perto && faltam.length && Math.abs($("messages").scrollTop - topoAntes) < 4) $("messages").scrollTop = $("messages").scrollHeight; // (só se a pessoa não mexeu na tela nesse meio-tempo)
       lembrarAvisosDaTela(g, faltam).catch(() => {});
     } else { for (const it of itens) await colocar(it); lembrarAvisosDaTela(g, itens.filter((it) => !it.aviso)).catch(() => {}); }

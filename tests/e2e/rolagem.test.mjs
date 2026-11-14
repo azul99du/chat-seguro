@@ -67,6 +67,23 @@ t("grupo: subir a tela logo ao abrir, enquanto o servidor ainda acrescenta uma m
   assert.ok(Math.max(...picos) < 60, "a tela foi puxada de volta para baixo: " + JSON.stringify(picos));
 });
 
+t("grupo: mensagens ANTIGAS que o servidor acrescenta no meio da lista (o aparelho não as tinha) não puxam a tela para o fim enquanto a pessoa começa a subir", async () => {
+  // (era o balanço do celular: depois de abrir, o app acrescentava dezenas de mensagens antigas, uma a cada ~12 ms, e cada uma mandava a tela para o fim)
+  await ctxA.addInitScript(() => { try { localStorage.setItem("lacre:poll", "0"); } catch {} });
+  await A.reload(); await pronto(A); await A.waitForTimeout(1500); // (sem tempo real: o que B manda agora só chega pelo servidor)
+  await A.click("#contacts button[data-grupo]"); await A.waitForSelector("#messages:not(.carregando) .msg", { timeout: 15000 });
+  for (let i = 1; i <= 8; i++) { await enviar(B, `antiga ${i} ` + "x".repeat(250)); await B.waitForSelector(`.msg.mine .vis:has-text("antiga ${i} ")`, { timeout: 30000 }); }
+  await enviar(A, "meu depois " + "y".repeat(40)); await A.waitForSelector(".msg.mine .vis:has-text('meu depois')", { timeout: 15000 }); // a mais nova do aparelho: as do B ficam ANTES dela na lista
+  await A.route(/\/rest\/v1\/messages\?/, async (route) => { if (route.request().method() !== "GET") return route.continue(); await dorme(60); route.continue().catch(() => {}); }); // o servidor responde logo depois de a lista aparecer
+  await A.click("#contacts button[data-grupo]"); await A.waitForSelector("#messages:not(.carregando) .msg", { timeout: 8000 });
+  const dist = () => A.evaluate(() => { const L = document.getElementById("messages"); return L.scrollHeight - L.scrollTop - L.clientHeight; });
+  assert.ok((await A.evaluate(() => document.getElementById("messages").scrollHeight)) > 1500, "a lista precisa ser bem mais alta que a tela");
+  const PASSO = 6, PASSOS = 60; // a pessoa começa a subir devagar logo ao abrir (~1 s): o servidor responde no meio disso, com ela ainda a menos de 140 px do fim
+  for (let i = 0; i < PASSOS; i++) { await A.evaluate((p) => { document.getElementById("messages").scrollTop -= p; }, PASSO); await dorme(16); }
+  await A.waitForSelector(".msg:not(.mine) .vis:has-text('antiga 8 ')", { timeout: 15000 }); await dorme(300);
+  const d = await dist(); assert.ok(d >= PASSO * PASSOS * 0.9, `a tela foi puxada de volta para o fim: distância do fim ${d}px, esperado pelo menos ${PASSO * PASSOS * 0.9}px`);
+});
+
 t("o menu da conta mostra a versão do site que está rodando (para conferir se o navegador pegou a atualização)", async () => {
   await menuConta(A); assert.match(await A.locator("#versao-site").innerText(), /^Versão do site: [0-9a-f]{10}$/);
 });
