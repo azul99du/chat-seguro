@@ -11,6 +11,9 @@ const PROD_URL = cfg.match(/SUPABASE_URL\s*=\s*"([^"]+)"/)[1], PROD_KEY = cfg.ma
 
 export const SUPABASE_URL = process.env.SUPABASE_URL, SUPABASE_KEY = process.env.SUPABASE_KEY;
 export const configurado = !!(SUPABASE_URL && SUPABASE_KEY);
+// Banco local do CI (Supabase CLI em Docker): só é aceito em 127.0.0.1, nunca outro endereço sem https.
+if (configurado && new URL(SUPABASE_URL).protocol === "http:" && !["127.0.0.1", "localhost"].includes(new URL(SUPABASE_URL).hostname))
+  throw new Error("SUPABASE_URL sem https só é aceito para o banco local (127.0.0.1).");
 export const motivoSemConfig = "defina SUPABASE_URL e SUPABASE_KEY de um projeto Supabase DE TESTE";
 // Trava: estes testes criam contas e mensagens. Nunca contra o banco que as pessoas usam, a menos que se peça explicitamente.
 if (configurado && SUPABASE_URL === PROD_URL && process.env.ALLOW_PROD !== "1")
@@ -31,6 +34,8 @@ export function prepararSite() {
   for (const f of ["config.js", "index.html"]) {
     const p = join(dir, f); let t = readFileSync(p, "utf8");
     t = t.replaceAll(host(PROD_URL), host(SUPABASE_URL)).replaceAll(PROD_KEY, SUPABASE_KEY).replaceAll(PROD_URL, SUPABASE_URL);
+    // banco local (só 127.0.0.1, sem https): o CSP precisa liberar http/ws no lugar de https/wss
+    if (new URL(SUPABASE_URL).protocol === "http:") t = t.replaceAll(`https://${host(SUPABASE_URL)}`, `http://${host(SUPABASE_URL)}`).replaceAll(`wss://${host(SUPABASE_URL)}`, `ws://${host(SUPABASE_URL)}`);
     writeFileSync(p, t);
   }
   return dir;

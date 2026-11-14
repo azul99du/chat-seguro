@@ -1,0 +1,65 @@
+name: CI local
+
+# Teste de ponta a ponta com um Supabase LOCAL e descartável (Supabase CLI + Docker) em cada grupo, rodando os grupos ao mesmo tempo.
+# Não usa o projeto Supabase de teste (nem o real), não custa nada e cada grupo tem o próprio banco: nada de fila nem de um banco pequeno engasgando.
+# Roda só na branch "ci/local" (experimento): o portão de publicação continua sendo o ci.yml até este provar que é estável.
+on:
+  push:
+    branches: ["ci/local"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-local-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-local:
+    name: Ponta a ponta local, grupo ${{ matrix.grupo }} de 8
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        grupo: [1]
+    env:
+      GRUPOS: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 3.1.0
+      - name: Instalar ffmpeg
+        run: sudo apt-get install -y --no-install-recommends ffmpeg || (sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg)
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Subir o Supabase local (só o que o app usa)
+        run: supabase start -x studio,imgproxy,mailpit,postgres-meta,edge-runtime,logflare,vector,supavisor
+      - name: Criar o banco (schema.sql) e o prazo curto de recuperação
+        run: |
+          export PGPASSWORD=postgres
+          psql -v ON_ERROR_STOP=1 -q -h 127.0.0.1 -p 54322 -U postgres -d postgres -f supabase/schema.sql
+          psql -v ON_ERROR_STOP=1 -q -h 127.0.0.1 -p 54322 -U postgres -d postgres -c "insert into public.push_config (chave, valor) values ('recuperacao_prazo', '8 seconds') on conflict (chave) do update set valor = excluded.valor"
+      - name: Endereço e chave do banco local
+        run: |
+          supabase status -o env > /tmp/sb.env
+          sed 's/=.*/=…/' /tmp/sb.env
+          echo "SUPABASE_URL=http://127.0.0.1:54321" >> "$GITHUB_ENV"
+          k=$(grep -E '^(ANON_KEY|PUBLISHABLE_KEY)=' /tmp/sb.env | head -1 | cut -d= -f2- | tr -d '"')
+          echo "SUPABASE_KEY=$k" >> "$GITHUB_ENV"
+      - name: Testes do grupo
+        run: |
+          arquivos="${E2E_SO:-$(node scripts/e2e-grupo.mjs ${{ matrix.grupo }} $GRUPOS --sem-funcoes)}"
+          echo "Arquivos: $arquivos"
+          node --test --test-concurrency=1 $arquivos
+        env:
+          E2E_SO: tests/e2e/chaves.test.mjs tests/e2e/inicio.test.mjs
+      - name: Se falhou, os logs do banco local
+        if: failure()
+        run: docker ps --format '{{.Names}}' | head -20; docker logs supabase_auth_lacre-teste 2>&1 | tail -40 || true
