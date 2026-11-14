@@ -12,6 +12,7 @@ async function cadastrar(page, usuario) { await page.goto(srv.url); await page.c
 const enviar = async (p, txt) => { await p.fill("#text", txt); await p.click("#send-form .primary"); };
 const meuId = (p) => p.evaluate(() => { const k = Object.keys(localStorage).find((x) => /^sb-.*-auth-token$/.test(x)); return JSON.parse(localStorage[k]).user.id; });
 
+const logsA = [];
 let listaFinal = []; // (o que a conversa mostrava depois do teste da mensagem esquecida)
 const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
 const textos = (p) => p.locator(".msg .vis").allInnerTexts().then((l) => l.filter((x) => x.trim()));
@@ -32,7 +33,7 @@ const recarregar = async (p) => { await p.unroute(/\/rest\/v1\/messages\?/).catc
 before(async () => {
   if (skip) return; const s = await cadastroFunciona(); if (!s.ok) { skip = s.motivo; return; }
   srv = await servir(prepararSite()); browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
-  const novo = async (n) => { const p = await (await browser.newContext({ viewport: { width: 1100, height: 800 } })).newPage(); p.on("pageerror", (e) => erros.push(n + ": " + e.message)); return p; };
+  const novo = async (n) => { const p = await (await browser.newContext({ viewport: { width: 1100, height: 800 } })).newPage(); p.on("pageerror", (e) => erros.push(n + ": " + e.message)); if (n === "A") p.on("console", (m) => logsA.push(m.type() + ": " + m.text().slice(0, 200))); return p; };
   [A, B] = [await novo("A"), await novo("B")]; [nomeA, nomeB] = [novoUsuario("a"), novoUsuario("b")];
   await cadastrar(A, nomeA); await cadastrar(B, nomeB);
 });
@@ -41,7 +42,14 @@ after(async () => { if (browser) { await browser.close(); await srv.close(); } }
 t("partida: A e B conversam, e criam um grupo com mensagens dos dois", async () => {
   await chamar(A, nomeB); await A.waitForSelector(`#conv-title:text-is("@${nomeB}")`);
   await enviar(A, "dm um do A"); await B.waitForSelector("#contacts button .unread", { timeout: 30000 }); await B.click("#contacts button"); await B.waitForSelector(".msg:not(.mine) .vis:has-text('dm um do A')", { timeout: 30000 });
-  await enviar(B, "dm dois do B"); await A.waitForSelector(".msg:not(.mine) .vis:has-text('dm dois do B')", { timeout: 30000 });
+  await enviar(B, "dm dois do B");
+  try { await A.waitForSelector(".msg:not(.mine) .vis:has-text('dm dois do B')", { timeout: 30000 }); }
+  catch (e) { // diagnóstico (só quando falha): o que A mostra, o que o console dela disse e o que o servidor guardou para ela
+    const d = await A.evaluate(async () => { const k = Object.keys(localStorage).find((x) => /^sb-.*-auth-token$/.test(x)), s = JSON.parse(localStorage[k]), u = s.user.id;
+      const r = await fetch(`${location.origin}/__sb`).catch(() => null); const cfg = await (await fetch("config.js")).text(); const url = cfg.match(/SUPABASE_URL\s*=\s*"([^"]+)"/)[1], key = cfg.match(/SUPABASE_KEY\s*=\s*"([^"]+)"/)[1];
+      const rows = await (await fetch(`${url}/rest/v1/messages?select=id,created_at,sender_id&recipient_id=eq.${u}&order=id`, { headers: { apikey: key, authorization: "Bearer " + s.access_token } })).json();
+      return { na_tela: [...document.querySelectorAll(".msg .vis")].map((x) => x.innerText), corte: localStorage.getItem("lacre:sync:" + u), no_servidor: rows, visivel: document.visibilityState, online: navigator.onLine }; }).catch((x) => ({ erro: String(x) }));
+    console.error("DIAGNOSTICO A:", JSON.stringify(d), "\nCONSOLE A:", JSON.stringify(logsA.slice(-40))); throw e; }
   await enviar(A, "dm tres do A"); await enviar(B, "dm quatro do B"); await B.waitForSelector(".msg.mine .vis:has-text('dm quatro do B')"); await A.waitForSelector(".msg:not(.mine) .vis:has-text('dm quatro do B')", { timeout: 30000 });
   await A.click("#chamar-fab"); await A.click("#novo-grupo"); await A.waitForSelector("#grupo-novo[open]"); await A.fill("#gn-nome", GRUPO); await A.check(`#gn-lista label:has-text("@${nomeB}") .marca`);
   await A.click("#gn-criar"); await A.waitForSelector(`#conv-title:text-is("${GRUPO}")`, { timeout: 30000 }); await A.waitForSelector("#messages:not(.carregando)");
