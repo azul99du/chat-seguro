@@ -20,7 +20,7 @@ const GRUPO = "Rapido";
 // atrasa as respostas do servidor sobre mensagens (leitura) em "ms"; devolve o controle para saber se já responderam
 async function atrasar(p, ms) {
   const c = { liberou: false, n: 0 };
-  await p.route(/\/rest\/v1\/messages\?/, async (route) => { if (route.request().method() !== "GET" || /[?&]id=gt\./.test(route.request().url())) return route.continue(); /* (a verificação periódica de chegada não é atrasada nem contada) */ c.n++; await dorme(ms); c.liberou = true; route.continue().catch(() => {}); });
+  await p.route(/\/rest\/v1\/messages\?/, async (route) => { if (route.request().method() !== "GET" || /[?&]id=gt\.|read_at=not\.is\.null/.test(route.request().url())) return route.continue(); /* (a verificação periódica de chegada não é atrasada nem contada) */ c.n++; await dorme(ms); c.liberou = true; route.continue().catch(() => {}); });
   return c;
 }
 // "Piscar": depois que a lista já está na tela, nenhuma mensagem pode ser APAGADA dela e ela não pode voltar a ficar escondida (era o que acontecia: aparecia, sumia por 1 s e reaparecia)

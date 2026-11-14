@@ -1,24 +1,24 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=9732644cf3";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=9732644cf3";
-import { montarFigurinhas } from "./figurinhas.js?v=9732644cf3";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=9732644cf3";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=9732644cf3";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=9732644cf3";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=9732644cf3";
-import { acharVideoLink } from "./videolink.js?v=9732644cf3";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=9732644cf3";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=9732644cf3";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=9732644cf3";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=9732644cf3";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=9732644cf3";
-import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=9732644cf3";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=9732644cf3";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=9732644cf3";
-import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=9732644cf3";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=9732644cf3";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=9732644cf3";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=9732644cf3";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=55e49bd046";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=55e49bd046";
+import { montarFigurinhas } from "./figurinhas.js?v=55e49bd046";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=55e49bd046";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=55e49bd046";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=55e49bd046";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=55e49bd046";
+import { acharVideoLink } from "./videolink.js?v=55e49bd046";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=55e49bd046";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=55e49bd046";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=55e49bd046";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=55e49bd046";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=55e49bd046";
+import { ACOES, TITULOS, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=55e49bd046";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=55e49bd046";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=55e49bd046";
+import { cleanImage, cleanVideo, cleanAudio, sealBytes, openBytes } from "./media.js?v=55e49bd046";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=55e49bd046";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=55e49bd046";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=55e49bd046";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -260,7 +260,7 @@ async function start() {
   // Rede de segurança: o tempo real do servidor não garante entregar todo aviso (uma conexão que oscila, um evento perdido). De tempos em tempos
   // (e só com a tela à vista) busca o que chegou desde a última conferência; quase sempre não há nada e é uma consulta pequena.
   let pollMs = 30000; try { const v = localStorage.getItem("lacre:poll"); if (v !== null && Number.isFinite(Number(v))) pollMs = Number(v); } catch {} // (os testes ajustam ou desligam)
-  if (pollMs > 0) setInterval(() => { if (!document.hidden && !carregandoConversa) sincronizar(); }, pollMs);
+  if (pollMs > 0) setInterval(() => { if (!document.hidden && !carregandoConversa) { sincronizar(); conferirVistas().catch(() => {}); } }, pollMs);
 }
 
 // ---------- Verificação em dois passos (código de app autenticador, TOTP) ----------
@@ -1515,6 +1515,14 @@ function marcarVistaDoEnvio(row) {
   let e = msgs.get(linhaParaMsg.get(row.id) ?? row.id);
   if (!e) { const t = Date.parse(row.created_at); for (const x of msgs.values()) if (x.mine && Date.parse(x.m.created_at) === t) { e = x; break; } } // (mensagem que veio de outro aparelho meu: acha pelo instante do envio)
   if (e && e.mine && !e.m.read_at) { e.m.read_at = row.read_at; setReceipt(e); }
+}
+// Rede de segurança das "vistas": se o aviso em tempo real de que o outro leu se perdeu, a conversa aberta confere no servidor o que ainda está sem "vista" (só consulta se há mensagem minha na tela sem ela)
+async function conferirVistas() {
+  const peer = active; if (!peer || peer.grupo || carregandoConversa) return;
+  if (![...msgs.values()].some((e) => e.mine && !e.m.read_at)) return;
+  const { data, error } = await sb.from("messages").select("id,created_at,read_at").eq("sender_id", me.id).eq("recipient_id", peer.id).not("read_at", "is", null).order("id", { ascending: false }).limit(100);
+  if (error || active !== peer) return;
+  for (const r of data || []) marcarVistaDoEnvio(r);
 }
 // Li esta conversa em outro aparelho meu: some a bolinha de não lida daqui
 function lidaEmOutroAparelho(row) {
