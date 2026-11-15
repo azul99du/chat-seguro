@@ -92,6 +92,11 @@ t("depois que acaba, qualquer um pode comprar de novo; remover a foto do admin t
   for (const p of [A, B, C]) await esperaLargura(p, 0);
 });
 t("travas do banco: só o admin muda a permanente; arquivos inválidos; passos; saldo; de fora; tabela fechada; preço", async () => {
+  { // a foto da loja do teste anterior (6 s no banco de teste) já deve ter acabado no servidor; confere e registra, para o caso de o CI ser mais rápido que a tela
+    const ini = Date.now(); let ativa; do { ativa = (await rpc(A, "grupo_fundo_ver", {})).data.filter((r) => r.origem === "loja"); if (ativa.length) await A.waitForTimeout(500); } while (ativa.length && Date.now() - ini < 20000);
+    if (Date.now() - ini > 600) console.log("fundo: o servidor ainda tinha uma foto da loja ativa; esperou", Date.now() - ini, "ms; ate =", JSON.stringify(ativa.map((r) => [r.ate, r.agora])));
+    assert.equal(ativa.length, 0, "nenhuma foto da loja ativa");
+  }
   const x = await apiUser("x"), gid = (await rpc(A, "grupo_fundo_ver", {})).gid, novoId = () => hex().replace(/^(.{8})(.{4})(.{4})(.{4})(.{12}).*$/, "$1-$2-$3-$4-$5");
   const ok = async (p, tipo = "image/jpeg") => ({ p: `${await uid(p)}/${gid}/${novoId()}`, iv: "aXZpdml2aXZpdg==", t: tipo });
   assert.equal((await rpc(B, "grupo_fundo", { p_fundo: await ok(B) })).code, "42501", "membro comum não muda a permanente"); assert.equal((await rpc(B, "grupo_fundo", { p_fundo: null })).code, "42501");
