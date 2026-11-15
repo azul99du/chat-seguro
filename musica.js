@@ -16,7 +16,7 @@ export function limpaBusca(json, origem = "br") {
     if (!r || typeof r !== "object" || r.kind !== "song" || !Number.isSafeInteger(r.trackId) || vistos.has(r.trackId)) continue;
     if (typeof r.previewUrl !== "string" || !PREVIA_OK.test(r.previewUrl) || typeof r.artworkUrl100 !== "string" || !CAPA_OK.test(r.artworkUrl100)) continue;
     const titulo = limpaTexto(r.trackName), artista = limpaTexto(r.artistName); if (!titulo) continue;
-    vistos.add(r.trackId); out.push({ id: r.trackId, titulo, artista: artista || "Artista desconhecido", album: limpaTexto(r.collectionName), previa: r.previewUrl, capa: r.artworkUrl100, capaGrande: capaGrande(r.artworkUrl100), origem, pos: out.length });
+    vistos.add(r.trackId); out.push({ id: r.trackId, titulo, artista: artista || "Artista desconhecido", album: limpaTexto(r.collectionName), genero: limpaTexto(r.primaryGenreName, 40), previa: r.previewUrl, capa: r.artworkUrl100, capaGrande: capaGrande(r.artworkUrl100), origem, pos: out.length });
     if (out.length >= MAX_RESULTADOS) break;
   }
   return out;
@@ -62,15 +62,20 @@ export function casaPalavra(q, t) {
   const lim = q.length >= 7 ? 2 : q.length >= 4 ? 1 : 0; if (!lim) return 0;
   const d = Math.min(distancia(q, t, lim), distancia(q, t.slice(0, q.length), lim)); return d <= lim ? Math.max(0.5, 0.78 - 0.14 * (d - 1)) : 0;
 }
-const VERSAO_FALSA = /\b(karaoke|tribute|cover|instrumental|ringtone|made famous|lullaby|8 bit|piano version|originally performed)\b/;
+const VERSAO_FALSA = /\b(karaoke|tribute|cover|instrumental|ringtone|made famous|lullaby|8 bit|piano version|originally performed|type beat|gym music|nightcore|slowed|sped up|geek music|trap music now)\b/;
+// Álbum de trilha sonora oficial ("Death Note Original Soundtrack", "... (Original Motion Picture Soundtrack)", "... OST", "Trilha Sonora Original")
+const ALBUM_OFICIAL = /\b(original (soundtrack|score|motion picture|television|tv|series|anime|game|video game)|trilha sonora original|banda sonora original|bande originale)\b|\bo ?s ?t( vol \d+| \d+)?$/, ALBUM_OFICIAL_JP = /(オリジナル|ｵﾘｼﾞﾅﾙ)\s*[・･]?\s*(サウンドトラック|サントラ|スコア)|원본 사운드트랙|\bOST\b$/i;
+export const albumOficial = (album) => ALBUM_OFICIAL.test(norm(album)) || ALBUM_OFICIAL_JP.test(String(album ?? "")); // (a Apple escreve a trilha do anime em japonês também; "OST" só vale no fim do nome: "(OST Drill Remix)" é remix)
 // Nota de 0 a ~100 de um resultado para o que foi digitado. ctx: { naLetra, popular (0-100) }
 export function pontuar(termo, r, ctx = {}) {
   const q = tokens(termo); if (!q.length || !r) return 0;
   const tt = tokens(r.titulo), ta = tokens(r.artista), tl = tokens(r.album), melhor = (x, lista) => lista.reduce((m, t) => Math.max(m, casaPalavra(x, t)), 0);
-  let nota = (q.reduce((s, x) => s + Math.max(melhor(x, tt), 0.85 * melhor(x, ta), 0.35 * melhor(x, tl)), 0) / q.length) * 70;
+  const oficial = albumOficial(r.album); // (o nome da obra no álbum da trilha original vale quase como no título: "death note" acha o álbum "DEATH NOTE Original Soundtrack" inteiro)
+  let nota = (q.reduce((s, x) => s + Math.max(melhor(x, tt), 0.85 * melhor(x, ta), (oficial ? 0.9 : 0.35) * melhor(x, tl)), 0) / q.length) * 70;
   const nq = norm(termo), nt = norm(r.titulo);
   if (nt === nq) nota += 22; else if (nt.startsWith(nq + " ") || nt.startsWith(nq)) nota += 12; else if ((nt + " " + norm(r.artista)).includes(nq)) nota += 8;
   if (!VERSAO_FALSA.test(nq) && VERSAO_FALSA.test(norm(`${r.titulo} ${r.album} ${r.artista}`))) nota -= 25;
+  if (oficial && q.every((x) => melhor(x, tl) >= 0.9) && !VERSAO_FALSA.test(norm(`${r.titulo} ${r.artista} ${r.album}`))) nota += 45; // a trilha original da obra buscada passa na frente de músicas de outros artistas com o mesmo nome
   nota += Math.max(0, 12 - (Number.isFinite(r.pos) ? r.pos : 20) * 0.6); // a ordem que a própria loja deu
   if (r.origem === "br") nota += 3; if (ctx.naLetra) nota += 10; if (Number.isFinite(ctx.popular)) nota += Math.max(0, Math.min(100, ctx.popular)) * 0.08;
   return Math.max(0, Math.round(nota * 10) / 10);
@@ -91,6 +96,8 @@ export function destaque(lista) {
   const [a, b] = Array.isArray(lista) ? lista : []; if (!a || a.score < 55) return null;
   return !b || a.score - b.score >= 15 || a.score >= 1.3 * b.score ? a : null;
 }
+// Busca extra, sempre junto da principal: acha a trilha original da obra ("death note" -> "death note original soundtrack"); vazio se a pessoa já pediu isso
+export const termoTrilha = (termo) => { const n = norm(termo); return !n || n.length > 60 || ALBUM_OFICIAL.test(n) || /\b(soundtrack|trilha)\b/.test(n) ? "" : `${n} original soundtrack`; };
 // Buscas de reserva quando a primeira não acha nada: sem acento, só as palavras mais longas, e a palavra mais longa sem a última letra (corrige "akeboshii")
 export function termosAmpliados(termo) {
   const t = tokens(termo), original = String(termo ?? "").trim().toLowerCase(), out = [], poe = (x) => { x = x.trim(); if (x && x !== original && !out.includes(x)) out.push(x); };

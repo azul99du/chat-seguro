@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { norm, tokens, distancia, casaPalavra, pontuar, combinar, destaque, termosAmpliados, barrasDeOnda, urlBusca, capaGrande, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, MAX_RESULTADOS } from "../musica.js";
+import { albumOficial, termoTrilha, norm, tokens, distancia, casaPalavra, pontuar, combinar, destaque, termosAmpliados, barrasDeOnda, urlBusca, capaGrande, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, MAX_RESULTADOS } from "../musica.js";
 
 const R = (id, extra = {}) => ({ wrapperType: "track", kind: "song", trackId: id, trackName: "Wind", artistName: "Akeboshi", previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/x/mzaf_1.m4a", artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music/x/jacket.jpg/100x100bb.jpg", ...extra });
 const G = "11111111-2222-4333-8444-555555555555", P = (n) => `${G}/${G}/${String(n).padStart(36, "a").slice(-36)}`;
@@ -84,5 +84,17 @@ describe("música: as ondas do trecho", () => {
     const taxa = 100, c = new Float32Array(3000); for (let i = 1000; i < 2000; i++) c[i] = 0.8 * Math.sin(i); const b = barrasDeOnda([c], taxa, 30, 30);
     assert.equal(b.length, 30); assert.ok(b.every((x) => x >= 0.14 && x <= 1)); assert.ok(b[15] > 0.9 && b[2] < 0.2, "o miolo é o mais forte e as pontas ficam baixas");
     assert.deepEqual(barrasDeOnda([], 100, 4), [0.5, 0.5, 0.5, 0.5]); assert.deepEqual(barrasDeOnda(null, 100, 3), [0.5, 0.5, 0.5]);
+  });
+  test("trilha oficial: o álbum 'Original Soundtrack' da obra passa na frente de músicas de outros artistas com o mesmo nome; remix, karaokê e cópias não ganham o bônus", () => {
+    const It = (id, titulo, artista, album, pos = 0) => ({ id, titulo, artista, album, pos, origem: "br" });
+    assert.ok(albumOficial("DEATH NOTE Original Soundtrack") && albumOficial("Interstellar (Original Motion Picture Soundtrack) [Expanded Edition]") && albumOficial("NARUTO -ナルト- オリジナルサウンドトラック") && albumOficial("Ribeirão (Trilha Sonora Original)") && albumOficial("Bleach OST"));
+    assert.ok(!albumOficial("Naruto (OST Drill Remix) - Single") && !albumOficial("Death Note - Single") && !albumOficial("") && !albumOficial(null));
+    const lista = combinar("death note", [{ itens: [It(1, "Death Note", "7 Minutoz", "Death Note - Single"), It(2, "Death Note", "Neotokio3", "Death Note - Single", 1), It(3, "Death Note - L's Theme", "Geek Music", "Death Note - L's Theme - Single", 2)] },
+      { itens: [It(4, "The WORLD -TV Size-", "NIGHTMARE", "DEATH NOTE Original Soundtrack"), It(5, "Light no Theme", "Hideki Taniuchi", "DEATH NOTE Original Soundtrack", 1), It(6, "Death Note", "Hideki Taniuchi", "DEATH NOTE Original Soundtrack", 2)] }]);
+    assert.deepEqual(lista.slice(0, 3).map((x) => x.id).sort(), [4, 5, 6], "as 3 faixas da trilha original vêm antes dos singles de outros artistas"); assert.equal(lista[0].id, 6, "e a que também tem o nome certo no título é a primeira");
+    assert.ok(pontuar("naruto", It(7, "Naruto", "X", "Naruto (OST Drill Remix) - Single")) < pontuar("naruto", It(8, "Main Theme", "Y", "NARUTO Original Soundtrack")), "remix 'OST' não é a trilha");
+    assert.ok(pontuar("evidencias", It(9, "Evidências", "Chitãozinho & Xororó", "Cowboy Do Asfalto")) > pontuar("evidencias", It(10, "Outra", "Z", "Ribeirão do Tempo (Trilha Sonora Original)")), "a trilha de OUTRA obra não ganha bônus");
+    assert.equal(termoTrilha("death note"), "death note original soundtrack"); assert.equal(termoTrilha("Death Note Original Soundtrack"), ""); assert.equal(termoTrilha("naruto ost"), ""); assert.equal(termoTrilha("  "), ""); assert.equal(termoTrilha("x".repeat(80)), "");
+    assert.equal(limpaBusca({ results: [{ kind: "song", trackId: 1, trackName: "A", artistName: "B", collectionName: "C", primaryGenreName: "Anime", previewUrl: "https://audio-ssl.itunes.apple.com/x.m4a", artworkUrl100: "https://is1-ssl.mzstatic.com/a/100x100bb.jpg" }] })[0].genero, "Anime");
   });
 });
