@@ -33,7 +33,8 @@ function png(w, h, cor = 0x9a) {
 }
 // largura (em pixels) da foto que está de fundo na lista de mensagens, ou 0 se não há fundo
 const larguraFundo = (p) => p.evaluate(async () => { const m = document.querySelector("#messages"), bg = getComputedStyle(m).backgroundImage, u = bg.match(/url\("?([^")]+)"?\)/)?.[1]; if (!u || !m.classList.contains("has-bg")) return 0; const im = new Image(); im.src = u; try { await im.decode(); } catch { return -1; } return im.naturalWidth; });
-const esperaLargura = (p, w, ms = 30000) => p.waitForFunction(async (x) => { const m = document.querySelector("#messages"), bg = getComputedStyle(m).backgroundImage, u = bg.match(/url\("?([^")]+)"?\)/)?.[1]; if (!u || !m.classList.contains("has-bg")) return x === 0; const im = new Image(); im.src = u; try { await im.decode(); } catch { return false; } return im.naturalWidth === x; }, w, { timeout: ms, polling: 400 });
+// (espera de verdade: o waitForFunction do Playwright não espera funções assíncronas, então repete a leitura até a largura bater)
+const esperaLargura = async (p, w, ms = 30000) => { const ini = Date.now(); let ult; for (;;) { ult = await larguraFundo(p); if (ult === w) return; if (Date.now() - ini > ms) assert.fail(`o fundo deveria ter ${w}px de largura, mas tem ${ult}px (esperou ${ms} ms)`); await p.waitForTimeout(300); } };
 const abrirInfo = async (p) => { await p.click("#grupo-btn"); await p.waitForSelector("#grupo-info[open]"); };
 const fecharInfo = (p) => p.click("#grupo-info .pg-volta");
 const ajusta = (p, sel, v) => p.evaluate(([s, x]) => { const i = document.querySelector(s); i.value = String(x); i.dispatchEvent(new Event("input", { bubbles: true })); }, [sel, v]);
