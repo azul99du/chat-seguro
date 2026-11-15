@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const raiz = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const ler = (f) => readFileSync(join(raiz, f), "utf8");
-const APP = ["guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "recorte.js", "recorte-config.js", "sam2.js", "figurinhas.js", "avatar.js", "historico.js", "video.js", "aparelhos.js", "dispositivos.js", "grupo.js", "videolink.js", "lista.js", "usuario.js", "cores.js", "estatisticas.js", "selos.js", "snapshot.js", "visto.js", "loja.js", "novidades.js", "sw.js", "supabase/functions/notificar/vapid.js"];
+const APP = ["guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "recorte.js", "recorte-config.js", "sam2.js", "figurinhas.js", "avatar.js", "historico.js", "video.js", "aparelhos.js", "dispositivos.js", "grupo.js", "videolink.js", "lista.js", "usuario.js", "cores.js", "estatisticas.js", "selos.js", "snapshot.js", "visto.js", "loja.js", "novidades.js", "musica.js", "sw.js", "supabase/functions/notificar/vapid.js"];
 const rastreados = execFileSync("git", ["ls-files"], { cwd: raiz, encoding: "utf8" }).split("\n").filter(Boolean);
 
 describe("código", () => {
@@ -71,7 +71,11 @@ describe("política de segurança do navegador (CSP)", () => {
   });
   test("só conversa com o Supabase configurado em config.js", () => {
     const host = new URL(ler("config.js").match(/SUPABASE_URL\s*=\s*"([^"]+)"/)[1]).host;
-    assert.equal(dir("connect-src"), `connect-src 'self' https://${host} wss://${host}`);
+    // (além do Supabase, só a busca e os trechos de música da Apple, para a função "Música" das conversas: dois endereços exatos, sem curinga)
+    assert.equal(dir("connect-src"), `connect-src 'self' https://${host} wss://${host} https://itunes.apple.com https://audio-ssl.itunes.apple.com`);
+  });
+  test("imagens só do próprio site e das capas de música da Apple (cinco endereços exatos, sem curinga)", () => {
+    assert.equal(dir("img-src"), "img-src 'self' blob: data: " + [1, 2, 3, 4, 5].map((i) => `https://is${i}-ssl.mzstatic.com`).join(" "));
   });
 });
 

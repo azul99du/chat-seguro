@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#15174A">
   <meta name="referrer" content="no-referrer">
   <!-- Só roda código deste próprio site; só conversa com o seu Supabase. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; manifest-src 'self'; worker-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob: data:; media-src blob:; frame-src https://www.youtube-nocookie.com https://www.instagram.com https://www.tiktok.com; connect-src 'self' https://okiurdcgbjaylihbycxn.supabase.co wss://okiurdcgbjaylihbycxn.supabase.co; base-uri 'none'; form-action 'self'; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; manifest-src 'self'; worker-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob: data: https://is1-ssl.mzstatic.com https://is2-ssl.mzstatic.com https://is3-ssl.mzstatic.com https://is4-ssl.mzstatic.com https://is5-ssl.mzstatic.com; media-src blob:; frame-src https://www.youtube-nocookie.com https://www.instagram.com https://www.tiktok.com; connect-src 'self' https://okiurdcgbjaylihbycxn.supabase.co wss://okiurdcgbjaylihbycxn.supabase.co https://itunes.apple.com https://audio-ssl.itunes.apple.com; base-uri 'none'; form-action 'self'; object-src 'none'">
   <title>Lacre — conversa só entre vocês</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="icon" href="favicon.ico" sizes="48x48">
@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=9e97870e8f">
+  <link rel="stylesheet" href="style.css?v=ecdfff73eb">
 </head>
 <body>
 
@@ -158,8 +158,9 @@
         <div id="tray" class="tray"><div class="tray-in">
           <button type="button" id="attach" class="tile" tabindex="-1"><span class="ti ti1"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg></span>Foto ou vídeo</button>
           <button type="button" id="sticker" class="tile" tabindex="-1"><span class="ti ti2"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6l8-8z"/><path d="M20 12h-4a2 2 0 0 0-2 2v6"/><circle cx="9" cy="9.5" r=".8"/><circle cx="14.5" cy="9.5" r=".8"/></svg></span>Figurinha</button>
+          <button type="button" id="musica" class="tile" tabindex="-1"><span class="ti ti3"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg></span>Música</button>
         </div></div>
-        <button type="button" id="mais" class="mais" aria-label="Mais opções: foto, vídeo e figurinha" aria-expanded="false" aria-controls="tray"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+        <button type="button" id="mais" class="mais" aria-label="Mais opções: foto, vídeo, figurinha e música" aria-expanded="false" aria-controls="tray"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
         <input type="file" id="file" accept="image/*,video/mp4,video/quicktime,audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/x-wav,.mp4,.m4v,.mov,.mp3,.m4a,.wav" hidden>
         <!-- campo editável simples (e não <input>): o teclado do Android não oferece senhas, cartões e endereços (preenchimento automático) aqui -->
         <div id="text" class="msg-input" contenteditable="plaintext-only" role="textbox" aria-multiline="false" aria-label="Mensagem" data-placeholder="Escreva uma mensagem" enterkeyhint="send" autocapitalize="sentences" spellcheck="true" translate="no"></div>
@@ -411,6 +412,25 @@
     <div class="btns"><button type="button" id="sn-ok" class="btn-rosa">Pronto</button></div>
   </dialog>
 
+  <dialog id="musica-folha" class="folha-seg musica-folha" aria-labelledby="mu-titulo">
+    <div class="grab"></div>
+    <h2 id="mu-titulo">Música</h2>
+    <div id="mu-busca-tela">
+      <input id="mu-busca" type="search" placeholder="Buscar música ou artista" autocomplete="off" autocapitalize="none" spellcheck="false" aria-label="Buscar música ou artista">
+      <ul id="mu-lista" class="mu-lista" role="list"></ul>
+      <p id="mu-msg" class="mu-msg" role="status">Digite o nome de uma música ou de um artista.</p>
+      <p class="mu-nota">A busca e o trecho vêm direto da Apple (catálogo público): ela vê o seu endereço de internet e o que você digita aqui. As suas conversas não passam por lá.</p>
+      <button type="button" id="mu-fechar" class="btn-limpa mu-fechar">Fechar</button>
+    </div>
+    <div id="mu-trecho-tela" hidden>
+      <div id="mu-cartao" class="mu-previa"></div>
+      <label class="mu-campo"><span>Começa em <b id="mu-ini-txt"></b></span><input id="mu-ini" type="range" min="0" max="25" step="0.5" aria-label="Onde o trecho começa"></label>
+      <label class="mu-campo"><span>Dura <b id="mu-dur-txt"></b></span><input id="mu-dur" type="range" min="5" max="30" step="1" aria-label="Duração do trecho"></label>
+      <p id="mu-trecho-msg" class="mu-msg" role="status"></p>
+      <div class="lf-botoes"><button type="button" id="mu-voltar" class="btn-limpa">Voltar</button><button type="button" id="mu-enviar" class="btn-rosa" disabled>Enviar</button></div>
+    </div>
+  </dialog>
+
   <dialog id="novidades" class="pagina">
     <form method="dialog">
       <header class="pg-bar"><button value="cancel" class="pg-volta" aria-label="Voltar" formnovalidate><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><h2>Novidades</h2></header>
@@ -546,6 +566,6 @@
 
   <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
 
-  <script src="guarda.js?v=9e97870e8f"></script>
+  <script src="guarda.js?v=ecdfff73eb"></script>
 </body>
 </html>

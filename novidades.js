@@ -5,6 +5,9 @@ export const TEMAS = [["selos", "Selos"], ["mensagens", "Mensagens"], ["grupos",
 const NOME_TEMA = new Map(TEMAS);
 export const temaNome = (t) => NOME_TEMA.get(t) || null;
 export const NOVIDADES = [
+  { id: "2026-11-15-2", data: "2026-11-15", itens: [
+    { tema: "mensagens", icone: "🎵", titulo: "Música nas conversas", texto: "Pesquise uma música e envie um trecho de até 30 segundos, no estilo do Instagram: capa, disco de vinil girando e play. Funciona em grupos e em conversas a dois. Está no botão + (Música)." },
+  ] },
   { id: "2026-11-15-1", data: "2026-11-15", itens: [
     { tema: "grupos", icone: "🖼️", titulo: "Foto de fundo do grupo", texto: "O admin pode pôr uma foto de fundo para o grupo todo, em Dados do grupo. E na loja, qualquer membro pode trocar a foto de fundo para todos por um tempo, de 5 em 5 minutos. Enquanto vale, ela substitui a do admin." },
   ] },

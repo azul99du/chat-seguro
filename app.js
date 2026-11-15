@@ -1,28 +1,29 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=9e97870e8f";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=9e97870e8f";
-import { montarFigurinhas } from "./figurinhas.js?v=9e97870e8f";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=9e97870e8f";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=9e97870e8f";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=9e97870e8f";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=9e97870e8f";
-import { acharVideoLink } from "./videolink.js?v=9e97870e8f";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=9e97870e8f";
-import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=9e97870e8f";
-import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=9e97870e8f";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=9e97870e8f";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=9e97870e8f";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=9e97870e8f";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=9e97870e8f";
-import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=9e97870e8f";
-import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=9e97870e8f";
-import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=9e97870e8f";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=9e97870e8f";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=9e97870e8f";
-import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=9e97870e8f";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=9e97870e8f";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=9e97870e8f";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=9e97870e8f";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=ecdfff73eb";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=ecdfff73eb";
+import { montarFigurinhas } from "./figurinhas.js?v=ecdfff73eb";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=ecdfff73eb";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=ecdfff73eb";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=ecdfff73eb";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=ecdfff73eb";
+import { acharVideoLink } from "./videolink.js?v=ecdfff73eb";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=ecdfff73eb";
+import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=ecdfff73eb";
+import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=ecdfff73eb";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=ecdfff73eb";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=ecdfff73eb";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=ecdfff73eb";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=ecdfff73eb";
+import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=ecdfff73eb";
+import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=ecdfff73eb";
+import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=ecdfff73eb";
+import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=ecdfff73eb";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=ecdfff73eb";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=ecdfff73eb";
+import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=ecdfff73eb";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=ecdfff73eb";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=ecdfff73eb";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=ecdfff73eb";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -1309,6 +1310,9 @@ function mediaBlock(c, mine, msgId = null) {
       const img = new Image(); img.alt = "Figurinha"; img.draggable = false;
       img.onload = () => { ph.replaceWith(img); salvar?.classList.remove("stk-sem-imagem"); }; img.onerror = fail; img.src = url;
     }).catch(fail);
+  } else if (c.kind === "musica") {
+    const m = limpaMusica(c); if (!m) { fail(); return box; } box.classList.add("musica"); const capaC = { ...m.capa, kind: "image" }, audioC = { ...m.audio, kind: "audio" };
+    box.append(cartaoMusica(m, { capaUrl: () => loadMedia(capaC), audioUrl: () => loadMedia(audioC), preparar: () => loadMedia(audioC).catch(() => {}) }));
   } else if (c.kind === "audio") {
     box.classList.add("audio");
     const dur = Math.min(3600, Math.max(0, Number(c.dur) || 0));
@@ -1411,8 +1415,8 @@ function addMessage(m, content, { err = false, animate = false, em = null, desce
   if (active) marcaUltima(active.id, m.created_at); // (a lista mostra a hora da última mensagem que aparece aqui)
   const wrap = el("div", "msg" + (mine ? " mine" : "")), line = el("div", "line"); wrap.dataset.de = m.sender_id;
   if (ehMid(content.mid) && !midParaId.has(content.mid)) midParaId.set(content.mid, m.id); // (grupo e conversa a dois no formato por aparelho: a mensagem se identifica pelo mid)
-  const b = el("div", "bubble" + (mine ? " mine" : "") + (err ? " err" : "") + (media ? " has-media" : "") + (media && content.kind === "sticker" ? " sticker" : "") + (apagada ? " apagada" : ""));
-  const label = media ? (content.kind === "sticker" ? "Figurinha enviada. " : content.kind === "video" ? "Vídeo enviado. " : content.kind === "audio" ? "Áudio enviado. " : "Foto enviada. ") : "";
+  const b = el("div", "bubble" + (mine ? " mine" : "") + (err ? " err" : "") + (media ? " has-media" : "") + (media && content.kind === "sticker" ? " sticker" : "") + (media && content.kind === "musica" ? " musica-bolha" : "") + (apagada ? " apagada" : ""));
+  const label = media ? (content.kind === "sticker" ? "Figurinha enviada. " : content.kind === "video" ? "Vídeo enviado. " : content.kind === "audio" ? "Áudio enviado. " : content.kind === "musica" ? "Música enviada: " + textoMusica(content) + ". " : "Foto enviada. ") : "";
   const re = limpaCitacao(content.re), alvo = re ? idDaRef(re) : undefined, original = alvo != null ? msgs.get(alvo) : undefined;
   const citado = re ? exibir(re, original, { me: me.id, peer: emGrupo ? (re.from && re.from !== me.id ? re.from : undefined) : active?.id }) : null;
   const quemCitado = citado?.autor === "mine" ? "Você" : citado?.autor === "theirs" ? "@" + (emGrupo ? nomeDe(original?.m.sender_id ?? re.from) : active.username) : "Mensagem";
@@ -1658,7 +1662,7 @@ async function apagarParaTodos(id) {
   const alvo = peer.grupo || ehMid(e.content?.mid) ? e.content?.mid : id; if (peer.grupo && !ehMid(alvo)) return;
   try { await enviar(peer, { type: "delete", to: alvo }); } catch (err) { return note(sendError(err, peer)); }
   const c = e.content; // o arquivo cifrado de foto/vídeo/áudio sai do servidor (figurinha não: o mesmo arquivo é reaproveitado em outras mensagens)
-  if (c?.type === "media" && c.kind !== "sticker" && typeof c.path === "string") { await sb.storage.from("media").remove([c.path]).catch(() => {}); delBlob(me.id, c.path).catch(() => {}); const u = mediaCache.get(c.path); if (u) { URL.revokeObjectURL(u); mediaCache.delete(c.path); } }
+  if (c?.type === "media" && c.kind !== "sticker" && typeof c.path === "string") { await sb.storage.from("media").remove([c.path]).catch(() => {}); delBlob(me.id, c.path).catch(() => {}); const u = mediaCache.get(c.path); if (u) { URL.revokeObjectURL(u); mediaCache.delete(c.path); } if (c.kind === "musica" && typeof c.capa?.path === "string") { await sb.storage.from("media").remove([c.capa.path]).catch(() => {}); delBlob(me.id, c.capa.path).catch(() => {}); const u2 = mediaCache.get(c.capa.path); if (u2) { URL.revokeObjectURL(u2); mediaCache.delete(c.capa.path); } } }
   await commit(me.id, peer.id, { entryId: id, entry: peer.grupo || ehMid(alvo) ? { content: { type: "deleted", by: me.id, mid: alvo }, at: e.m.created_at, mine: true, from: me.id } : { content: { type: "deleted", by: me.id }, at: e.m.created_at, mine: true } });
   trocaPorApagada(id);
 }
@@ -3558,6 +3562,114 @@ $("send-form").onsubmit = async (e) => {
     if (resp && !replyTo) { replyTo = resp; mostrarResposta(); }
     note(sendError(e, peer));
   } finally { btn.disabled = false; if (tinhaFoco && document.activeElement !== $("text")) $("text").focus(); }
+};
+
+// ---------- Música nas conversas (cartão no estilo do Instagram) ----------
+// Busca no catálogo público da Apple, trecho de até 30 s escolhido por quem envia; o áudio (já sem metadados) e a capa vão CIFRADOS como qualquer mídia.
+// Quem recebe só toca a janela escolhida (começo + duração). Funciona em conversas a dois e em grupos.
+let musicaAtual = null; // o cartão que está tocando (só um por vez)
+function svgMusica(classe, formas) { // ícone feito pelo DOM (o projeto não usa innerHTML)
+  const ns = "http://www.w3.org/2000/svg", s = document.createElementNS(ns, "svg");
+  for (const [k, v] of Object.entries({ class: classe, width: "30", height: "30", viewBox: "0 0 24 24", fill: "currentColor", "aria-hidden": "true" })) s.setAttribute(k, v);
+  for (const [tag, attrs] of formas) { const e = document.createElementNS(ns, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); s.append(e); }
+  return s;
+}
+const iconesPlay = () => [svgMusica("toca", [["path", { d: "M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" }]]), svgMusica("pausa", [["rect", { x: "6", y: "5", width: "4", height: "14", rx: "1.5" }], ["rect", { x: "14", y: "5", width: "4", height: "14", rx: "1.5" }]])];
+function cartaoMusica(m, fonte) { // m: { titulo, artista, ini, dur } (lido na hora de tocar, então a prévia acompanha os controles); fonte: { capaUrl(), audioUrl(), preparar?() }
+  const card = el("div", "mu-card"), disco = el("div", "mu-disco"), rot = el("span", "mu-rotulo"), capa = el("button", "mu-capa"), play = el("span", "mu-play");
+  card.setAttribute("role", "group"); card.setAttribute("aria-label", `Música: ${m.titulo}, ${m.artista}`); capa.type = "button"; play.append(...iconesPlay()); play.setAttribute("aria-hidden", "true");
+  disco.append(rot); capa.append(play, el("span", "mu-tit", m.titulo), el("span", "mu-art", m.artista)); card.append(disco, capa);
+  Promise.resolve().then(() => fonte.capaUrl()).then((url) => { if (!url) return; const im = new Image(); im.alt = ""; im.draggable = false; im.onload = () => capa.prepend(im); im.src = url; rot.style.backgroundImage = `url("${url}")`; }).catch(() => {});
+  let a = null, tocando = false;
+  const marcar = (v) => { tocando = v; card.classList.toggle("tocando", v); capa.setAttribute("aria-label", `${v ? "Pausar" : "Tocar"} o trecho de ${m.titulo}, ${m.artista}`); };
+  const ctl = { parar() { if (a) { a.pause(); try { a.currentTime = m.ini; } catch {} } marcar(false); if (musicaAtual === ctl) musicaAtual = null; } };
+  card.parar = ctl.parar; marcar(false);
+  capa.onclick = async () => {
+    if (tocando) return ctl.parar();
+    if (musicaAtual && musicaAtual !== ctl) musicaAtual.parar();
+    try {
+      if (!a) { a = new Audio(await fonte.audioUrl()); a.preload = "auto"; a.addEventListener("timeupdate", () => { if (a.currentTime >= m.ini + m.dur - 0.05) ctl.parar(); }); a.addEventListener("ended", () => ctl.parar()); }
+      a.currentTime = m.ini; musicaAtual = ctl; marcar(true); await a.play();
+    } catch { ctl.parar(); }
+  };
+  if (fonte.preparar && "IntersectionObserver" in window) { const io = new IntersectionObserver((es) => { if (es.some((x) => x.isIntersecting)) { io.disconnect(); fonte.preparar(); } }, { rootMargin: "200px" }); io.observe(card); } // (baixa o áudio um pouco antes de aparecer, para tocar na hora)
+  return card;
+}
+const mu = { timer: null, ctrl: null, sessao: null, escolhida: null, audio: null, capa: null, m: null, card: null, conv: null };
+const buscaTela = (busca) => { $("mu-busca-tela").hidden = !busca; $("mu-trecho-tela").hidden = busca; };
+function limpaPrevia(soltar = true) { // para o que toca e solta os arquivos da prévia (os que foram enviados já estão no cache de mídia)
+  mu.card?.parar?.(); mu.card = null; if (soltar) { for (const x of [mu.audio, mu.capa]) if (x?.url) URL.revokeObjectURL(x.url); } mu.audio = null; mu.capa = null; mu.m = null; mu.escolhida = null; mu.sessao = null;
+}
+function abrirMusica() {
+  if (!active) return; mu.conv = active; limpaPrevia(); buscaTela(true); $("mu-busca").value = ""; $("mu-lista").replaceChildren(); $("mu-msg").textContent = "Digite o nome de uma música ou de um artista."; $("mu-trecho-msg").textContent = "";
+  $("musica-folha").showModal(); setTimeout(() => $("mu-busca").focus(), 60);
+}
+$("musica").onclick = () => { bandeja(false); abrirMusica(); };
+$("musica-folha").addEventListener("close", () => { clearTimeout(mu.timer); mu.ctrl?.abort(); limpaPrevia(); mu.conv = null; });
+$("mu-busca").oninput = () => {
+  clearTimeout(mu.timer); const termo = $("mu-busca").value.trim();
+  if (termo.length < 2) { mu.ctrl?.abort(); $("mu-lista").replaceChildren(); $("mu-msg").textContent = termo ? "Digite pelo menos 2 letras." : "Digite o nome de uma música ou de um artista."; return; }
+  $("mu-msg").textContent = "Buscando…"; mu.timer = setTimeout(() => buscarMusica(termo), 450);
+};
+async function buscarMusica(termo) {
+  mu.ctrl?.abort(); const ctrl = mu.ctrl = new AbortController();
+  try {
+    const r = await fetch(urlBusca(termo), { signal: ctrl.signal, referrerPolicy: "no-referrer", credentials: "omit" }); if (!r.ok) throw new Error("busca");
+    const lista = limpaBusca(await r.json()); if (ctrl.signal.aborted) return;
+    $("mu-lista").replaceChildren(...lista.map((x) => { const li = el("li"), b = el("button"), im = el("img"), t = el("span", "t"); b.type = "button"; im.alt = ""; im.loading = "lazy"; im.src = x.capa; t.append(el("b", null, x.titulo), el("small", null, x.artista)); b.append(im, t); b.onclick = () => escolherMusica(x).catch(() => {}); li.append(b); return li; }));
+    $("mu-msg").textContent = lista.length ? "" : "Nenhuma música encontrada.";
+  } catch { if (!ctrl.signal.aborted) $("mu-msg").textContent = "Não foi possível buscar agora. Verifique a conexão e tente de novo."; }
+}
+async function baixarPrevia(url) {
+  const r = await fetch(url, { referrerPolicy: "no-referrer", credentials: "omit" }); if (!r.ok) throw new Error("previa");
+  const buf = await r.arrayBuffer(); if (buf.byteLength < 2000 || buf.byteLength > 5 * 1048576) throw new Error("previa"); return buf;
+}
+function baixarCapa(url) { // pela <img> (a política de segurança libera as capas da Apple), redesenhada em JPEG 600x600: sem metadados e com tamanho previsível
+  return new Promise((ok, falha) => {
+    const im = new Image(); im.crossOrigin = "anonymous"; im.referrerPolicy = "no-referrer";
+    im.onload = async () => { try { const c = el("canvas"); c.width = c.height = 600; c.getContext("2d").drawImage(im, 0, 0, 600, 600); const blob = await new Promise((r) => c.toBlob(r, "image/jpeg", 0.85)); if (!blob) throw new Error("capa"); ok({ bytes: new Uint8Array(await blob.arrayBuffer()), url: URL.createObjectURL(blob) }); } catch { falha(new Error("capa")); } };
+    im.onerror = () => falha(new Error("capa")); im.src = url;
+  });
+}
+const duracaoDoAudio = (url) => new Promise((ok) => { const a = new Audio(); a.preload = "metadata"; const fim = (v) => { clearTimeout(t); ok(Number.isFinite(v) && v > 0 ? v : MAX_TRECHO_S); }, t = setTimeout(() => fim(NaN), 4000); a.onloadedmetadata = () => fim(a.duration); a.onerror = () => fim(NaN); a.src = url; });
+async function escolherMusica(r) {
+  const sessao = mu.sessao = {}; limpaPrevia(false); mu.sessao = sessao; buscaTela(false); $("mu-enviar").disabled = true; $("mu-trecho-msg").textContent = ""; $("mu-cartao").replaceChildren(el("div", "mu-msg", "Carregando a música…"));
+  try {
+    const [buf, capa] = await Promise.all([baixarPrevia(r.previa), baixarCapa(r.capaGrande)]);
+    if (mu.sessao !== sessao) { URL.revokeObjectURL(capa.url); return; }
+    const limpo = cleanAudio(buf), audioUrl = URL.createObjectURL(new Blob([limpo.bytes], { type: limpo.mime })), total = await duracaoDoAudio(audioUrl);
+    if (mu.sessao !== sessao) { URL.revokeObjectURL(audioUrl); URL.revokeObjectURL(capa.url); return; }
+    mu.escolhida = r; mu.audio = { bytes: limpo.bytes, mime: limpo.mime, url: audioUrl, total }; mu.capa = capa;
+    const j = janelaDoTrecho(total, 0, PADRAO_TRECHO_S); mu.m = { titulo: r.titulo, artista: r.artista, ini: j.ini, dur: j.dur };
+    mu.card = cartaoMusica(mu.m, { capaUrl: () => capa.url, audioUrl: async () => audioUrl }); $("mu-cartao").replaceChildren(mu.card); sincronizarTrecho(); $("mu-enviar").disabled = false;
+  } catch { if (mu.sessao === sessao) { buscaTela(true); $("mu-msg").textContent = "Não foi possível carregar essa música. Tente outra."; } }
+}
+function sincronizarTrecho() { // põe os controles de acordo com a janela (começo + duração), que nunca passa do arquivo
+  if (!mu.audio) return; const t = Math.min(mu.audio.total, MAX_TRECHO_S), j = janelaDoTrecho(mu.audio.total, mu.m.ini, mu.m.dur); mu.m.ini = j.ini; mu.m.dur = j.dur;
+  $("mu-dur").min = String(Math.min(MIN_TRECHO_S, Math.floor(t))); $("mu-dur").max = String(Math.max(1, Math.floor(t))); $("mu-dur").value = String(j.dur); $("mu-ini").max = String(Math.max(0, Math.floor((t - j.dur) * 2) / 2)); $("mu-ini").value = String(j.ini);
+  $("mu-ini-txt").textContent = mmssCurto(j.ini); $("mu-dur-txt").textContent = `${j.dur} s`;
+}
+$("mu-ini").oninput = () => { if (!mu.m) return; mu.m.ini = Number($("mu-ini").value); mu.card?.parar?.(); sincronizarTrecho(); };
+$("mu-dur").oninput = () => { if (!mu.m) return; mu.m.dur = Number($("mu-dur").value); mu.card?.parar?.(); sincronizarTrecho(); };
+$("mu-fechar").onclick = () => $("musica-folha").close();
+$("mu-voltar").onclick = () => { limpaPrevia(); buscaTela(true); $("mu-busca").focus(); };
+$("mu-enviar").onclick = async () => {
+  const peer = mu.conv; if (!peer || !mu.escolhida || !mu.audio || !mu.capa || !mu.m) return; if (active !== peer) { $("musica-folha").close(); return; }
+  $("mu-enviar").disabled = true; $("mu-trecho-msg").textContent = "Enviando…"; mu.card?.parar?.(); const subidos = [];
+  try {
+    const base = `${me.id}/${peer.id}/`, pa = base + crypto.randomUUID(), pc = base + crypto.randomUUID(), audio = mu.audio, capa = mu.capa, m = { ...mu.m };
+    const sa = await uploadSealed(audio.bytes, pa); subidos.push(pa); const sc = await uploadSealed(capa.bytes, pc); subidos.push(pc);
+    const content = { v: 1, type: "media", kind: "musica", path: pa, key: sa.key, iv: sa.iv, mime: audio.mime, size: audio.bytes.length, capa: { path: pc, key: sc.key, iv: sc.iv, mime: "image/jpeg", size: capa.bytes.length }, titulo: m.titulo, artista: m.artista, ini: m.ini, dur: m.dur };
+    const resp = replyTo; if (resp) content.re = resp;
+    const row = await enviar(peer, content);
+    mediaCache.set(pa, audio.url); mediaCache.set(pc, capa.url); mu.audio = mu.capa = null; // (enviados: ficam no cache de mídia, sem baixar de novo)
+    if (resp) cancelarResposta(); $("musica-folha").close();
+    if (peer.grupo) tocarEfeitoDaMensagem(peer, me.id, row);
+    if (active === peer) { $("msgs-empty")?.remove(); addMessage(row, content, { descer: true }); if (row.quem) { const en = msgs.get(row.id); if (en) { en.quem = row.quem; setReceipt(en); } } }
+  } catch (e) {
+    console.warn("música:", e?.code, e?.message || e); if (subidos.length) sb.storage.from("media").remove(subidos).catch(() => {});
+    $("mu-trecho-msg").textContent = sendError(e, peer); $("mu-enviar").disabled = false;
+  }
 };
 
 // ---------- Fundo da conversa (pessoal, limpo de metadados e cifrado) ----------

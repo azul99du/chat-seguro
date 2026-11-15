@@ -1,6 +1,6 @@
 // Estatísticas do grupo. Funções puras (testadas em Node): contam o que este aparelho tem guardado das mensagens do grupo.
 // O servidor não vê o conteúdo, então tipo de mensagem, respostas e citações são contados aqui; só o tempo de tela vem do servidor.
-import { mencionados } from "./grupo.js?v=9e97870e8f";
+import { mencionados } from "./grupo.js?v=ecdfff73eb";
 
 export const TIPOS = ["texto", "foto", "video", "audio", "figurinha"];
 const por = (n, um, varios) => (n === 1 ? `1 ${um}` : `${n} ${varios}`);
@@ -9,7 +9,7 @@ const por = (n, um, varios) => (n === 1 ? `1 ${um}` : `${n} ${varios}`);
 export function tipoDe(c) {
   if (!c || typeof c !== "object") return null;
   if (c.type === "text") return "texto";
-  if (c.type === "media") return { image: "foto", video: "video", audio: "audio", sticker: "figurinha" }[c.kind] || null;
+  if (c.type === "media") return { image: "foto", video: "video", audio: "audio", musica: "audio", sticker: "figurinha" }[c.kind] || null;
   return null;
 }
 const pad = (n) => String(n).padStart(2, "0");

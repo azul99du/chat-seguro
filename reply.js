@@ -1,6 +1,6 @@
 // Responder a uma mensagem (citação). Funções puras: não dependem do navegador, então são testadas em Node.
 // A citação viaja DENTRO da mensagem cifrada; o servidor nunca vê qual mensagem foi respondida.
-const KINDS = ["text", "image", "video", "audio", "sticker"];
+const KINDS = ["text", "image", "video", "audio", "sticker", "musica"];
 const UUID = /^[0-9a-f-]{36}$/;
 export const MAX_PREVIEW = 80;
 // corta com reticências, para não parecer que a frase terminou ali (idempotente: um texto já cortado não muda)
@@ -11,6 +11,7 @@ export const mmss = (n) => `${Math.floor(dur(n) / 60)}:${String(dur(n) % 60).pad
 // Resumo de uma mensagem para citar: tipo + um trecho curto do texto/legenda.
 export function resumo(c) {
   if (!c) return null;
+  if (c.type === "media" && c.kind === "musica") return { kind: "musica", text: corta([c.titulo, c.artista].filter((x) => typeof x === "string" && x.trim()).join(" · ")), dur: 0 }; // (música: o título e o artista)
   if (c.type === "media") return { kind: KINDS.includes(c.kind) && c.kind !== "text" ? c.kind : "image", text: corta(String(c.caption ?? "")), dur: dur(c.dur) };
   if (c.type === "text") return { kind: "text", text: corta(String(c.text ?? "")), dur: 0 };
   return null;
@@ -48,6 +49,7 @@ export function rotulo(r) {
   if (r.kind === "sticker") return "Figurinha";
   if (r.kind === "image") return "Foto" + extra;
   if (r.kind === "video") return "Vídeo" + extra;
+  if (r.kind === "musica") return "Música" + extra;
   if (r.kind === "audio") return `Áudio${r.dur ? " · " + mmss(r.dur) : ""}${extra}`;
   return r.text || "Mensagem";
 }
