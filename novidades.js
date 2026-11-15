@@ -5,6 +5,10 @@ export const TEMAS = [["selos", "Selos"], ["mensagens", "Mensagens"], ["grupos",
 const NOME_TEMA = new Map(TEMAS);
 export const temaNome = (t) => NOME_TEMA.get(t) || null;
 export const NOVIDADES = [
+  { id: "2026-11-15-3", data: "2026-11-15", itens: [
+    { tema: "mensagens", icone: "🎚️", titulo: "Escolher o trecho da música ficou mais fácil", texto: "Agora você arrasta um trecho grande sobre as ondas da música para escolher onde começa, e a duração fica na barra." },
+    { tema: "mensagens", icone: "🔎", titulo: "Busca de música melhor", texto: "Entende acento e erro de digitação, mostra o melhor resultado em destaque e, se não achar no Brasil, procura também na loja dos EUA." },
+  ] },
   { id: "2026-11-15-2", data: "2026-11-15", itens: [
     { tema: "mensagens", icone: "🎵", titulo: "Música nas conversas", texto: "Pesquise uma música e envie um trecho de até 30 segundos, no estilo do Instagram: capa, disco de vinil girando e play. Funciona em grupos e em conversas a dois. Está no botão + (Música)." },
   ] },

@@ -918,7 +918,27 @@ dialog.musica-folha{max-height:88dvh;overflow:auto}
 .mu-msg{margin:10px 0 0;color:var(--mut);font-size:.88rem;text-align:center}
 .mu-nota{margin:12px 0 0;color:var(--mut);font-size:.74rem;line-height:1.4}
 .mu-previa{display:flex;justify-content:center;margin:8px 0 14px}
-.mu-campo{display:grid;gap:4px;margin:8px 0}.mu-campo span{display:flex;justify-content:space-between;font-size:.85rem;color:var(--mut)}.mu-campo b{font:500 .8rem var(--mono);color:var(--texto)}
-.mu-campo input[type=range]{width:100%;accent-color:var(--seal)}
 .media.musica{width:auto}
 .mu-fechar{margin:14px 0 0;width:100%}
+
+/* ----- Música: seletor do trecho (janela arrastável sobre as ondas) e melhor resultado ----- */
+.mu-sec{display:flex;justify-content:space-between;align-items:baseline;margin:14px 0 0;font-size:.9rem;color:var(--mut)}.mu-sec b{font:500 .8rem var(--mono);color:var(--texto)}
+.mu-dica{margin:2px 0 0;font-size:.78rem;color:var(--mut)}
+.mu-linha{position:relative;height:104px;margin:40px 0 4px;border-radius:14px;background:var(--paper);border:1px solid var(--line);touch-action:none;user-select:none;-webkit-user-select:none}
+.mu-onda{position:absolute;inset:10px 8px;display:flex;align-items:center;gap:2px;pointer-events:none}
+.mu-onda i{flex:1;border-radius:2px;background:var(--mut);opacity:.45;min-width:2px}.mu-onda i.dentro{background:var(--seal);opacity:1}:root[data-tema="escuro"] .mu-onda i.dentro{background:#fff;opacity:.95}
+@media (prefers-color-scheme:dark){:root:not([data-tema="claro"]) .mu-onda i.dentro{background:#fff;opacity:.95}}
+.mu-sombra{position:absolute;top:0;bottom:0;background:rgba(0,0,0,.30);pointer-events:none}.mu-sombra.e{left:0;border-radius:14px 0 0 14px}.mu-sombra.d{right:0;border-radius:0 14px 14px 0}
+.mu-janela{position:absolute;top:-1px;bottom:-1px;border-radius:14px;border:2.5px solid var(--seal);background:rgba(232,51,95,.16);cursor:grab;outline:none}
+.mu-janela.arrastando{cursor:grabbing;background:rgba(232,51,95,.24)}.mu-janela:focus-visible{box-shadow:0 0 0 3px rgba(232,51,95,.45)}
+.mu-janela .grip{position:absolute;left:50%;top:-34px;transform:translateX(-50%);padding:5px 12px;border-radius:99px;background:var(--seal);color:#fff;font:500 .78rem var(--mono);white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,.35);pointer-events:none}
+.mu-janela .borda{position:absolute;top:50%;width:6px;height:34px;margin-top:-17px;border-radius:4px;background:#fff;opacity:.9;pointer-events:none}.mu-janela .borda.e{left:5px}.mu-janela .borda.d{right:5px}
+.mu-cabeca{position:absolute;top:0;bottom:0;width:2px;background:#fff;box-shadow:0 0 6px rgba(255,255,255,.8);pointer-events:none}.mu-cabeca[hidden]{display:none}
+.mu-regua{display:flex;justify-content:space-between;padding:0 4px;font:500 .72rem var(--mono);color:var(--mut)}
+.mu-dur{margin:6px 0 0;width:100%;accent-color:var(--seal)}
+.mu-destaque{margin:6px 0 8px}.mu-destaque[hidden]{display:none}
+.mu-destaque>b.mu-rot{display:block;margin:0 0 6px;font:500 .68rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--seal)}
+.mu-destaque button{display:flex;align-items:center;gap:14px;width:100%;padding:12px;border:1.5px solid var(--seal);border-radius:16px;background:rgba(232,51,95,.10);color:var(--texto);text-align:left}
+.mu-destaque img{flex:none;width:84px;height:84px;border-radius:12px;object-fit:cover;background:var(--ink-2);box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.mu-destaque .t{min-width:0}.mu-destaque .t b{display:block;font-size:1.05rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mu-destaque .t small{display:block;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mu-lista .tag{display:inline-block;margin-left:6px;padding:0 6px;border-radius:99px;background:var(--ink-2);color:#fff;font:500 .62rem var(--mono);vertical-align:1px}

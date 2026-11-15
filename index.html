@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=ecdfff73eb">
+  <link rel="stylesheet" href="style.css?v=e3193df7f9">
 </head>
 <body>
 
@@ -417,6 +417,7 @@
     <h2 id="mu-titulo">Música</h2>
     <div id="mu-busca-tela">
       <input id="mu-busca" type="search" placeholder="Buscar música ou artista" autocomplete="off" autocapitalize="none" spellcheck="false" aria-label="Buscar música ou artista">
+      <div id="mu-destaque" class="mu-destaque" hidden></div>
       <ul id="mu-lista" class="mu-lista" role="list"></ul>
       <p id="mu-msg" class="mu-msg" role="status">Digite o nome de uma música ou de um artista.</p>
       <p class="mu-nota">A busca e o trecho vêm direto da Apple (catálogo público): ela vê o seu endereço de internet e o que você digita aqui. As suas conversas não passam por lá.</p>
@@ -424,8 +425,18 @@
     </div>
     <div id="mu-trecho-tela" hidden>
       <div id="mu-cartao" class="mu-previa"></div>
-      <label class="mu-campo"><span>Começa em <b id="mu-ini-txt"></b></span><input id="mu-ini" type="range" min="0" max="25" step="0.5" aria-label="Onde o trecho começa"></label>
-      <label class="mu-campo"><span>Dura <b id="mu-dur-txt"></b></span><input id="mu-dur" type="range" min="5" max="30" step="1" aria-label="Duração do trecho"></label>
+      <div class="mu-sec"><span>Onde começa</span><b id="mu-ini-txt">0:00</b></div>
+      <p class="mu-dica">Arraste o trecho colorido para escolher o começo</p>
+      <div id="mu-linha" class="mu-linha">
+        <div id="mu-onda" class="mu-onda" aria-hidden="true"></div>
+        <div id="mu-sombra-e" class="mu-sombra e" aria-hidden="true"></div><div id="mu-sombra-d" class="mu-sombra d" aria-hidden="true"></div>
+        <div id="mu-janela" class="mu-janela" role="slider" tabindex="0" aria-label="Onde o trecho começa" aria-valuemin="0" aria-valuenow="0">
+          <span class="borda e" aria-hidden="true"></span><span class="borda d" aria-hidden="true"></span><span id="mu-grip" class="grip" aria-hidden="true"></span><i id="mu-cabeca" class="mu-cabeca" hidden></i>
+        </div>
+      </div>
+      <div id="mu-regua" class="mu-regua" aria-hidden="true"><span>0:00</span><span>0:10</span><span>0:20</span><span>0:30</span></div>
+      <div class="mu-sec"><span>Duração</span><b id="mu-dur-txt">15 s</b></div>
+      <input id="mu-dur" class="mu-dur" type="range" min="5" max="30" step="1" aria-label="Duração do trecho">
       <p id="mu-trecho-msg" class="mu-msg" role="status"></p>
       <div class="lf-botoes"><button type="button" id="mu-voltar" class="btn-limpa">Voltar</button><button type="button" id="mu-enviar" class="btn-rosa" disabled>Enviar</button></div>
     </div>
@@ -566,6 +577,6 @@
 
   <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
 
-  <script src="guarda.js?v=ecdfff73eb"></script>
+  <script src="guarda.js?v=e3193df7f9"></script>
 </body>
 </html>

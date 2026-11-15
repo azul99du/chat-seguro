@@ -1,6 +1,6 @@
 // Estatísticas do grupo. Funções puras (testadas em Node): contam o que este aparelho tem guardado das mensagens do grupo.
 // O servidor não vê o conteúdo, então tipo de mensagem, respostas e citações são contados aqui; só o tempo de tela vem do servidor.
-import { mencionados } from "./grupo.js?v=ecdfff73eb";
+import { mencionados } from "./grupo.js?v=e3193df7f9";
 
 export const TIPOS = ["texto", "foto", "video", "audio", "figurinha"];
 const por = (n, um, varios) => (n === 1 ? `1 ${um}` : `${n} ${varios}`);
