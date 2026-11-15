@@ -5,6 +5,9 @@ export const TEMAS = [["selos", "Selos"], ["mensagens", "Mensagens"], ["grupos",
 const NOME_TEMA = new Map(TEMAS);
 export const temaNome = (t) => NOME_TEMA.get(t) || null;
 export const NOVIDADES = [
+  { id: "2026-11-15-1", data: "2026-11-15", itens: [
+    { tema: "grupos", icone: "🖼️", titulo: "Foto de fundo do grupo", texto: "O admin pode pôr uma foto de fundo para o grupo todo, em Dados do grupo. E na loja, qualquer membro pode trocar a foto de fundo para todos por um tempo, de 5 em 5 minutos. Enquanto vale, ela substitui a do admin." },
+  ] },
   { id: "2026-11-14-6", data: "2026-11-14", itens: [
     { tema: "selos", icone: "🎁", titulo: "Coleta diária de Selos", texto: "Uma vez por dia, cada membro pode coletar na tela de Selos a média dos preços dos itens ligados na loja. O admin liga a coleta nas regras." },
   ] },

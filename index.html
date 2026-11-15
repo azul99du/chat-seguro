@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=eb39133610">
+  <link rel="stylesheet" href="style.css?v=9e97870e8f">
 </head>
 <body>
 
@@ -347,6 +347,9 @@
         <div class="gi-topo"><div class="gi-av-box"><span id="gi-av" class="avatar grupo grande" aria-hidden="true"></span><button type="button" id="gi-foto-btn" class="cam" aria-label="Trocar a foto do grupo" hidden><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button></div><b id="gi-nome"></b><small id="gi-sub"></small></div>
         <input id="gi-file" type="file" accept="image/*" hidden>
         <button type="button" id="gi-foto-rm" class="linha perigo" hidden><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></span><span class="tx"><b>Remover a foto do grupo</b></span></button>
+        <input id="gi-fundo-file" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+        <button type="button" id="gi-fundo" class="linha" hidden><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/></svg></span><span class="tx"><b>Foto de fundo do grupo</b><small id="gi-fundo-sub">Aparece atrás das mensagens, para todos</small></span></button>
+        <button type="button" id="gi-fundo-rm" class="linha perigo" hidden><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></span><span class="tx"><b>Remover a foto de fundo</b></span></button>
         <button type="button" id="gi-cor" class="linha"><span class="ic"><span id="gi-cor-sw" class="cor-bolinha" aria-hidden="true"></span></span><span class="tx"><b>Minha cor neste grupo</b><small id="gi-cor-nome"></small></span></button>
         <button type="button" id="gi-renomear" class="linha" hidden><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></span><span class="tx"><b>Mudar o nome do grupo</b></span></button>
         <button type="button" id="gi-selos" class="linha"><span class="ic"><svg class="selo-ico" width="26" height="26" viewBox="0 0 100 100" aria-hidden="true"><use href="#selo"/></svg></span><span class="tx"><b>Selos</b><small>Seu saldo e como ganhar</small></span></button>
@@ -543,6 +546,6 @@
 
   <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
 
-  <script src="guarda.js?v=eb39133610"></script>
+  <script src="guarda.js?v=9e97870e8f"></script>
 </body>
 </html>

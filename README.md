@@ -324,3 +324,13 @@ Regra nova dos Selos (`coleta`, só liga/desliga, **começa desligada**; fica em
 - **Fora do limite por dia:** a coleta não conta no "limite de Selos por dia" (que só vale para os ganhos por atividade).
 - **Site antigo:** um site sem a chave `coleta` que salve regras não desliga a coleta (`selo_limpa` preserva).
 - **Testes:** seção "coleta diária" de `tests/loja.test.mjs` (média e arredondamento) e `tests/e2e/coleta.test.mjs`.
+
+## Foto de fundo do grupo
+Duas fontes de foto de fundo para o chat do GRUPO (os fundos pessoais das conversas a dois continuam como antes):
+- **Do admin (permanente):** "Dados do grupo" → "Foto de fundo do grupo" (só o admin; sub-admin não). Guardada em `grupos.fundo` (`grupo_fundo`, só admin). Dá para remover.
+- **Da loja (por tempo):** 6º item da loja, `loja_fundo` (preço no editor, como o efeito sonoro: `valor` = primeiros 5 minutos, `extra` = cada 5 minutos a mais; sugestão 40 e 10; 1 a 12 passos, 5 a 60 minutos). `selo_fundo_comprar(grupo, passos, arquivo)` confere regra ligada, 1 a 12 passos, arquivo e saldo, e **recusa (`ja_com_fundo`) enquanto outra foto da loja estiver valendo, de qualquer pessoa**. Vale para TODOS os membros e **substitui a do admin enquanto durar** (inclusive para o admin); ao acabar, volta a do admin (ou fica sem fundo).
+- **Arquivo:** a foto é reduzida (até 1280 px, ≤ 700 KB), sem metadados, e **cifrada no aparelho com a chave do grupo** (como a foto do grupo) na pasta de quem a enviou; o servidor só aceita caminho da pasta do grupo e do próprio remetente, e tipo JPEG/PNG/WebP (`fundo_arquivo_ok`). A duração de cada passo é a mesma do efeito sonoro (`efeito_passo()`: 5 minutos; 6 s no banco de teste e no CI).
+- **No app:** `grupo_fundo_ver` devolve as duas fotos (a da loja só se ainda vale, com a hora do servidor); o app escolhe (`fundoEfetivo` em `loja.js`), pinta com `setBg` e agenda a volta para a do admin quando a da loja acabar. Busca ao abrir o grupo, a cada verificação do grupo aberto e quando o comprador/admin avisa o grupo. O arquivo baixado fica guardado cifrado no aparelho.
+- **Avisos:** a compra vira "@x pôs uma foto de fundo no grupo por N minutos". A mudança do fundo do admin não gera aviso no chat.
+- **Coleta diária:** o preço dos primeiros 5 minutos do fundo também entra na média da coleta diária.
+- **Testes:** seção "foto de fundo do grupo" de `tests/loja.test.mjs` e `tests/e2e/fundo.test.mjs`.

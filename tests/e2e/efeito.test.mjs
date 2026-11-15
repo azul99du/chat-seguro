@@ -59,7 +59,7 @@ after(async () => { if (browser) { await browser.close(); await srv.close(); } }
 
 t("o admin liga o efeito e põe dois preços: os primeiros 5 minutos e cada 5 minutos a mais", async () => {
   await abrirSelos(A); await A.click("#sl-editar"); await A.waitForSelector("#selos-regras[open]");
-  assert.equal(await A.locator("#sr-loja .sr-card").count(), 5); await chave(A, "Entrar no grupo").click(); await A.locator('#sr-cards .sr-card:has(b:text-is("Entrar no grupo")) .sr-n').first().click(); await A.waitForSelector("#selos-num[open]"); await A.fill("#sn-valor", "300"); await A.click("#sn-ok"); await A.waitForFunction(() => !document.querySelector("#selos-num").open);
+  assert.equal(await A.locator("#sr-loja .sr-card").count(), 6); await chave(A, "Entrar no grupo").click(); await A.locator('#sr-cards .sr-card:has(b:text-is("Entrar no grupo")) .sr-n').first().click(); await A.waitForSelector("#selos-num[open]"); await A.fill("#sn-valor", "300"); await A.click("#sn-ok"); await A.waitForFunction(() => !document.querySelector("#selos-num").open);
   await A.locator('#sr-loja button.sr-sw[aria-label="Efeito sonoro"]').click(); assert.match(await A.locator('#sr-loja .sr-card:has(b:text-is("Efeito sonoro")) .sr-frase').innerText(), /Custa 30 Selos pelos primeiros 5 minutos e 10 Selos a cada 5 minutos a mais/);
   await mudarLoja(A, "Efeito sonoro", 1, 20); assert.match(await A.locator('#sr-loja .sr-card:has(b:text-is("Efeito sonoro")) .sr-frase').innerText(), /e 20 Selos a cada 5 minutos a mais/);
   await A.click("#sr-salvar"); await A.waitForFunction(() => !document.querySelector("#selos-regras").open, null, { timeout: 30000 }); await sair(A);

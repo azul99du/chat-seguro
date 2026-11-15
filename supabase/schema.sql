@@ -2396,3 +2396,126 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke all on function public.selo_coleta_hoje(uuid) from public, anon, authenticated;
 grant execute on function public.selo_coleta_hoje(uuid) to authenticated;
+
+-- ===== Foto de fundo do grupo (migração fundo_do_grupo) =====
+-- 1) O ADMIN define uma foto de fundo permanente do grupo (configuração normal; grupos.fundo, cifrada com a chave do grupo como a foto do grupo).
+-- 2) Item da loja: qualquer membro compra uma foto de fundo POR UM TEMPO (de 5 em 5 minutos, até 60). Preço = primeiros 5 min (loja_fundo.valor) + (passos - 1) x cada 5 min a mais (loja_fundo.extra).
+--    Enquanto estiver ativa ela vale para TODOS e SUBSTITUI a do admin; quando acaba, volta a do admin (ou nenhuma). Só uma de cada vez: comprar com uma ativa é recusado (ja_com_fundo).
+-- A duração de cada passo é a mesma do efeito sonoro (efeito_passo(): 5 minutos; 6 s no projeto de teste).
+create or replace function public.selo_limpa(novo jsonb, velho jsonb, hoje date) returns jsonb
+language plpgsql stable set search_path = public as $$
+declare r jsonb := '{}'::jsonb; k text; o jsonb; ant jsonb; lig boolean; it jsonb; ms jsonb := '[]'::jsonb; vistos int[] := '{}'; d int; v int; m jsonb;
+begin
+  if novo is null or jsonb_typeof(novo) <> 'object' then raise exception 'regras_invalidas' using errcode = '22023'; end if;
+  foreach k in array array['entrada','dia_ativo','mensagens','arquivos','sequencia','teto','coleta','loja_titulo','loja_destaque','loja_silenciar','loja_jumpscare','loja_efeito','loja_fundo'] loop
+    o := coalesce(novo -> k, case when k like 'loja\_%' or k = 'coleta' then velho -> k end, '{"on": false}'::jsonb); ant := coalesce(velho -> k, '{}'::jsonb); -- (preços e coleta que um site antigo não conhece ficam como estão)
+    if jsonb_typeof(o) <> 'object' or jsonb_typeof(o -> 'on') <> 'boolean' then raise exception 'regras_invalidas' using errcode = '22023', detail = k; end if;
+    lig := (o ->> 'on')::boolean; it := jsonb_build_object('on', lig);
+    if k = 'sequencia' then
+      m := coalesce(o -> 'marcos', '[]'::jsonb);
+      if jsonb_typeof(m) <> 'array' or jsonb_array_length(m) > 10 then raise exception 'regras_invalidas' using errcode = '22023', detail = 'marcos'; end if;
+      for v in select generate_series(0, jsonb_array_length(m) - 1) loop
+        if jsonb_typeof(m -> v) <> 'object' then raise exception 'regras_invalidas' using errcode = '22023', detail = 'marcos'; end if;
+        d := public.selo_int(m -> v, 'dias', 1, 365, 1);
+        if d = any(vistos) then raise exception 'regras_invalidas' using errcode = '22023', detail = 'marcos'; end if;
+        vistos := vistos || d; ms := ms || jsonb_build_array(jsonb_build_object('dias', d, 'valor', public.selo_int(m -> v, 'valor', 1, 999, 1)));
+      end loop;
+      it := it || jsonb_build_object('marcos', (select coalesce(jsonb_agg(e order by (e ->> 'dias')::int), '[]'::jsonb) from jsonb_array_elements(ms) e));
+    else
+      if k <> 'coleta' then it := it || jsonb_build_object('valor', public.selo_int(o, 'valor', 1, 999, 1)); end if;
+      if k = 'dia_ativo' then it := it || jsonb_build_object('min', public.selo_int(o, 'min', 1, 999, 1)); end if;
+      if k in ('mensagens', 'arquivos') then it := it || jsonb_build_object('a_cada', public.selo_int(o, 'a_cada', 1, 999, 1)); end if;
+      if k in ('loja_efeito', 'loja_fundo') then it := it || jsonb_build_object('extra', public.selo_int(o, 'extra', 1, 999, 10)); end if;
+    end if;
+    if k <> 'teto' and k <> 'coleta' and k not like 'loja\_%' then
+      it := it || jsonb_build_object('desde', case when lig and (not coalesce((ant ->> 'on')::boolean, false) or ant ->> 'desde' is null) then hoje::text else coalesce(ant ->> 'desde', hoje::text) end);
+    end if;
+    r := r || jsonb_build_object(k, it);
+  end loop;
+  return r;
+end $$;
+
+-- A coleta diária passa a contar também o preço (dos primeiros 5 minutos) da foto de fundo, se estiver ligada
+create or replace function public.selo_coleta_valor(reg jsonb) returns int
+language sql immutable set search_path = public as $$
+  select round(avg((reg -> k ->> 'valor')::numeric))::int
+    from unnest(array['loja_titulo', 'loja_destaque', 'loja_silenciar', 'loja_jumpscare', 'loja_efeito', 'loja_fundo']) k
+   where coalesce((reg -> k ->> 'on')::boolean, false) and (reg -> k ->> 'valor') is not null
+$$;
+revoke all on function public.selo_coleta_valor(jsonb) from public, anon, authenticated;
+
+alter table public.selo_compras drop constraint selo_compras_item_check;
+alter table public.selo_compras add constraint selo_compras_item_check check (item in ('titulo', 'destaque', 'silenciar', 'jumpscare', 'efeito', 'fundo'));
+
+alter table public.grupos add column fundo jsonb check (fundo is null or length(fundo::text) < 400);
+
+create table public.selo_fundos (
+  id bigint generated always as identity primary key,
+  compra_id bigint not null unique references public.selo_compras(id) on delete cascade,
+  grupo_id uuid not null references public.grupos(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  arquivo jsonb not null,
+  criado_em timestamptz not null default now(),
+  ate timestamptz not null
+);
+create index selo_fundos_grupo on public.selo_fundos (grupo_id, ate desc);
+alter table public.selo_fundos enable row level security;
+revoke all on public.selo_fundos from anon, authenticated;
+create policy "exige dois passos" on public.selo_fundos as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+
+-- Arquivo cifrado de uma foto de fundo: { p: pasta DESTE grupo e de quem envia, iv, t: tipo da imagem }
+create or replace function public.fundo_arquivo_ok(a jsonb, p_grupo uuid, u uuid) returns boolean
+language sql immutable set search_path = public as $$
+  select coalesce(public.jumpscare_arquivo_ok(a, p_grupo) and (a ->> 't') in ('image/jpeg', 'image/png', 'image/webp') and (a ->> 'p') like (u::text || '/%'), false)
+$$;
+revoke all on function public.fundo_arquivo_ok(jsonb, uuid, uuid) from public, anon, authenticated;
+
+create or replace function public.selo_fundo_comprar(p_grupo uuid, p_passos int, p_arquivo jsonb) returns bigint
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); reg jsonb; preco int; saldo bigint; novo bigint; passo interval := public.efeito_passo();
+begin
+  perform public.consome('selo_comprar', 20, 200);
+  if not (select public.mfa_ok()) or not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = u) then raise exception 'nao_esta_no_grupo' using errcode = '42501'; end if;
+  if coalesce(public.aparelho_estado(), 'aprovado') = 'pendente' then raise exception 'aparelho_pendente' using errcode = '42501'; end if;
+  if p_passos is null or p_passos < 1 or p_passos > 12 or not public.fundo_arquivo_ok(p_arquivo, p_grupo, u) then raise exception 'detalhe_invalido' using errcode = '22023'; end if;
+  perform pg_advisory_xact_lock(hashtext('selo:' || p_grupo::text));
+  perform public.selo_apurar(p_grupo);
+  select s.regras -> 'loja_fundo' into reg from public.selo_regras s where s.grupo_id = p_grupo;
+  if reg is null or not coalesce((reg ->> 'on')::boolean, false) then raise exception 'item_desligado' using errcode = 'P0001'; end if;
+  if exists (select 1 from public.selo_fundos f where f.grupo_id = p_grupo and f.ate > now()) then raise exception 'ja_com_fundo' using errcode = 'P0001'; end if;
+  preco := (reg ->> 'valor')::int + (p_passos - 1) * coalesce((reg ->> 'extra')::int, 10);
+  select coalesce(sum(e.quantidade), 0) into saldo from public.moedas_extrato e where e.grupo_id = p_grupo and e.user_id = u;
+  if saldo < preco then raise exception 'saldo_insuficiente' using errcode = 'P0001'; end if;
+  insert into public.selo_compras (grupo_id, user_id, item, preco, detalhe) values (p_grupo, u, 'fundo', preco, p_passos::text) returning id into novo;
+  insert into public.moedas_extrato (grupo_id, user_id, quantidade, motivo, ref) values (p_grupo, u, -preco, 'compra', novo::text);
+  insert into public.selo_fundos (compra_id, grupo_id, user_id, arquivo, ate) values (novo, p_grupo, u, p_arquivo, now() + passo * p_passos);
+  return novo;
+end $$;
+revoke all on function public.selo_fundo_comprar(uuid, int, jsonb) from public, anon, authenticated;
+grant execute on function public.selo_fundo_comprar(uuid, int, jsonb) to authenticated;
+
+-- Fundo permanente do admin (ou null para tirar): só o admin; o arquivo tem de estar na pasta deste grupo e ser dele
+create or replace function public.grupo_fundo(p_grupo uuid, p_fundo jsonb) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid());
+begin
+  perform public.consome('grupo_mudar', 30, 200);
+  if not (select public.mfa_ok()) or not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = u and gm.admin) then raise exception 'so_admin' using errcode = '42501'; end if;
+  if coalesce(public.aparelho_estado(), 'aprovado') = 'pendente' then raise exception 'aparelho_pendente' using errcode = '42501'; end if;
+  if p_fundo is not null and jsonb_typeof(p_fundo) <> 'null' and not public.fundo_arquivo_ok(p_fundo, p_grupo, u) then raise exception 'arquivo_invalido' using errcode = '22023'; end if;
+  update public.grupos g set fundo = case when p_fundo is null or jsonb_typeof(p_fundo) = 'null' then null else p_fundo end where g.id = p_grupo;
+end $$;
+revoke all on function public.grupo_fundo(uuid, jsonb) from public, anon, authenticated;
+grant execute on function public.grupo_fundo(uuid, jsonb) to authenticated;
+
+-- O que os membros precisam: a foto da loja que está valendo (origem 'loja', com quando acaba e quem pôs) e a do admin (origem 'admin'). Quem decide qual mostra é o app: a da loja, enquanto valer.
+create or replace function public.grupo_fundo_ver(p_grupo uuid) returns table (origem text, arquivo jsonb, ate timestamptz, por uuid, agora timestamptz)
+language sql stable security definer set search_path = public as $$
+  select * from (
+    select 'loja'::text, f.arquivo, f.ate, f.user_id, now() from public.selo_fundos f where f.grupo_id = p_grupo and f.ate > now()
+    union all
+    select 'admin'::text, g.fundo, null::timestamptz, null::uuid, now() from public.grupos g where g.id = p_grupo and g.fundo is not null) x
+   where (select public.mfa_ok()) and exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = (select auth.uid()))
+$$;
+revoke all on function public.grupo_fundo_ver(uuid) from public, anon, authenticated;
+grant execute on function public.grupo_fundo_ver(uuid) to authenticated;

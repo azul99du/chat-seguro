@@ -1,28 +1,28 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=eb39133610";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=eb39133610";
-import { montarFigurinhas } from "./figurinhas.js?v=eb39133610";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=eb39133610";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=eb39133610";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=eb39133610";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=eb39133610";
-import { acharVideoLink } from "./videolink.js?v=eb39133610";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=eb39133610";
-import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=eb39133610";
-import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=eb39133610";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=eb39133610";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=eb39133610";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=eb39133610";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=eb39133610";
-import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=eb39133610";
-import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente } from "./loja.js?v=eb39133610";
-import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=eb39133610";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=eb39133610";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=eb39133610";
-import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=eb39133610";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=eb39133610";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=eb39133610";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=eb39133610";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=9e97870e8f";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=9e97870e8f";
+import { montarFigurinhas } from "./figurinhas.js?v=9e97870e8f";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=9e97870e8f";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=9e97870e8f";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=9e97870e8f";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=9e97870e8f";
+import { acharVideoLink } from "./videolink.js?v=9e97870e8f";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=9e97870e8f";
+import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=9e97870e8f";
+import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=9e97870e8f";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=9e97870e8f";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=9e97870e8f";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=9e97870e8f";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=9e97870e8f";
+import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=9e97870e8f";
+import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=9e97870e8f";
+import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=9e97870e8f";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=9e97870e8f";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=9e97870e8f";
+import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=9e97870e8f";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=9e97870e8f";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=9e97870e8f";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=9e97870e8f";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -2373,6 +2373,7 @@ async function abrirGrupo(g) {
   $("messages").replaceChildren(); msgs.clear(); reactions.clear(); midParaId.clear(); cancelarResposta();
   $("messages").classList.add("carregando");
   carregandoConversa = g; filaChegando = [];
+  fundoChave = ""; aplicarFundoGrupo(g); atualizarFundo(g).catch(() => {}); // a foto de fundo do grupo (a da loja enquanto valer, senão a do admin)
   atualizarGrupos().catch(() => {}); // confere quem está no grupo agora
   let local = null; // o que foi pintado do próprio aparelho antes de o servidor responder
   try {
@@ -2473,12 +2474,13 @@ async function removerDoGrupo(g, p) {
 // ----- tela "Dados do grupo" -----
 let giGrupo = null;
 const msgGrupo = (t, ok) => { const m = $("gi-msg"); m.textContent = t; m.className = "pg-msg" + (ok ? " ok" : ""); };
-function abrirInfoGrupo(g) { giGrupo = g; msgGrupo(""); desenharInfoGrupo(); $("grupo-info").showModal(); atualizarGrupos().catch(() => {}); }
+function abrirInfoGrupo(g) { giGrupo = g; msgGrupo(""); desenharInfoGrupo(); $("grupo-info").showModal(); atualizarGrupos().catch(() => {}); atualizarFundo(g).then(() => { if ($("grupo-info").open) desenharInfoGrupo(); }).catch(() => {}); }
 function desenharInfoGrupo() {
   const g = giGrupo && grupos.get(giGrupo.id); if (!g) { if ($("grupo-info").open) $("grupo-info").close(); return; }
   const meu = cargoDe({ admin: g.admin, sub: g.sub });
   pintarAvatarGrupo($("gi-av"), g); $("gi-nome").textContent = g.nome; $("gi-sub").textContent = "Grupo · " + contagem(g.membros.size);
   $("gi-foto-btn").hidden = !g.admin || !g.gk; $("gi-foto-rm").hidden = !g.admin || !g.foto;
+  { const f = fundosPor.get(g.id); $("gi-fundo").hidden = !g.admin || !g.gk; $("gi-fundo-rm").hidden = !g.admin || !f?.admin; $("gi-fundo-sub").textContent = f?.loja?.ate > Date.now() ? `Uma foto de fundo da loja vale até ${horaFim(f.loja.ate)}; depois volta a sua.` : f?.admin ? "Aparece atrás das mensagens, para todos" : "Nenhuma ainda: aparece atrás das mensagens, para todos"; }
   { const c = g.membros.get(me.id)?.cor, st = estilosDaCor(c); $("gi-cor-nome").textContent = nomeDaCor(c); $("gi-cor-sw").style.setProperty("--c", st?.claro.forte || "transparent"); }
   $("gi-renomear").hidden = !g.admin || !g.gk; $("gi-add").hidden = !g.admin || !g.gk || g.membros.size >= MAX_MEMBROS;
   $("gi-cont").textContent = `Participantes · ${g.membros.size} de ${MAX_MEMBROS}`;
@@ -2672,7 +2674,7 @@ function aplicarLojaNaTela(g) {
 }
 function avisoLoja(g, est, a) {
   const c = est.compras.find((x) => x.id === a.compra), nome = (id) => g.membros.get(id)?.username || perfis.get(id)?.username || "alguém";
-  return { ...a, nome: nome(a.id), eu: a.id === me.id, ...(a.alvo ? { alvoNome: nome(a.alvo), alvoEu: a.alvo === me.id, mesmo: a.alvo === a.id, min: a.tipo === "loja_efeito" ? a.min : c ? Math.round(c.silencio_s / 60) || undefined : undefined } : {}) };
+  return { ...a, nome: nome(a.id), eu: a.id === me.id, ...(a.tipo === "loja_fundo" ? { min: a.min } : {}), ...(a.alvo ? { alvoNome: nome(a.alvo), alvoEu: a.alvo === me.id, mesmo: a.alvo === a.id, min: a.tipo === "loja_efeito" ? a.min : c ? Math.round(c.silencio_s / 60) || undefined : undefined } : {}) };
 }
 async function atualizarLoja(g) {
   const { data, error } = await sb.rpc("selo_loja_estado", { p_grupo: g.id }); if (error || !grupos.has(g.id)) return null;
@@ -2684,20 +2686,22 @@ async function atualizarLoja(g) {
     if (active === g && carregandoConversa !== g) { $("msgs-empty")?.remove(); for (const a of novos) addAviso(textoAviso(a)); }
   });
   await atualizarEfeitos(g, est).catch(() => {});
+  if (active?.id === g.id) await atualizarFundo(g).catch(() => {}); // (o fundo só interessa para o grupo que está aberto; abrirGrupo também chama)
   aplicarLojaNaTela(g); if (slGrupo === g && slDados) desenharSelos();
   conferirSustos(g).catch(() => {});
   return est;
 }
-const EMOJI_LOJA = { titulo: "🏷️", destaque: "✨", silenciar: "🔇", jumpscare: "👻", efeito: "🔊" };
+const EMOJI_LOJA = { titulo: "🏷️", destaque: "✨", silenciar: "🔇", jumpscare: "👻", efeito: "🔊", fundo: "🖼️" };
 function desenharLojaCartoes(g, meu) {
   $("sl-loja").replaceChildren(...ITENS.map((item) => {
     const preco = precoDaLoja(slDados.regras, item), c = el("div", "lj-cartao" + (preco == null ? " off" : "")), tx = el("div", "lj-tx"), b = el("button", "lj-bt"); c.dataset.item = item; b.type = "button";
     tx.append(el("b", null, INFO[item].nome), el("small", null, INFO[item].desc));
     const atual = item === "titulo" ? tituloTexto(lojas.get(g.id)?.titulos.get(me.id)) : null; if (atual) tx.append(el("small", "titulo-atual", "Seu título agora: " + atual));
     if (preco == null) { b.textContent = "Desligado pelo admin"; b.disabled = true; }
+    else if (item === "fundo" && fundosPor.get(g.id)?.loja?.ate > Date.now()) { b.textContent = "Em uso até " + horaFim(fundosPor.get(g.id).loja.ate); b.disabled = true; }
     else if (item === "destaque") { b.append(seloIcone(16), ` ${preco} · Como usar`); b.onclick = () => choose("Mensagem em destaque", `Custa ${preco} ${preco === 1 ? "Selo" : "Selos"} por mensagem. Segure uma mensagem sua no grupo e toque em “Destacar…”: ela ganha borda e selo dourados para todos.`, [{ label: "Entendi", value: 1 }]); }
     else if (meu < preco) { b.append(seloIcone(16), ` ${preco} · faltam ${preco - meu}`); b.disabled = true; }
-    else { b.append(seloIcone(16), item === "efeito" ? ` Comprar · a partir de ${preco}` : ` Comprar por ${preco}`); b.onclick = () => abrirCompra(g, item).catch(() => {}); }
+    else { b.append(seloIcone(16), item === "efeito" || item === "fundo" ? ` Comprar · a partir de ${preco}` : ` Comprar por ${preco}`); b.onclick = () => abrirCompra(g, item).catch(() => {}); }
     c.append(el("span", "lj-ic", EMOJI_LOJA[item]), tx); tx.append(b); return c;
   }));
 }
@@ -2714,10 +2718,10 @@ async function abrirCompra(g, item, { detalhe = null } = {}) {
   let d; try { d = await dadosLoja(g); await atualizarLoja(g); } catch { if (lf?.g === g) $("lf-msg").textContent = "Não foi possível abrir a loja agora."; return; }
   if (lf?.g !== g || lf.item !== item) return;
   const preco = precoDaLoja(d.regras, item); if (preco == null) { $("lf-msg").textContent = "O admin desligou esta vantagem."; return; }
-  Object.assign(lf, { preco, saldo: d.saldo, pronto: true, regras: d.regras }); if (item === "jumpscare") lf.sel = true; if (item === "efeito") Object.assign(lf, { alvo: null, passos: 1, dur: 1, inicio: 0, fonte: null, montado: false }); desenharCompra();
+  Object.assign(lf, { preco, saldo: d.saldo, pronto: true, regras: d.regras }); if (item === "jumpscare") lf.sel = true; if (item === "efeito") Object.assign(lf, { alvo: null, passos: 1, dur: 1, inicio: 0, fonte: null, montado: false }); if (item === "fundo") Object.assign(lf, { passos: 1, foto: null, montado: false }); desenharCompra();
 }
 function desenharCompra() {
-  if (!lf?.pronto) return; const { g, item, saldo } = lf, est = lojas.get(g.id), corpo = $("lf-corpo"), preco = item === "efeito" ? precoEfeito(lf.regras, lf.passos) : lf.preco; lf.preco = preco;
+  if (!lf?.pronto) return; const { g, item, saldo } = lf, est = lojas.get(g.id), corpo = $("lf-corpo"), preco = item === "efeito" ? precoEfeito(lf.regras, lf.passos) : item === "fundo" ? precoFundo(lf.regras, lf.passos) : lf.preco; lf.preco = preco;
   if (item === "titulo") {
     const atual = est?.titulos.get(me.id), grade = el("div", "lf-titulos");
     for (const [id, nome] of TITULOS_LOJA) { const b = el("button", id === atual ? "atual" : null, nome); b.type = "button"; b.dataset.t = id; b.setAttribute("aria-pressed", String(lf.sel === id)); b.disabled = id === atual; b.onclick = () => { lf.sel = id; desenharCompra(); }; grade.append(b); }
@@ -2728,6 +2732,7 @@ function desenharCompra() {
       b.setAttribute("aria-pressed", String(lf.sel === p.id)); b.disabled = !!s; b.append(av, nm); if (s) b.append(el("small", null, "silenciado até " + horaFim(s.ate)));
       b.onclick = () => { lf.sel = p.id; desenharCompra(); }; return b;
     }));
+  } else if (item === "fundo") { if (!lf.montado) { montarFundo(corpo); lf.montado = true; } atualizarCamposFundo(); lf.sel = !!lf.foto;
   } else if (item === "efeito") { if (!lf.montado) { montarEfeito(corpo); lf.montado = true; } atualizarCamposEfeito(); lf.sel = !!(lf.alvo && lf.fonte);
   } else if (item === "destaque") corpo.replaceChildren(el("p", "t", "Esta mensagem vai ganhar borda e selo dourados para todo o grupo."));
   else corpo.replaceChildren(el("p", "t", "O app vai sortear um jumpscare da lista do admin e todos os outros membros levam o mesmo susto. Você não vê qual é, e só descobrem que foi você depois do susto."));
@@ -2793,10 +2798,81 @@ async function comprarEfeito() {
   if (error) { lf.busy = false; const d = await dadosLoja(g).catch(() => null); await atualizarLoja(g).catch(() => {}); if (d && lf) lf.saldo = d.saldo; desenharCompra(); $("lf-msg").textContent = erroLoja(error); return; }
   $("loja-folha").close(); await atualizarLoja(g).catch(() => {}); avisarMudanca([...g.membros.values()]); if (slGrupo === g) carregarSelos(g).catch(() => {});
 }
+// ----- Foto de fundo do grupo: a do admin (permanente) e a da loja (por tempo; vale para todos e substitui a do admin enquanto durar) -----
+const fundosPor = new Map(), fundoUrls = new Map(); let fundoTimer = null, fundoChave = ""; // grupo -> {loja, admin}; caminho -> URL local; chave da foto pintada agora (grupo|origem:caminho)
+async function atualizarFundo(g) {
+  const { data, error } = await sb.rpc("grupo_fundo_ver", { p_grupo: g.id }); if (error || !grupos.has(g.id)) return;
+  fundosPor.set(g.id, limpaFundos(data, g.id, Date.now())); aplicarFundoGrupo(g); if ($("grupo-info").open && giGrupo?.id === g.id) desenharInfoGrupo(); if (slGrupo?.id === g.id && slDados) desenharSelos();
+}
+async function urlDoFundo(g, f) { // arquivo cifrado -> URL local (fica guardado neste aparelho, cifrado, para abrir na hora da próxima vez)
+  if (fundoUrls.has(f.p)) return fundoUrls.get(f.p);
+  let enc = await getBlob(me.id, f.p).catch(() => null);
+  if (!enc) { const { data, error } = await sb.storage.from("media").download(f.p); if (error) return null; enc = new Uint8Array(await data.arrayBuffer()); if (enc.byteLength > 3 * 1048576) return null; putBlob(me.id, f.p, enc).catch(() => {}); }
+  let bytes; try { bytes = await abrirFotoCifrada(g.gk, g.id, enc, f.iv); } catch { delBlob(me.id, f.p).catch(() => {}); return null; }
+  const url = URL.createObjectURL(new Blob([bytes], { type: f.t })); fundoUrls.set(f.p, url); return url;
+}
+function aplicarFundoGrupo(g) { // pinta o fundo que vale agora e agenda a volta para o do admin quando o da loja acabar
+  clearTimeout(fundoTimer); if (active?.id !== g.id || !g.gk) return;
+  const ef = fundoEfetivo(fundosPor.get(g.id), Date.now()), chaveDe = (e) => (e ? `${g.id}|${e.origem}:${e.arquivo.p}` : ""), chave = chaveDe(ef);
+  if (ef?.origem === "loja") fundoTimer = setTimeout(() => aplicarFundoGrupo(g), Math.max(300, ef.ate - Date.now() + 300));
+  if (chave === fundoChave) return; // já está pintada
+  if (!ef) { fundoChave = ""; setBg(null); return; }
+  urlDoFundo(g, ef.arquivo).then((url) => { if (url && active?.id === g.id && chaveDe(fundoEfetivo(fundosPor.get(g.id), Date.now())) === chave) { setBg(url); fundoChave = chave; } }); // (se mudou enquanto baixava, a chamada mais nova cuida)
+}
+async function prepararFotoFundo(file) { // reduz e limpa a foto (sem metadados); no máximo 700 KB
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type)) throw new Error("Escolha uma imagem (JPG, PNG ou WebP).");
+  if (file.size > 20 * 1048576) throw new Error("Essa foto é grande demais (máximo 20 MB).");
+  let img = await cleanImage(file, 1280); for (const lado of [960, 720, 520]) { if (img.bytes.length <= 700 * 1024) break; img = await cleanImage(file, lado); }
+  if (img.bytes.length > 700 * 1024) throw new Error("Essa foto ficou pesada demais. Tente outra.");
+  return img;
+}
+// Admin: fundo permanente, como uma configuração normal do grupo
+$("gi-fundo").onclick = () => $("gi-fundo-file").click();
+$("gi-fundo-file").onchange = async () => {
+  const f = $("gi-fundo-file").files[0]; $("gi-fundo-file").value = ""; const g = giGrupo && grupos.get(giGrupo.id); if (!f || !g?.gk || !g.admin) return;
+  msgGrupo("Enviando a foto de fundo…", true);
+  try {
+    const img = await prepararFotoFundo(f), velho = fundosPor.get(g.id)?.admin?.arquivo.p, arq = await guardarSusto(g, img.bytes, img.mime);
+    const { error } = await sb.rpc("grupo_fundo", { p_grupo: g.id, p_fundo: arq }); if (error) { sb.storage.from("media").remove([arq.p]).catch(() => {}); throw error; }
+    if (velho?.startsWith(me.id + "/")) sb.storage.from("media").remove([velho]).catch(() => {});
+    await atualizarFundo(g); avisarMudanca([...g.membros.values()]); msgGrupo("Foto de fundo do grupo atualizada ✓", true);
+  } catch (e) { msgGrupo(limitado(e) ? "Muitas tentativas seguidas. Espere um minuto." : String(e?.message || "Não foi possível trocar a foto de fundo. Tente de novo.")); }
+};
+$("gi-fundo-rm").onclick = async () => {
+  const g = giGrupo && grupos.get(giGrupo.id), velho = g && fundosPor.get(g.id)?.admin?.arquivo.p; if (!g?.admin || !velho) return;
+  const { error } = await sb.rpc("grupo_fundo", { p_grupo: g.id, p_fundo: null }); if (error) return msgGrupo(erroGrupo(error));
+  if (velho.startsWith(me.id + "/")) sb.storage.from("media").remove([velho]).catch(() => {});
+  await atualizarFundo(g); avisarMudanca([...g.membros.values()]); msgGrupo("Foto de fundo removida.", true);
+};
+// Loja: folha de compra da foto de fundo (1. qual foto  2. por quanto tempo)
+function montarFundo(corpo) {
+  const ui = lf.ui = {}, sec = (t) => el("h4", "lf-sec", t), arq = el("input"); arq.type = "file"; arq.hidden = true; arq.accept = "image/jpeg,image/png,image/webp"; arq.id = "lf-foto";
+  const escolher = el("button", "lf-arq-bt", "Escolher foto"); escolher.type = "button"; escolher.id = "lf-escolher-foto"; escolher.onclick = () => arq.click();
+  ui.info = el("p", "lf-info", "JPG, PNG ou WebP. A foto é reduzida e cifrada no seu aparelho."); ui.prev = el("img", "lf-prev"); ui.prev.alt = "Prévia da foto de fundo"; ui.prev.hidden = true; ui.prev.id = "lf-prev";
+  arq.onchange = async () => {
+    const f = arq.files[0]; arq.value = ""; if (!f || !lf || lf.item !== "fundo") return; const g2 = lf.g; ui.info.textContent = "Preparando a foto…";
+    try { const img = await prepararFotoFundo(f); if (!lf || lf.g !== g2) return; if (lf.fotoUrl) URL.revokeObjectURL(lf.fotoUrl); lf.foto = img; lf.fotoUrl = URL.createObjectURL(new Blob([img.bytes], { type: img.mime })); ui.info.textContent = `${f.name} · ${Math.round(img.bytes.length / 1024)} KB`; }
+    catch (e) { if (lf) { lf.foto = null; ui.info.textContent = String(e?.message || "Não consegui abrir essa foto."); } }
+    desenharCompra();
+  };
+  ui.passos = el("input"); ui.passos.type = "range"; ui.passos.id = "lf-passos"; ui.passos.min = "1"; ui.passos.max = String(PASSOS_MAX); ui.passos.step = "1"; ui.passos.value = "1"; ui.passos.setAttribute("aria-label", "Por quanto tempo a foto fica de fundo");
+  ui.passos.oninput = () => { lf.passos = Number(ui.passos.value); desenharCompra(); }; ui.passosTxt = el("span", "lf-mono");
+  corpo.replaceChildren(sec("1. Qual foto"), escolher, arq, ui.info, ui.prev, sec("2. Por quanto tempo"), ui.passos, ui.passosTxt);
+}
+function atualizarCamposFundo() { const ui = lf.ui; if (!ui) return; ui.prev.hidden = !lf.foto; if (lf.foto) ui.prev.src = lf.fotoUrl; ui.passosTxt.textContent = `${minutosDoEfeito(lf.passos)} minutos · custa ${lf.preco} ${lf.preco === 1 ? "Selo" : "Selos"}`; }
+async function comprarFundo() {
+  const { g, passos, foto } = lf; if (!lf.pronto || lf.busy || !foto) return; lf.busy = true; $("lf-ok").disabled = true; $("lf-msg").textContent = "Enviando a foto…";
+  let arq; try { arq = await guardarSusto(g, foto.bytes, foto.mime); } catch { if (lf) { lf.busy = false; $("lf-msg").textContent = "Não foi possível enviar a foto agora."; desenharCompra(); } return; }
+  const { error } = await sb.rpc("selo_fundo_comprar", { p_grupo: g.id, p_passos: passos, p_arquivo: arq });
+  if (error) sb.storage.from("media").remove([arq.p]).catch(() => {});
+  if (!lf || lf.g !== g) return;
+  if (error) { lf.busy = false; const d = await dadosLoja(g).catch(() => null); await atualizarLoja(g).catch(() => {}); await atualizarFundo(g).catch(() => {}); if (d && lf) lf.saldo = d.saldo; desenharCompra(); $("lf-msg").textContent = erroLoja(error); return; }
+  if (lf.fotoUrl) URL.revokeObjectURL(lf.fotoUrl); $("loja-folha").close(); await atualizarLoja(g).catch(() => {}); await atualizarFundo(g).catch(() => {}); avisarMudanca([...g.membros.values()]); if (slGrupo === g) carregarSelos(g).catch(() => {});
+}
 $("lf-cancelar").onclick = () => $("loja-folha").close();
 $("loja-folha").addEventListener("close", () => { lf = null; });
 $("lf-ok").onclick = async () => {
-  if (!lf?.pronto || lf.busy || !lf.sel) return; if (lf.item === "efeito") return comprarEfeito(); const { g, item, sel } = lf; lf.busy = true; $("lf-ok").disabled = true; $("lf-msg").textContent = "";
+  if (!lf?.pronto || lf.busy || !lf.sel) return; if (lf.item === "efeito") return comprarEfeito(); if (lf.item === "fundo") return comprarFundo(); const { g, item, sel } = lf; lf.busy = true; $("lf-ok").disabled = true; $("lf-msg").textContent = "";
   const { error } = await sb.rpc("selo_comprar", { p_grupo: g.id, p_item: item, p_alvo: item === "silenciar" ? sel : null, p_detalhe: item === "titulo" || item === "destaque" ? sel : null });
   if (!lf || lf.g !== g) return;
   if (error) { lf.busy = false; $("lf-msg").textContent = erroLoja(error); const d = await dadosLoja(g).catch(() => null); await atualizarLoja(g).catch(() => {}); if (d && lf) lf.saldo = d.saldo; desenharCompra(); $("lf-msg").textContent = erroLoja(error); return; }

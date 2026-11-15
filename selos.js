@@ -7,11 +7,12 @@ export const TITULOS = {
   arquivos: ["Arquivos enviados", "Fotos, vídeos e áudios"], sequencia: ["Sequência de dias", "Bônus uma vez por marco"],
   loja_titulo: ["Título ao lado do nome", "Compra única: a pessoa escolhe um título"], loja_destaque: ["Mensagem em destaque", "Paga a cada mensagem destacada"],
   loja_silenciar: ["Silenciar um membro", "5 minutos sem poder escrever no grupo"], loja_jumpscare: ["Jumpscare", "Susto sorteado da lista do grupo, para os outros membros"], loja_efeito: ["Efeito sonoro", "Som de 1 a 2 s que toca a cada mensagem de um membro"],
+  loja_fundo: ["Foto de fundo do grupo", "Troca a foto de fundo para todos, por um tempo"],
   coleta: ["Coleta diária da loja", "Uma vez por dia, cada membro coleta a média dos preços dos itens ligados"],
 };
 // Preços da loja: ficam junto das regras. Começam desligados; o admin liga e põe o preço (1 a 999).
-export const LOJA = ["loja_titulo", "loja_destaque", "loja_silenciar", "loja_jumpscare", "loja_efeito"];
-const PRECO_PADRAO = { loja_titulo: 50, loja_destaque: 30, loja_silenciar: 80, loja_jumpscare: 60, loja_efeito: 30 };
+export const LOJA = ["loja_titulo", "loja_destaque", "loja_silenciar", "loja_jumpscare", "loja_efeito", "loja_fundo"];
+const PRECO_PADRAO = { loja_titulo: 50, loja_destaque: 30, loja_silenciar: 80, loja_jumpscare: 60, loja_efeito: 30, loja_fundo: 40 };
 const EXTRA_PADRAO = 10; // efeito sonoro: preço de cada 5 minutos a mais
 const FAIXAS = { valor: [1, MAX_SELOS], extra: [1, MAX_SELOS], min: [1, 999], a_cada: [1, 999], dias: [1, MAX_DIAS] };
 export const faixa = (campo) => FAIXAS[campo] || [1, MAX_SELOS];
@@ -22,7 +23,7 @@ const pl = (n, um, varios) => (n === 1 ? um : varios);
 export const regrasVazias = () => ({
   entrada: { on: false, valor: 1 }, dia_ativo: { on: false, valor: 1, min: 1 }, mensagens: { on: false, valor: 1, a_cada: 1 },
   arquivos: { on: false, valor: 1, a_cada: 1 }, sequencia: { on: false, marcos: [] }, teto: { on: false, valor: 1 }, coleta: { on: false },
-  loja_titulo: { on: false, valor: PRECO_PADRAO.loja_titulo }, loja_destaque: { on: false, valor: PRECO_PADRAO.loja_destaque }, loja_silenciar: { on: false, valor: PRECO_PADRAO.loja_silenciar }, loja_jumpscare: { on: false, valor: PRECO_PADRAO.loja_jumpscare }, loja_efeito: { on: false, valor: PRECO_PADRAO.loja_efeito, extra: EXTRA_PADRAO },
+  loja_titulo: { on: false, valor: PRECO_PADRAO.loja_titulo }, loja_destaque: { on: false, valor: PRECO_PADRAO.loja_destaque }, loja_silenciar: { on: false, valor: PRECO_PADRAO.loja_silenciar }, loja_jumpscare: { on: false, valor: PRECO_PADRAO.loja_jumpscare }, loja_efeito: { on: false, valor: PRECO_PADRAO.loja_efeito, extra: EXTRA_PADRAO }, loja_fundo: { on: false, valor: PRECO_PADRAO.loja_fundo, extra: EXTRA_PADRAO },
 });
 // O que vem do servidor (ou de uma versão antiga) é desconfiável: só chaves conhecidas, números inteiros nos limites
 export function limpaRegras(r) {
@@ -31,7 +32,7 @@ export function limpaRegras(r) {
     const o = r[k]; if (!o || typeof o !== "object") continue;
     v[k].on = o.on === true; v[k].valor = inteiro(o.valor, "valor", LOJA.includes(k) ? PRECO_PADRAO[k] : 1);
     if (k === "dia_ativo") v[k].min = inteiro(o.min, "min", 1);
-    if (k === "loja_efeito") v[k].extra = inteiro(o.extra, "extra", EXTRA_PADRAO);
+    if (k === "loja_efeito" || k === "loja_fundo") v[k].extra = inteiro(o.extra, "extra", EXTRA_PADRAO);
     if (k === "mensagens" || k === "arquivos") v[k].a_cada = inteiro(o.a_cada, "a_cada", 1);
   }
   if (r.coleta && typeof r.coleta === "object") v.coleta.on = r.coleta.on === true; // (a coleta só liga/desliga: o valor vem dos preços da loja)
@@ -58,7 +59,10 @@ export const lojaLigada = (r, item) => limpaRegras(r)["loja_" + item]?.on === tr
 export const PASSO_MIN = 5, PASSOS_MAX = 12;
 export const passosOk = (n) => Number.isInteger(n) && n >= 1 && n <= PASSOS_MAX;
 export const minutosDoEfeito = (n) => n * PASSO_MIN;
-export function precoEfeito(r, passos) { const a = limpaRegras(r).loja_efeito; return a.on && passosOk(passos) ? a.valor + (passos - 1) * a.extra : null; }
+// Itens "por tempo" (efeito sonoro e foto de fundo): preço = primeiros 5 minutos + (passos - 1) x cada 5 minutos a mais
+export function precoPorTempo(r, chave, passos) { const a = limpaRegras(r)[chave]; return a?.on && passosOk(passos) ? a.valor + (passos - 1) * a.extra : null; }
+export const precoEfeito = (r, passos) => precoPorTempo(r, "loja_efeito", passos);
+export const precoFundo = (r, passos) => precoPorTempo(r, "loja_fundo", passos);
 export const precoDaLoja = (r, item) => (lojaLigada(r, item) ? limpaRegras(r)["loja_" + item].valor : null);
 export const algumaLigada = (r) => { const x = limpaRegras(r); return ACOES.some((k) => x[k].on); };
 
@@ -82,7 +86,7 @@ export function frase(acao, r, marco) {
   if (acao === "dia_ativo") return ["Ganha ", S(a.valor), ` ${pl(a.valor, "Selo", "Selos")} em cada dia com pelo menos `, Q(a.min, "min"), ` ${pl(a.min, "mensagem", "mensagens")}`];
   if (acao === "mensagens") return ["Ganha ", S(a.valor), ` ${pl(a.valor, "Selo", "Selos")} a cada `, Q(a.a_cada, "a_cada"), a.a_cada === 1 ? " mensagem enviada" : " mensagens enviadas"];
   if (acao === "arquivos") return ["Ganha ", S(a.valor), ` ${pl(a.valor, "Selo", "Selos")} a cada `, Q(a.a_cada, "a_cada"), a.a_cada === 1 ? " arquivo enviado" : " arquivos enviados"];
-  if (acao === "loja_efeito") return ["Custa ", S(a.valor), ` ${pl(a.valor, "Selo", "Selos")} pelos primeiros 5 minutos e `, E(a.extra), ` ${pl(a.extra, "Selo", "Selos")} a cada 5 minutos a mais`];
+  if (acao === "loja_efeito" || acao === "loja_fundo") return ["Custa ", S(a.valor), ` ${pl(a.valor, "Selo", "Selos")} pelos primeiros 5 minutos e `, E(a.extra), ` ${pl(a.extra, "Selo", "Selos")} a cada 5 minutos a mais`];
   if (LOJA.includes(acao)) return ["Custa ", S(a.valor), ` ${pl(a.valor, "Selo", "Selos")}`];
   if (acao === "teto") return ["No máximo ", S(a.valor), ` ${pl(a.valor, "Selo", "Selos")} por pessoa em cada dia`];
   if (acao === "sequencia") { const m = a.marcos[marco]; if (!m) return []; return ["Com ", Q(m.dias, "dias", marco), m.dias === 1 ? " dia seguido, ganha " : " dias seguidos, ganha ", S(m.valor, marco), ` ${pl(m.valor, "Selo", "Selos")}`]; }

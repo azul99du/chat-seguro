@@ -1,8 +1,8 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { limpaEfeitos, efeitoAtivoDe, mensagemRecente, atrasoSusto, limpaPendentes, limpaArquivoSusto, SUSTO_VIVO_S, SUSTOS_MAX, limpaCompras, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, tituloTexto, TITULOS_LOJA, ITENS } from "../loja.js";
+import { limpaFundos, fundoEfetivo, limpaEfeitos, efeitoAtivoDe, mensagemRecente, atrasoSusto, limpaPendentes, limpaArquivoSusto, SUSTO_VIVO_S, SUSTOS_MAX, limpaCompras, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, tituloTexto, TITULOS_LOJA, ITENS } from "../loja.js";
 import { textoAviso } from "../grupo.js";
-import { mediaDaLoja, coletaLigada, precoEfeito, minutosDoEfeito, passosOk, PASSOS_MAX, limpaRegras, regrasVazias, igualRegras, frase, fraseTexto, precoDaLoja, lojaLigada, LOJA } from "../selos.js";
+import { precoFundo, precoPorTempo, mediaDaLoja, coletaLigada, precoEfeito, minutosDoEfeito, passosOk, PASSOS_MAX, limpaRegras, regrasVazias, igualRegras, frase, fraseTexto, precoDaLoja, lojaLigada, LOJA } from "../selos.js";
 
 const U = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`, MID = (n) => String(n).padStart(32, "0").replace(/0/g, "a");
 const T = (s) => `2026-11-14T12:00:${String(s).padStart(2, "0")}.000Z`;
@@ -50,7 +50,7 @@ describe("loja de Selos: o que o servidor diz", () => {
     assert.deepEqual(avisosNovos(e, 0).map((a) => a.tipo), ["loja_titulo", "loja_destaque", "loja_silencio"]); assert.deepEqual(avisosNovos(e, 2).map((a) => a.compra), [3]); assert.equal(avisosNovos(e, 3).length, 0); assert.equal(avisosNovos(e, 0)[0].titulo, "Lenda"); assert.equal(avisosNovos(e, 0)[2].alvo, U(1));
   });
   test("catálogo: 12 títulos com ids t01 a t12 e textos diferentes", () => {
-    assert.equal(TITULOS_LOJA.length, 12); assert.deepEqual(TITULOS_LOJA.map(([i]) => i), Array.from({ length: 12 }, (_, i) => "t" + String(i + 1).padStart(2, "0"))); assert.equal(new Set(TITULOS_LOJA.map(([, t]) => t)).size, 12); assert.deepEqual(ITENS, ["titulo", "destaque", "silenciar", "jumpscare", "efeito"]);
+    assert.equal(TITULOS_LOJA.length, 12); assert.deepEqual(TITULOS_LOJA.map(([i]) => i), Array.from({ length: 12 }, (_, i) => "t" + String(i + 1).padStart(2, "0"))); assert.equal(new Set(TITULOS_LOJA.map(([, t]) => t)).size, 12); assert.deepEqual(ITENS, ["titulo", "destaque", "silenciar", "jumpscare", "efeito", "fundo"]);
   });
   test("erros do servidor viram frases em português", () => {
     for (const [m, re] of [["saldo_insuficiente", /Selos suficientes/], ["item_desligado", /desligou/], ["ja_silenciado", /já está silenciada/], ["ja_destacada", /já está em destaque/], ["si_mesmo", /outra pessoa/], ["alvo_fora", /não está mais/]]) assert.match(erroLoja({ message: m }), re);
@@ -152,4 +152,34 @@ describe("coleta diária da loja", () => {
     assert.equal(mediaDaLoja({ loja_efeito: { on: true, valor: 30, extra: 500 }, loja_titulo: { on: true, valor: 50 } }), 40, "do efeito sonoro conta só o preço dos primeiros 5 minutos");
   });
   test("erros do servidor viram frases", () => { for (const [m, re] of [["ja_coletou", /já coletou hoje/], ["coleta_desligada", /desligou a coleta/], ["sem_itens", /Não há itens ligados/]]) assert.match(erroLoja({ message: m }), re); });
+});
+
+describe("foto de fundo do grupo", () => {
+  const F = (valor, extra, on = true) => ({ loja_fundo: { on, valor, extra } });
+  test("regra: começa desligada (40 + 10 a cada 5 minutos a mais); a frase tem os dois números; mudar o tempo a mais é mudança", () => {
+    assert.deepEqual(regrasVazias().loja_fundo, { on: false, valor: 40, extra: 10 }); assert.ok(LOJA.includes("loja_fundo"));
+    assert.deepEqual(limpaRegras({ loja_fundo: { on: true, valor: 55, extra: 5000 } }).loja_fundo, { on: true, valor: 55, extra: 10 });
+    assert.equal(fraseTexto(frase("loja_fundo", F(40, 15))), "Custa 40 Selos pelos primeiros 5 minutos e 15 Selos a cada 5 minutos a mais"); assert.equal(igualRegras(F(40, 15), F(40, 16)), false);
+  });
+  test("preço = primeiros 5 minutos + (passos - 1) x cada 5 a mais (1 a 12), igual ao efeito sonoro; desligado não tem preço", () => {
+    assert.equal(precoFundo(F(40, 10), 1), 40); assert.equal(precoFundo(F(40, 10), 12), 150); assert.equal(precoFundo(F(40, 10), 13), null); assert.equal(precoFundo(F(40, 10, false), 1), null); assert.equal(precoPorTempo({ loja_efeito: { on: true, valor: 30, extra: 10 } }, "loja_efeito", 3), 50);
+  });
+  test("entra na média da coleta diária (preço dos primeiros 5 minutos)", () => { assert.equal(mediaDaLoja({ ...F(40, 10), loja_titulo: { on: true, valor: 50 } }), 45); });
+  test("compras de fundo: 1 a 12 passos, sem alvo; viram aviso com os minutos para todos", () => {
+    const ok = L(1, 1, "fundo", { detalhe: "4" }); assert.deepEqual(limpaCompras([ok, L(2, 1, "fundo", { detalhe: "0" }), L(3, 1, "fundo", { detalhe: "13" }), L(4, 1, "fundo", { detalhe: "x" })]).map((c) => c.id), [1]);
+    assert.deepEqual(avisosNovos(estadoDaLoja([ok]), 0, U(9)).map((a) => [a.tipo, a.id, a.min]), [["loja_fundo", U(1), 20]]); assert.equal(silenciadoAte(estadoDaLoja([ok], Date.parse(T(30))), U(1), Date.parse(T(30))), null, "fundo não silencia ninguém");
+    assert.equal(textoAviso({ tipo: "loja_fundo", nome: "ana", min: 20 }), "@ana pôs uma foto de fundo no grupo por 20 minutos"); assert.equal(textoAviso({ tipo: "loja_fundo", eu: true, min: 5 }), "Você pôs uma foto de fundo no grupo por 5 minutos");
+    assert.match(erroLoja({ message: "ja_com_fundo" }), /foto de fundo da loja valendo/);
+  });
+  const g = "11111111-2222-4333-8444-555555555555", arq = (t = "image/jpeg") => ({ p: `${U(1)}/${g}/${U(2)}`, iv: "abc", t });
+  const agora = Date.parse("2026-11-14T12:00:00.000Z");
+  test("o que vem do servidor: só imagens da pasta do grupo; a hora do fim é corrigida pelo relógio do servidor", () => {
+    const f = limpaFundos([{ origem: "loja", arquivo: arq(), ate: "2026-11-14T12:05:00.000Z", por: U(3), agora: "2026-11-14T12:00:30.000Z" }, { origem: "admin", arquivo: arq("image/png"), ate: null, por: null, agora: "2026-11-14T12:00:30.000Z" }], g, agora);
+    assert.equal(f.loja.ate, Date.parse("2026-11-14T12:04:30.000Z"), "o aparelho está 30 s atrasado em relação ao servidor"); assert.equal(f.loja.por, U(3)); assert.equal(f.admin.arquivo.t, "image/png");
+    const ruim = limpaFundos([{ origem: "loja", arquivo: arq("audio/wav"), ate: "2026-11-14T12:05:00.000Z" }, { origem: "admin", arquivo: { ...arq(), p: `${U(1)}/${U(9)}/${U(2)}` } }, { origem: "x", arquivo: arq() }, null, 5], g, agora); assert.deepEqual(ruim, { loja: null, admin: null }); assert.deepEqual(limpaFundos(null, g), { loja: null, admin: null });
+  });
+  test("qual foto vale: a da loja enquanto não acabou; depois a do admin; sem nenhuma, nada", () => {
+    const f = { loja: { arquivo: arq(), ate: agora + 1000, por: U(3) }, admin: { arquivo: arq("image/png") } };
+    assert.equal(fundoEfetivo(f, agora).origem, "loja"); assert.equal(fundoEfetivo(f, agora + 1001).origem, "admin", "acabou: volta a do admin"); assert.equal(fundoEfetivo({ loja: f.loja, admin: null }, agora + 5000), null); assert.equal(fundoEfetivo({ loja: null, admin: f.admin }, agora).origem, "admin"); assert.equal(fundoEfetivo(null, agora), null);
+  });
 });
