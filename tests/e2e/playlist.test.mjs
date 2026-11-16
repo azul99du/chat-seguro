@@ -25,7 +25,7 @@ const manda = (o) => parent.postMessage(JSON.stringify({ ...o, channel: "widget"
 const erro = () => id.startsWith("ERRO");
 const agora = () => (estado === 1 ? t + (performance.now() - ini) / 1000 : t);
 const entrega = () => { const c = agora(); if (estado === 1 && c >= dur) { estado = 0; t = dur; } manda({ event: "infoDelivery", info: { currentTime: c, playerState: estado, muted: mudo } }); };
-setInterval(() => { if (listening) { entrega(); } }, 300);
+setInterval(() => { if (listening) { entrega(); } }, 300); let fimLog = false; setInterval(() => { if (estado === 0 && !fimLog) { fimLog = true; console.log("STUB fim " + id); } if (estado !== 0) fimLog = false; }, 200);
 let listening = false;
 addEventListener("message", (e) => { let d; try { d = JSON.parse(e.data); } catch { return; }
   if (d.event === "listening") { if (!listening) { listening = true; if (erro()) manda({ event: "onError", info: 150 }); else { manda({ event: "initialDelivery", info: { playerState: estado, currentTime: t, duration: dur, videoData: { video_id: id, title: "Vídeo " + id, author: "", errorCode: null } } }); manda({ event: "onReady", info: null }); } } else manda({ event: "alreadyInitialized", info: null }); return; }
@@ -42,12 +42,12 @@ async function simular(ctx) {
   await ctx.route("https://www.youtube-nocookie.com/**", (r) => { pedidos.push("youtube-nocookie"); r.fulfill({ status: 200, headers: { "content-type": "text/html; charset=utf-8" }, body: YT_HTML }); });
 }
 
-const vigiar = (p) => { p.on("pageerror", (e) => erros.push(e.message)); p.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) erros.push(m.text().slice(0, 200)); }); p.on("request", (r) => pedidos.push(r.url())); };
+const vigiar = (p) => { p.on("console", (m) => { if (m.text().startsWith("STUB")) (p.__stub ||= []).push(m.text()); }); p.on("pageerror", (e) => erros.push(e.message)); p.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) erros.push(m.text().slice(0, 200)); }); p.on("request", (r) => pedidos.push(r.url())); };
 const menu = async (p, item) => { if (!(await p.locator("#menu-conta").isVisible())) { await p.click("#eu-foto"); await p.waitForSelector("#menu-conta:not([hidden])"); } await p.click(item); };
 const listar = async (p) => { if (await p.locator("#back").isVisible()) { await p.click("#back"); await p.waitForSelector("#contacts button", { state: "visible" }); } };
 const abrirDm = async (p, nome) => { if (await p.locator(`#conv-title:text-is("@${nome}")`).isVisible()) return; await listar(p); await p.click(`#contacts button:not([data-grupo]):has-text("@${nome}")`); await p.waitForSelector(`#conv-title:text-is("@${nome}")`, { timeout: 20000 }); await p.waitForSelector("#messages:not(.carregando)"); };
 const faixaDaBarra = (p) => p.locator("#pl-faixa").innerText();
-const esperaBarra = async (p, re, ms = 20000) => { const ini = Date.now(); for (;;) { if ((await p.locator("#pl-barra").isVisible()) && re.test(await faixaDaBarra(p))) return; if (Date.now() - ini > ms) assert.fail(`a barra não mostrou ${re}; mostra: ${(await p.locator("#pl-faixa").innerText().catch(() => "?"))}; rastro: ${JSON.stringify(await p.evaluate(() => window.__plLog || []))}`); await p.waitForTimeout(250); } };
+const esperaBarra = async (p, re, ms = 20000) => { const ini = Date.now(); for (;;) { if ((await p.locator("#pl-barra").isVisible()) && re.test(await faixaDaBarra(p))) return; if (Date.now() - ini > ms) assert.fail(`a barra não mostrou ${re}; mostra: ${(await p.locator("#pl-faixa").innerText().catch(() => "?"))}; rastro: ${JSON.stringify(await p.evaluate(() => window.__plLog || []))}; stub: ${JSON.stringify(p.__stub || [])}`); await p.waitForTimeout(250); } };
 const esperaEstado = async (p, nomeBotao, aria, ms = 15000) => { const ini = Date.now(); for (;;) { const v = await p.locator(`#pl-ctl button[aria-label="${nomeBotao}"]`).getAttribute("aria-pressed").catch(() => null); if (v === aria) return; if (Date.now() - ini > ms) assert.fail(`${nomeBotao} não ficou ${aria}`); await p.waitForTimeout(250); } };
 const tocandoAgora = (p) => p.evaluate(() => window.__som.filter((x) => x.tocando).length);
 const srcAtual = (p) => p.evaluate(() => window.__som.length ? window.__som[window.__som.length - 1].src : "");

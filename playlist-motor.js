@@ -31,15 +31,15 @@ export function sondarYoutube(id, { espera = 15000 } = {}) {
   });
 }
 // criarMotor({ palco, aoFim, aoErro, aoBloquear, aoInfo }): palco = elemento onde o iframe do YouTube mora (visível quando a música é de vídeo)
-export function criarMotor({ palco, aoFim = () => {}, aoErro = () => {}, aoBloquear = () => {}, aoInfo = () => {} }) {
+export function criarMotor({ palco, aoFim = () => {}, aoErro = () => {}, aoBloquear = () => {}, aoInfo = () => {}, log = () => {} }) {
   let audio = null, yt = null, ponte = null, faixa = null, mudo = false, destravado = false, geracao = 0, ytGer = 0, ytInfo = { t: 0, em: 0, dur: 0, estado: -1 }, ytPronto = null, ytTocando = false;
   const maca = () => { if (!audio) { audio = new Audio(); audio.preload = "auto"; audio.onended = () => { if (faixa?.t === "a") aoFim(); }; audio.onerror = () => { if (faixa?.t === "a") aoErro(0); }; } return audio; };
   const fechaYt = () => { ytGer++; ponte?.fechar(); ponte = null; yt?.remove(); yt = null; ytPronto = null; ytInfo = { t: 0, em: 0, dur: 0, estado: -1 }; palco.hidden = true; };
   const abreYt = (id, pos, tocando) => {
     fechaYt(); const g = ytGer; yt = novoFrame(id, pos, tocando, "pl-yt"); ytTocando = tocando; // (g marca ESTE iframe: as respostas dele só valem enquanto ele for o atual; trocar de música dentro do mesmo iframe não as invalida)
-    ytPronto = new Promise((ok) => { ponte = ponteYoutube(yt, { pronto: ok, erro: (c) => { if (g === ytGer) aoErro(c); },
+    ytPronto = new Promise((ok) => { ponte = ponteYoutube(yt, { pronto: () => { log("yt-pronto"); ok(); }, erro: (c) => { if (g === ytGer) aoErro(c); },
       info: (i) => { if (g !== ytGer) return; if (Number.isFinite(i.currentTime)) { ytInfo.t = i.currentTime; ytInfo.em = performance.now(); } if (Number.isFinite(i.duration) && i.duration > 0 && i.duration !== ytInfo.dur) { ytInfo.dur = i.duration; aoInfo({ duracao: Math.round(i.duration) }); }
-        if (Number.isFinite(i.playerState) && i.playerState !== ytInfo.estado) { const antes = ytInfo.estado; ytInfo.estado = i.playerState; if (i.playerState === 0 && antes !== 0) aoFim(); if (i.playerState === 1) ytTocando = true; } } }); });
+        if (Number.isFinite(i.playerState) && i.playerState !== ytInfo.estado) { const antes = ytInfo.estado; ytInfo.estado = i.playerState; log("yt-estado", antes, ">", i.playerState); if (i.playerState === 0 && antes !== 0) aoFim(); if (i.playerState === 1) ytTocando = true; } } }); });
     palco.hidden = false; palco.replaceChildren(yt); if (mudo) ytPronto.then(() => ponte?.manda({ event: "command", func: "mute", args: "" }));
   };
   const comando = (func, args = "") => ponte?.manda({ event: "command", func, args });
@@ -54,7 +54,7 @@ export function criarMotor({ palco, aoFim = () => {}, aoErro = () => {}, aoBloqu
         if (g !== geracao) return; try { a.currentTime = Math.max(0, Math.min(pos, (a.duration || 30) - 0.2)); } catch {}
         if (tocando) { try { await a.play(); } catch { if (g === geracao) aoBloquear(); } } else a.pause();
       } else {
-        audio?.pause(); const igual = yt && ponte?.aberta && yt.dataset.id === f.id;
+        audio?.pause(); const igual = yt && ponte?.aberta && yt.dataset.id === f.id; log("yt-tocar", f.id, Math.round(pos), tocando, igual ? "igual" : yt && ponte?.aberta ? "troca" : "abre");
         if (igual) { comando("seekTo", [Math.max(0, pos), true]); comando(tocando ? "playVideo" : "pauseVideo"); ytTocando = tocando; }
         else if (yt && ponte?.aberta) { comando(tocando ? "loadVideoById" : "cueVideoById", [f.id, Math.max(0, pos)]); yt.dataset.id = f.id; ytInfo = { t: pos, em: performance.now(), dur: 0, estado: -1 }; ytTocando = tocando; }
         else { abreYt(f.id, pos, tocando); yt.dataset.id = f.id; }
