@@ -2613,3 +2613,44 @@ begin
 end $$;
 revoke all on function public.sugestao_apagar(bigint) from public, anon, authenticated;
 grant execute on function public.sugestao_apagar(bigint) to authenticated;
+
+-- ===== Sugestões: apagar não devolve o limite do dia (migração sugestoes_envios) =====
+-- Os envios do dia são contados à parte (sugestao_envios): apagar a própria sugestão não libera mais uma. O limite continua 5 por dia (dia de Brasília).
+create table public.sugestao_envios (
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  dia date not null,
+  n int not null default 0,
+  primary key (user_id, dia)
+);
+alter table public.sugestao_envios enable row level security;
+revoke all on public.sugestao_envios from anon, authenticated;
+create policy "exige dois passos" on public.sugestao_envios as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+insert into public.sugestao_envios (user_id, dia, n)
+  select s.user_id, (s.criado_em at time zone 'America/Sao_Paulo')::date, count(*) from public.sugestoes s group by 1, 2 on conflict do nothing;
+
+create or replace function public.sugestao_enviar(p_texto text, p_mostrar_nome boolean) returns bigint
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); t text; novo bigint; hoje date := (now() at time zone 'America/Sao_Paulo')::date;
+begin
+  perform public.consome('sugestao', 6, 30);
+  if coalesce(public.aparelho_estado(), 'aprovado') = 'pendente' then raise exception 'aparelho_pendente' using errcode = '42501'; end if;
+  t := btrim(regexp_replace(regexp_replace(coalesce(p_texto, ''), '[[:cntrl:]]+', ' ', 'g'), '[[:space:]]+', ' ', 'g'));
+  if p_mostrar_nome is null or char_length(t) < 1 or char_length(t) > 202 then raise exception 'texto_invalido' using errcode = '22023'; end if;
+  insert into public.sugestao_envios (user_id, dia, n) values (u, hoje, 1)
+    on conflict (user_id, dia) do update set n = public.sugestao_envios.n + 1 where public.sugestao_envios.n < 5;
+  if not found then raise exception 'limite_diario' using errcode = 'P0001'; end if;
+  insert into public.sugestoes (user_id, texto, mostrar_nome) values (u, t, p_mostrar_nome) returning id into novo;
+  return novo;
+end $$;
+revoke all on function public.sugestao_enviar(text, boolean) from public, anon, authenticated;
+grant execute on function public.sugestao_enviar(text, boolean) to authenticated;
+
+create or replace function public.sugestao_resumo() returns table (total bigint, hoje int, limite int)
+language sql stable security definer set search_path = public as $$
+  select (select count(*) from public.sugestoes),
+         coalesce((select e.n from public.sugestao_envios e where e.user_id = (select auth.uid()) and e.dia = (now() at time zone 'America/Sao_Paulo')::date), 0),
+         5
+   where (select auth.uid()) is not null and (select public.mfa_ok())
+$$;
+revoke all on function public.sugestao_resumo() from public, anon, authenticated;
+grant execute on function public.sugestao_resumo() to authenticated;

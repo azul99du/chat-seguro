@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=bb6087ac5f">
+  <link rel="stylesheet" href="style.css?v=1363c240bd">
 </head>
 <body>
 
@@ -106,6 +106,9 @@
         <button id="arm-btn" class="mi" type="button" role="menuitem"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg><span class="tx2">Armazenamento<small id="arm-resumo">neste aparelho</small></span></button>
         <button id="nov-btn" class="mi" type="button" role="menuitem" aria-label="Novidades: o que mudou em cada atualização">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg><span class="tx2">Novidades<small id="nov-aviso" class="aviso" hidden>● há novidades para ver</small></span>
+        </button>
+        <button id="sug-btn" class="mi" type="button" role="menuitem" aria-label="Sugestões: o que você gostaria de ver no Lacre">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.4 1.1 2.2h5c0-.8.4-1.6 1.1-2.2A6 6 0 0 0 12 3z"/></svg>Sugestões
         </button>
         <button id="sec-btn" class="mi" type="button" role="menuitem" aria-label="Segurança da conta (verificação em dois passos)">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg><span class="tx2">Segurança da conta<small id="sec-aviso" class="aviso" hidden>● ative a verificação em 2 passos</small><small id="sec-aviso-ap" class="aviso" hidden>● aparelho novo para conferir</small></span>
@@ -453,6 +456,27 @@
     </form>
   </dialog>
 
+  <dialog id="sugestoes" class="pagina">
+    <form method="dialog">
+      <header class="pg-bar"><button value="cancel" class="pg-volta" aria-label="Voltar" formnovalidate><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><h2>Sugestões</h2></header>
+      <div class="pg-corpo sg-corpo">
+        <p id="sg-resumo" class="sg-resumo"></p>
+        <div id="sg-ordem" class="nov-chips" role="group" aria-label="Ordem das sugestões"><button type="button" data-ordem="recentes" aria-pressed="true">Mais recentes</button><button type="button" data-ordem="curtidas" aria-pressed="false">Mais curtidas</button></div>
+        <div id="sg-quadro" class="sg-quadro"></div>
+        <p id="sg-vazio" class="sg-vazio" hidden>Ainda não há sugestões. Seja a primeira pessoa a sugerir algo.</p>
+        <p id="sg-fim" class="sg-vazio" role="status" hidden></p>
+      </div>
+      <div class="sg-barra">
+        <p id="sg-info" class="sg-info" role="status"></p>
+        <div class="sg-linha">
+          <button type="button" id="sg-nome" class="sg-chip" aria-pressed="true"></button>
+          <textarea id="sg-texto" rows="1" maxlength="202" placeholder="Sugerir algo…" aria-label="Sua sugestão"></textarea>
+          <button type="button" id="sg-enviar" class="sg-env" aria-label="Enviar sugestão" disabled><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.4 20.4 21 12 3.4 3.6 3.3 10l12 2-12 2z"/></svg></button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="js-lista" class="pagina">
     <form method="dialog">
       <header class="pg-bar"><button value="cancel" class="pg-volta" aria-label="Voltar" formnovalidate><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><h2>Jumpscares do grupo</h2></header>
@@ -577,6 +601,6 @@
 
   <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
 
-  <script src="guarda.js?v=bb6087ac5f"></script>
+  <script src="guarda.js?v=1363c240bd"></script>
 </body>
 </html>

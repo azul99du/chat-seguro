@@ -5,6 +5,10 @@ export const TEMAS = [["selos", "Selos"], ["mensagens", "Mensagens"], ["grupos",
 const NOME_TEMA = new Map(TEMAS);
 export const temaNome = (t) => NOME_TEMA.get(t) || null;
 export const NOVIDADES = [
+  { id: "2026-11-16-1", data: "2026-11-16", itens: [
+    { tema: "geral", icone: "💡", titulo: "Sugestões", texto: "Toque na sua foto e abra Sugestões para dizer o que gostaria de ver no Lacre. O quadro é público para quem tem conta, mostra a data de cada sugestão e você escolhe se o seu nome aparece ou se fica anônimo. Dá para curtir as ideias dos outros. São até 5 sugestões por dia, de até 202 caracteres." },
+    { tema: "mensagens", icone: "🎼", titulo: "Música: busca e lista melhores", texto: "A busca de música agora mostra primeiro a trilha original da obra (por exemplo, as músicas oficiais de Death Note) e a lista continua carregando mais músicas conforme você desce. Ao escolher uma música ela já começa a tocar, e volta a tocar sozinha depois que você muda o trecho ou a duração." },
+  ] },
   { id: "2026-11-15-3", data: "2026-11-15", itens: [
     { tema: "mensagens", icone: "🎚️", titulo: "Escolher o trecho da música ficou mais fácil", texto: "Agora você arrasta um trecho grande sobre as ondas da música para escolher onde começa, e a duração fica na barra." },
     { tema: "mensagens", icone: "🔎", titulo: "Busca de música melhor", texto: "Entende acento e erro de digitação, mostra o melhor resultado em destaque e, se não achar no Brasil, procura também na loja dos EUA." },
