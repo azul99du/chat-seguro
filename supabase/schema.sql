@@ -2519,3 +2519,97 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke all on function public.grupo_fundo_ver(uuid) from public, anon, authenticated;
 grant execute on function public.grupo_fundo_ver(uuid) to authenticated;
+
+-- ===== Sugestões do que adicionar ao site (migração sugestoes) =====
+-- Quadro PÚBLICO para quem tem conta: qualquer pessoa escreve uma sugestão (até 202 caracteres, a média de 10 exemplos de simples a complexas) e escolhe se o @usuário aparece.
+-- Limite: 5 sugestões por dia (dia de Brasília). Todos veem a data de envio. Quem quiser curte as dos outros (uma curtida por pessoa; só o total aparece, nunca quem curtiu).
+-- Anonimato: o servidor guarda o autor (precisa dele para o limite diário e para a pessoa apagar a própria sugestão), mas NUNCA o entrega: sugestao_lista só devolve o @usuário quando a pessoa escolheu mostrar.
+-- As tabelas não são legíveis nem graváveis direto (sem acesso para anon/authenticated): só pelas funções abaixo.
+create table public.sugestoes (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  texto text not null check (char_length(texto) between 1 and 202),
+  mostrar_nome boolean not null,
+  criado_em timestamptz not null default now()
+);
+create index sugestoes_do_usuario on public.sugestoes (user_id, criado_em desc);
+alter table public.sugestoes enable row level security;
+revoke all on public.sugestoes from anon, authenticated;
+create policy "exige dois passos" on public.sugestoes as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+
+create table public.sugestao_curtidas (
+  sugestao_id bigint not null references public.sugestoes(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  criado_em timestamptz not null default now(),
+  primary key (sugestao_id, user_id)
+);
+create index sugestao_curtidas_do_usuario on public.sugestao_curtidas (user_id);
+alter table public.sugestao_curtidas enable row level security;
+revoke all on public.sugestao_curtidas from anon, authenticated;
+create policy "exige dois passos" on public.sugestao_curtidas as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+
+create or replace function public.sugestao_enviar(p_texto text, p_mostrar_nome boolean) returns bigint
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); t text; novo bigint; hoje date := (now() at time zone 'America/Sao_Paulo')::date;
+begin
+  perform public.consome('sugestao', 6, 30);
+  if coalesce(public.aparelho_estado(), 'aprovado') = 'pendente' then raise exception 'aparelho_pendente' using errcode = '42501'; end if;
+  t := btrim(regexp_replace(regexp_replace(coalesce(p_texto, ''), '[[:cntrl:]]+', ' ', 'g'), '[[:space:]]+', ' ', 'g'));
+  if p_mostrar_nome is null or char_length(t) < 1 or char_length(t) > 202 then raise exception 'texto_invalido' using errcode = '22023'; end if;
+  perform pg_advisory_xact_lock(hashtext('sug:' || u::text));
+  if (select count(*) from public.sugestoes s where s.user_id = u and (s.criado_em at time zone 'America/Sao_Paulo')::date = hoje) >= 5 then raise exception 'limite_diario' using errcode = 'P0001'; end if;
+  insert into public.sugestoes (user_id, texto, mostrar_nome) values (u, t, p_mostrar_nome) returning id into novo;
+  return novo;
+end $$;
+revoke all on function public.sugestao_enviar(text, boolean) from public, anon, authenticated;
+grant execute on function public.sugestao_enviar(text, boolean) to authenticated;
+
+-- A lista pública: 'recentes' (mais novas primeiro) ou 'curtidas' (mais curtidas primeiro, empate pela mais nova). O @usuário só vem quando a pessoa escolheu mostrar.
+create or replace function public.sugestao_lista(p_ordem text default 'recentes', p_offset int default 0, p_limite int default 30)
+returns table (id bigint, texto text, criado_em timestamptz, autor text, curtidas int, eu_curti boolean, minha boolean)
+language sql stable security definer set search_path = public as $$
+  select s.id, s.texto, s.criado_em, case when s.mostrar_nome then p.username end, c.n,
+         exists (select 1 from public.sugestao_curtidas x where x.sugestao_id = s.id and x.user_id = (select auth.uid())), s.user_id = (select auth.uid())
+    from public.sugestoes s
+    join public.profiles p on p.id = s.user_id
+    cross join lateral (select count(*)::int as n from public.sugestao_curtidas k where k.sugestao_id = s.id) c
+   where (select auth.uid()) is not null and (select public.mfa_ok())
+   order by case when p_ordem = 'curtidas' then c.n end desc nulls last, s.id desc
+   offset greatest(coalesce(p_offset, 0), 0) limit least(greatest(coalesce(p_limite, 30), 1), 50)
+$$;
+revoke all on function public.sugestao_lista(text, int, int) from public, anon, authenticated;
+grant execute on function public.sugestao_lista(text, int, int) to authenticated;
+
+-- Quantas existem, quantas EU já mandei hoje e o limite diário (para o contador do compositor)
+create or replace function public.sugestao_resumo() returns table (total bigint, hoje int, limite int)
+language sql stable security definer set search_path = public as $$
+  select (select count(*) from public.sugestoes),
+         (select count(*)::int from public.sugestoes s where s.user_id = (select auth.uid()) and (s.criado_em at time zone 'America/Sao_Paulo')::date = (now() at time zone 'America/Sao_Paulo')::date),
+         5
+   where (select auth.uid()) is not null and (select public.mfa_ok())
+$$;
+revoke all on function public.sugestao_resumo() from public, anon, authenticated;
+grant execute on function public.sugestao_resumo() to authenticated;
+
+create or replace function public.sugestao_curtir(p_id bigint, p_curtir boolean) returns int
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); n int;
+begin
+  perform public.consome('sugestao_curtir', 60, 600);
+  if not exists (select 1 from public.sugestoes s where s.id = p_id) then raise exception 'nao_existe' using errcode = 'P0001'; end if;
+  if coalesce(p_curtir, false) then insert into public.sugestao_curtidas (sugestao_id, user_id) values (p_id, u) on conflict do nothing;
+  else delete from public.sugestao_curtidas where sugestao_id = p_id and user_id = u; end if;
+  select count(*)::int into n from public.sugestao_curtidas where sugestao_id = p_id; return n;
+end $$;
+revoke all on function public.sugestao_curtir(bigint, boolean) from public, anon, authenticated;
+grant execute on function public.sugestao_curtir(bigint, boolean) to authenticated;
+
+create or replace function public.sugestao_apagar(p_id bigint) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  perform public.consome('sugestao', 6, 30);
+  delete from public.sugestoes where id = p_id and user_id = (select auth.uid());
+  if not found then raise exception 'nao_existe' using errcode = 'P0001'; end if;
+end $$;
+revoke all on function public.sugestao_apagar(bigint) from public, anon, authenticated;
+grant execute on function public.sugestao_apagar(bigint) to authenticated;
