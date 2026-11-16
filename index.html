@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#15174A">
   <meta name="referrer" content="no-referrer">
   <!-- Só roda código deste próprio site; só conversa com o seu Supabase. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; manifest-src 'self'; worker-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob: data: https://is1-ssl.mzstatic.com https://is2-ssl.mzstatic.com https://is3-ssl.mzstatic.com https://is4-ssl.mzstatic.com https://is5-ssl.mzstatic.com; media-src blob:; frame-src https://www.youtube-nocookie.com https://www.instagram.com https://www.tiktok.com; connect-src 'self' https://okiurdcgbjaylihbycxn.supabase.co wss://okiurdcgbjaylihbycxn.supabase.co https://itunes.apple.com https://audio-ssl.itunes.apple.com; base-uri 'none'; form-action 'self'; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; manifest-src 'self'; worker-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob: data: https://i.ytimg.com https://is1-ssl.mzstatic.com https://is2-ssl.mzstatic.com https://is3-ssl.mzstatic.com https://is4-ssl.mzstatic.com https://is5-ssl.mzstatic.com; media-src blob: https://audio-ssl.itunes.apple.com; frame-src https://www.youtube-nocookie.com https://www.instagram.com https://www.tiktok.com; connect-src 'self' https://okiurdcgbjaylihbycxn.supabase.co wss://okiurdcgbjaylihbycxn.supabase.co https://itunes.apple.com https://audio-ssl.itunes.apple.com; base-uri 'none'; form-action 'self'; object-src 'none'">
   <title>Lacre — conversa só entre vocês</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="icon" href="favicon.ico" sizes="48x48">
@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=93ab49f6ea">
+  <link rel="stylesheet" href="style.css?v=9cd665b8e0">
 </head>
 <body>
 
@@ -110,6 +110,9 @@
         <button id="sug-btn" class="mi" type="button" role="menuitem" aria-label="Sugestões: o que você gostaria de ver no Lacre">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.4 1.1 2.2h5c0-.8.4-1.6 1.1-2.2A6 6 0 0 0 12 3z"/></svg>Sugestões
         </button>
+        <button id="pl-menu" class="mi" type="button" role="menuitem" aria-label="Playlists: criar e editar suas playlists">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h11M4 11h11M4 16h6"/><path d="M19 7v8"/><circle cx="17" cy="16" r="2.4"/></svg>Playlists
+        </button>
         <button id="sec-btn" class="mi" type="button" role="menuitem" aria-label="Segurança da conta (verificação em dois passos)">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg><span class="tx2">Segurança da conta<small id="sec-aviso" class="aviso" hidden>● ative a verificação em 2 passos</small><small id="sec-aviso-ap" class="aviso" hidden>● aparelho novo para conferir</small></span>
         </button>
@@ -142,6 +145,19 @@
         </button>
         <div class="badge" id="badge" title="Conversa lacrada de ponta a ponta" hidden><i class="seal" aria-hidden="true"></i>lacrada</div>
       </header>
+      <div id="pl-barra" class="pl-barra" hidden>
+        <div class="pl-topo">
+          <span id="pl-capa" class="pl-capa" aria-hidden="true"></span>
+          <div class="pl-info"><b id="pl-nome"></b><small id="pl-faixa"></small></div>
+          <button type="button" id="pl-abrir" class="pl-mini" aria-expanded="false" aria-controls="pl-faixas" aria-label="Ver as músicas da playlist"></button>
+        </div>
+        <div class="pl-prog" aria-hidden="true"><i id="pl-prog"></i></div>
+        <div class="pl-tempo"><span id="pl-t1">0:00</span><span id="pl-t2"></span></div>
+        <div id="pl-ctl" class="pl-ctl"></div>
+        <div id="pl-palco" class="pl-palco" hidden></div>
+        <ol id="pl-faixas" class="pl-faixas" hidden></ol>
+        <p id="pl-aviso" class="pl-aviso" role="status" hidden></p>
+      </div>
       <div id="messages" aria-live="polite"></div>
       <div id="conv-empty" class="empty big">
         <div class="wordmark mid">lacre<i class="seal" aria-hidden="true"></i></div>
@@ -162,6 +178,7 @@
           <button type="button" id="attach" class="tile" tabindex="-1"><span class="ti ti1"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg></span>Foto ou vídeo</button>
           <button type="button" id="sticker" class="tile" tabindex="-1"><span class="ti ti2"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6l8-8z"/><path d="M20 12h-4a2 2 0 0 0-2 2v6"/><circle cx="9" cy="9.5" r=".8"/><circle cx="14.5" cy="9.5" r=".8"/></svg></span>Figurinha</button>
           <button type="button" id="musica" class="tile" tabindex="-1"><span class="ti ti3"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg></span>Música</button>
+          <button type="button" id="plbtn" class="tile" tabindex="-1"><span class="ti ti4"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h11M4 11h11M4 16h6"/><path d="M19 7v8"/><circle cx="17" cy="16" r="2.4"/></svg></span>Playlist</button>
         </div></div>
         <button type="button" id="mais" class="mais" aria-label="Mais opções: foto, vídeo, figurinha e música" aria-expanded="false" aria-controls="tray"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
         <input type="file" id="file" accept="image/*,video/mp4,video/quicktime,audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/x-wav,.mp4,.m4v,.mov,.mp3,.m4a,.wav" hidden>
@@ -493,6 +510,55 @@
     </form>
   </dialog>
 
+  <dialog id="playlists" class="pagina">
+    <form method="dialog">
+      <header class="pg-bar"><button value="cancel" class="pg-volta" aria-label="Voltar" formnovalidate><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><h2>Playlists</h2></header>
+      <div class="pg-corpo pl-corpo">
+        <p id="pl-ctx" class="pl-ctx" hidden></p>
+        <div id="pl-lista" class="pl-lista"></div>
+        <p id="pl-vazio" class="pl-vazio" hidden>Você ainda não tem playlists. Crie uma e ponha músicas da Apple (trecho de 30 s) ou do YouTube (música inteira).</p>
+        <p id="pl-msg" class="pl-msg" role="status"></p>
+        <button type="button" id="pl-nova" class="primary pl-nova">Nova playlist</button>
+        <p class="pg-dica">Suas playlists ficam cifradas e aparecem em todos os seus aparelhos. As músicas vêm direto da Apple e do YouTube: eles veem o endereço de internet de quem ouve.</p>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="pl-editor" class="pagina">
+    <form method="dialog">
+      <header class="pg-bar"><button value="cancel" class="pg-volta" aria-label="Voltar" formnovalidate><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><h2>Playlist</h2></header>
+      <div class="pg-corpo pl-corpo">
+        <label class="sr" for="pl-nome-in">Nome da playlist</label>
+        <input id="pl-nome-in" type="text" maxlength="40" placeholder="Nome da playlist" autocomplete="off">
+        <p id="pl-trava" class="pl-trava" role="status" hidden></p>
+        <ol id="pl-musicas" class="pl-musicas"></ol>
+        <p id="pl-vazia" class="pl-vazio" hidden>Nenhuma música ainda.</p>
+        <p id="pl-emsg" class="pl-msg" role="status"></p>
+        <button type="button" id="pl-add-btn" class="primary pl-nova">Adicionar música</button>
+        <button type="button" id="pl-apagar" class="ghost pl-perigo">Apagar esta playlist</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="pl-add" class="folha-seg musica-folha" aria-labelledby="pl-add-t">
+    <div class="grab"></div>
+    <h2 id="pl-add-t">Adicionar música</h2>
+    <div class="nov-chips" role="group" aria-label="De onde vem a música"><button type="button" id="pl-aba-a" aria-pressed="true">Apple (trecho de 30 s)</button><button type="button" id="pl-aba-y" aria-pressed="false">YouTube (inteira)</button></div>
+    <div id="pl-tela-a">
+      <input id="pl-busca" type="search" placeholder="Buscar música ou artista" autocomplete="off" autocapitalize="none" spellcheck="false" aria-label="Buscar música ou artista">
+      <ul id="pl-res" class="mu-lista" role="list"></ul>
+      <p id="pl-res-msg" class="mu-msg" role="status">Digite o nome de uma música ou de um artista.</p>
+      <p class="mu-nota">A busca vem direto da Apple: ela vê o seu endereço de internet e o que você digita. Cada música toca só o trecho de 30 s que a Apple libera.</p>
+    </div>
+    <div id="pl-tela-y" hidden>
+      <input id="pl-link" type="url" placeholder="Cole o link do vídeo do YouTube" autocomplete="off" autocapitalize="none" spellcheck="false" aria-label="Link do vídeo do YouTube">
+      <button type="button" id="pl-link-ok" class="primary pl-nova">Verificar e adicionar</button>
+      <p id="pl-link-msg" class="mu-msg" role="status">Cole o endereço de um vídeo (youtube.com ou youtu.be). A música toca inteira, pelo player do YouTube.</p>
+      <p class="mu-nota">Alguns vídeos não deixam tocar fora do YouTube e não dá para usá-los. O YouTube vê o endereço de internet de quem ouve.</p>
+    </div>
+    <button type="button" id="pl-add-fechar" class="ghost mu-fechar">Pronto</button>
+  </dialog>
+
   <dialog id="js-lista" class="pagina">
     <form method="dialog">
       <header class="pg-bar"><button value="cancel" class="pg-volta" aria-label="Voltar" formnovalidate><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><h2>Jumpscares do grupo</h2></header>
@@ -617,6 +683,6 @@
 
   <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
 
-  <script src="guarda.js?v=93ab49f6ea"></script>
+  <script src="guarda.js?v=9cd665b8e0"></script>
 </body>
 </html>

@@ -1,32 +1,34 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=93ab49f6ea";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=93ab49f6ea";
-import { montarFigurinhas } from "./figurinhas.js?v=93ab49f6ea";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=93ab49f6ea";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=93ab49f6ea";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=93ab49f6ea";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=93ab49f6ea";
-import { acharVideoLink } from "./videolink.js?v=93ab49f6ea";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=93ab49f6ea";
-import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=93ab49f6ea";
-import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=93ab49f6ea";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=93ab49f6ea";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=93ab49f6ea";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=93ab49f6ea";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=93ab49f6ea";
-import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, combinar, destaque, PAGINA_RESULTADOS, MAX_BUSCA, termosAmpliados, termoTrilha, albumOficial, barrasDeOnda, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=93ab49f6ea";
-import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=93ab49f6ea";
-import { MAX_SUGESTAO, MAX_POR_DIA, POR_PAGINA, limpaSugestao, restantesHoje, dataCarimbo, corDaNota, limpaSugestoes, erroSugestao } from "./sugestoes.js?v=93ab49f6ea";
-import { MODELOS, IDS_MODELOS, MODELO_PADRAO, MAX_TRANSCRICAO_S, limpaModelo, mbDoModelo, bytesDoModelo, estimativa, paraMono, limpaTranscricao } from "./transcricao.js?v=93ab49f6ea";
-import { modeloBaixado, apagarModelo } from "./transcricao-arquivos.js?v=93ab49f6ea";
-import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=93ab49f6ea";
-import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=93ab49f6ea";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=93ab49f6ea";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=93ab49f6ea";
-import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=93ab49f6ea";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=93ab49f6ea";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=93ab49f6ea";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=93ab49f6ea";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=9cd665b8e0";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=9cd665b8e0";
+import { montarFigurinhas } from "./figurinhas.js?v=9cd665b8e0";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=9cd665b8e0";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=9cd665b8e0";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=9cd665b8e0";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=9cd665b8e0";
+import { acharVideoLink } from "./videolink.js?v=9cd665b8e0";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=9cd665b8e0";
+import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=9cd665b8e0";
+import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=9cd665b8e0";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=9cd665b8e0";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=9cd665b8e0";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=9cd665b8e0";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=9cd665b8e0";
+import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, combinar, destaque, PAGINA_RESULTADOS, MAX_BUSCA, termosAmpliados, termoTrilha, albumOficial, barrasDeOnda, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=9cd665b8e0";
+import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=9cd665b8e0";
+import { MAX_SUGESTAO, MAX_POR_DIA, POR_PAGINA, limpaSugestao, restantesHoje, dataCarimbo, corDaNota, limpaSugestoes, erroSugestao } from "./sugestoes.js?v=9cd665b8e0";
+import { MODELOS, IDS_MODELOS, MODELO_PADRAO, MAX_TRANSCRICAO_S, limpaModelo, mbDoModelo, bytesDoModelo, estimativa, paraMono, limpaTranscricao } from "./transcricao.js?v=9cd665b8e0";
+import { modeloBaixado, apagarModelo } from "./transcricao-arquivos.js?v=9cd665b8e0";
+import * as PLM from "./playlist.js?v=9cd665b8e0";
+import { criarMotor, sondarYoutube } from "./playlist-motor.js?v=9cd665b8e0";
+import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=9cd665b8e0";
+import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=9cd665b8e0";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=9cd665b8e0";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=9cd665b8e0";
+import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=9cd665b8e0";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=9cd665b8e0";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=9cd665b8e0";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=9cd665b8e0";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -2079,7 +2081,7 @@ async function open(peer) {
   if (peer.grupo) return abrirGrupo(peer);
   bandeja(false); fecharMencoes();
   if (!(await checkPin(peer))) return;
-  active = peer; limparNaoLidas(peer.id); renderContacts(); updateStatus(); pintarSilencio(); desarmarSustosDeFora();
+  active = peer; limparNaoLidas(peer.id); renderContacts(); updateStatus(); pintarSilencio(); desarmarSustosDeFora(); plAoAbrir();
   pintarAvatar($("conv-av"), peer, true); $("conv-av").setAttribute("aria-label", "Ver foto de perfil"); atualizaFotoDe(peer).catch(() => {});
   $("chat").classList.add("in-conv");
   $("conv-title").textContent = "@" + peer.username;
@@ -2148,7 +2150,7 @@ async function open(peer) {
   focoSeMouse(); // (no celular o teclado só sobe se a pessoa tocar no campo)
   markRead();
 }
-const voltarDaConversa = () => { fecharMencoes(); $("chat").classList.remove("in-conv"); active = null; renderContacts(); updateStatus(); };
+const voltarDaConversa = () => { fecharMencoes(); plAoSair(); $("chat").classList.remove("in-conv"); active = null; renderContacts(); updateStatus(); };
 $("back").onclick = voltarDaConversa;
 
 let carregandoConversa = null, filaChegando = []; // mensagens que chegam enquanto open() ainda carrega
@@ -2279,7 +2281,7 @@ function sincronizar(tentativa = 0) {
 function addAviso(texto) { if (!texto) return; const d = el("div", "aviso-linha"); d.append(el("span", null, texto)); const colar = !semPuxar && ($("messages").classList.contains("carregando") || pertoDoFim()); $("messages").append(d); if (colar) $("messages").scrollTop = 1e9; }
 function sairDaConversa(aviso) { // fecha a conversa aberta e volta para a tela inicial
   fecharMencoes();
-  $("chat").classList.remove("in-conv"); active = null; carregandoConversa = null; filaChegando = []; desarmarSustosDeFora();
+  plAoSair(); $("chat").classList.remove("in-conv"); active = null; carregandoConversa = null; filaChegando = []; desarmarSustosDeFora();
   $("messages").replaceChildren(); msgs.clear(); reactions.clear(); midParaId.clear(); cancelarResposta(); clearPending(); setBg(null);
   $("conv-title").textContent = "Escolha um amigo"; $("conv-av").replaceChildren(); $("conv-av").disabled = true; $("conv-av").classList.remove("grupo");
   $("send-form").hidden = true; $("send-form").classList.remove("silenciado"); $("conv-empty").hidden = false; for (const id of ["badge", "bg-btn", "safety-btn", "grupo-btn"]) $(id).hidden = true;
@@ -3649,6 +3651,195 @@ $("send-form").onsubmit = async (e) => {
     note(sendError(e, peer));
   } finally { btn.disabled = false; if (tinhaFoco && document.activeElement !== $("text")) $("text").focus(); }
 };
+
+// ---------- Playlists: minhas playlists (sincronizadas e cifradas) e playlist tocando na conversa ----------
+// Em conversa a dois é uma função livre (quem inicia controla). As músicas são trechos de 30 s da Apple ou vídeos inteiros do YouTube. O servidor guarda só o estado (faixa, posição, tocando, aleatório, loop) com a hora dele.
+const PL = { col: PLM.colecaoVazia(), versao: 0, lida: false, edit: null, aqui: false, buscaTimer: null, buscaN: 0, apagarTimer: null, grav: Promise.resolve(),
+  s: { sessao: null, timer: null, tick: null, relogio: PLM.relogio(), motor: null, ouvindo: true, bloqueado: false, aberta: false, erros: 0, alvo: null, vendo: 0 } };
+const plCifrar = async (obj, pub) => { const r = await encrypt(myKeys.privateKey, pub, JSON.stringify(obj)); return { v: 1, ciphertext: r.ciphertext, iv: r.iv }; };
+const plAbrirBloco = async (b, pub) => JSON.parse(await decrypt(myKeys.privateKey, pub, { ciphertext: b.ciphertext, iv: b.iv }));
+async function plLer() {
+  const { data, error } = await sb.rpc("playlists_ler"); if (error) throw error; const r = Array.isArray(data) ? data[0] : data;
+  if (r) { let rem = PLM.colecaoVazia(); try { rem = PLM.limpaColecao(await plAbrirBloco(r.dados, me.public_key)); } catch {} PL.col = PLM.mesclar(PL.col, rem); PL.versao = Number(r.versao) || 0; } else PL.versao = 0;
+  PL.lida = true;
+}
+function plSalvar(novo) { // grava na fila; se outro aparelho gravou antes (conflito), lê, junta e grava de novo
+  PL.col = PLM.limpaColecao(novo);
+  const f = async () => { for (let i = 0; i < 4; i++) { const bloco = await plCifrar(PL.col, me.public_key), { data, error } = await sb.rpc("playlists_gravar", { p_dados: bloco, p_versao: PL.versao }); if (!error) { PL.versao = Number(data) || PL.versao; return; } if (/conflito/.test(String(error.message))) { await plLer(); continue; } throw error; } throw new Error("conflito"); };
+  return (PL.grav = PL.grav.catch(() => {}).then(f));
+}
+const plMuda = (fn) => { const c = structuredClone(PL.col); fn(c); return plSalvar(c); };
+const plAcha = (id) => PL.col.listas.find((l) => l.id === id) || null;
+const plMsg = (t, id = "pl-msg") => { $(id).textContent = t || ""; };
+// ----- Ícones (pelo DOM) -----
+const PL_ICONES = { play: "M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z", pausa: "M7 5h3.5v14H7zM13.5 5H17v14h-3.5z", prox: "M6 5.5v13l9-6.5zM16.5 5.5h2v13h-2z", ant: "M18 5.5v13l-9-6.5zM5.5 5.5h2v13h-2z", parar: "M6.5 6.5h11v11h-11z", baixo: "M6 9l6 6 6-6", mudo: "M4 9.5v5h3.5L12 18.5v-13L7.5 9.5zM15.5 9.5l5 5M20.5 9.5l-5 5", som: "M4 9.5v5h3.5L12 18.5v-13L7.5 9.5zM15.5 9a4 4 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11", mais: "M12 5v14M5 12h14", sobe: "M12 18V6M6 12l6-6 6 6", desce: "M12 6v12M6 12l6 6 6-6", x: "M6 6l12 12M18 6L6 18", nota: "M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" };
+const PL_CHEIOS = new Set(["play", "pausa", "prox", "ant", "parar"]);
+function plIcone(nome, tam = 20) {
+  const ns = "http://www.w3.org/2000/svg", s = document.createElementNS(ns, "svg"), cheio = PL_CHEIOS.has(nome);
+  for (const [k, v] of Object.entries({ width: String(tam), height: String(tam), viewBox: "0 0 24 24", fill: cheio ? "currentColor" : "none", stroke: cheio ? "none" : "currentColor", "stroke-width": "2", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true" })) s.setAttribute(k, v);
+  if (nome === "aleatorio") for (const d of ["M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"]) { const p = document.createElementNS(ns, "path"); p.setAttribute("d", d); s.append(p); }
+  else if (nome === "loop") for (const d of ["M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3", "M11 10l1.5-1v6"]) { const p = document.createElementNS(ns, "path"); p.setAttribute("d", d); s.append(p); }
+  else { const p = document.createElementNS(ns, "path"); p.setAttribute("d", PL_ICONES[nome] || PL_ICONES.nota); s.append(p); }
+  return s;
+}
+const plBotao = (icone, rotulo, onclick, { cls = "", pressed = null, off = false } = {}) => { const b = el("button", cls); b.type = "button"; b.setAttribute("aria-label", rotulo); b.title = rotulo; b.append(plIcone(icone)); if (pressed !== null) b.setAttribute("aria-pressed", String(pressed)); b.disabled = off; b.onclick = onclick; return b; };
+// ----- Página "Playlists" -----
+async function plAbrirPagina(aqui) {
+  PL.aqui = !!aqui && !!active; $("playlists").showModal(); plMsg("");
+  const c = $("pl-ctx"); c.hidden = !PL.aqui; c.textContent = PL.aqui ? (active.grupo ? "Em grupo, a playlist toca como item da loja de Selos (se o admin ligou)." : `Escolha uma playlist para tocar com @${active.username}. Quem inicia controla; as duas pessoas ouvem.`) : "";
+  plDesenharLista(); if (!PL.lida) { plMsg("Carregando suas playlists…"); try { await plLer(); plMsg(""); } catch { plMsg("Não foi possível carregar agora. Tente de novo."); } plDesenharLista(); }
+}
+function plDesenharLista() {
+  const box = $("pl-lista"); $("pl-vazio").hidden = PL.col.listas.length > 0; $("pl-nova").disabled = PL.col.listas.length >= PLM.MAX_PLAYLISTS;
+  box.replaceChildren(...PL.col.listas.map((l) => {
+    const c = el("div", "pl-cartao"), bt = el("div", "pl-bt"), ed = el("button", null, "Editar"); ed.type = "button"; ed.onclick = () => plAbrirEditor(l.id);
+    c.append(el("b", null, l.nome), el("small", null, `${l.faixas.length} ${l.faixas.length === 1 ? "música" : "músicas"}`));
+    if (PL.aqui) { const t = el("button", "primary", active.grupo ? "Comprar para o grupo" : "▶ Tocar aqui"); t.type = "button"; t.disabled = !l.faixas.length; t.onclick = () => plTocarAqui(l.id); bt.append(t); }
+    bt.append(ed); c.append(bt); return c;
+  }));
+}
+$("pl-menu").onclick = () => plAbrirPagina(false);
+$("plbtn").onclick = () => { bandeja(false); plAbrirPagina(true); };
+$("pl-nova").onclick = async () => {
+  if (PL.col.listas.length >= PLM.MAX_PLAYLISTS) return; const id = PLM.novoId();
+  try { await plMuda((c) => { c.listas.push({ id, nome: `Playlist ${c.listas.length + 1}`, faixas: [], mod: Date.now() }); }); plDesenharLista(); plAbrirEditor(id); } catch { plMsg("Não foi possível criar agora."); }
+};
+// ----- Editor -----
+function plAbrirEditor(id) { PL.edit = id; const l = plAcha(id); if (!l) return; $("pl-nome-in").value = l.nome; plMsg("", "pl-emsg"); plDesenharEditor(); if (!$("pl-editor").open) $("pl-editor").showModal(); }
+function plDesenharEditor() {
+  const l = plAcha(PL.edit); if (!l) return; $("pl-vazia").hidden = l.faixas.length > 0; $("pl-add-btn").disabled = l.faixas.length >= PLM.MAX_FAIXAS; $("pl-trava").hidden = true;
+  $("pl-musicas").replaceChildren(...l.faixas.map((f, i) => {
+    const li = el("li"), im = f.t === "y" ? el("img") : f.ca ? el("img") : el("span", "pl-sem", f.t === "y" ? "YT" : "♪"), t = el("div", "t");
+    if (im.tagName === "IMG") { im.alt = ""; im.loading = "lazy"; im.src = f.t === "y" ? PLM.capaYoutube(f.id) : f.ca; }
+    t.append(el("b", null, f.ti), el("small", null, f.t === "y" ? `YouTube${f.du ? " · " + mmss(f.du) : ""}` : `${f.ar || "Apple"} · trecho de 30 s`));
+    const sobe = plBotao("sobe", "Subir", () => plMover(i, -1), { off: i === 0 }), desce = plBotao("desce", "Descer", () => plMover(i, 1), { off: i === l.faixas.length - 1 }), tira = plBotao("x", "Tirar da playlist", () => plTirar(i));
+    li.append(im, t, sobe, desce, tira); return li;
+  }));
+}
+const plMudaLista = (fn) => plMuda((c) => { const l = c.listas.find((x) => x.id === PL.edit); if (l) { fn(l); l.mod = Date.now(); } }).then(() => { plDesenharEditor(); plDesenharLista(); }).catch(() => plMsg("Não foi possível salvar agora.", "pl-emsg"));
+const plMover = (i, d) => plMudaLista((l) => { const j = i + d; if (j >= 0 && j < l.faixas.length) [l.faixas[i], l.faixas[j]] = [l.faixas[j], l.faixas[i]]; });
+const plTirar = (i) => plMudaLista((l) => { l.faixas.splice(i, 1); });
+$("pl-nome-in").onchange = () => { const nome = $("pl-nome-in").value.trim().slice(0, PLM.MAX_NOME); if (!nome) { $("pl-nome-in").value = plAcha(PL.edit)?.nome || ""; return; } plMudaLista((l) => { l.nome = nome; }); };
+$("pl-apagar").onclick = async () => {
+  const b = $("pl-apagar"); if (!b.dataset.c) { b.dataset.c = "1"; b.textContent = "Apagar mesmo?"; clearTimeout(PL.apagarTimer); PL.apagarTimer = setTimeout(() => { delete b.dataset.c; b.textContent = "Apagar esta playlist"; }, 4000); return; }
+  delete b.dataset.c; b.textContent = "Apagar esta playlist"; const id = PL.edit;
+  try { await plMuda((c) => { c.listas = c.listas.filter((x) => x.id !== id); c.apagadas[id] = Date.now(); }); $("pl-editor").close(); plDesenharLista(); } catch { plMsg("Não foi possível apagar agora.", "pl-emsg"); }
+};
+$("pl-editor").addEventListener("close", () => { delete $("pl-apagar").dataset.c; $("pl-apagar").textContent = "Apagar esta playlist"; PL.edit = null; });
+// ----- Adicionar música: Apple (busca) ou YouTube (link) -----
+const plAba = (y) => { $("pl-tela-a").hidden = y; $("pl-tela-y").hidden = !y; $("pl-aba-a").setAttribute("aria-pressed", String(!y)); $("pl-aba-y").setAttribute("aria-pressed", String(y)); };
+$("pl-aba-a").onclick = () => plAba(false); $("pl-aba-y").onclick = () => plAba(true);
+$("pl-add-btn").onclick = () => { plAba(false); $("pl-busca").value = ""; $("pl-res").replaceChildren(); plMsg("Digite o nome de uma música ou de um artista.", "pl-res-msg"); $("pl-link").value = ""; plMsg("Cole o endereço de um vídeo (youtube.com ou youtu.be). A música toca inteira, pelo player do YouTube.", "pl-link-msg"); $("pl-add").showModal(); setTimeout(() => $("pl-busca").focus(), 60); };
+$("pl-add-fechar").onclick = () => $("pl-add").close();
+$("pl-add").addEventListener("close", () => { clearTimeout(PL.buscaTimer); PL.buscaN++; plDesenharEditor(); });
+const plJaTem = (f) => !!plAcha(PL.edit)?.faixas.some((x) => PLM.chaveFaixa(x) === PLM.chaveFaixa(f));
+async function plAdicionar(f, msgId) {
+  const l = plAcha(PL.edit); if (!l) return false; if (l.faixas.length >= PLM.MAX_FAIXAS) { plMsg(`A playlist já tem ${PLM.MAX_FAIXAS} músicas.`, msgId); return false; } if (plJaTem(f)) { plMsg("Essa música já está na playlist.", msgId); return false; }
+  try { await plMuda((c) => { const x = c.listas.find((y) => y.id === PL.edit); if (x) { x.faixas.push(f); x.mod = Date.now(); } }); plMsg(`Adicionada: ${f.ti} ✓`, msgId); plDesenharEditor(); plDesenharLista(); return true; } catch { plMsg("Não foi possível salvar agora.", msgId); return false; }
+}
+$("pl-busca").oninput = () => {
+  clearTimeout(PL.buscaTimer); const termo = $("pl-busca").value.trim(); if (termo.length < 2) { PL.buscaN++; $("pl-res").replaceChildren(); plMsg(termo ? "Digite pelo menos 2 letras." : "Digite o nome de uma música ou de um artista.", "pl-res-msg"); return; }
+  plMsg("Buscando…", "pl-res-msg"); PL.buscaTimer = setTimeout(async () => {
+    const n = ++PL.buscaN, ctrl = new AbortController(); try {
+      const trilha = termoTrilha(termo), [br, tr1, tr2] = await Promise.all([appleBusca(termo, "BR", 40, ctrl), ...["BR", "US"].map((p) => (trilha ? appleBusca(trilha, p, 25, ctrl).catch(() => []) : []))]); if (n !== PL.buscaN) return;
+      let grupos = [{ itens: br }, { itens: [...tr1, ...tr2].filter((x) => albumOficial(x.album)) }]; if (combinar(termo, grupos).length < 5) grupos.push({ itens: await appleBusca(termo, "US", 30, ctrl).catch(() => []) }); if (n !== PL.buscaN) return;
+      const lista = combinar(termo, grupos, 40); $("pl-res").replaceChildren(...lista.map((r) => {
+        const li = el("li"), b = el("button"), im = el("img"), t = el("span", "t"); im.alt = ""; im.loading = "lazy"; im.src = r.capa; t.append(el("b", null, r.titulo), el("small", null, r.artista)); b.type = "button"; b.append(im, t, plIcone("mais")); li.append(b);
+        b.onclick = async () => { const f = PLM.limpaFaixa({ t: "a", id: r.id, ti: r.titulo, ar: r.artista, pr: r.previa, ca: r.capa }); if (f) { b.disabled = true; await plAdicionar(f, "pl-res-msg"); b.disabled = false; } }; return li;
+      })); plMsg(lista.length ? "" : "Nenhuma música encontrada.", "pl-res-msg");
+    } catch { if (n === PL.buscaN) plMsg("Não foi possível buscar agora. Verifique a conexão.", "pl-res-msg"); }
+  }, 450);
+};
+$("pl-link-ok").onclick = async () => {
+  const id = PLM.idYoutube($("pl-link").value); if (!id) { plMsg("Esse não parece o link de um vídeo do YouTube.", "pl-link-msg"); return; } if (plJaTem({ t: "y", id })) { plMsg("Essa música já está na playlist.", "pl-link-msg"); return; }
+  const b = $("pl-link-ok"); b.disabled = true; plMsg("Verificando o vídeo…", "pl-link-msg");
+  try { const s = await sondarYoutube(id), f = PLM.limpaFaixa({ t: "y", id, ti: s.titulo, ar: s.autor, du: s.duracao }); if (f && (await plAdicionar(f, "pl-link-msg"))) $("pl-link").value = ""; }
+  catch (e) { plMsg(e?.codigo === 101 || e?.codigo === 150 ? "Este vídeo não deixa tocar fora do YouTube. Escolha outro." : e?.codigo === 100 ? "Vídeo não encontrado ou privado." : e?.codigo === 0 ? "Não consegui verificar o vídeo a tempo. Tente de novo." : "Este vídeo não pode ser usado.", "pl-link-msg"); }
+  b.disabled = false;
+};
+// ----- Tocar na conversa -----
+const plPar = () => (active && !active.grupo ? { pub: active.public_key, rpcVer: "playlist_ver_dm", args: { p_outro: active.id } } : null);
+async function plTocarAqui(listaId) {
+  const l = plAcha(listaId); if (!l || !l.faixas.length || !active) return; plMotor().destravar();
+  if (active.grupo) { plMsg("Em grupo, a compra da playlist ainda não está disponível."); return; }
+  plMsg("Iniciando…");
+  try {
+    const blob = await plCifrar({ pl: l.id, nome: l.nome, faixas: l.faixas }, active.public_key), { error } = await sb.rpc("playlist_iniciar_dm", { p_outro: active.id, p_faixas: blob, p_estado: PLM.estadoParaServidor(PLM.estadoInicial()) });
+    if (error) { plMsg(PLM.erroPlaylist(error)); return; }
+    $("playlists").close(); PL.s.ouvindo = true; PL.s.bloqueado = false; PL.s.sessao = null; await plPoll();
+  } catch { plMsg("Não foi possível iniciar agora."); }
+}
+function plMotor() {
+  const S = PL.s; if (S.motor) return S.motor;
+  return (S.motor = criarMotor({ palco: $("pl-palco"), aoFim: () => plFim(), aoErro: () => plErroFaixa(),
+    aoBloquear: () => { S.bloqueado = true; plDesenharBarra(); },
+    aoInfo: ({ duracao }) => { const f = S.sessao?.faixas[S.sessao.estado.f]; if (f && f.t === "y" && !f.du) f.du = duracao; } }));
+}
+const plDono = () => PL.s.sessao?.dono === me.id;
+function plEfetivo(ses) { // o estado de agora, já passando por faixas que acabaram desde que foi gravado (para o caso de ninguém ter atualizado)
+  const S = PL.s; let e = ses.estado, em = ses.em, pos = PLM.posicaoAgora(e, S.relogio.agora(), em), n = ses.faixas.length;
+  for (let i = 0; i < 6 && e.t; i++) { const d = PLM.duracaoDaFaixa(ses.faixas[e.f]); if (!d || pos < d - 0.3) break; pos -= d; e = PLM.fimNatural(e, n); if (e.l) { pos = pos % d; } }
+  return { e, pos };
+}
+function plReconciliar(forcar = false) {
+  const S = PL.s, ses = S.sessao; if (!ses) return; const m = plMotor(), { e, pos } = plEfetivo(ses), f = ses.faixas[e.f]; if (!f) return;
+  if (!S.ouvindo) { if (m.faixa) m.parar(); return; }
+  if (!m.faixa || m.faixa.t !== f.t || m.faixa.id !== f.id || forcar) { if (e.t || forcar) m.tocar(f, pos, e.t).catch(() => {}); else m.tocar(f, e.p, false).catch(() => {}); return; }
+  if (e.t) { if (Math.abs(m.posicao() - pos) > 2.5) m.ir(pos); if (!m.tocando() && !S.bloqueado) m.retomar(); } else { if (m.tocando()) m.pausar(); }
+}
+function plAplicarLinha(row) {
+  const S = PL.s; if (!row) { if (S.sessao) { S.sessao = null; plMotor().parar(); S.bloqueado = false; S.erros = 0; plDesenharBarra(); } return Promise.resolve(); }
+  S.relogio.acerta(Date.parse(row.agora)); const ehNova = !S.sessao || S.sessao.id !== row.id; if (!ehNova && S.ocupado > 0) return Promise.resolve();
+  const aplicar = () => { const ses = S.sessao; if (!ses || Number(row.versao) === ses.versao) return; ses.versao = Number(row.versao); const e = PLM.limpaEstado(row.estado, ses.faixas.length); if (!e) return; ses.estado = e; ses.em = Date.parse(row.em); S.erros = 0; plReconciliar(); plDesenharBarra(); };
+  if (!ehNova) { S.sessao.dono = row.dono; aplicar(); return Promise.resolve(); }
+  const par = plPar(); if (!par || S.vendo === row.id) return Promise.resolve(); S.vendo = row.id;
+  return sb.rpc("playlist_faixas", { p_sessao: row.id }).then(async ({ data, error }) => {
+    if (error || !data) { S.vendo = 0; return; } let conteudo = null; try { conteudo = PLM.limpaSessaoFaixas(await plAbrirBloco(data, par.pub)); } catch {} if (!conteudo) { S.vendo = 0; return; }
+    if (!plPar() || plPar().args.p_outro !== par.args.p_outro) return; S.sessao = { id: row.id, dono: row.dono, nome: conteudo.nome, pl: conteudo.pl, faixas: conteudo.faixas, versao: -1, estado: PLM.estadoInicial(), em: Date.now() }; S.ouvindo = true; S.erros = 0; aplicar(); S.vendo = 0;
+  });
+}
+async function plPoll() {
+  const par = plPar(); if (!par || PL.s.ocupado > 0) return; const alvo = active.id;
+  try { const { data, error } = await sb.rpc(par.rpcVer, par.args); if (error || !active || active.id !== alvo) return; await plAplicarLinha(Array.isArray(data) ? data[0] || null : data || null); } catch {}
+}
+function plAoAbrir() { plAoSair(); if (!active || active.grupo) return; const S = PL.s; S.timer = setInterval(plPoll, 3000); S.tick = setInterval(plTique, 500); plPoll(); }
+function plAoSair() { const S = PL.s; clearInterval(S.timer); clearInterval(S.tick); S.timer = S.tick = null; S.sessao = null; S.vendo = 0; S.bloqueado = false; S.aberta = false; S.erros = 0; S.ocupado = 0; S.motor?.parar(); $("pl-barra").hidden = true; }
+// ----- Ações de quem controla -----
+async function plAcao(novo) {
+  const S = PL.s, ses = S.sessao; if (!ses || !plDono()) return; ses.estado = novo; ses.em = S.relogio.agora(); plReconciliar(); plDesenharBarra();
+  S.ocupado = (S.ocupado || 0) + 1; // (enquanto a ação não chega ao servidor, o que o servidor diz é velho: não deixa passar por cima)
+  try { const { error } = await sb.rpc("playlist_controlar", { p_sessao: ses.id, p_estado: PLM.estadoParaServidor(novo) }); if (error) plAviso(PLM.erroPlaylist(error)); } catch { plAviso("Não foi possível agora. Tente de novo."); }
+  S.ocupado = Math.max(0, (S.ocupado || 1) - 1); if (!S.ocupado) plPoll();
+}
+function plFim() { const S = PL.s, ses = S.sessao; if (!ses) return; const novo = PLM.fimNatural(ses.estado, ses.faixas.length); if (plDono()) plAcao(novo); else { ses.estado = novo; ses.em = S.relogio.agora(); plReconciliar(); plDesenharBarra(); } }
+function plErroFaixa() {
+  const S = PL.s, ses = S.sessao; if (!ses) return; S.erros++; if (S.erros > ses.faixas.length) { plAviso("Nenhuma música desta playlist pôde tocar aqui."); S.motor?.parar(); return; }
+  plAviso("Pulei uma música que não toca aqui."); const novo = PLM.pular(ses.estado, ses.faixas.length, 1); if (plDono()) plAcao(novo); else { ses.estado = novo; ses.em = S.relogio.agora(); plReconciliar(); plDesenharBarra(); }
+}
+const plAviso = (t) => { const p = $("pl-aviso"); p.textContent = t || ""; p.hidden = !t; if (t) setTimeout(() => { if (p.textContent === t) { p.hidden = true; p.textContent = ""; } }, 5000); };
+// ----- Barra na conversa -----
+function plTique() {
+  const S = PL.s, ses = S.sessao; if (!ses || $("pl-barra").hidden) return; const m = S.motor, f = ses.faixas[ses.estado.f]; if (!f) return;
+  const { e, pos } = plEfetivo(ses), dur = PLM.duracaoDaFaixa(f) || m?.duracao() || 0, atual = S.ouvindo && m?.faixa ? m.posicao() : pos;
+  $("pl-prog").style.width = dur ? `${Math.max(0, Math.min(100, (atual / dur) * 100))}%` : "0%"; $("pl-t1").textContent = mmss(atual); $("pl-t2").textContent = dur ? mmss(dur) : "";
+  if (S.ouvindo && !S.bloqueado && e.t && m?.faixa && (m.faixa.id !== f.id || m.faixa.t !== f.t)) plReconciliar(); // (o estado avançou sozinho: acompanha)
+}
+function plDesenharBarra() {
+  const S = PL.s, ses = S.sessao, barra = $("pl-barra"); barra.hidden = !ses; if (!ses) return;
+  const e = ses.estado, n = ses.faixas.length, f = ses.faixas[e.f], dono = plDono(); $("pl-nome").textContent = ses.nome; $("pl-faixa").textContent = `${f ? PLM.rotuloFaixa(f) : ""} · ${dono ? "você controla" : `@${active?.username} controla`}`;
+  const capa = $("pl-capa"); capa.replaceChildren(); if (f && (f.t === "y" || f.ca)) { const im = el("img"); im.alt = ""; im.src = f.t === "y" ? PLM.capaYoutube(f.id) : f.ca; capa.append(im); } else capa.append(plIcone("nota"));
+  const ab = $("pl-abrir"); ab.replaceChildren(plIcone("baixo")); ab.setAttribute("aria-expanded", String(S.aberta));
+  const ctl = $("pl-ctl"), btns = [];
+  if (dono) { btns.push(plBotao("ant", "Música anterior", () => plAcao(PLM.pular(ses.estado, n, -1))), plBotao(e.t ? "pausa" : "play", e.t ? "Pausar" : "Tocar", () => plAcao(e.t ? PLM.pausar(ses.estado, S.relogio.agora(), ses.em) : PLM.continuar(ses.estado)), { cls: "grande" }),
+    plBotao("prox", "Próxima música", () => plAcao(PLM.pular(ses.estado, n, 1))), plBotao("aleatorio", "Ordem aleatória", () => plAcao(PLM.alternarAleatorio(ses.estado, n)), { pressed: e.a }), plBotao("loop", "Repetir esta música", () => plAcao(PLM.alternarLoop(ses.estado)), { pressed: e.l }), plBotao("parar", "Parar a playlist", () => plParar())); }
+  else { const o = el("button", "pl-rot", S.ouvindo ? "Parar de ouvir" : "Ouvir"); o.type = "button"; o.onclick = () => { S.ouvindo = !S.ouvindo; if (S.ouvindo) { plMotor().destravar(); S.bloqueado = false; } plReconciliar(true); plDesenharBarra(); }; btns.push(o); }
+  if (S.bloqueado && S.ouvindo) { const t = el("button", "pl-rot grande", "Tocar"); t.type = "button"; t.onclick = () => { plMotor().destravar(); S.bloqueado = false; plReconciliar(true); plDesenharBarra(); }; btns.unshift(t); }
+  btns.push(plBotao(S.mudo ? "mudo" : "som", S.mudo ? "Ligar o som" : "Silenciar neste aparelho", () => { S.mudo = !S.mudo; plMotor().mudo(S.mudo); plDesenharBarra(); })); ctl.replaceChildren(...btns);
+  $("pl-palco").hidden = !(f && f.t === "y" && S.ouvindo);
+  const lista = $("pl-faixas"); lista.hidden = !S.aberta; if (S.aberta) lista.replaceChildren(...ses.faixas.map((x, i) => { const li = el("li"), b = el("button"); b.type = "button"; b.disabled = !dono; if (i === e.f) b.setAttribute("aria-current", "true"); b.append(el("span", "n", String(i + 1)), el("span", "t", PLM.rotuloFaixa(x))); b.onclick = () => plAcao(PLM.irPara(ses.estado, i, n)); li.append(b); return li; }));
+}
+$("pl-abrir").onclick = () => { PL.s.aberta = !PL.s.aberta; plDesenharBarra(); };
+async function plParar() { const ses = PL.s.sessao; if (!ses || !plDono()) return; const { error } = await sb.rpc("playlist_parar", { p_sessao: ses.id }); if (error) plAviso(PLM.erroPlaylist(error)); plPoll(); }
 
 // ---------- Transcrição de áudios (Whisper no próprio aparelho; o áudio e o texto nunca saem dele) ----------
 // Botão "Transcrever" em cada áudio. O modelo (Base ou Melhor/Small) é baixado do próprio site uma vez e fica no aparelho; roda num worker, sem travar a tela.
