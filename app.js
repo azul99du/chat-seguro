@@ -1,34 +1,34 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=a67a6ca1fa";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=a67a6ca1fa";
-import { montarFigurinhas } from "./figurinhas.js?v=a67a6ca1fa";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=a67a6ca1fa";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=a67a6ca1fa";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=a67a6ca1fa";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=a67a6ca1fa";
-import { acharVideoLink } from "./videolink.js?v=a67a6ca1fa";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=a67a6ca1fa";
-import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=a67a6ca1fa";
-import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=a67a6ca1fa";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=a67a6ca1fa";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=a67a6ca1fa";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=a67a6ca1fa";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=a67a6ca1fa";
-import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, combinar, destaque, PAGINA_RESULTADOS, MAX_BUSCA, termosAmpliados, termoTrilha, albumOficial, barrasDeOnda, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=a67a6ca1fa";
-import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=a67a6ca1fa";
-import { MAX_SUGESTAO, MAX_POR_DIA, POR_PAGINA, limpaSugestao, restantesHoje, dataCarimbo, corDaNota, limpaSugestoes, erroSugestao } from "./sugestoes.js?v=a67a6ca1fa";
-import { MODELOS, IDS_MODELOS, MODELO_PADRAO, MAX_TRANSCRICAO_S, limpaModelo, mbDoModelo, bytesDoModelo, estimativa, paraMono, limpaTranscricao } from "./transcricao.js?v=a67a6ca1fa";
-import { modeloBaixado, apagarModelo } from "./transcricao-arquivos.js?v=a67a6ca1fa";
-import * as PLM from "./playlist.js?v=a67a6ca1fa";
-import { criarMotor, sondarYoutube } from "./playlist-motor.js?v=a67a6ca1fa";
-import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=a67a6ca1fa";
-import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, precoPlaylist, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=a67a6ca1fa";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=a67a6ca1fa";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=a67a6ca1fa";
-import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=a67a6ca1fa";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=a67a6ca1fa";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=a67a6ca1fa";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=a67a6ca1fa";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=9d7f5fac6c";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=9d7f5fac6c";
+import { montarFigurinhas } from "./figurinhas.js?v=9d7f5fac6c";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=9d7f5fac6c";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=9d7f5fac6c";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=9d7f5fac6c";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=9d7f5fac6c";
+import { acharVideoLink } from "./videolink.js?v=9d7f5fac6c";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=9d7f5fac6c";
+import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=9d7f5fac6c";
+import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=9d7f5fac6c";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=9d7f5fac6c";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=9d7f5fac6c";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=9d7f5fac6c";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=9d7f5fac6c";
+import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, combinar, destaque, PAGINA_RESULTADOS, MAX_BUSCA, termosAmpliados, termoTrilha, albumOficial, barrasDeOnda, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=9d7f5fac6c";
+import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=9d7f5fac6c";
+import { MAX_SUGESTAO, MAX_POR_DIA, POR_PAGINA, limpaSugestao, restantesHoje, dataCarimbo, corDaNota, limpaSugestoes, erroSugestao } from "./sugestoes.js?v=9d7f5fac6c";
+import { MODELOS, IDS_MODELOS, MODELO_PADRAO, MAX_TRANSCRICAO_S, limpaModelo, mbDoModelo, bytesDoModelo, estimativa, paraMono, limpaTranscricao } from "./transcricao.js?v=9d7f5fac6c";
+import { modeloBaixado, apagarModelo } from "./transcricao-arquivos.js?v=9d7f5fac6c";
+import * as PLM from "./playlist.js?v=9d7f5fac6c";
+import { criarMotor, sondarYoutube } from "./playlist-motor.js?v=9d7f5fac6c";
+import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=9d7f5fac6c";
+import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, precoPlaylist, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=9d7f5fac6c";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=9d7f5fac6c";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=9d7f5fac6c";
+import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=9d7f5fac6c";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=9d7f5fac6c";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=9d7f5fac6c";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=9d7f5fac6c";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -3806,8 +3806,12 @@ async function plTocarAqui(listaId) {
 function plMotor() {
   const S = PL.s; if (S.motor) return S.motor;
   return (S.motor = criarMotor({ palco: $("pl-palco"), log: plLog, aoFim: () => plFim(), aoErro: () => plErroFaixa(),
-    aoBloquear: () => { plLog("bloqueou"); S.bloqueado = true; plDesenharBarra(); },
+    aoBloquear: () => { plLog("bloqueou"); S.bloqueado = true; plDesenharBarra(); plEsperaToque(); },
     aoInfo: ({ duracao }) => { const f = S.sessao?.faixas[S.sessao.estado.f]; if (f && f.t === "y" && !f.du) f.du = duracao; } }));
+}
+function plEsperaToque() { // o navegador só deixa o som começar depois de um toque da pessoa: o próximo toque em qualquer lugar da tela libera e retoma (sem precisar achar o botão)
+  const S = PL.s; if (S.esperaToque) return; S.esperaToque = true;
+  addEventListener("pointerup", () => { S.esperaToque = false; if (!S.bloqueado || !S.sessao) return; plMotor().destravar(); S.bloqueado = false; plReconciliar(true); setTimeout(plDesenharBarra, 400); }, { once: true, capture: true }); // (a barra só é redesenhada depois: se o toque foi num botão, o clique dele não pode se perder)
 }
 const plDono = () => PL.s.sessao?.dono === me.id;
 const plBase = () => { const ses = PL.s.sessao, { e, pos } = plEfetivo(ses); return { ...e, p: pos }; }; // o estado de agora, com a posição de agora (para mudar um modo sem voltar a música ao começo)
@@ -3821,7 +3825,8 @@ function plReconciliar(forcar = false) {
   const S = PL.s, ses = S.sessao; if (!ses) return; const m = plMotor(), { e, pos } = plEfetivo(ses), f = ses.faixas[e.f]; if (!f) return;
   if (!S.ouvindo) { if (m.faixa) m.parar(); return; }
   if (!m.faixa || m.faixa.t !== f.t || m.faixa.id !== f.id || forcar) { if (e.t || forcar) m.tocar(f, pos, e.t).catch(() => {}); else m.tocar(f, e.p, false).catch(() => {}); return; }
-  if (e.t) { if (Math.abs(m.posicao() - pos) > 2.5) m.ir(pos); if (!m.tocando() && !S.bloqueado) m.retomar(); } else { if (m.tocando()) m.pausar(); }
+  if (e.t) { if (Math.abs(m.posicao() - pos) > (f.t === "y" ? 10 : 2.5)) m.ir(pos); // (no YouTube cada pessoa pode ver um anúncio de tamanho diferente antes da música: só corrige se a diferença for grande)
+    if (!m.tocando() && (!S.bloqueado || S.retomouVer !== ses.versao)) { S.retomouVer = ses.versao; m.retomar(); } } else { if (m.tocando()) m.pausar(); }
 }
 function plAplicarLinha(row) {
   const S = PL.s; if (!row) { if (S.sessao) { S.sessao = null; plMotor().parar(); S.bloqueado = false; S.erros = 0; plDesenharBarra(); } return Promise.resolve(); }
@@ -3870,9 +3875,9 @@ function plDesenharBarra() {
   if (dono) { btns.push(plBotao("ant", "Música anterior", () => plAcao(PLM.pular(ses.estado, n, -1))), plBotao(e.t ? "pausa" : "play", e.t ? "Pausar" : "Tocar", () => plAcao(e.t ? PLM.pausar(ses.estado, S.relogio.agora(), ses.em) : PLM.continuar(ses.estado)), { cls: "grande" }),
     plBotao("prox", "Próxima música", () => plAcao(PLM.pular(ses.estado, n, 1))), plBotao("aleatorio", "Ordem aleatória", () => plAcao(PLM.alternarAleatorio(plBase(), n)), { pressed: e.a }), plBotao("loop", "Repetir esta música", () => plAcao(PLM.alternarLoop(plBase())), { pressed: e.l }), plBotao("parar", "Parar a playlist", () => plParar())); }
   else { const o = el("button", "pl-rot", S.ouvindo ? "Parar de ouvir" : "Ouvir"); o.type = "button"; o.onclick = () => { S.ouvindo = !S.ouvindo; if (S.ouvindo) { plMotor().destravar(); S.bloqueado = false; } plReconciliar(true); plDesenharBarra(); }; btns.push(o); }
-  if (S.bloqueado && S.ouvindo) { const t = el("button", "pl-rot grande", "Tocar"); t.type = "button"; t.onclick = () => { plMotor().destravar(); S.bloqueado = false; plReconciliar(true); plDesenharBarra(); }; btns.unshift(t); }
+  if (S.bloqueado && S.ouvindo) { const t = el("button", "pl-rot grande", "Ativar o som"); t.type = "button"; t.title = "O navegador bloqueou o som automático. Toque para ouvir."; PL.s.dica = true; t.onclick = () => { plMotor().destravar(); S.bloqueado = false; plReconciliar(true); plDesenharBarra(); }; btns.unshift(t); }
   btns.push(plBotao(S.mudo ? "mudo" : "som", S.mudo ? "Ligar o som" : "Silenciar neste aparelho", () => { S.mudo = !S.mudo; plMotor().mudo(S.mudo); plDesenharBarra(); })); ctl.replaceChildren(...btns);
-  $("pl-palco").hidden = !(f && f.t === "y" && S.ouvindo);
+  $("pl-palco").hidden = !(f && f.t === "y" && S.ouvindo); const av = $("pl-aviso"); if (S.bloqueado && S.ouvindo) { av.hidden = false; av.textContent = "O navegador bloqueou o som. Toque em “Ativar o som” (ou em qualquer lugar da tela) para ouvir."; } else if (av.textContent.startsWith("O navegador bloqueou")) { av.hidden = true; av.textContent = ""; }
   const lista = $("pl-faixas"); lista.hidden = !S.aberta; if (S.aberta) lista.replaceChildren(...ses.faixas.map((x, i) => { const li = el("li"), b = el("button"); b.type = "button"; b.disabled = !dono; if (i === e.f) b.setAttribute("aria-current", "true"); b.append(el("span", "n", String(i + 1)), el("span", "t", PLM.rotuloFaixa(x))); b.onclick = () => plAcao(PLM.irPara(ses.estado, i, n)); li.append(b); return li; }));
 }
 $("pl-abrir").onclick = () => { PL.s.aberta = !PL.s.aberta; plDesenharBarra(); };

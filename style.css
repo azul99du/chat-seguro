@@ -1021,7 +1021,7 @@ dialog.musica-folha{max-height:88dvh;overflow:auto}
 .pl-ctl button{width:44px;min-height:44px;padding:0;border-radius:50%;border:1.5px solid var(--line);background:none;color:var(--texto);display:grid;place-items:center}
 .pl-ctl button[aria-pressed=true]{background:var(--seal);border-color:var(--seal);color:#fff}.pl-ctl button.grande{background:var(--btn);border-color:var(--btn);color:#fff}.pl-ctl button:disabled{opacity:.35}
 .pl-ctl .pl-rot{width:auto;border-radius:99px;padding:0 14px;font:600 .82rem var(--body)}
-.pl-palco{display:flex;justify-content:center}.pl-yt{width:min(100%,260px);aspect-ratio:16/9;border:0;border-radius:10px;background:#000}
+.pl-palco{display:flex;justify-content:center}.pl-yt{width:168px;max-width:100%;aspect-ratio:16/9;border:0;border-radius:8px;background:#000}
 .pl-sonda{position:fixed;left:-9999px;top:0;width:200px;height:113px;border:0}
 .pl-faixas{list-style:none;margin:0;padding:0;display:grid;gap:4px;max-height:34vh;overflow:auto}
 .pl-faixas button{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:4px 8px;border:0;border-radius:10px;background:none;color:var(--texto);text-align:left}

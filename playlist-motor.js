@@ -32,7 +32,7 @@ export function sondarYoutube(id, { espera = 15000 } = {}) {
 }
 // criarMotor({ palco, aoFim, aoErro, aoBloquear, aoInfo }): palco = elemento onde o iframe do YouTube mora (visível quando a música é de vídeo)
 export function criarMotor({ palco, aoFim = () => {}, aoErro = () => {}, aoBloquear = () => {}, aoInfo = () => {}, log = () => {} }) {
-  let audio = null, yt = null, ponte = null, faixa = null, mudo = false, destravado = false, geracao = 0, ytGer = 0, ytInfo = { t: 0, em: 0, dur: 0, estado: -1 }, ytPronto = null, ytTocando = false;
+  let audio = null, yt = null, ponte = null, faixa = null, mudo = false, destravado = false, geracao = 0, ytGer = 0, quer = false, ytInfo = { t: 0, em: 0, dur: 0, estado: -1 }, ytPronto = null, ytTocando = false;
   const maca = () => { if (!audio) { audio = new Audio(); audio.preload = "auto"; audio.onended = () => { if (faixa?.t === "a") aoFim(); }; audio.onerror = () => { if (faixa?.t === "a") aoErro(0); }; } return audio; };
   const fechaYt = () => { ytGer++; ponte?.fechar(); ponte = null; yt?.remove(); yt = null; ytPronto = null; ytInfo = { t: 0, em: 0, dur: 0, estado: -1 }; palco.hidden = true; };
   const abreYt = (id, pos, tocando) => {
@@ -47,7 +47,7 @@ export function criarMotor({ palco, aoFim = () => {}, aoErro = () => {}, aoBloqu
     // Num toque da pessoa: libera o som do navegador (celulares só deixam tocar sozinho depois disso)
     destravar() { if (destravado) return; destravado = true; try { const a = maca(), u = URL.createObjectURL(new Blob([SILENCIO], { type: "audio/wav" })); a.src = u; a.play().catch(() => {}).finally(() => setTimeout(() => URL.revokeObjectURL(u), 3000)); } catch {} },
     async tocar(f, pos = 0, tocando = true) {
-      const g = ++geracao; faixa = f;
+      const g = ++geracao; faixa = f; quer = !!tocando;
       if (f.t === "a") {
         fechaYt(); const a = maca(); a.muted = mudo; if (a.dataset.url !== f.pr) { a.src = f.pr; a.dataset.url = f.pr; }
         await new Promise((ok) => { if (a.readyState >= 1) return ok(); const fim = () => { a.removeEventListener("loadedmetadata", fim); a.removeEventListener("error", fim); ok(); }; a.addEventListener("loadedmetadata", fim); a.addEventListener("error", fim); setTimeout(ok, 8000); });
@@ -58,11 +58,11 @@ export function criarMotor({ palco, aoFim = () => {}, aoErro = () => {}, aoBloqu
         if (igual) { comando("seekTo", [Math.max(0, pos), true]); comando(tocando ? "playVideo" : "pauseVideo"); ytTocando = tocando; }
         else if (yt && ponte?.aberta) { comando(tocando ? "loadVideoById" : "cueVideoById", [f.id, Math.max(0, pos)]); yt.dataset.id = f.id; ytInfo = { t: pos, em: performance.now(), dur: 0, estado: -1 }; ytTocando = tocando; }
         else { abreYt(f.id, pos, tocando); yt.dataset.id = f.id; }
-        if (tocando) setTimeout(() => { if (g === geracao && faixa?.t === "y" && ytInfo.estado !== 1 && ytInfo.estado !== 3) aoBloquear(); }, 6000);
+        if (tocando) setTimeout(() => { if (g === geracao && quer && faixa?.t === "y" && ytInfo.estado !== 1 && ytInfo.estado !== 3) aoBloquear(); }, 6000);
       }
     },
-    pausar() { if (faixa?.t === "a") audio?.pause(); else if (faixa) { comando("pauseVideo"); ytTocando = false; } },
-    retomar() { if (faixa?.t === "a") audio?.play().catch(() => aoBloquear()); else if (faixa) { comando("playVideo"); ytTocando = true; } },
+    pausar() { quer = false; if (faixa?.t === "a") audio?.pause(); else if (faixa) { comando("pauseVideo"); ytTocando = false; } },
+    retomar() { quer = true; if (faixa?.t === "a") audio?.play().catch(() => aoBloquear()); else if (faixa) { const g = geracao; comando("playVideo"); ytTocando = true; setTimeout(() => { if (g === geracao && quer && faixa?.t === "y" && ytInfo.estado !== 1 && ytInfo.estado !== 3) aoBloquear(); }, 4000); } },
     ir(seg) { if (faixa?.t === "a") { try { audio.currentTime = seg; } catch {} } else if (faixa) comando("seekTo", [seg, true]); },
     posicao() { if (!faixa) return 0; if (faixa.t === "a") return audio?.currentTime || 0; return ytInfo.estado === 1 ? ytInfo.t + (performance.now() - ytInfo.em) / 1000 : ytInfo.t; },
     duracao() { return faixa?.t === "a" ? (Number.isFinite(audio?.duration) ? audio.duration : 30) : ytInfo.dur || null; },
