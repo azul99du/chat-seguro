@@ -32,13 +32,13 @@ export function sondarYoutube(id, { espera = 15000 } = {}) {
 }
 // criarMotor({ palco, aoFim, aoErro, aoBloquear, aoInfo }): palco = elemento onde o iframe do YouTube mora (visível quando a música é de vídeo)
 export function criarMotor({ palco, aoFim = () => {}, aoErro = () => {}, aoBloquear = () => {}, aoInfo = () => {} }) {
-  let audio = null, yt = null, ponte = null, faixa = null, mudo = false, destravado = false, geracao = 0, ytInfo = { t: 0, em: 0, dur: 0, estado: -1 }, ytPronto = null, ytTocando = false;
+  let audio = null, yt = null, ponte = null, faixa = null, mudo = false, destravado = false, geracao = 0, ytGer = 0, ytInfo = { t: 0, em: 0, dur: 0, estado: -1 }, ytPronto = null, ytTocando = false;
   const maca = () => { if (!audio) { audio = new Audio(); audio.preload = "auto"; audio.onended = () => { if (faixa?.t === "a") aoFim(); }; audio.onerror = () => { if (faixa?.t === "a") aoErro(0); }; } return audio; };
-  const fechaYt = () => { ponte?.fechar(); ponte = null; yt?.remove(); yt = null; ytPronto = null; ytInfo = { t: 0, em: 0, dur: 0, estado: -1 }; palco.hidden = true; };
+  const fechaYt = () => { ytGer++; ponte?.fechar(); ponte = null; yt?.remove(); yt = null; ytPronto = null; ytInfo = { t: 0, em: 0, dur: 0, estado: -1 }; palco.hidden = true; };
   const abreYt = (id, pos, tocando) => {
-    fechaYt(); const g = geracao; yt = novoFrame(id, pos, tocando, "pl-yt"); ytTocando = tocando;
-    ytPronto = new Promise((ok) => { ponte = ponteYoutube(yt, { pronto: ok, erro: (c) => { if (g === geracao) aoErro(c); },
-      info: (i) => { if (g !== geracao) return; if (Number.isFinite(i.currentTime)) { ytInfo.t = i.currentTime; ytInfo.em = performance.now(); } if (Number.isFinite(i.duration) && i.duration > 0 && i.duration !== ytInfo.dur) { ytInfo.dur = i.duration; aoInfo({ duracao: Math.round(i.duration) }); }
+    fechaYt(); const g = ytGer; yt = novoFrame(id, pos, tocando, "pl-yt"); ytTocando = tocando; // (g marca ESTE iframe: as respostas dele só valem enquanto ele for o atual; trocar de música dentro do mesmo iframe não as invalida)
+    ytPronto = new Promise((ok) => { ponte = ponteYoutube(yt, { pronto: ok, erro: (c) => { if (g === ytGer) aoErro(c); },
+      info: (i) => { if (g !== ytGer) return; if (Number.isFinite(i.currentTime)) { ytInfo.t = i.currentTime; ytInfo.em = performance.now(); } if (Number.isFinite(i.duration) && i.duration > 0 && i.duration !== ytInfo.dur) { ytInfo.dur = i.duration; aoInfo({ duracao: Math.round(i.duration) }); }
         if (Number.isFinite(i.playerState) && i.playerState !== ytInfo.estado) { const antes = ytInfo.estado; ytInfo.estado = i.playerState; if (i.playerState === 0 && antes !== 0) aoFim(); if (i.playerState === 1) ytTocando = true; } } }); });
     palco.hidden = false; palco.replaceChildren(yt); if (mudo) ytPronto.then(() => ponte?.manda({ event: "command", func: "mute", args: "" }));
   };
