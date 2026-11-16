@@ -1,29 +1,29 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=553f216f9e";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=553f216f9e";
-import { montarFigurinhas } from "./figurinhas.js?v=553f216f9e";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=553f216f9e";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=553f216f9e";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=553f216f9e";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=553f216f9e";
-import { acharVideoLink } from "./videolink.js?v=553f216f9e";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=553f216f9e";
-import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=553f216f9e";
-import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=553f216f9e";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=553f216f9e";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=553f216f9e";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=553f216f9e";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=553f216f9e";
-import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, combinar, destaque, termosAmpliados, termoTrilha, albumOficial, barrasDeOnda, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=553f216f9e";
-import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=553f216f9e";
-import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=553f216f9e";
-import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=553f216f9e";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=553f216f9e";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=553f216f9e";
-import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=553f216f9e";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=553f216f9e";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=553f216f9e";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=553f216f9e";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=bb6087ac5f";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=bb6087ac5f";
+import { montarFigurinhas } from "./figurinhas.js?v=bb6087ac5f";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=bb6087ac5f";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=bb6087ac5f";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=bb6087ac5f";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=bb6087ac5f";
+import { acharVideoLink } from "./videolink.js?v=bb6087ac5f";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=bb6087ac5f";
+import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=bb6087ac5f";
+import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=bb6087ac5f";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=bb6087ac5f";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=bb6087ac5f";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=bb6087ac5f";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=bb6087ac5f";
+import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, combinar, destaque, PAGINA_RESULTADOS, MAX_BUSCA, termosAmpliados, termoTrilha, albumOficial, barrasDeOnda, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=bb6087ac5f";
+import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=bb6087ac5f";
+import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=bb6087ac5f";
+import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=bb6087ac5f";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=bb6087ac5f";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=bb6087ac5f";
+import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=bb6087ac5f";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=bb6087ac5f";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=bb6087ac5f";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=bb6087ac5f";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -3602,7 +3602,7 @@ function destravarAudio() { // celulares só deixam tocar sozinho um som cujo pl
   try { silencioMu ??= URL.createObjectURL(new Blob([pcm16ParaWav(new Int16Array(441), 22050)], { type: "audio/wav" })); a.src = silencioMu; a.play().then(() => a.pause()).catch(() => {}); } catch {}
   return a;
 }
-const mu = { retoma: null, timer: null, ctrl: null, sessao: null, escolhida: null, audio: null, capa: null, m: null, card: null, conv: null };
+const mu = { mostrados: 0, obs: null, retoma: null, timer: null, ctrl: null, sessao: null, escolhida: null, audio: null, capa: null, m: null, card: null, conv: null };
 const buscaTela = (busca) => { $("mu-busca-tela").hidden = !busca; $("mu-trecho-tela").hidden = busca; };
 function limpaPrevia(soltar = true) { // para o que toca e solta os arquivos da prévia (os que foram enviados já estão no cache de mídia)
   clearInterval(mu.rel); clearTimeout(mu.retoma); mu.card?.parar?.(); mu.card = null; if (soltar) { for (const x of [mu.audio, mu.capa]) if (x?.url) URL.revokeObjectURL(x.url); } mu.audio = null; mu.capa = null; mu.m = null; mu.escolhida = null; mu.sessao = null;
@@ -3612,41 +3612,47 @@ function abrirMusica() {
   $("musica-folha").showModal(); setTimeout(() => $("mu-busca").focus(), 60);
 }
 $("musica").onclick = () => { bandeja(false); abrirMusica(); };
-$("musica-folha").addEventListener("close", () => { clearTimeout(mu.timer); mu.ctrl?.abort(); limpaPrevia(); mu.conv = null; });
+$("musica-folha").addEventListener("close", () => { clearTimeout(mu.timer); mu.obs?.disconnect(); mu.ctrl?.abort(); limpaPrevia(); mu.conv = null; });
 $("mu-busca").oninput = () => {
   clearTimeout(mu.timer); const termo = $("mu-busca").value.trim();
-  if (termo.length < 2) { mu.ctrl?.abort(); buscaMu.n++; $("mu-lista").replaceChildren(); $("mu-destaque").hidden = true; $("mu-msg").textContent = termo ? "Digite pelo menos 2 letras." : "Digite o nome de uma música ou de um artista."; return; }
+  if (termo.length < 2) { mu.ctrl?.abort(); buscaMu.n++; mu.obs?.disconnect(); mu.mostrados = 0; $("mu-lista").replaceChildren(); $("mu-destaque").hidden = true; $("mu-msg").textContent = termo ? "Digite pelo menos 2 letras." : "Digite o nome de uma música ou de um artista."; return; }
   $("mu-msg").textContent = "Buscando…"; mu.timer = setTimeout(() => buscarMusica(termo), 450);
 };
 const buscaMu = { n: 0 };
 async function appleBusca(termo, pais, limite, ctrl) {
   const r = await fetch(urlBusca(termo, pais, limite), { signal: ctrl.signal, referrerPolicy: "no-referrer", credentials: "omit" }); if (!r.ok) throw new Error("busca");
-  return limpaBusca(await r.json(), pais === "BR" ? "br" : "us");
+  return limpaBusca(await r.json(), pais === "BR" ? "br" : "us", limite);
 }
-function desenharResultados(lista, fim) { // o melhor resultado (se bem à frente dos outros) ganha um cartão maior no topo
+function desenharResultados(lista, fim) { // o melhor resultado (se bem à frente dos outros) ganha um cartão maior no topo; o resto aparece 20 por vez e vai soltando mais conforme se desce a lista
   const d = destaque(lista), resto = d ? lista.filter((x) => x !== d) : lista, ligar = (x, b) => { b.type = "button"; b.onclick = () => escolherMusica(x).catch(() => {}); return b; };
   const item = (x) => { const li = el("li"), b = el("button"), im = el("img"), t = el("span", "t"); im.alt = ""; im.loading = "lazy"; im.src = x.capa; t.append(el("b", null, x.titulo), el("small", null, x.artista)); b.append(im, t); li.append(ligar(x, b)); return li; };
   const box = $("mu-destaque"); box.hidden = !d; box.replaceChildren();
   if (d) { const b = el("button"), im = el("img"), t = el("span", "t"); im.alt = ""; im.src = d.capa; t.append(el("b", null, d.titulo), el("small", null, d.artista)); b.append(im, t); box.append(el("b", "mu-rot", "Melhor resultado"), ligar(d, b)); }
-  $("mu-lista").replaceChildren(...resto.map(item));
+  const ul = $("mu-lista"), quanto = Math.max(PAGINA_RESULTADOS, mu.mostrados); mu.obs?.disconnect(); mu.mostrados = 0; ul.replaceChildren();
+  const mais = (n) => { // põe mais n músicas no fim; se ainda sobram, deixa um marcador que, ao aparecer na tela, chama a próxima leva
+    ul.querySelector(".mu-mais, .mu-fim")?.remove(); mu.obs?.disconnect(); ul.append(...resto.slice(mu.mostrados, mu.mostrados + n).map(item)); mu.mostrados = Math.min(resto.length, mu.mostrados + n);
+    if (mu.mostrados < resto.length) { const m = el("li", "mu-mais", "Carregando mais…"); ul.append(m); if (typeof IntersectionObserver === "function") { mu.obs = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) mais(PAGINA_RESULTADOS); }, { rootMargin: "400px" }); mu.obs.observe(m); } }
+    else if (fim && resto.length > PAGINA_RESULTADOS) ul.append(el("li", "mu-fim", "Fim dos resultados da Apple para essa busca."));
+  };
+  mais(quanto);
   $("mu-msg").textContent = lista.length ? "" : fim ? "Nenhuma música encontrada. Tente o nome do artista ou outra parte do título." : "Buscando…";
 }
 async function buscarMusica(termo) {
-  mu.ctrl?.abort(); const ctrl = mu.ctrl = new AbortController(), minha = ++buscaMu.n, grupos = [], vivo = () => !ctrl.signal.aborted && minha === buscaMu.n;
-  const mostrar = (fim) => { if (vivo()) desenharResultados(combinar(termo, grupos), fim); };
+  mu.ctrl?.abort(); mu.mostrados = 0; const ctrl = mu.ctrl = new AbortController(), minha = ++buscaMu.n, grupos = [], vivo = () => !ctrl.signal.aborted && minha === buscaMu.n;
+  const mostrar = (fim) => { if (vivo()) desenharResultados(combinar(termo, grupos, MAX_BUSCA), fim); };
   try {
     const trilha = termoTrilha(termo); // (junto com a busca normal, procura a trilha sonora original da obra: "death note" também traz as músicas oficiais do anime)
-    const [principal, oficiaisBr, oficiaisUs] = await Promise.all([appleBusca(termo, "BR", 25, ctrl), ...["BR", "US"].map((p) => (trilha ? appleBusca(trilha, p, 25, ctrl).catch(() => []) : []))]); // (algumas trilhas só existem na loja dos EUA)
+    const [principal, oficiaisBr, oficiaisUs] = await Promise.all([appleBusca(termo, "BR", 100, ctrl), ...["BR", "US"].map((p) => (trilha ? appleBusca(trilha, p, 50, ctrl).catch(() => []) : []))]); // (algumas trilhas só existem na loja dos EUA)
     grupos.push({ itens: principal }, { itens: [...oficiaisBr, ...oficiaisUs].filter((x) => albumOficial(x.album)) }); if (!vivo()) return; mostrar(false);
-    let lista = combinar(termo, grupos);
+    let lista = combinar(termo, grupos, MAX_BUSCA);
     if (lista.length < 5 || lista[0].score < 60) { // reserva: a loja do Brasil achou pouco ou nada de bom, tenta também a dos EUA
       if (!lista.length) $("mu-msg").textContent = "Buscando também na loja dos EUA…";
-      grupos.push({ itens: await appleBusca(termo, "US", 15, ctrl).catch(() => []) }); if (!vivo()) return; lista = combinar(termo, grupos); mostrar(false);
+      grupos.push({ itens: await appleBusca(termo, "US", 50, ctrl).catch(() => []) }); if (!vivo()) return; lista = combinar(termo, grupos, MAX_BUSCA); mostrar(false);
     }
     if (!lista.length || lista[0].score < 40) { // ainda nada bom: variações da busca (sem acento, só as palavras longas, sem a última letra)
       for (const alt of termosAmpliados(termo)) {
         const [a, b] = await Promise.all([appleBusca(alt, "BR", 15, ctrl).catch(() => []), appleBusca(alt, "US", 10, ctrl).catch(() => [])]); if (!vivo()) return;
-        grupos.push({ itens: a }, { itens: b }); lista = combinar(termo, grupos); mostrar(false); if (lista.length && lista[0].score >= 50) break;
+        grupos.push({ itens: a }, { itens: b }); lista = combinar(termo, grupos, MAX_BUSCA); mostrar(false); if (lista.length && lista[0].score >= 50) break;
       }
     }
     mostrar(true);

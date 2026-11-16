@@ -1,7 +1,7 @@
 // Música nas conversas (estilo Instagram): busca no catálogo público da Apple (iTunes Search), trecho de até 30 s escolhido por quem envia.
 // Funções puras (testadas em Node). O que vem da Apple e o que vem de OUTRA pessoa (conteúdo da mensagem) é desconfiável: só entra o que tem a forma certa.
 // Privacidade: a busca e o trecho vêm direto da Apple (ela vê o IP e o que se digita na busca); o que vai para a conversa é cifrado como qualquer mídia.
-export const MAX_TRECHO_S = 30, MIN_TRECHO_S = 5, PADRAO_TRECHO_S = 15, MAX_RESULTADOS = 20;
+export const MAX_TRECHO_S = 30, MIN_TRECHO_S = 5, PADRAO_TRECHO_S = 15, MAX_RESULTADOS = 20, PAGINA_RESULTADOS = 20, MAX_BUSCA = 200; // (a lista da busca mostra 20 de cada vez e vai soltando mais conforme se desce, até MAX_BUSCA)
 const PREVIA_OK = /^https:\/\/audio-ssl\.itunes\.apple\.com\/[^\s"'<>]+$/, CAPA_OK = /^https:\/\/is[1-5]-ssl\.mzstatic\.com\/[^\s"'<>]+$/;
 const PATH_OK = /^[0-9a-f-]{36}\/[0-9a-f-]{36}\/[A-Za-z0-9._-]{1,80}$/, B64 = /^[A-Za-z0-9+/=_-]{8,64}$/;
 export const MIME_MUSICA = ["audio/mp4", "audio/mpeg", "audio/wav"]; // (os trechos da Apple são AAC em MP4; MP3 e WAV também tocam em qualquer aparelho)
@@ -10,14 +10,14 @@ export const urlBusca = (termo, pais = "BR", limite = MAX_RESULTADOS) => `https:
 // A Apple deixa trocar o tamanho no fim do endereço da capa (100x100bb -> 600x600bb)
 export const capaGrande = (url, lado = 600) => (typeof url === "string" ? url.replace(/\/\d+x\d+(bb)?\.(jpg|png)$/i, `/${lado}x${lado}bb.jpg`) : url);
 // Resposta da busca -> lista de { id, titulo, artista, previa, capa (pequena, para a lista), capaGrande }
-export function limpaBusca(json, origem = "br") {
+export function limpaBusca(json, origem = "br", max = MAX_RESULTADOS) {
   const out = [], vistos = new Set();
   for (const r of Array.isArray(json?.results) ? json.results : []) {
     if (!r || typeof r !== "object" || r.kind !== "song" || !Number.isSafeInteger(r.trackId) || vistos.has(r.trackId)) continue;
     if (typeof r.previewUrl !== "string" || !PREVIA_OK.test(r.previewUrl) || typeof r.artworkUrl100 !== "string" || !CAPA_OK.test(r.artworkUrl100)) continue;
     const titulo = limpaTexto(r.trackName), artista = limpaTexto(r.artistName); if (!titulo) continue;
     vistos.add(r.trackId); out.push({ id: r.trackId, titulo, artista: artista || "Artista desconhecido", album: limpaTexto(r.collectionName), genero: limpaTexto(r.primaryGenreName, 40), previa: r.previewUrl, capa: r.artworkUrl100, capaGrande: capaGrande(r.artworkUrl100), origem, pos: out.length });
-    if (out.length >= MAX_RESULTADOS) break;
+    if (out.length >= max) break;
   }
   return out;
 }

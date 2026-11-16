@@ -24,6 +24,7 @@ const musica = (id, titulo, artista) => ({ wrapperType: "track", kind: "song", t
 async function simularApple(ctx) { // a "Apple" do teste: busca, trecho de 30 s e capa
   await ctx.route("https://itunes.apple.com/**", (r) => { buscas++; const u = new URL(r.request().url()), termo = u.searchParams.get("term"), pais = u.searchParams.get("country"); cabecalhos.push(r.request().headers()); pedidos.push(`${pais}:${termo}`); if (modoBusca === "erro") return r.fulfill({ status: 500, headers: CORS, body: "x" });
     const vazio = modoBusca === "vazio" || (modoBusca === "so-us" && pais === "BR") || (modoBusca === "tipo" && termo !== "akeboshi wnd");
+    if (modoBusca === "muitas") { const lim = Math.min(Number(u.searchParams.get("limit")) || 20, 70); return r.fulfill({ status: 200, headers: { ...CORS, "content-type": "text/javascript; charset=utf-8" }, body: JSON.stringify({ resultCount: lim, results: Array.from({ length: lim }, (_, i) => musica(100 + i, `Faixa ${String(i + 1).padStart(2, "0")}`, "Banda Teste")) }) }); }
     return r.fulfill({ status: 200, headers: { ...CORS, "content-type": "text/javascript; charset=utf-8" }, body: JSON.stringify({ resultCount: vazio ? 0 : 3, results: vazio ? [] : [musica(1, "Wind", "Akeboshi"), musica(2, "Blue Wind", "Outro Artista"), { ...musica(3, "Sem trecho", "X"), previewUrl: "https://evil.example/x.m4a" }] }) }); });
   await ctx.route("https://audio-ssl.itunes.apple.com/**", (r) => r.fulfill({ status: 200, headers: { ...CORS, "content-type": "audio/x-m4p" }, body: onda(30) }));
   await ctx.route("https://is1-ssl.mzstatic.com/**", (r) => r.fulfill({ status: 200, headers: { ...CORS, "content-type": "image/png" }, body: png(60, 60) }));
@@ -105,5 +106,19 @@ t("voltar e fechar no meio: nada fica tocando nem é enviado; abrir de novo come
   await abrirDm(A, nomeB); await abrirMusica(A); await buscarEEscolher(A, "akeboshi", "Wind"); await A.click("#mu-voltar"); await A.waitForSelector("#mu-busca-tela:not([hidden])"); assert.equal(await A.locator("#mu-trecho-tela").isHidden(), true);
   await A.click("#mu-fechar"); await A.waitForFunction(() => !document.querySelector("#musica-folha").open); assert.equal(await A.locator(".msg.mine .mu-card").count(), 1, "só a música enviada antes");
   await abrirMusica(A); assert.equal(await A.inputValue("#mu-busca"), ""); assert.equal(await A.locator("#mu-lista button").count(), 0, "a busca anterior foi limpa"); await A.click("#mu-fechar");
+});
+t("a lista não acaba em 20: quanto mais se desce, mais músicas aparecem, até o fim do que a Apple devolveu (e avisa que acabou)", async () => {
+  await A.waitForSelector("#musica-folha[open]").catch(async () => { await abrirDm(A, nomeB); await abrirMusica(A); });
+  if (await A.locator("#mu-busca-tela").isHidden()) await A.click("#mu-voltar");
+  modoBusca = "muitas"; pedidos.length = 0; await A.fill("#mu-busca", "faixa");
+  await A.waitForFunction(() => document.querySelectorAll("#mu-lista button").length >= 20, null, { timeout: 20000 });
+  const total = () => A.locator("#mu-lista button").count(), esperaTotal = async (n) => { const ini = Date.now(); while ((await total()) < n) { if (Date.now() - ini > 15000) assert.fail(`esperava ${n} músicas, tem ${await total()}`); await A.waitForTimeout(100); } };
+  assert.ok((await total()) <= 21, `começa com uma página só (20), tem ${await total()}`); assert.equal(await A.locator(".mu-mais").count() > 0, true, "marcador 'carregando mais' no fim");
+  await A.locator(".mu-mais").scrollIntoViewIfNeeded(); await esperaTotal(40); assert.ok((await total()) <= 41);
+  for (let i = 0; i < 6 && (await A.locator(".mu-fim").count()) === 0; i++) { await A.locator(".mu-mais, .mu-fim").last().scrollIntoViewIfNeeded(); await A.waitForTimeout(300); }
+  await A.waitForSelector(".mu-fim", { timeout: 10000 }); assert.equal(await total(), 70, "chegou ao fim: todas as 70 que a Apple devolveu"); assert.equal(await A.locator(".mu-mais").count(), 0); assert.match(await A.locator(".mu-fim").innerText(), /Fim dos resultados/);
+  assert.equal(new Set(await A.locator("#mu-lista b").allInnerTexts()).size, 70, "sem repetidas");
+  assert.ok(pedidos.some((x) => x.startsWith("BR:faixa")), "a busca pediu mais que 20 de uma vez (limit maior), em vez de pedir página por página");
+  modoBusca = "ok"; await A.fill("#mu-busca", "akeboshi"); await A.waitForFunction(() => document.querySelectorAll("#mu-lista button").length <= 2 && document.querySelectorAll(".mu-fim, .mu-mais").length === 0, null, { timeout: 15000 }); await A.keyboard.press("Escape");
 });
 t("nenhum erro de página", () => assert.deepEqual(erros, []));

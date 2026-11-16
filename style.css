@@ -915,6 +915,7 @@ dialog.musica-folha{max-height:88dvh;overflow:auto}
 .mu-lista button:hover,.mu-lista button:focus-visible{background:var(--paper)}
 .mu-lista img{flex:none;width:48px;height:48px;border-radius:8px;object-fit:cover;background:var(--ink-2)}
 .mu-lista .t{min-width:0}.mu-lista b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mu-lista small{display:block;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mu-lista .mu-mais,.mu-lista .mu-fim{padding:14px 8px;color:var(--mut);font-size:.8rem;text-align:center}
 .mu-msg{margin:10px 0 0;color:var(--mut);font-size:.88rem;text-align:center}
 .mu-nota{margin:12px 0 0;color:var(--mut);font-size:.74rem;line-height:1.4}
 .mu-previa{display:flex;justify-content:center;margin:8px 0 14px}

@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { albumOficial, termoTrilha, norm, tokens, distancia, casaPalavra, pontuar, combinar, destaque, termosAmpliados, barrasDeOnda, urlBusca, capaGrande, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, MAX_RESULTADOS } from "../musica.js";
+import { MAX_BUSCA, PAGINA_RESULTADOS, albumOficial, termoTrilha, norm, tokens, distancia, casaPalavra, pontuar, combinar, destaque, termosAmpliados, barrasDeOnda, urlBusca, capaGrande, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, MAX_RESULTADOS } from "../musica.js";
 
 const R = (id, extra = {}) => ({ wrapperType: "track", kind: "song", trackId: id, trackName: "Wind", artistName: "Akeboshi", previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/x/mzaf_1.m4a", artworkUrl100: "https://is1-ssl.mzstatic.com/image/thumb/Music/x/jacket.jpg/100x100bb.jpg", ...extra });
 const G = "11111111-2222-4333-8444-555555555555", P = (n) => `${G}/${G}/${String(n).padStart(36, "a").slice(-36)}`;
@@ -18,7 +18,7 @@ describe("música: busca na Apple", () => {
   test("só entram músicas com trecho e capa dos endereços da Apple; sem repetidas; textos limpos e curtos", () => {
     const ok = limpaBusca({ results: [R(1), R(1), R(2, { trackName: "  Wi\u0000nd‮  ", artistName: "" }), R(3, { kind: "podcast" }), R(4, { previewUrl: "http://audio-ssl.itunes.apple.com/x.m4a" }), R(5, { previewUrl: "https://evil.example/x.m4a" }), R(6, { artworkUrl100: "https://evil.example/c.jpg" }), R(7, { trackId: "7" }), R(8, { trackName: "   " }), null, 5]});
     assert.deepEqual(ok.map((x) => x.id), [1, 2]); assert.equal(ok[1].titulo, "Wind"); assert.equal(ok[1].artista, "Artista desconhecido"); assert.match(ok[0].capaGrande, /600x600bb\.jpg$/);
-    assert.equal(limpaBusca({ results: Array.from({ length: 50 }, (_, i) => R(i + 1)) }).length, MAX_RESULTADOS); assert.deepEqual(limpaBusca(null), []); assert.deepEqual(limpaBusca({ results: "x" }), []);
+    assert.equal(limpaBusca({ results: Array.from({ length: 50 }, (_, i) => R(i + 1)) }).length, MAX_RESULTADOS); assert.equal(limpaBusca({ results: Array.from({ length: 150 }, (_, i) => R(i + 1)) }, "br", 100).length, 100, "com limite maior, entra mais (a lista vai soltando aos poucos)"); assert.ok(MAX_BUSCA > MAX_RESULTADOS && PAGINA_RESULTADOS === 20); assert.deepEqual(limpaBusca(null), []); assert.deepEqual(limpaBusca({ results: "x" }), []);
     assert.equal(limpaBusca({ results: [R(1, { trackName: "a".repeat(300) })] })[0].titulo.length, 80);
   });
 });
