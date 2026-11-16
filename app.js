@@ -1,34 +1,34 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=9d7f5fac6c";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=9d7f5fac6c";
-import { montarFigurinhas } from "./figurinhas.js?v=9d7f5fac6c";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=9d7f5fac6c";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=9d7f5fac6c";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=9d7f5fac6c";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=9d7f5fac6c";
-import { acharVideoLink } from "./videolink.js?v=9d7f5fac6c";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=9d7f5fac6c";
-import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=9d7f5fac6c";
-import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=9d7f5fac6c";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=9d7f5fac6c";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=9d7f5fac6c";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=9d7f5fac6c";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=9d7f5fac6c";
-import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, combinar, destaque, PAGINA_RESULTADOS, MAX_BUSCA, termosAmpliados, termoTrilha, albumOficial, barrasDeOnda, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=9d7f5fac6c";
-import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=9d7f5fac6c";
-import { MAX_SUGESTAO, MAX_POR_DIA, POR_PAGINA, limpaSugestao, restantesHoje, dataCarimbo, corDaNota, limpaSugestoes, erroSugestao } from "./sugestoes.js?v=9d7f5fac6c";
-import { MODELOS, IDS_MODELOS, MODELO_PADRAO, MAX_TRANSCRICAO_S, limpaModelo, mbDoModelo, bytesDoModelo, estimativa, paraMono, limpaTranscricao } from "./transcricao.js?v=9d7f5fac6c";
-import { modeloBaixado, apagarModelo } from "./transcricao-arquivos.js?v=9d7f5fac6c";
-import * as PLM from "./playlist.js?v=9d7f5fac6c";
-import { criarMotor, sondarYoutube } from "./playlist-motor.js?v=9d7f5fac6c";
-import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=9d7f5fac6c";
-import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, precoPlaylist, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=9d7f5fac6c";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=9d7f5fac6c";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=9d7f5fac6c";
-import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=9d7f5fac6c";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=9d7f5fac6c";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=9d7f5fac6c";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=9d7f5fac6c";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=e2ecf3280e";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=e2ecf3280e";
+import { montarFigurinhas } from "./figurinhas.js?v=e2ecf3280e";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=e2ecf3280e";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=e2ecf3280e";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=e2ecf3280e";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=e2ecf3280e";
+import { acharVideoLink } from "./videolink.js?v=e2ecf3280e";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=e2ecf3280e";
+import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=e2ecf3280e";
+import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=e2ecf3280e";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=e2ecf3280e";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=e2ecf3280e";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=e2ecf3280e";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=e2ecf3280e";
+import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, combinar, destaque, PAGINA_RESULTADOS, MAX_BUSCA, termosAmpliados, termoTrilha, albumOficial, barrasDeOnda, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=e2ecf3280e";
+import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=e2ecf3280e";
+import { MAX_SUGESTAO, MAX_POR_DIA, POR_PAGINA, limpaSugestao, restantesHoje, dataCarimbo, corDaNota, limpaSugestoes, erroSugestao } from "./sugestoes.js?v=e2ecf3280e";
+import { MODELOS, IDS_MODELOS, MODELO_PADRAO, MAX_TRANSCRICAO_S, limpaModelo, mbDoModelo, bytesDoModelo, estimativa, paraMono, limpaTranscricao } from "./transcricao.js?v=e2ecf3280e";
+import { modeloBaixado, apagarModelo } from "./transcricao-arquivos.js?v=e2ecf3280e";
+import * as PLM from "./playlist.js?v=e2ecf3280e";
+import { criarMotor, sondarYoutube } from "./playlist-motor.js?v=e2ecf3280e";
+import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=e2ecf3280e";
+import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, precoPlaylist, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=e2ecf3280e";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=e2ecf3280e";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=e2ecf3280e";
+import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=e2ecf3280e";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=e2ecf3280e";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=e2ecf3280e";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=e2ecf3280e";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -3702,7 +3702,7 @@ async function plCarregarMinhas() { // as minhas playlists que estão tocando nu
 const plTrava = (id) => PL.minhas.find((x) => x.pl === id && x.ate > Date.now() + PL.s.relogio.dif()) || null;
 const plMsg = (t, id = "pl-msg") => { $(id).textContent = t || ""; };
 // ----- Ícones (pelo DOM) -----
-const PL_ICONES = { play: "M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z", pausa: "M7 5h3.5v14H7zM13.5 5H17v14h-3.5z", prox: "M6 5.5v13l9-6.5zM16.5 5.5h2v13h-2z", ant: "M18 5.5v13l-9-6.5zM5.5 5.5h2v13h-2z", parar: "M6.5 6.5h11v11h-11z", baixo: "M6 9l6 6 6-6", mudo: "M4 9.5v5h3.5L12 18.5v-13L7.5 9.5zM15.5 9.5l5 5M20.5 9.5l-5 5", som: "M4 9.5v5h3.5L12 18.5v-13L7.5 9.5zM15.5 9a4 4 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11", mais: "M12 5v14M5 12h14", sobe: "M12 18V6M6 12l6-6 6 6", desce: "M12 6v12M6 12l6 6 6-6", x: "M6 6l12 12M18 6L6 18", nota: "M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" };
+const PL_ICONES = { play: "M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z", pausa: "M7 5h3.5v14H7zM13.5 5H17v14h-3.5z", prox: "M6 5.5v13l9-6.5zM16.5 5.5h2v13h-2z", ant: "M18 5.5v13l-9-6.5zM5.5 5.5h2v13h-2z", parar: "M6.5 6.5h11v11h-11z", baixo: "M6 9l6 6 6-6", cima: "M6 15l6-6 6 6", mudo: "M4 9.5v5h3.5L12 18.5v-13L7.5 9.5zM15.5 9.5l5 5M20.5 9.5l-5 5", som: "M4 9.5v5h3.5L12 18.5v-13L7.5 9.5zM15.5 9a4 4 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11", mais: "M12 5v14M5 12h14", sobe: "M12 18V6M6 12l6-6 6 6", desce: "M12 6v12M6 12l6 6 6-6", x: "M6 6l12 12M18 6L6 18", nota: "M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" };
 const PL_CHEIOS = new Set(["play", "pausa", "prox", "ant", "parar"]);
 function plIcone(nome, tam = 20) {
   const ns = "http://www.w3.org/2000/svg", s = document.createElementNS(ns, "svg"), cheio = PL_CHEIOS.has(nome);
@@ -3829,7 +3829,7 @@ function plReconciliar(forcar = false) {
     if (!m.tocando() && (!S.bloqueado || S.retomouVer !== ses.versao)) { S.retomouVer = ses.versao; m.retomar(); } } else { if (m.tocando()) m.pausar(); }
 }
 function plAplicarLinha(row) {
-  const S = PL.s; if (!row) { if (S.sessao) { S.sessao = null; plMotor().parar(); S.bloqueado = false; S.erros = 0; plDesenharBarra(); } return Promise.resolve(); }
+  const S = PL.s; if (!row) { if (S.sessao) { S.sessao = null; plMotor().parar(); S.bloqueado = false; S.erros = 0; S.aberta = false; plDesenharBarra(); } return Promise.resolve(); }
   S.relogio.acerta(Date.parse(row.agora)); const ehNova = !S.sessao || S.sessao.id !== row.id; if (!ehNova && S.ocupado > 0) return Promise.resolve();
   const aplicar = () => { const ses = S.sessao; if (!ses || Number(row.versao) === ses.versao) return; ses.versao = Number(row.versao); const e = PLM.limpaEstado(row.estado, ses.faixas.length); if (!e) return; ses.estado = e; ses.em = Date.parse(row.em); S.erros = 0; plReconciliar(); plDesenharBarra(); };
   if (!ehNova) { S.sessao.dono = row.dono; S.sessao.ate = row.ate ? Date.parse(row.ate) : null; aplicar(); return Promise.resolve(); }
@@ -3844,7 +3844,7 @@ async function plPoll() {
   try { const { data, error } = await sb.rpc(par.rpcVer, par.args); if (error || !active || active.id !== alvo) return; await plAplicarLinha(Array.isArray(data) ? data[0] || null : data || null); } catch {}
 }
 function plAoAbrir() { plAoSair(); if (!active) return; const S = PL.s; S.timer = setInterval(plPoll, 3000); S.tick = setInterval(plTique, 500); plPoll(); }
-function plAoSair() { const S = PL.s; clearInterval(S.timer); clearInterval(S.tick); S.timer = S.tick = null; S.sessao = null; S.vendo = 0; S.bloqueado = false; S.aberta = false; S.erros = 0; S.ocupado = 0; S.motor?.parar(); $("pl-barra").hidden = true; }
+function plAoSair() { const S = PL.s; clearInterval(S.timer); clearInterval(S.tick); S.timer = S.tick = null; S.sessao = null; S.vendo = 0; S.bloqueado = false; S.aberta = false; S.erros = 0; S.ocupado = 0; S.motor?.parar(); $("pl-barra").hidden = true; $("pl-gaveta").hidden = true; }
 // ----- Ações de quem controla -----
 async function plAcao(novo) {
   const S = PL.s, ses = S.sessao; if (!ses || !plDono()) return; plLog("acao", JSON.stringify(novo)); ses.estado = novo; ses.em = S.relogio.agora(); plReconciliar(); plDesenharBarra();
@@ -3863,24 +3863,33 @@ function plTique() {
   const S = PL.s, ses = S.sessao; if (ses?.ate && S.relogio.agora() >= ses.ate) { plAplicarLinha(null); return; } if (!ses || $("pl-barra").hidden) return; const m = S.motor, f = ses.faixas[ses.estado.f]; if (!f) return;
   const { e, pos } = plEfetivo(ses), dur = PLM.duracaoDaFaixa(f) || m?.duracao() || 0, atual = S.ouvindo && m?.faixa ? m.posicao() : pos;
   if (e.t && dur && (plDono() || S.ouvindo) && S.fimGuarda !== ses.em && posicaoBruta(ses) >= dur + 1.5) { S.fimGuarda = ses.em; plLog("fim-por-tempo"); plFim(); return; } // (rede de segurança: se o player não avisou que a música acabou, passa pela hora)
-  $("pl-prog").style.width = dur ? `${Math.max(0, Math.min(100, (atual / dur) * 100))}%` : "0%"; $("pl-t1").textContent = mmss(atual); $("pl-t2").textContent = dur ? mmss(dur) : "";
+  const pct = dur ? `${Math.max(0, Math.min(100, (atual / dur) * 100))}%` : "0%"; $("pl-prog").style.width = pct; $("pl-fio").style.width = pct; $("pl-t1").textContent = mmss(atual); $("pl-t2").textContent = dur ? mmss(dur) : "";
   if (S.ouvindo && !S.bloqueado && e.t && m?.faixa && (m.faixa.id !== f.id || m.faixa.t !== f.t)) plReconciliar(); // (o estado avançou sozinho: acompanha)
 }
 function plDesenharBarra() {
-  const S = PL.s, ses = S.sessao, barra = $("pl-barra"); barra.hidden = !ses; if (!ses) return;
-  const e = ses.estado, n = ses.faixas.length, f = ses.faixas[e.f], dono = plDono(); $("pl-nome").textContent = ses.nome; $("pl-faixa").textContent = `${f ? PLM.rotuloFaixa(f) : ""} · ${dono ? "você controla" : `@${plNomeDe(ses.dono)} controla`}${ses.ate ? ` · até ${horaFim(ses.ate - S.relogio.dif())}` : ""}`;
-  const capa = $("pl-capa"); capa.replaceChildren(); if (f && (f.t === "y" || f.ca)) { const im = el("img"); im.alt = ""; im.src = f.t === "y" ? PLM.capaYoutube(f.id) : f.ca; capa.append(im); } else capa.append(plIcone("nota"));
-  const ab = $("pl-abrir"); ab.replaceChildren(plIcone("baixo")); ab.setAttribute("aria-expanded", String(S.aberta));
-  const ctl = $("pl-ctl"), btns = [];
-  if (dono) { btns.push(plBotao("ant", "Música anterior", () => plAcao(PLM.pular(ses.estado, n, -1))), plBotao(e.t ? "pausa" : "play", e.t ? "Pausar" : "Tocar", () => plAcao(e.t ? PLM.pausar(ses.estado, S.relogio.agora(), ses.em) : PLM.continuar(ses.estado)), { cls: "grande" }),
-    plBotao("prox", "Próxima música", () => plAcao(PLM.pular(ses.estado, n, 1))), plBotao("aleatorio", "Ordem aleatória", () => plAcao(PLM.alternarAleatorio(plBase(), n)), { pressed: e.a }), plBotao("loop", "Repetir esta música", () => plAcao(PLM.alternarLoop(plBase())), { pressed: e.l }), plBotao("parar", "Parar a playlist", () => plParar())); }
-  else { const o = el("button", "pl-rot", S.ouvindo ? "Parar de ouvir" : "Ouvir"); o.type = "button"; o.onclick = () => { S.ouvindo = !S.ouvindo; if (S.ouvindo) { plMotor().destravar(); S.bloqueado = false; } plReconciliar(true); plDesenharBarra(); }; btns.push(o); }
-  if (S.bloqueado && S.ouvindo) { const t = el("button", "pl-rot grande", "Ativar o som"); t.type = "button"; t.title = "O navegador bloqueou o som automático. Toque para ouvir."; PL.s.dica = true; t.onclick = () => { plMotor().destravar(); S.bloqueado = false; plReconciliar(true); plDesenharBarra(); }; btns.unshift(t); }
-  btns.push(plBotao(S.mudo ? "mudo" : "som", S.mudo ? "Ligar o som" : "Silenciar neste aparelho", () => { S.mudo = !S.mudo; plMotor().mudo(S.mudo); plDesenharBarra(); })); ctl.replaceChildren(...btns);
+  const S = PL.s, ses = S.sessao, barra = $("pl-barra"); barra.hidden = !ses; if (!ses) { $("pl-gaveta").hidden = true; return; }
+  const e = ses.estado, n = ses.faixas.length, f = ses.faixas[e.f], dono = plDono(), titulo = f ? f.ti : "", controla = `${dono ? "você controla" : `@${plNomeDe(ses.dono)} controla`}${ses.ate ? ` · até ${horaFim(ses.ate - S.relogio.dif())}` : ""}`;
+  $("pl-nome").textContent = titulo; $("pl-sub").textContent = `${ses.nome} · ${controla}`; $("pl-faixa").textContent = `${f ? PLM.rotuloFaixa(f) : ""} · ${controla}`; $("pl-g-nome").textContent = titulo; $("pl-g-sub").textContent = `${ses.nome} · ${controla}`;
+  for (const id of ["pl-capa", "pl-g-capa"]) { const capa = $(id); capa.replaceChildren(); if (f && (f.t === "y" || f.ca)) { const im = el("img"); im.alt = ""; im.src = f.t === "y" ? PLM.capaYoutube(f.id) : f.ca; capa.append(im); } else capa.append(plIcone("nota")); }
+  const ab = $("pl-abrir"); ab.replaceChildren(plIcone("cima")); ab.setAttribute("aria-expanded", String(S.aberta)); $("pl-gaveta").hidden = !S.aberta;
+  // linha fina: o que se usa no dia a dia (pausar/continuar e próxima, para quem controla; "Ativar o som" quando o navegador bloqueou)
+  const rapidos = []; if (S.bloqueado && S.ouvindo) { const t = el("button", "pl-rot grande", "Ativar o som"); t.type = "button"; t.title = "O navegador bloqueou o som automático. Toque para ouvir."; t.onclick = () => { plMotor().destravar(); S.bloqueado = false; plReconciliar(true); plDesenharBarra(); }; rapidos.push(t); }
+  if (dono) rapidos.push(plBotao(e.t ? "pausa" : "play", e.t ? "Pausar" : "Tocar", () => plAcao(e.t ? PLM.pausar(ses.estado, S.relogio.agora(), ses.em) : PLM.continuar(ses.estado)), { cls: "pl-q" }), plBotao("prox", "Próxima música", () => plAcao(PLM.pular(ses.estado, n, 1)), { cls: "pl-q" }));
+  $("pl-rapidos").replaceChildren(...rapidos);
+  // gaveta: tudo (só desenhada quando aberta)
+  if (S.aberta) {
+    const ctl = $("pl-ctl"), btns = [];
+    if (dono) { btns.push(plBotao("ant", "Música anterior", () => plAcao(PLM.pular(ses.estado, n, -1))), plBotao(e.t ? "pausa" : "play", e.t ? "Pausar" : "Tocar", () => plAcao(e.t ? PLM.pausar(ses.estado, S.relogio.agora(), ses.em) : PLM.continuar(ses.estado)), { cls: "grande" }),
+      plBotao("prox", "Próxima música", () => plAcao(PLM.pular(ses.estado, n, 1))), plBotao("aleatorio", "Ordem aleatória", () => plAcao(PLM.alternarAleatorio(plBase(), n)), { pressed: e.a }), plBotao("loop", "Repetir esta música", () => plAcao(PLM.alternarLoop(plBase())), { pressed: e.l }), plBotao("parar", "Parar a playlist", () => plParar())); }
+    else { const o = el("button", "pl-rot", S.ouvindo ? "Parar de ouvir" : "Ouvir"); o.type = "button"; o.onclick = () => { S.ouvindo = !S.ouvindo; if (S.ouvindo) { plMotor().destravar(); S.bloqueado = false; } plReconciliar(true); plDesenharBarra(); }; btns.push(o); }
+    btns.push(plBotao(S.mudo ? "mudo" : "som", S.mudo ? "Ligar o som" : "Silenciar neste aparelho", () => { S.mudo = !S.mudo; plMotor().mudo(S.mudo); plDesenharBarra(); })); ctl.replaceChildren(...btns);
+    $("pl-faixas").replaceChildren(...ses.faixas.map((x, i) => { const li = el("li"), b = el("button"); b.type = "button"; b.disabled = !dono; if (i === e.f) b.setAttribute("aria-current", "true"); b.append(el("span", "n", String(i + 1)), el("span", "t", PLM.rotuloFaixa(x))); b.onclick = () => plAcao(PLM.irPara(ses.estado, i, n)); li.append(b); return li; }));
+  }
   $("pl-palco").hidden = !(f && f.t === "y" && S.ouvindo); const av = $("pl-aviso"); if (S.bloqueado && S.ouvindo) { av.hidden = false; av.textContent = "O navegador bloqueou o som. Toque em “Ativar o som” (ou em qualquer lugar da tela) para ouvir."; } else if (av.textContent.startsWith("O navegador bloqueou")) { av.hidden = true; av.textContent = ""; }
-  const lista = $("pl-faixas"); lista.hidden = !S.aberta; if (S.aberta) lista.replaceChildren(...ses.faixas.map((x, i) => { const li = el("li"), b = el("button"); b.type = "button"; b.disabled = !dono; if (i === e.f) b.setAttribute("aria-current", "true"); b.append(el("span", "n", String(i + 1)), el("span", "t", PLM.rotuloFaixa(x))); b.onclick = () => plAcao(PLM.irPara(ses.estado, i, n)); li.append(b); return li; }));
 }
 $("pl-abrir").onclick = () => { PL.s.aberta = !PL.s.aberta; plDesenharBarra(); };
+$("pl-fechar-g").onclick = () => { PL.s.aberta = false; plDesenharBarra(); };
+addEventListener("keydown", (e) => { if (e.key === "Escape" && PL.s.aberta && !document.querySelector("dialog[open]")) { PL.s.aberta = false; plDesenharBarra(); } });
 async function plParar() { const ses = PL.s.sessao; if (!ses || !plDono()) return; const { error } = await sb.rpc("playlist_parar", { p_sessao: ses.id }); if (error) plAviso(PLM.erroPlaylist(error)); plPoll(); }
 
 // ---------- Transcrição de áudios (Whisper no próprio aparelho; o áudio e o texto nunca saem dele) ----------

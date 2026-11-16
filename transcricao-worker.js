@@ -1,7 +1,7 @@
 // Worker da transcrição: carrega o Whisper (Transformers.js + ONNX Runtime Web, em WebAssembly, 1 thread) e transcreve áudio no próprio aparelho.
 // Mensagens que recebe: { tipo: "transcrever", id, modelo, audio: Float32Array (mono, 16 kHz) }.  Mensagens que manda: progresso, estado, pronto, erro.
-import { limpaModelo, limpaTranscricao, MODELOS } from "./transcricao.js?v=9d7f5fac6c";
-import { baseVendor, arquivoDoModelo } from "./transcricao-arquivos.js?v=9d7f5fac6c";
+import { limpaModelo, limpaTranscricao, MODELOS } from "./transcricao.js?v=e2ecf3280e";
+import { baseVendor, arquivoDoModelo } from "./transcricao-arquivos.js?v=e2ecf3280e";
 let T = null, atual = null, fila = Promise.resolve(); const vendor = baseVendor();
 const manda = (m) => postMessage(m);
 async function lib() {

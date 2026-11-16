@@ -54,6 +54,7 @@ async function apiUser(tag) { const c = createClient(SUPABASE_URL, SUPABASE_KEY,
 
 import { createClient } from "../../vendor/supabase.js";
 const vigiar = (p) => { p.on("pageerror", (e) => erros.push(e.message)); p.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) erros.push(m.text().slice(0, 200)); }); p.on("request", (r) => pedidos.push(r.url())); };
+const gaveta = async (p) => { if (!(await p.locator("#pl-gaveta").isVisible())) await p.click("#pl-abrir"); await p.waitForSelector("#pl-gaveta #pl-ctl button", { state: "visible" }); };
 const botao = (p, rotulo) => p.locator(`#pl-ctl button[aria-label="${rotulo}"]`);
 const esperaBarra = async (p, re, ms = 25000) => { const ini = Date.now(); for (;;) { if ((await p.locator("#pl-barra").isVisible()) && re.test(await p.locator("#pl-faixa").innerText())) return; if (Date.now() - ini > ms) assert.fail(`a barra não mostrou ${re}; mostra: ${(await p.locator("#pl-faixa").innerText().catch(() => "?"))}`); await p.waitForTimeout(250); } };
 const abrirGrupoDe = async (p) => { await p.click("#contacts button[data-grupo]"); await p.waitForSelector('#conv-title:text-is("Radio")', { timeout: 15000 }); await p.waitForSelector("#messages:not(.carregando)"); };
@@ -93,10 +94,10 @@ t("o admin liga o item Playlist tocando e dá Selos; B cria a playlist (Apple e 
 t("a playlist toca para todo o grupo; só quem comprou controla (próxima, aleatório, escolher); o servidor recusa controle e outra compra de quem não é o dono", async () => {
   await esperaBarra(B, /Aurora · Banda Sol · você controla · até \d\d:\d\d/); for (const p of [A, C]) await esperaBarra(p, new RegExp(`Aurora · Banda Sol · @${nomeB} controla · até`));
   for (const p of [A, B, C]) await p.waitForFunction(() => window.__som.some((x) => x.tocando && x.src.includes("previa101")), null, { timeout: 15000 });
-  assert.equal(await A.locator("#pl-ctl button[aria-label='Pausar']").count(), 0, "membro comum não controla"); assert.equal(await C.locator("#pl-ctl button[aria-label='Pausar']").count(), 0);
+  await gaveta(A); await gaveta(B); await gaveta(C); assert.equal(await A.locator("#pl-ctl button[aria-label='Pausar']").count(), 0, "membro comum não controla"); assert.equal(await C.locator("#pl-ctl button[aria-label='Pausar']").count(), 0);
   await botao(B, "Próxima música").click(); for (const p of [A, B, C]) await esperaBarra(p, /Brisa/); await botao(B, "Pausar").click(); for (const p of [A, C]) await p.waitForFunction(() => !window.__som.some((x) => x.tocando), null, { timeout: 12000 }); await botao(B, "Tocar").click(); for (const p of [A, C]) await p.waitForFunction(() => window.__som.some((x) => x.tocando), null, { timeout: 12000 });
   await botao(B, "Ordem aleatória").click(); await B.waitForFunction(() => document.querySelector("#pl-ctl button[aria-label='Ordem aleatória']").getAttribute("aria-pressed") === "true"); await botao(B, "Ordem aleatória").click();
-  await B.click("#pl-abrir"); await B.locator("#pl-faixas li").nth(2).locator("button").click(); for (const p of [A, B, C]) await esperaBarra(p, /Vídeo abcdefghijk/); await A.waitForSelector("#pl-palco iframe.pl-yt", { timeout: 10000 });
+  await B.locator("#pl-faixas li").nth(2).locator("button").click(); for (const p of [A, B, C]) await esperaBarra(p, /Vídeo abcdefghijk/); await A.waitForSelector("#pl-palco iframe.pl-yt", { state: "attached", timeout: 10000 });
   gid = await A.evaluate(async () => (await (await import("./vendor/supabase.js")).createClient((await import("./config.js")).SUPABASE_URL, (await import("./config.js")).SUPABASE_KEY).rpc("meus_grupos")).data[0].grupo_id);
   const ver = await rpcDe(A, "playlist_ver_grupo", { p_grupo: gid }); const sessao = JSON.parse(ver.corpo)[0]; assert.ok(sessao && sessao.dono && !("faixas" in sessao), "a consulta leve não traz as músicas");
   const ctl = await rpcDe(A, "playlist_controlar", { p_sessao: sessao.id, p_estado: { f: 0, p: 0, t: true, a: false, l: false } }); assert.ok(ctl.status >= 400 && /sem_controle/.test(ctl.corpo), "quem não comprou não controla (servidor)");
