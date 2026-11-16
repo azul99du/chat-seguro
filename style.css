@@ -1029,3 +1029,4 @@ dialog.musica-folha{max-height:88dvh;overflow:auto}
 .pl-aviso{margin:0;color:var(--mut);font-size:.8rem;text-align:center}
 .lf-pls{display:grid;gap:8px}.lf-pl{display:grid;gap:2px;text-align:left;min-height:52px;padding:8px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);color:var(--texto)}
 .lf-pl small{color:var(--mut)}.lf-pl[aria-pressed=true]{border-color:var(--seal);background:rgba(232,51,95,.14)}
+.pl-nota{margin:12px 0 0;color:var(--mut);font-size:.74rem;line-height:1.4}
