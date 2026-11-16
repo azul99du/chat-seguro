@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=1363c240bd">
+  <link rel="stylesheet" href="style.css?v=93ab49f6ea">
 </head>
 <body>
 
@@ -415,6 +415,22 @@
     <div class="btns"><button type="button" id="sn-ok" class="btn-rosa">Pronto</button></div>
   </dialog>
 
+  <dialog id="tr-folha" class="folha-seg" aria-labelledby="tr-titulo">
+    <div class="grab"></div>
+    <h2 id="tr-titulo">Transcrever áudio</h2>
+    <p>O áudio vira texto aqui mesmo, no seu aparelho. Nada é enviado para fora: nem o áudio, nem o texto.</p>
+    <div id="tr-modelos" class="tr-modelos" role="group" aria-label="Qualidade da transcrição">
+      <button type="button" data-modelo="base" aria-pressed="true"><b>Base</b><small>Mais rápido, erra mais</small><span class="tr-st"></span></button>
+      <button type="button" data-modelo="small" aria-pressed="false"><b>Melhor (Small)</b><small>Mais preciso, mais lento e mais pesado</small><span class="tr-st"></span></button>
+    </div>
+    <p id="tr-aviso" class="tr-aviso" role="status"></p>
+    <div class="btns">
+      <button type="button" id="tr-ir" class="primary">Transcrever</button>
+      <button type="button" id="tr-apagar" class="ghost" hidden>Apagar o modelo do aparelho</button>
+      <button type="button" id="tr-fechar" class="ghost">Agora não</button>
+    </div>
+  </dialog>
+
   <dialog id="musica-folha" class="folha-seg musica-folha" aria-labelledby="mu-titulo">
     <div class="grab"></div>
     <h2 id="mu-titulo">Música</h2>
@@ -601,6 +617,6 @@
 
   <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
 
-  <script src="guarda.js?v=1363c240bd"></script>
+  <script src="guarda.js?v=93ab49f6ea"></script>
 </body>
 </html>

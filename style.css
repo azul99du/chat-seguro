@@ -977,3 +977,18 @@ dialog.musica-folha{max-height:88dvh;overflow:auto}
 .sg-env{flex:none;width:46px;height:46px;min-height:46px;padding:0;border-radius:50%;background:var(--btn);color:#fff;display:grid;place-items:center}
 .sg-env:disabled{opacity:.45;cursor:default}
 @media (prefers-reduced-motion:reduce){.sg-nota{transform:none!important}}
+
+/* ===== Transcrição de áudios ===== */
+.transc{margin-top:6px;display:grid;gap:6px;font-size:.88rem}
+.transc-btn{justify-self:start;min-height:34px;padding:0 12px;border-radius:99px;border:1.5px solid currentColor;background:none;color:inherit;font:600 .8rem var(--body);opacity:.85}
+.transc-btn:disabled{opacity:.5}
+.transc-msg{margin:0;font:400 .74rem var(--mono);opacity:.85}
+.transc-saida{padding:8px 10px;border-left:3px solid var(--seal);border-radius:4px 10px 10px 4px;background:rgba(127,127,160,.16)}
+.transc-saida p{margin:0;font:500 .9rem/1.35 var(--body);overflow-wrap:anywhere;white-space:pre-wrap}
+.transc-rod{display:flex;flex-wrap:wrap;gap:4px 10px}
+.transc-rod button{min-height:32px;padding:0 4px;border:0;background:none;color:inherit;font:500 .72rem var(--mono);text-decoration:underline;opacity:.85}
+.tr-modelos{display:grid;gap:8px;margin:14px 0 8px}
+.tr-modelos button{display:grid;gap:2px;text-align:left;min-height:64px;padding:10px 14px;border-radius:14px;border:1.5px solid var(--line);background:var(--card);color:var(--texto)}
+.tr-modelos button[aria-pressed=true]{border-color:var(--seal);box-shadow:0 0 0 2px rgba(232,51,95,.2)}
+.tr-modelos small{color:var(--mut);font-weight:400}.tr-modelos .tr-st{font:500 .72rem var(--mono);color:var(--mut)}
+.tr-aviso{margin:0 0 12px;color:var(--mut);font-size:.82rem;min-height:1.2em}

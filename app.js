@@ -1,30 +1,32 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=1363c240bd";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=1363c240bd";
-import { montarFigurinhas } from "./figurinhas.js?v=1363c240bd";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=1363c240bd";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=1363c240bd";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=1363c240bd";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=1363c240bd";
-import { acharVideoLink } from "./videolink.js?v=1363c240bd";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=1363c240bd";
-import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=1363c240bd";
-import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=1363c240bd";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=1363c240bd";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=1363c240bd";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=1363c240bd";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=1363c240bd";
-import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, combinar, destaque, PAGINA_RESULTADOS, MAX_BUSCA, termosAmpliados, termoTrilha, albumOficial, barrasDeOnda, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=1363c240bd";
-import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=1363c240bd";
-import { MAX_SUGESTAO, MAX_POR_DIA, POR_PAGINA, limpaSugestao, restantesHoje, dataCarimbo, corDaNota, limpaSugestoes, erroSugestao } from "./sugestoes.js?v=1363c240bd";
-import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=1363c240bd";
-import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=1363c240bd";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=1363c240bd";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=1363c240bd";
-import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=1363c240bd";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=1363c240bd";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=1363c240bd";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=1363c240bd";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=93ab49f6ea";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=93ab49f6ea";
+import { montarFigurinhas } from "./figurinhas.js?v=93ab49f6ea";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=93ab49f6ea";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=93ab49f6ea";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=93ab49f6ea";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=93ab49f6ea";
+import { acharVideoLink } from "./videolink.js?v=93ab49f6ea";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=93ab49f6ea";
+import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=93ab49f6ea";
+import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=93ab49f6ea";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=93ab49f6ea";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=93ab49f6ea";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=93ab49f6ea";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=93ab49f6ea";
+import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, combinar, destaque, PAGINA_RESULTADOS, MAX_BUSCA, termosAmpliados, termoTrilha, albumOficial, barrasDeOnda, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=93ab49f6ea";
+import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=93ab49f6ea";
+import { MAX_SUGESTAO, MAX_POR_DIA, POR_PAGINA, limpaSugestao, restantesHoje, dataCarimbo, corDaNota, limpaSugestoes, erroSugestao } from "./sugestoes.js?v=93ab49f6ea";
+import { MODELOS, IDS_MODELOS, MODELO_PADRAO, MAX_TRANSCRICAO_S, limpaModelo, mbDoModelo, bytesDoModelo, estimativa, paraMono, limpaTranscricao } from "./transcricao.js?v=93ab49f6ea";
+import { modeloBaixado, apagarModelo } from "./transcricao-arquivos.js?v=93ab49f6ea";
+import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=93ab49f6ea";
+import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=93ab49f6ea";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=93ab49f6ea";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=93ab49f6ea";
+import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=93ab49f6ea";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=93ab49f6ea";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=93ab49f6ea";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=93ab49f6ea";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -1180,6 +1182,13 @@ const OK_MIME = { image: ["image/jpeg", "image/png", "image/webp"], sticker: ["i
 const OK_PATH = /^[0-9a-f-]{36}\/[0-9a-f-]{36}\/[A-Za-z0-9._-]{1,80}$/;
 // o tipo vem da mensagem (quem enviou controla): só aceitamos tipos de imagem/vídeo, nunca text/html
 const safeMime = (c) => { const l = OK_MIME[c.kind === "video" ? "video" : c.kind === "audio" ? "audio" : c.kind === "sticker" ? "sticker" : "image"]; return l.includes(c.mime) ? c.mime : l[0]; };
+async function bytesDaMidia(c) { // os bytes já abertos (decifrados) de uma mídia: o que a transcrição precisa (a política de segurança não deixa ler blob: por fetch)
+  if (typeof c.path !== "string" || !OK_PATH.test(c.path) || typeof c.key !== "string" || typeof c.iv !== "string") throw new Error("midia invalida");
+  let enc = await getBlob(me.id, c.path).catch(() => null), bytes = null;
+  if (enc) { try { bytes = await openBytes(enc, c.key, c.iv); } catch { enc = null; } }
+  if (!bytes) { const { data, error } = await sb.storage.from("media").download(c.path); if (error) throw error; enc = new Uint8Array(await data.arrayBuffer()); bytes = await openBytes(enc, c.key, c.iv); putBlob(me.id, c.path, enc).catch(() => {}); }
+  return bytes;
+}
 async function loadMedia(c) {
   if (typeof c.path !== "string" || !OK_PATH.test(c.path) || typeof c.key !== "string" || typeof c.iv !== "string") throw new Error("midia invalida");
   if (mediaCache.has(c.path)) return mediaCache.get(c.path);
@@ -1436,6 +1445,7 @@ function addMessage(m, content, { err = false, animate = false, em = null, desce
   }
   if (autor) { autor.setAttribute("aria-hidden", "true"); b.prepend(autor); }
   if (media) b.append(mediaBlock(content, mine, mine ? null : m.id));
+  if (media && content.kind === "audio" && typeof content.path === "string" && OK_PATH.test(content.path)) b.append(blocoTranscricao(content));
   b.append(sr, vis, meta); line.append(b);
   if (!err && !apagada && content.type === "text") { const vl = acharVideoLink(content.text); if (vl) { b.classList.add("has-video"); b.insertBefore(cartaoVideo(vl), meta); } } // link de Shorts/Reels/TikTok: cartão que abre o vídeo aqui
   if (!err) { // botão "⌄" ao passar o mouse (só em aparelhos com mouse); fica fora do balão e não ocupa espaço
@@ -3639,6 +3649,83 @@ $("send-form").onsubmit = async (e) => {
     note(sendError(e, peer));
   } finally { btn.disabled = false; if (tinhaFoco && document.activeElement !== $("text")) $("text").focus(); }
 };
+
+// ---------- Transcrição de áudios (Whisper no próprio aparelho; o áudio e o texto nunca saem dele) ----------
+// Botão "Transcrever" em cada áudio. O modelo (Base ou Melhor/Small) é baixado do próprio site uma vez e fica no aparelho; roda num worker, sem travar a tela.
+const TR_CHAVE = "lacre:transc-modelo";
+const tr = { modelo: (() => { try { return limpaModelo(localStorage.getItem(TR_CHAVE)); } catch { return MODELO_PADRAO; } })(), w: null, ocioso: null, atual: null, alvo: null, textos: new Map(), estado: { base: false, small: false } };
+const trSalvaModelo = (id) => { tr.modelo = limpaModelo(id); try { localStorage.setItem(TR_CHAVE, tr.modelo); } catch {} };
+function trWorker() {
+  clearTimeout(tr.ocioso);
+  if (!tr.w) {
+    const u = new URL("./transcricao-worker.js", import.meta.url); u.search = new URL(import.meta.url).search;
+    const w = tr.w = new Worker(u, { type: "module" });
+    w.onmessage = (e) => { const d = e.data || {}, h = tr.atual; if (!h) return; if (d.tipo === "progresso") h.progresso?.(d.baixado, d.total); else if (d.tipo === "estado") h.estado?.(d.fase); else if (d.tipo === "pronto") h.ok(d.texto); else if (d.tipo === "erro") h.erro(new Error(d.mensagem || "falhou")); };
+    w.onerror = () => { const h = tr.atual; trMataWorker(); h?.erro(new Error("Não foi possível iniciar a transcrição neste aparelho.")); };
+  }
+  return tr.w;
+}
+function trMataWorker() { clearTimeout(tr.ocioso); try { tr.w?.terminate(); } catch {} tr.w = null; }
+const trDescansa = () => { clearTimeout(tr.ocioso); tr.ocioso = setTimeout(() => { if (!tr.atual) trMataWorker(); }, 90000); }; // (solta a memória do modelo depois de um tempo parado)
+function trExecuta(modelo, audio, hooks) { // uma transcrição por vez
+  return new Promise((ok, erro) => {
+    tr.atual = { ...hooks, ok: (t) => { tr.atual = null; trDescansa(); ok(t); }, erro: (e) => { tr.atual = null; trDescansa(); erro(e); } };
+    try { trWorker().postMessage({ tipo: "transcrever", id: 1, modelo, audio }, [audio.buffer]); } catch (e) { tr.atual = null; erro(e); }
+  });
+}
+function blocoTranscricao(c) {
+  const raiz = el("div", "transc"), btn = el("button", "transc-btn", "Transcrever"), msg = el("p", "transc-msg"), saida = el("div", "transc-saida"), rod = el("div", "transc-rod");
+  btn.type = "button"; btn.setAttribute("aria-label", "Transcrever este áudio em texto"); msg.setAttribute("role", "status"); saida.hidden = true; rod.hidden = true; msg.hidden = true;
+  const ui = { c, btn, msg, saida, rod };
+  const mostra = (t) => { msg.hidden = !t; msg.textContent = t || ""; };
+  ui.mostra = mostra;
+  const textoPronto = (t, modelo) => {
+    saida.hidden = false; saida.replaceChildren(el("p", null, t || "(não entendi nada neste áudio)")); rod.hidden = false; mostra("");
+    const trocar = el("button", null, `Modelo: ${MODELOS[modelo].nome} · trocar`), copiar = el("button", null, "Copiar"), ocultar = el("button", null, "Ocultar");
+    for (const b of [trocar, copiar, ocultar]) b.type = "button";
+    trocar.onclick = () => trAbrirFolha(ui); copiar.onclick = async () => { try { await navigator.clipboard.writeText(t); copiar.textContent = "Copiado ✓"; setTimeout(() => { copiar.textContent = "Copiar"; }, 1800); } catch { copiar.textContent = "Não foi possível copiar"; } };
+    ocultar.onclick = () => { saida.hidden = true; rod.hidden = true; btn.hidden = false; btn.textContent = "Mostrar transcrição"; };
+    rod.replaceChildren(trocar, copiar, ocultar); btn.hidden = true;
+  };
+  ui.pronto = textoPronto;
+  btn.onclick = async () => {
+    const guardado = tr.textos.get(c.path); if (guardado && btn.textContent === "Mostrar transcrição") { textoPronto(guardado.texto, guardado.modelo); return; }
+    if (await modeloBaixado(tr.modelo)) trComecar(ui, tr.modelo); else trAbrirFolha(ui);
+  };
+  raiz.append(btn, msg, saida, rod); return raiz;
+}
+async function trComecar(ui, modelo) {
+  if (tr.atual) { ui.mostra("Já há uma transcrição em andamento. Espere ela terminar."); return; }
+  ui.btn.disabled = true; ui.mostra("Preparando o áudio…");
+  try {
+    const bytes = await bytesDaMidia(ui.c), dec = await decodificarAudio(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), 16000);
+    if (dec.duracao > MAX_TRANSCRICAO_S) throw new Error(`Só dá para transcrever áudios de até ${Math.round(MAX_TRANSCRICAO_S / 60)} minutos.`);
+    const audio = paraMono(dec.canais), baixado = await modeloBaixado(modelo);
+    ui.mostra(baixado ? "Carregando o modelo…" : `Baixando o modelo ${MODELOS[modelo].nome} (${mbDoModelo(modelo)} MB), só desta vez…`);
+    const texto = await trExecuta(modelo, audio, {
+      progresso: (b, t) => ui.mostra(`Baixando o modelo ${MODELOS[modelo].nome}… ${Math.min(100, Math.round((b / (t || 1)) * 100))}%`),
+      estado: (f) => ui.mostra(f === "transcrevendo" ? `Transcrevendo (${estimativa(modelo, dec.duracao)} neste aparelho)…` : "Carregando o modelo…"),
+    });
+    tr.textos.set(ui.c.path, { texto, modelo }); ui.pronto(texto, modelo); tr.estado[modelo] = true;
+  } catch (e) { ui.mostra(String(e?.message || "Não foi possível transcrever agora.")); }
+  ui.btn.disabled = false;
+}
+// Folha para escolher o modelo (e baixar/apagar). Abre na primeira vez, quando o modelo ainda não está no aparelho, e no "trocar".
+async function trDesenharFolha() {
+  for (const id of IDS_MODELOS) tr.estado[id] = await modeloBaixado(id);
+  for (const b of $("tr-modelos").children) {
+    const id = b.dataset.modelo, ok = tr.estado[id]; b.setAttribute("aria-pressed", String(tr.modelo === id));
+    b.querySelector(".tr-st").textContent = ok ? "já está no aparelho" : `baixar ${mbDoModelo(id)} MB`;
+  }
+  const id = tr.modelo, ok = tr.estado[id], alvo = tr.alvo, dur = Number(alvo?.c?.dur) || 0;
+  $("tr-ir").textContent = ok ? "Transcrever" : `Baixar (${mbDoModelo(id)} MB) e transcrever`; $("tr-apagar").hidden = !ok; $("tr-apagar").textContent = `Apagar o modelo ${MODELOS[id].nome} do aparelho`;
+  $("tr-aviso").textContent = ok ? (dur ? `Neste áudio de ${mmss(dur)}, deve levar ${estimativa(id, dur)} (em celular mais fraco, mais).` : "") : `Será baixado do próprio site e fica guardado neste aparelho. Use Wi-Fi: são ${mbDoModelo(id)} MB.${id === "small" ? " Esse modelo usa bastante memória e pode não funcionar em celulares mais simples." : ""}`;
+}
+function trAbrirFolha(ui) { tr.alvo = ui; $("tr-folha").showModal(); trDesenharFolha(); }
+for (const b of $("tr-modelos").children) b.onclick = () => { trSalvaModelo(b.dataset.modelo); trDesenharFolha(); };
+$("tr-ir").onclick = () => { const ui = tr.alvo; $("tr-folha").close(); if (ui) trComecar(ui, tr.modelo); };
+$("tr-apagar").onclick = async () => { await apagarModelo(tr.modelo); trMataWorker(); await trDesenharFolha(); };
+$("tr-fechar").onclick = () => $("tr-folha").close();
 
 // ---------- Música nas conversas (cartão no estilo do Instagram) ----------
 // Busca no catálogo público da Apple, trecho de até 30 s escolhido por quem envia; o áudio (já sem metadados) e a capa vão CIFRADOS como qualquer mídia.
