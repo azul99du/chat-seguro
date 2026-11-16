@@ -50,7 +50,7 @@ describe("loja de Selos: o que o servidor diz", () => {
     assert.deepEqual(avisosNovos(e, 0).map((a) => a.tipo), ["loja_titulo", "loja_destaque", "loja_silencio"]); assert.deepEqual(avisosNovos(e, 2).map((a) => a.compra), [3]); assert.equal(avisosNovos(e, 3).length, 0); assert.equal(avisosNovos(e, 0)[0].titulo, "Lenda"); assert.equal(avisosNovos(e, 0)[2].alvo, U(1));
   });
   test("catálogo: 12 títulos com ids t01 a t12 e textos diferentes", () => {
-    assert.equal(TITULOS_LOJA.length, 12); assert.deepEqual(TITULOS_LOJA.map(([i]) => i), Array.from({ length: 12 }, (_, i) => "t" + String(i + 1).padStart(2, "0"))); assert.equal(new Set(TITULOS_LOJA.map(([, t]) => t)).size, 12); assert.deepEqual(ITENS, ["titulo", "destaque", "silenciar", "jumpscare", "efeito", "fundo"]);
+    assert.equal(TITULOS_LOJA.length, 12); assert.deepEqual(TITULOS_LOJA.map(([i]) => i), Array.from({ length: 12 }, (_, i) => "t" + String(i + 1).padStart(2, "0"))); assert.equal(new Set(TITULOS_LOJA.map(([, t]) => t)).size, 12); assert.deepEqual(ITENS, ["titulo", "destaque", "silenciar", "jumpscare", "efeito", "fundo", "playlist"]);
   });
   test("erros do servidor viram frases em português", () => {
     for (const [m, re] of [["saldo_insuficiente", /Selos suficientes/], ["item_desligado", /desligou/], ["ja_silenciado", /já está silenciada/], ["ja_destacada", /já está em destaque/], ["si_mesmo", /outra pessoa/], ["alvo_fora", /não está mais/]]) assert.match(erroLoja({ message: m }), re);

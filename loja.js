@@ -1,12 +1,13 @@
 // Loja de Selos: funções puras (testadas em Node). O servidor valida tudo de novo (selo_comprar); aqui só se monta a tela e se confere o que vem dele, que é desconfiável.
 // Vantagens: título ao lado do nome (compra única, da lista fixa), mensagem em destaque (por mensagem) e silenciar um membro (5 minutos, vale contra qualquer um).
-export const ITENS = ["titulo", "destaque", "silenciar", "jumpscare", "efeito", "fundo"];
+export const ITENS = ["titulo", "destaque", "silenciar", "jumpscare", "efeito", "fundo", "playlist"];
 export const INFO = {
   titulo: { nome: "Título ao lado do nome", desc: "Escolha um título que aparece junto do seu nome nas mensagens deste grupo. Para trocar, compra de novo.", botao: "Comprar" },
   destaque: { nome: "Mensagem em destaque", desc: "Uma mensagem sua ganha borda e selo dourados que todos veem. Vale por mensagem: segure uma mensagem sua e toque em “Destacar”.", botao: "Como usar" },
   silenciar: { nome: "Silenciar um membro", desc: "A pessoa fica 5 minutos sem poder escrever no grupo (ela continua lendo). Vale contra qualquer membro.", botao: "Comprar" },
   efeito: { nome: "Efeito sonoro", desc: "Escolha um membro (pode ser você) e um trecho de 1 ou 2 segundos de um áudio: a cada mensagem que essa pessoa mandar, o som toca para todo o grupo. Você escolhe por quanto tempo, de 5 em 5 minutos, e quanto mais tempo, mais Selos.", botao: "Comprar" },
   fundo: { nome: "Foto de fundo do grupo", desc: "Escolha uma foto: ela vira o fundo do grupo para TODOS (no lugar da foto do admin) pelo tempo que você escolher, de 5 em 5 minutos. Quanto mais tempo, mais Selos. Só uma por vez: enquanto uma estiver valendo, ninguém põe outra.", botao: "Comprar" },
+  playlist: { nome: "Playlist tocando", desc: "Escolha uma das suas playlists para tocar para TODO o grupo, pelo tempo que você escolher, de 5 em 5 minutos. Quanto mais tempo, mais Selos. Só você controla (pausar, pular, aleatório, repetir uma música) e só uma por vez. As músicas são as que estavam na playlist na hora da compra, e você não pode pôr músicas novas nela enquanto estiver tocando.", botao: "Comprar" },
   jumpscare: { nome: "Jumpscare", desc: "Um susto sorteado da lista do admin aparece para os outros membros: na hora, para quem está com o app aberto, ou quando entrarem no grupo. Você não escolhe qual, e só descobrem que foi você depois do susto.", botao: "Comprar" },
 };
 // Os títulos ficam num catálogo do app: o servidor guarda só qual foi escolhido (t01 a t12), nunca um texto.
@@ -26,7 +27,7 @@ export function limpaCompras(linhas) {
     if (l.item === "titulo" && !TEXTO.has(l.detalhe)) continue;
     if (l.item === "destaque" && !(typeof l.detalhe === "string" && MID.test(l.detalhe))) continue;
     if (l.item === "silenciar" && !alvo) continue;
-    if (l.item === "fundo" && (!/^\d{1,2}$/.test(String(l.detalhe)) || +l.detalhe < 1 || +l.detalhe > 12)) continue;
+    if ((l.item === "fundo" || l.item === "playlist") && (!/^\d{1,2}$/.test(String(l.detalhe)) || +l.detalhe < 1 || +l.detalhe > 12)) continue;
     if (l.item === "efeito" && (!alvo || !/^\d{1,2}$/.test(String(l.detalhe)) || +l.detalhe < 1 || +l.detalhe > 12)) continue; // (detalhe = quantos passos de 5 minutos)
     out.push({ id: l.id, user: l.user_id.toLowerCase(), item: l.item, alvo, detalhe: l.item === "silenciar" || l.item === "jumpscare" ? null : l.detalhe, t, agora: ms(l.agora), silencio_s: Number.isFinite(l.silencio_s) ? Math.max(1, Math.min(86400, Math.trunc(l.silencio_s))) : 300 });
   }
@@ -50,7 +51,7 @@ export const emDestaque = (estado, mid, remetente) => { const d = typeof mid ===
 // Avisos para o chat: uma linha por compra que este aparelho ainda não viu.
 // Jumpscare: quem comprou vê o aviso na hora; os outros só DEPOIS do próprio susto (o app põe esse aviso quando o susto termina), então aqui ele não entra para eles.
 export function avisosNovos(estado, visto, eu = null) {
-  return (estado?.compras || []).filter((c) => c.id > visto && (c.item !== "jumpscare" || (eu !== null && c.user === eu))).map((c) => (c.item === "titulo" ? { tipo: "loja_titulo", id: c.user, titulo: tituloTexto(c.detalhe), t: c.t, compra: c.id } : c.item === "destaque" ? { tipo: "loja_destaque", id: c.user, t: c.t, compra: c.id } : c.item === "jumpscare" ? { tipo: "loja_jumpscare", id: c.user, t: c.t, compra: c.id } : c.item === "fundo" ? { tipo: "loja_fundo", id: c.user, min: Number(c.detalhe) * 5, t: c.t, compra: c.id } : c.item === "efeito" ? { tipo: "loja_efeito", id: c.user, alvo: c.alvo, min: Number(c.detalhe) * 5, t: c.t, compra: c.id } : { tipo: "loja_silencio", id: c.user, alvo: c.alvo, t: c.t, compra: c.id }));
+  return (estado?.compras || []).filter((c) => c.id > visto && (c.item !== "jumpscare" || (eu !== null && c.user === eu))).map((c) => (c.item === "titulo" ? { tipo: "loja_titulo", id: c.user, titulo: tituloTexto(c.detalhe), t: c.t, compra: c.id } : c.item === "destaque" ? { tipo: "loja_destaque", id: c.user, t: c.t, compra: c.id } : c.item === "jumpscare" ? { tipo: "loja_jumpscare", id: c.user, t: c.t, compra: c.id } : c.item === "fundo" ? { tipo: "loja_fundo", id: c.user, min: Number(c.detalhe) * 5, t: c.t, compra: c.id } : c.item === "playlist" ? { tipo: "loja_playlist", id: c.user, min: Number(c.detalhe) * 5, t: c.t, compra: c.id } : c.item === "efeito" ? { tipo: "loja_efeito", id: c.user, alvo: c.alvo, min: Number(c.detalhe) * 5, t: c.t, compra: c.id } : { tipo: "loja_silencio", id: c.user, alvo: c.alvo, t: c.t, compra: c.id }));
 }
 // ----- Jumpscare: o que o servidor diz que falta para mim, e quando acontece -----
 export const SUSTO_MIN_S = 3, SUSTO_MAX_S = 10, SUSTO_VIVO_S = 60, SUSTOS_MAX = 5, MAX_JUMPSCARES = 10;
@@ -78,6 +79,7 @@ export const erroLoja = (e) => {
   if (/item_desligado/.test(m)) return "O admin desligou esta vantagem.";
   if (/ja_silenciado/.test(m)) return "Essa pessoa já está silenciada. Espere acabar.";
   if (/ja_destacada/.test(m)) return "Essa mensagem já está em destaque.";
+  if (/ja_com_playlist/.test(m)) return "Já há uma playlist tocando neste grupo. Espere acabar.";
   if (/ja_com_fundo/.test(m)) return "Já há uma foto de fundo da loja valendo. Espere acabar.";
   if (/ja_coletou/.test(m)) return "Você já coletou hoje. Volte amanhã.";
   if (/coleta_desligada/.test(m)) return "O admin desligou a coleta diária.";

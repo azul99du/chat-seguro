@@ -122,6 +122,7 @@ export function textoAviso(a) {
     : a.tipo === "loja_destaque" ? (a.eu ? "Você destacou uma mensagem" : `${n} destacou uma mensagem`)
     : a.tipo === "loja_efeito" ? textoEfeito(a, n)
     : a.tipo === "loja_fundo" ? (a.eu ? `Você pôs uma foto de fundo no grupo por ${minTxt(a.min)}` : `${n} pôs uma foto de fundo no grupo por ${minTxt(a.min)}`)
+    : a.tipo === "loja_playlist" ? (a.eu ? `Você pôs uma playlist para tocar no grupo por ${minTxt(a.min)}` : `${n} pôs uma playlist para tocar no grupo por ${minTxt(a.min)}`)
     : a.tipo === "loja_jumpscare" ? (a.eu ? "Você comprou um jumpscare" : `${n} comprou um jumpscare`)
     : a.tipo === "loja_silencio" ? (a.eu ? `Você silenciou @${a.alvoNome || "alguém"} por ${a.min || 5} minutos` : a.alvoEu ? `${n} silenciou você por ${a.min || 5} minutos` : `${n} silenciou @${a.alvoNome || "alguém"} por ${a.min || 5} minutos`)
     : a.tipo === "renomeou" ? `@${a.de || "alguém"} agora é @${a.nome || "alguém"}` : "";

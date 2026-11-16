@@ -5,6 +5,10 @@ export const TEMAS = [["selos", "Selos"], ["mensagens", "Mensagens"], ["grupos",
 const NOME_TEMA = new Map(TEMAS);
 export const temaNome = (t) => NOME_TEMA.get(t) || null;
 export const NOVIDADES = [
+  { id: "2026-11-16-3", data: "2026-11-16", itens: [
+    { tema: "mensagens", icone: "🎧", titulo: "Playlists", texto: "Crie suas playlists no menu da sua foto, com trechos de 30 segundos de músicas da Apple ou vídeos inteiros do YouTube (cole o link). Elas ficam cifradas e aparecem em todos os seus aparelhos. Em uma conversa a dois, toque em + e em Playlist para tocar a sua para as duas pessoas: quem inicia controla (pausar, pular, ordem aleatória, repetir uma música ou escolher qual toca)." },
+    { tema: "selos", icone: "🎵", titulo: "Playlist na loja de Selos", texto: "Em grupo, a playlist é um item da loja: você escolhe uma playlist sua e por quanto tempo ela toca para todo o grupo (de 5 em 5 minutos; quanto mais tempo, mais Selos). Só quem comprou controla, e as músicas são as de quando comprou: enquanto estiver tocando, você não pode pôr músicas novas nela. O admin liga o item e define o preço nas regras dos Selos." },
+  ] },
   { id: "2026-11-16-2", data: "2026-11-16", itens: [
     { tema: "mensagens", icone: "📝", titulo: "Transcrição de áudios", texto: "Todo áudio tem um botão Transcrever, que transforma a voz em texto. Acontece no seu próprio aparelho: o áudio e o texto não saem dele. Você escolhe entre Base (mais rápido, erra mais) e Melhor (mais preciso, mas mais lento e pesado). O modelo é baixado só uma vez e fica guardado; use Wi-Fi na primeira vez." },
   ] },

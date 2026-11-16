@@ -66,7 +66,7 @@ t("o admin define a foto de fundo do grupo como uma configuração normal (só e
   for (const p of [A, B, C]) await esperaLargura(p, 200);
 });
 t("a loja: o admin liga o item e dá Selos; B compra uma foto por 15 minutos; vale para TODOS e substitui a do admin", async () => {
-  await abrirSelos(A); await A.click("#sl-editar"); await A.waitForSelector("#selos-regras[open]"); assert.equal(await A.locator("#sr-loja .sr-card").count(), 6);
+  await abrirSelos(A); await A.click("#sl-editar"); await A.waitForSelector("#selos-regras[open]"); assert.equal(await A.locator("#sr-loja .sr-card").count(), 7);
   await chave(A, "Entrar no grupo").click(); await A.locator('#sr-cards .sr-card:has(b:text-is("Entrar no grupo")) .sr-n').first().click(); await A.waitForSelector("#selos-num[open]"); await A.fill("#sn-valor", "300"); await A.click("#sn-ok"); await A.waitForFunction(() => !document.querySelector("#selos-num").open);
   await A.locator('#sr-loja button.sr-sw[aria-label="Foto de fundo do grupo"]').click(); assert.match(await A.locator('#sr-loja .sr-card:has(b:text-is("Foto de fundo do grupo")) .sr-frase').innerText(), /Custa 40 Selos pelos primeiros 5 minutos e 10 Selos a cada 5 minutos a mais/);
   await A.click("#sr-salvar"); await A.waitForFunction(() => !document.querySelector("#selos-regras").open, null, { timeout: 30000 }); await sair(A);

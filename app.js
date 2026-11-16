@@ -1,34 +1,34 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=9cd665b8e0";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=9cd665b8e0";
-import { montarFigurinhas } from "./figurinhas.js?v=9cd665b8e0";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=9cd665b8e0";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=9cd665b8e0";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=9cd665b8e0";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=9cd665b8e0";
-import { acharVideoLink } from "./videolink.js?v=9cd665b8e0";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=9cd665b8e0";
-import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=9cd665b8e0";
-import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=9cd665b8e0";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=9cd665b8e0";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=9cd665b8e0";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=9cd665b8e0";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=9cd665b8e0";
-import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, combinar, destaque, PAGINA_RESULTADOS, MAX_BUSCA, termosAmpliados, termoTrilha, albumOficial, barrasDeOnda, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=9cd665b8e0";
-import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=9cd665b8e0";
-import { MAX_SUGESTAO, MAX_POR_DIA, POR_PAGINA, limpaSugestao, restantesHoje, dataCarimbo, corDaNota, limpaSugestoes, erroSugestao } from "./sugestoes.js?v=9cd665b8e0";
-import { MODELOS, IDS_MODELOS, MODELO_PADRAO, MAX_TRANSCRICAO_S, limpaModelo, mbDoModelo, bytesDoModelo, estimativa, paraMono, limpaTranscricao } from "./transcricao.js?v=9cd665b8e0";
-import { modeloBaixado, apagarModelo } from "./transcricao-arquivos.js?v=9cd665b8e0";
-import * as PLM from "./playlist.js?v=9cd665b8e0";
-import { criarMotor, sondarYoutube } from "./playlist-motor.js?v=9cd665b8e0";
-import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=9cd665b8e0";
-import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=9cd665b8e0";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=9cd665b8e0";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=9cd665b8e0";
-import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=9cd665b8e0";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=9cd665b8e0";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=9cd665b8e0";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=9cd665b8e0";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=c71ae3b8e0";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=c71ae3b8e0";
+import { montarFigurinhas } from "./figurinhas.js?v=c71ae3b8e0";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=c71ae3b8e0";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=c71ae3b8e0";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=c71ae3b8e0";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=c71ae3b8e0";
+import { acharVideoLink } from "./videolink.js?v=c71ae3b8e0";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=c71ae3b8e0";
+import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=c71ae3b8e0";
+import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=c71ae3b8e0";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=c71ae3b8e0";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=c71ae3b8e0";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=c71ae3b8e0";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=c71ae3b8e0";
+import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, combinar, destaque, PAGINA_RESULTADOS, MAX_BUSCA, termosAmpliados, termoTrilha, albumOficial, barrasDeOnda, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=c71ae3b8e0";
+import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=c71ae3b8e0";
+import { MAX_SUGESTAO, MAX_POR_DIA, POR_PAGINA, limpaSugestao, restantesHoje, dataCarimbo, corDaNota, limpaSugestoes, erroSugestao } from "./sugestoes.js?v=c71ae3b8e0";
+import { MODELOS, IDS_MODELOS, MODELO_PADRAO, MAX_TRANSCRICAO_S, limpaModelo, mbDoModelo, bytesDoModelo, estimativa, paraMono, limpaTranscricao } from "./transcricao.js?v=c71ae3b8e0";
+import { modeloBaixado, apagarModelo } from "./transcricao-arquivos.js?v=c71ae3b8e0";
+import * as PLM from "./playlist.js?v=c71ae3b8e0";
+import { criarMotor, sondarYoutube } from "./playlist-motor.js?v=c71ae3b8e0";
+import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=c71ae3b8e0";
+import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, precoPlaylist, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=c71ae3b8e0";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=c71ae3b8e0";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=c71ae3b8e0";
+import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=c71ae3b8e0";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=c71ae3b8e0";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=c71ae3b8e0";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=c71ae3b8e0";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -2381,7 +2381,7 @@ async function mostrarCopiaDoGrupo(g, m) {
 }
 async function abrirGrupo(g) {
   bandeja(false); fecharMencoes();
-  active = g; limparNaoLidas(g.id); renderContacts(); updateStatus(); pintarSilencio(); desarmarSustosDeFora(); armarSustos();
+  active = g; limparNaoLidas(g.id); renderContacts(); updateStatus(); pintarSilencio(); desarmarSustosDeFora(); armarSustos(); plAoAbrir();
   pintarAvatarGrupo($("conv-av"), g, true); $("conv-av").setAttribute("aria-label", "Dados do grupo");
   $("chat").classList.add("in-conv");
   $("conv-title").textContent = g.nome;
@@ -2766,7 +2766,7 @@ function aplicarLojaNaTela(g) {
 }
 function avisoLoja(g, est, a) {
   const c = est.compras.find((x) => x.id === a.compra), nome = (id) => g.membros.get(id)?.username || perfis.get(id)?.username || "alguém";
-  return { ...a, nome: nome(a.id), eu: a.id === me.id, ...(a.tipo === "loja_fundo" ? { min: a.min } : {}), ...(a.alvo ? { alvoNome: nome(a.alvo), alvoEu: a.alvo === me.id, mesmo: a.alvo === a.id, min: a.tipo === "loja_efeito" ? a.min : c ? Math.round(c.silencio_s / 60) || undefined : undefined } : {}) };
+  return { ...a, nome: nome(a.id), eu: a.id === me.id, ...(a.tipo === "loja_fundo" || a.tipo === "loja_playlist" ? { min: a.min } : {}), ...(a.alvo ? { alvoNome: nome(a.alvo), alvoEu: a.alvo === me.id, mesmo: a.alvo === a.id, min: a.tipo === "loja_efeito" ? a.min : c ? Math.round(c.silencio_s / 60) || undefined : undefined } : {}) };
 }
 async function atualizarLoja(g) {
   const { data, error } = await sb.rpc("selo_loja_estado", { p_grupo: g.id }); if (error || !grupos.has(g.id)) return null;
@@ -2783,7 +2783,7 @@ async function atualizarLoja(g) {
   conferirSustos(g).catch(() => {});
   return est;
 }
-const EMOJI_LOJA = { titulo: "🏷️", destaque: "✨", silenciar: "🔇", jumpscare: "👻", efeito: "🔊", fundo: "🖼️" };
+const EMOJI_LOJA = { titulo: "🏷️", destaque: "✨", silenciar: "🔇", jumpscare: "👻", efeito: "🔊", fundo: "🖼️", playlist: "🎧" };
 function desenharLojaCartoes(g, meu) {
   $("sl-loja").replaceChildren(...ITENS.map((item) => {
     const preco = precoDaLoja(slDados.regras, item), c = el("div", "lj-cartao" + (preco == null ? " off" : "")), tx = el("div", "lj-tx"), b = el("button", "lj-bt"); c.dataset.item = item; b.type = "button";
@@ -2791,9 +2791,10 @@ function desenharLojaCartoes(g, meu) {
     const atual = item === "titulo" ? tituloTexto(lojas.get(g.id)?.titulos.get(me.id)) : null; if (atual) tx.append(el("small", "titulo-atual", "Seu título agora: " + atual));
     if (preco == null) { b.textContent = "Desligado pelo admin"; b.disabled = true; }
     else if (item === "fundo" && fundosPor.get(g.id)?.loja?.ate > Date.now()) { b.textContent = "Em uso até " + horaFim(fundosPor.get(g.id).loja.ate); b.disabled = true; }
+    else if (item === "playlist" && active?.id === g.id && PL.s.sessao?.ate && PL.s.sessao.ate - PL.s.relogio.dif() > Date.now()) { b.textContent = "Em uso até " + horaFim(PL.s.sessao.ate - PL.s.relogio.dif()); b.disabled = true; }
     else if (item === "destaque") { b.append(seloIcone(16), ` ${preco} · Como usar`); b.onclick = () => choose("Mensagem em destaque", `Custa ${preco} ${preco === 1 ? "Selo" : "Selos"} por mensagem. Segure uma mensagem sua no grupo e toque em “Destacar…”: ela ganha borda e selo dourados para todos.`, [{ label: "Entendi", value: 1 }]); }
     else if (meu < preco) { b.append(seloIcone(16), ` ${preco} · faltam ${preco - meu}`); b.disabled = true; }
-    else { b.append(seloIcone(16), item === "efeito" || item === "fundo" ? ` Comprar · a partir de ${preco}` : ` Comprar por ${preco}`); b.onclick = () => abrirCompra(g, item).catch(() => {}); }
+    else { b.append(seloIcone(16), item === "efeito" || item === "fundo" || item === "playlist" ? ` Comprar · a partir de ${preco}` : ` Comprar por ${preco}`); b.onclick = () => abrirCompra(g, item).catch(() => {}); }
     c.append(el("span", "lj-ic", EMOJI_LOJA[item]), tx); tx.append(b); return c;
   }));
 }
@@ -2810,10 +2811,10 @@ async function abrirCompra(g, item, { detalhe = null } = {}) {
   let d; try { d = await dadosLoja(g); await atualizarLoja(g); } catch { if (lf?.g === g) $("lf-msg").textContent = "Não foi possível abrir a loja agora."; return; }
   if (lf?.g !== g || lf.item !== item) return;
   const preco = precoDaLoja(d.regras, item); if (preco == null) { $("lf-msg").textContent = "O admin desligou esta vantagem."; return; }
-  Object.assign(lf, { preco, saldo: d.saldo, pronto: true, regras: d.regras }); if (item === "jumpscare") lf.sel = true; if (item === "efeito") Object.assign(lf, { alvo: null, passos: 1, dur: 1, inicio: 0, fonte: null, montado: false }); if (item === "fundo") Object.assign(lf, { passos: 1, foto: null, montado: false }); desenharCompra();
+  Object.assign(lf, { preco, saldo: d.saldo, pronto: true, regras: d.regras }); if (item === "jumpscare") lf.sel = true; if (item === "efeito") Object.assign(lf, { alvo: null, passos: 1, dur: 1, inicio: 0, fonte: null, montado: false }); if (item === "fundo") Object.assign(lf, { passos: 1, foto: null, montado: false }); if (item === "playlist") Object.assign(lf, { passos: 1, lista: PL.pre || null, montado: false }); PL.pre = null; desenharCompra();
 }
 function desenharCompra() {
-  if (!lf?.pronto) return; const { g, item, saldo } = lf, est = lojas.get(g.id), corpo = $("lf-corpo"), preco = item === "efeito" ? precoEfeito(lf.regras, lf.passos) : item === "fundo" ? precoFundo(lf.regras, lf.passos) : lf.preco; lf.preco = preco;
+  if (!lf?.pronto) return; const { g, item, saldo } = lf, est = lojas.get(g.id), corpo = $("lf-corpo"), preco = item === "efeito" ? precoEfeito(lf.regras, lf.passos) : item === "fundo" ? precoFundo(lf.regras, lf.passos) : item === "playlist" ? precoPlaylist(lf.regras, lf.passos) : lf.preco; lf.preco = preco;
   if (item === "titulo") {
     const atual = est?.titulos.get(me.id), grade = el("div", "lf-titulos");
     for (const [id, nome] of TITULOS_LOJA) { const b = el("button", id === atual ? "atual" : null, nome); b.type = "button"; b.dataset.t = id; b.setAttribute("aria-pressed", String(lf.sel === id)); b.disabled = id === atual; b.onclick = () => { lf.sel = id; desenharCompra(); }; grade.append(b); }
@@ -2824,6 +2825,7 @@ function desenharCompra() {
       b.setAttribute("aria-pressed", String(lf.sel === p.id)); b.disabled = !!s; b.append(av, nm); if (s) b.append(el("small", null, "silenciado até " + horaFim(s.ate)));
       b.onclick = () => { lf.sel = p.id; desenharCompra(); }; return b;
     }));
+  } else if (item === "playlist") { if (!PL.lida) { corpo.replaceChildren(el("p", "t", "Carregando suas playlists…")); plLer().catch(() => {}).then(() => { if (lf?.item === "playlist") { lf.montado = false; desenharCompra(); } }); lf.sel = false; } else { if (!lf.montado) { montarPlaylistCompra(corpo); lf.montado = true; } atualizarCamposPlaylist(); lf.sel = !!plAcha(lf.lista)?.faixas.length; }
   } else if (item === "fundo") { if (!lf.montado) { montarFundo(corpo); lf.montado = true; } atualizarCamposFundo(); lf.sel = !!lf.foto;
   } else if (item === "efeito") { if (!lf.montado) { montarEfeito(corpo); lf.montado = true; } atualizarCamposEfeito(); lf.sel = !!(lf.alvo && lf.fonte);
   } else if (item === "destaque") corpo.replaceChildren(el("p", "t", "Esta mensagem vai ganhar borda e selo dourados para todo o grupo."));
@@ -2961,10 +2963,30 @@ async function comprarFundo() {
   if (error) { lf.busy = false; const d = await dadosLoja(g).catch(() => null); await atualizarLoja(g).catch(() => {}); await atualizarFundo(g).catch(() => {}); if (d && lf) lf.saldo = d.saldo; desenharCompra(); $("lf-msg").textContent = erroLoja(error); return; }
   if (lf.fotoUrl) URL.revokeObjectURL(lf.fotoUrl); $("loja-folha").close(); await atualizarLoja(g).catch(() => {}); await atualizarFundo(g).catch(() => {}); avisarMudanca([...g.membros.values()]); if (slGrupo === g) carregarSelos(g).catch(() => {});
 }
+// ----- Playlist (item da loja): a playlist escolhida toca para todo o grupo por um tempo; só quem comprou controla -----
+function montarPlaylistCompra(corpo) {
+  const ui = lf.ui = {}, sec = (t) => el("h4", "lf-sec", t), grade = el("div", "lf-pls"); ui.grade = grade;
+  const com = PL.col.listas.filter((l) => l.faixas.length);
+  if (!com.length) grade.append(el("p", "lf-info", "Você ainda não tem playlist com músicas. Crie uma em Playlists (menu da sua foto) e volte aqui."));
+  for (const l of com) { const b = el("button", "lf-pl"); b.type = "button"; b.dataset.id = l.id; b.append(el("b", null, l.nome), el("small", null, `${l.faixas.length} ${l.faixas.length === 1 ? "música" : "músicas"}`)); b.onclick = () => { lf.lista = l.id; desenharCompra(); }; grade.append(b); }
+  ui.passos = el("input"); ui.passos.type = "range"; ui.passos.id = "lf-passos"; ui.passos.min = "1"; ui.passos.max = String(PASSOS_MAX); ui.passos.step = "1"; ui.passos.value = String(lf.passos); ui.passos.setAttribute("aria-label", "Por quanto tempo a playlist toca");
+  ui.passos.oninput = () => { lf.passos = Number(ui.passos.value); desenharCompra(); }; ui.passosTxt = el("span", "lf-mono"); ui.aviso = el("p", "lf-info", "As músicas ficam como estão agora: você não poderá pôr músicas novas nesta playlist enquanto ela estiver tocando no grupo.");
+  corpo.replaceChildren(sec("1. Qual playlist"), grade, sec("2. Por quanto tempo"), ui.passos, ui.passosTxt, ui.aviso);
+}
+function atualizarCamposPlaylist() { const ui = lf.ui; if (!ui) return; for (const b of ui.grade.querySelectorAll("button.lf-pl")) b.setAttribute("aria-pressed", String(b.dataset.id === lf.lista)); ui.passosTxt.textContent = `${minutosDoEfeito(lf.passos)} minutos · custa ${lf.preco} ${lf.preco === 1 ? "Selo" : "Selos"}`; }
+async function comprarPlaylist() {
+  const { g, passos, lista } = lf, l = plAcha(lista); if (!lf.pronto || lf.busy || !l || !l.faixas.length) return; lf.busy = true; $("lf-ok").disabled = true; $("lf-msg").textContent = "Preparando…";
+  try {
+    const blob = await plCifrarG(g, { pl: l.id, nome: l.nome, faixas: l.faixas }), { error } = await sb.rpc("playlist_comprar", { p_grupo: g.id, p_passos: passos, p_faixas: blob, p_estado: PLM.estadoParaServidor(PLM.estadoInicial()) });
+    if (!lf || lf.g !== g) return;
+    if (error) { lf.busy = false; const d = await dadosLoja(g).catch(() => null); await atualizarLoja(g).catch(() => {}); if (d && lf) lf.saldo = d.saldo; desenharCompra(); $("lf-msg").textContent = erroLoja(error); return; }
+    plMotor().destravar(); $("loja-folha").close(); PL.s.ouvindo = true; PL.s.bloqueado = false; PL.s.sessao = null; await atualizarLoja(g).catch(() => {}); avisarMudanca([...g.membros.values()]); if (slGrupo === g) carregarSelos(g).catch(() => {}); if (active === g) plPoll(); plCarregarMinhas().catch(() => {});
+  } catch { if (lf) { lf.busy = false; $("lf-msg").textContent = "Não foi possível comprar agora."; desenharCompra(); } }
+}
 $("lf-cancelar").onclick = () => $("loja-folha").close();
 $("loja-folha").addEventListener("close", () => { lf = null; });
 $("lf-ok").onclick = async () => {
-  if (!lf?.pronto || lf.busy || !lf.sel) return; if (lf.item === "efeito") return comprarEfeito(); if (lf.item === "fundo") return comprarFundo(); const { g, item, sel } = lf; lf.busy = true; $("lf-ok").disabled = true; $("lf-msg").textContent = "";
+  if (!lf?.pronto || lf.busy || !lf.sel) return; if (lf.item === "efeito") return comprarEfeito(); if (lf.item === "fundo") return comprarFundo(); if (lf.item === "playlist") return comprarPlaylist(); const { g, item, sel } = lf; lf.busy = true; $("lf-ok").disabled = true; $("lf-msg").textContent = "";
   const { error } = await sb.rpc("selo_comprar", { p_grupo: g.id, p_item: item, p_alvo: item === "silenciar" ? sel : null, p_detalhe: item === "titulo" || item === "destaque" ? sel : null });
   if (!lf || lf.g !== g) return;
   if (error) { lf.busy = false; $("lf-msg").textContent = erroLoja(error); const d = await dadosLoja(g).catch(() => null); await atualizarLoja(g).catch(() => {}); if (d && lf) lf.saldo = d.saldo; desenharCompra(); $("lf-msg").textContent = erroLoja(error); return; }
@@ -3670,6 +3692,13 @@ function plSalvar(novo) { // grava na fila; se outro aparelho gravou antes (conf
 }
 const plMuda = (fn) => { const c = structuredClone(PL.col); fn(c); return plSalvar(c); };
 const plAcha = (id) => PL.col.listas.find((l) => l.id === id) || null;
+PL.minhas = [];
+async function plCarregarMinhas() { // as minhas playlists que estão tocando num grupo agora (item da loja): nelas não dá para pôr música nova
+  const { data, error } = await sb.rpc("playlist_minhas"); if (error || !Array.isArray(data)) return; const out = [];
+  for (const r of data) { if (!r.grupo_id) continue; const g = grupos.get(r.grupo_id); if (!g || !r.ate) continue; try { const c = PLM.limpaSessaoFaixas(await plAbrirBlocoG(g, r.faixas)); if (c?.pl) out.push({ pl: c.pl, ate: Date.parse(r.ate), grupo: g.nome || "grupo" }); } catch {} }
+  PL.minhas = out; if ($("pl-editor").open) plDesenharEditor();
+}
+const plTrava = (id) => PL.minhas.find((x) => x.pl === id && x.ate > Date.now() + PL.s.relogio.dif()) || null;
 const plMsg = (t, id = "pl-msg") => { $(id).textContent = t || ""; };
 // ----- Ícones (pelo DOM) -----
 const PL_ICONES = { play: "M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z", pausa: "M7 5h3.5v14H7zM13.5 5H17v14h-3.5z", prox: "M6 5.5v13l9-6.5zM16.5 5.5h2v13h-2z", ant: "M18 5.5v13l-9-6.5zM5.5 5.5h2v13h-2z", parar: "M6.5 6.5h11v11h-11z", baixo: "M6 9l6 6 6-6", mudo: "M4 9.5v5h3.5L12 18.5v-13L7.5 9.5zM15.5 9.5l5 5M20.5 9.5l-5 5", som: "M4 9.5v5h3.5L12 18.5v-13L7.5 9.5zM15.5 9a4 4 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11", mais: "M12 5v14M5 12h14", sobe: "M12 18V6M6 12l6-6 6 6", desce: "M12 6v12M6 12l6 6 6-6", x: "M6 6l12 12M18 6L6 18", nota: "M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" };
@@ -3705,9 +3734,9 @@ $("pl-nova").onclick = async () => {
   try { await plMuda((c) => { c.listas.push({ id, nome: `Playlist ${c.listas.length + 1}`, faixas: [], mod: Date.now() }); }); plDesenharLista(); plAbrirEditor(id); } catch { plMsg("Não foi possível criar agora."); }
 };
 // ----- Editor -----
-function plAbrirEditor(id) { PL.edit = id; const l = plAcha(id); if (!l) return; $("pl-nome-in").value = l.nome; plMsg("", "pl-emsg"); plDesenharEditor(); if (!$("pl-editor").open) $("pl-editor").showModal(); }
+function plAbrirEditor(id) { PL.edit = id; const l = plAcha(id); if (!l) return; plCarregarMinhas().catch(() => {}); $("pl-nome-in").value = l.nome; plMsg("", "pl-emsg"); plDesenharEditor(); if (!$("pl-editor").open) $("pl-editor").showModal(); }
 function plDesenharEditor() {
-  const l = plAcha(PL.edit); if (!l) return; $("pl-vazia").hidden = l.faixas.length > 0; $("pl-add-btn").disabled = l.faixas.length >= PLM.MAX_FAIXAS; $("pl-trava").hidden = true;
+  const l = plAcha(PL.edit); if (!l) return; $("pl-vazia").hidden = l.faixas.length > 0; const trava = plTrava(l.id); $("pl-add-btn").disabled = l.faixas.length >= PLM.MAX_FAIXAS || !!trava; $("pl-trava").hidden = !trava; if (trava) $("pl-trava").textContent = `Esta playlist está tocando no grupo “${trava.grupo}” até ${horaFim(trava.ate - PL.s.relogio.dif())}. Até lá não dá para pôr músicas novas nela (você ainda pode tirar e mudar a ordem).`;
   $("pl-musicas").replaceChildren(...l.faixas.map((f, i) => {
     const li = el("li"), im = f.t === "y" ? el("img") : f.ca ? el("img") : el("span", "pl-sem", f.t === "y" ? "YT" : "♪"), t = el("div", "t");
     if (im.tagName === "IMG") { im.alt = ""; im.loading = "lazy"; im.src = f.t === "y" ? PLM.capaYoutube(f.id) : f.ca; }
@@ -3734,7 +3763,7 @@ $("pl-add-fechar").onclick = () => $("pl-add").close();
 $("pl-add").addEventListener("close", () => { clearTimeout(PL.buscaTimer); PL.buscaN++; plDesenharEditor(); });
 const plJaTem = (f) => !!plAcha(PL.edit)?.faixas.some((x) => PLM.chaveFaixa(x) === PLM.chaveFaixa(f));
 async function plAdicionar(f, msgId) {
-  const l = plAcha(PL.edit); if (!l) return false; if (l.faixas.length >= PLM.MAX_FAIXAS) { plMsg(`A playlist já tem ${PLM.MAX_FAIXAS} músicas.`, msgId); return false; } if (plJaTem(f)) { plMsg("Essa música já está na playlist.", msgId); return false; }
+  const l = plAcha(PL.edit); if (!l) return false; if (plTrava(l.id)) { plMsg("Esta playlist está tocando no grupo: não dá para pôr músicas novas agora.", msgId); return false; } if (l.faixas.length >= PLM.MAX_FAIXAS) { plMsg(`A playlist já tem ${PLM.MAX_FAIXAS} músicas.`, msgId); return false; } if (plJaTem(f)) { plMsg("Essa música já está na playlist.", msgId); return false; }
   try { await plMuda((c) => { const x = c.listas.find((y) => y.id === PL.edit); if (x) { x.faixas.push(f); x.mod = Date.now(); } }); plMsg(`Adicionada: ${f.ti} ✓`, msgId); plDesenharEditor(); plDesenharLista(); return true; } catch { plMsg("Não foi possível salvar agora.", msgId); return false; }
 }
 $("pl-busca").oninput = () => {
@@ -3758,10 +3787,14 @@ $("pl-link-ok").onclick = async () => {
   b.disabled = false;
 };
 // ----- Tocar na conversa -----
-const plPar = () => (active && !active.grupo ? { pub: active.public_key, rpcVer: "playlist_ver_dm", args: { p_outro: active.id } } : null);
+const plB64 = (u8) => { let s = ""; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode(...u8.subarray(i, i + 0x8000)); return btoa(s); };
+async function plCifrarG(g, obj) { const { data, iv } = await cifrarFoto(g.gk, g.id, new TextEncoder().encode(JSON.stringify(obj))); return { v: 1, ciphertext: plB64(data), iv }; } // (grupo: cifrada com a chave do grupo)
+const plAbrirBlocoG = async (g, b) => JSON.parse(new TextDecoder().decode(await abrirFotoCifrada(g.gk, g.id, Uint8Array.from(atob(b.ciphertext), (c) => c.charCodeAt(0)), b.iv)));
+const plPar = () => (!active ? null : active.grupo ? { id: active.id, rpcVer: "playlist_ver_grupo", args: { p_grupo: active.id }, abrir: (b) => plAbrirBlocoG(active, b) } : { id: active.id, rpcVer: "playlist_ver_dm", args: { p_outro: active.id }, abrir: (b) => plAbrirBloco(b, active.public_key) });
+const plNomeDe = (id) => (id === me.id ? "você" : active?.grupo ? active.membros.get(id)?.username || "alguém" : active?.username || "alguém");
 async function plTocarAqui(listaId) {
   const l = plAcha(listaId); if (!l || !l.faixas.length || !active) return; plMotor().destravar();
-  if (active.grupo) { plMsg("Em grupo, a compra da playlist ainda não está disponível."); return; }
+  if (active.grupo) { PL.pre = listaId; $("playlists").close(); abrirCompra(active, "playlist").catch(() => {}); return; }
   plMsg("Iniciando…");
   try {
     const blob = await plCifrar({ pl: l.id, nome: l.nome, faixas: l.faixas }, active.public_key), { error } = await sb.rpc("playlist_iniciar_dm", { p_outro: active.id, p_faixas: blob, p_estado: PLM.estadoParaServidor(PLM.estadoInicial()) });
@@ -3791,18 +3824,18 @@ function plAplicarLinha(row) {
   const S = PL.s; if (!row) { if (S.sessao) { S.sessao = null; plMotor().parar(); S.bloqueado = false; S.erros = 0; plDesenharBarra(); } return Promise.resolve(); }
   S.relogio.acerta(Date.parse(row.agora)); const ehNova = !S.sessao || S.sessao.id !== row.id; if (!ehNova && S.ocupado > 0) return Promise.resolve();
   const aplicar = () => { const ses = S.sessao; if (!ses || Number(row.versao) === ses.versao) return; ses.versao = Number(row.versao); const e = PLM.limpaEstado(row.estado, ses.faixas.length); if (!e) return; ses.estado = e; ses.em = Date.parse(row.em); S.erros = 0; plReconciliar(); plDesenharBarra(); };
-  if (!ehNova) { S.sessao.dono = row.dono; aplicar(); return Promise.resolve(); }
+  if (!ehNova) { S.sessao.dono = row.dono; S.sessao.ate = row.ate ? Date.parse(row.ate) : null; aplicar(); return Promise.resolve(); }
   const par = plPar(); if (!par || S.vendo === row.id) return Promise.resolve(); S.vendo = row.id;
   return sb.rpc("playlist_faixas", { p_sessao: row.id }).then(async ({ data, error }) => {
-    if (error || !data) { S.vendo = 0; return; } let conteudo = null; try { conteudo = PLM.limpaSessaoFaixas(await plAbrirBloco(data, par.pub)); } catch {} if (!conteudo) { S.vendo = 0; return; }
-    if (!plPar() || plPar().args.p_outro !== par.args.p_outro) return; S.sessao = { id: row.id, dono: row.dono, nome: conteudo.nome, pl: conteudo.pl, faixas: conteudo.faixas, versao: -1, estado: PLM.estadoInicial(), em: Date.now() }; S.ouvindo = true; S.erros = 0; aplicar(); S.vendo = 0;
+    if (error || !data) { S.vendo = 0; return; } let conteudo = null; try { conteudo = PLM.limpaSessaoFaixas(await par.abrir(data)); } catch {} if (!conteudo) { S.vendo = 0; return; }
+    if (plPar()?.id !== par.id) return; S.sessao = { id: row.id, dono: row.dono, ate: row.ate ? Date.parse(row.ate) : null, nome: conteudo.nome, pl: conteudo.pl, faixas: conteudo.faixas, versao: -1, estado: PLM.estadoInicial(), em: Date.now() }; S.ouvindo = true; S.erros = 0; aplicar(); S.vendo = 0;
   });
 }
 async function plPoll() {
   const par = plPar(); if (!par || PL.s.ocupado > 0) return; const alvo = active.id;
   try { const { data, error } = await sb.rpc(par.rpcVer, par.args); if (error || !active || active.id !== alvo) return; await plAplicarLinha(Array.isArray(data) ? data[0] || null : data || null); } catch {}
 }
-function plAoAbrir() { plAoSair(); if (!active || active.grupo) return; const S = PL.s; S.timer = setInterval(plPoll, 3000); S.tick = setInterval(plTique, 500); plPoll(); }
+function plAoAbrir() { plAoSair(); if (!active) return; const S = PL.s; S.timer = setInterval(plPoll, 3000); S.tick = setInterval(plTique, 500); plPoll(); }
 function plAoSair() { const S = PL.s; clearInterval(S.timer); clearInterval(S.tick); S.timer = S.tick = null; S.sessao = null; S.vendo = 0; S.bloqueado = false; S.aberta = false; S.erros = 0; S.ocupado = 0; S.motor?.parar(); $("pl-barra").hidden = true; }
 // ----- Ações de quem controla -----
 async function plAcao(novo) {
@@ -3819,14 +3852,14 @@ function plErroFaixa() {
 const plAviso = (t) => { const p = $("pl-aviso"); p.textContent = t || ""; p.hidden = !t; if (t) setTimeout(() => { if (p.textContent === t) { p.hidden = true; p.textContent = ""; } }, 5000); };
 // ----- Barra na conversa -----
 function plTique() {
-  const S = PL.s, ses = S.sessao; if (!ses || $("pl-barra").hidden) return; const m = S.motor, f = ses.faixas[ses.estado.f]; if (!f) return;
+  const S = PL.s, ses = S.sessao; if (ses?.ate && S.relogio.agora() >= ses.ate) { plAplicarLinha(null); return; } if (!ses || $("pl-barra").hidden) return; const m = S.motor, f = ses.faixas[ses.estado.f]; if (!f) return;
   const { e, pos } = plEfetivo(ses), dur = PLM.duracaoDaFaixa(f) || m?.duracao() || 0, atual = S.ouvindo && m?.faixa ? m.posicao() : pos;
   $("pl-prog").style.width = dur ? `${Math.max(0, Math.min(100, (atual / dur) * 100))}%` : "0%"; $("pl-t1").textContent = mmss(atual); $("pl-t2").textContent = dur ? mmss(dur) : "";
   if (S.ouvindo && !S.bloqueado && e.t && m?.faixa && (m.faixa.id !== f.id || m.faixa.t !== f.t)) plReconciliar(); // (o estado avançou sozinho: acompanha)
 }
 function plDesenharBarra() {
   const S = PL.s, ses = S.sessao, barra = $("pl-barra"); barra.hidden = !ses; if (!ses) return;
-  const e = ses.estado, n = ses.faixas.length, f = ses.faixas[e.f], dono = plDono(); $("pl-nome").textContent = ses.nome; $("pl-faixa").textContent = `${f ? PLM.rotuloFaixa(f) : ""} · ${dono ? "você controla" : `@${active?.username} controla`}`;
+  const e = ses.estado, n = ses.faixas.length, f = ses.faixas[e.f], dono = plDono(); $("pl-nome").textContent = ses.nome; $("pl-faixa").textContent = `${f ? PLM.rotuloFaixa(f) : ""} · ${dono ? "você controla" : `@${plNomeDe(ses.dono)} controla`}${ses.ate ? ` · até ${horaFim(ses.ate - S.relogio.dif())}` : ""}`;
   const capa = $("pl-capa"); capa.replaceChildren(); if (f && (f.t === "y" || f.ca)) { const im = el("img"); im.alt = ""; im.src = f.t === "y" ? PLM.capaYoutube(f.id) : f.ca; capa.append(im); } else capa.append(plIcone("nota"));
   const ab = $("pl-abrir"); ab.replaceChildren(plIcone("baixo")); ab.setAttribute("aria-expanded", String(S.aberta));
   const ctl = $("pl-ctl"), btns = [];

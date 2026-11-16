@@ -61,7 +61,7 @@ after(async () => { if (browser) { await browser.close(); await srv.close(); } }
 
 t("o admin liga o jumpscare e dá Selos a todos; sem lista, comprar é recusado com um aviso claro", async () => {
   await abrirSelos(A); await A.click("#sl-editar"); await A.waitForSelector("#selos-regras[open]");
-  assert.equal(await A.locator("#sr-loja .sr-card").count(), 6);
+  assert.equal(await A.locator("#sr-loja .sr-card").count(), 7);
   await chave(A, "Entrar no grupo").click(); await mudar(A, "Entrar no grupo", 0, 200);
   await A.locator('#sr-loja button.sr-sw[aria-label="Jumpscare"]').click(); assert.match(await A.locator('#sr-loja .sr-card:has(b:text-is("Jumpscare")) .sr-frase').innerText(), /Custa 60 Selos/);
   await A.click("#sr-salvar"); await A.waitForFunction(() => !document.querySelector("#selos-regras").open, null, { timeout: 30000 }); await sair(A);
