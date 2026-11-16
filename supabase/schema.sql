@@ -2654,3 +2654,240 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke all on function public.sugestao_resumo() from public, anon, authenticated;
 grant execute on function public.sugestao_resumo() to authenticated;
+
+-- ===== Playlists (migração playlists) =====
+-- 1) Cada pessoa tem suas playlists, SINCRONIZADAS entre os aparelhos da conta: o app cifra tudo com a chave da própria conta (acordo de chaves da pessoa com ela mesma) e o servidor guarda só o bloco cifrado
+--    (playlists_usuario). A gravação usa versão: se outro aparelho gravou antes, o servidor recusa (conflito) e o app junta e grava de novo.
+-- 2) Uma "sessão de playlist" é uma playlist tocando numa conversa: em conversa a dois (função livre; quem inicia controla; começar a sua troca a que estava tocando) ou em grupo
+--    (item da loja de Selos: quem compra controla por um tempo, de 5 em 5 minutos, e a playlist é uma cópia congelada das músicas de quando comprou). As músicas ficam cifradas (grupo: chave do grupo;
+--    conversa a dois: chave do par); o servidor só guarda o estado de quem está tocando (faixa, posição, tocando, aleatório, loop) com a HORA DO SERVIDOR, para os aparelhos se alinharem.
+create or replace function public.selo_limpa(novo jsonb, velho jsonb, hoje date) returns jsonb
+language plpgsql stable set search_path = public as $$
+declare r jsonb := '{}'::jsonb; k text; o jsonb; ant jsonb; lig boolean; it jsonb; ms jsonb := '[]'::jsonb; vistos int[] := '{}'; d int; v int; m jsonb;
+begin
+  if novo is null or jsonb_typeof(novo) <> 'object' then raise exception 'regras_invalidas' using errcode = '22023'; end if;
+  foreach k in array array['entrada','dia_ativo','mensagens','arquivos','sequencia','teto','coleta','loja_titulo','loja_destaque','loja_silenciar','loja_jumpscare','loja_efeito','loja_fundo','loja_playlist'] loop
+    o := coalesce(novo -> k, case when k like 'loja\_%' or k = 'coleta' then velho -> k end, '{"on": false}'::jsonb); ant := coalesce(velho -> k, '{}'::jsonb); -- (preços e coleta que um site antigo não conhece ficam como estão)
+    if jsonb_typeof(o) <> 'object' or jsonb_typeof(o -> 'on') <> 'boolean' then raise exception 'regras_invalidas' using errcode = '22023', detail = k; end if;
+    lig := (o ->> 'on')::boolean; it := jsonb_build_object('on', lig);
+    if k = 'sequencia' then
+      m := coalesce(o -> 'marcos', '[]'::jsonb);
+      if jsonb_typeof(m) <> 'array' or jsonb_array_length(m) > 10 then raise exception 'regras_invalidas' using errcode = '22023', detail = 'marcos'; end if;
+      for v in select generate_series(0, jsonb_array_length(m) - 1) loop
+        if jsonb_typeof(m -> v) <> 'object' then raise exception 'regras_invalidas' using errcode = '22023', detail = 'marcos'; end if;
+        d := public.selo_int(m -> v, 'dias', 1, 365, 1);
+        if d = any(vistos) then raise exception 'regras_invalidas' using errcode = '22023', detail = 'marcos'; end if;
+        vistos := vistos || d; ms := ms || jsonb_build_array(jsonb_build_object('dias', d, 'valor', public.selo_int(m -> v, 'valor', 1, 999, 1)));
+      end loop;
+      it := it || jsonb_build_object('marcos', (select coalesce(jsonb_agg(e order by (e ->> 'dias')::int), '[]'::jsonb) from jsonb_array_elements(ms) e));
+    else
+      if k <> 'coleta' then it := it || jsonb_build_object('valor', public.selo_int(o, 'valor', 1, 999, 1)); end if;
+      if k = 'dia_ativo' then it := it || jsonb_build_object('min', public.selo_int(o, 'min', 1, 999, 1)); end if;
+      if k in ('mensagens', 'arquivos') then it := it || jsonb_build_object('a_cada', public.selo_int(o, 'a_cada', 1, 999, 1)); end if;
+      if k in ('loja_efeito', 'loja_fundo', 'loja_playlist') then it := it || jsonb_build_object('extra', public.selo_int(o, 'extra', 1, 999, 10)); end if;
+    end if;
+    if k <> 'teto' and k <> 'coleta' and k not like 'loja\_%' then
+      it := it || jsonb_build_object('desde', case when lig and (not coalesce((ant ->> 'on')::boolean, false) or ant ->> 'desde' is null) then hoje::text else coalesce(ant ->> 'desde', hoje::text) end);
+    end if;
+    r := r || jsonb_build_object(k, it);
+  end loop;
+  return r;
+end $$;
+
+create or replace function public.selo_coleta_valor(reg jsonb) returns int
+language sql immutable set search_path = public as $$
+  select round(avg((reg -> k ->> 'valor')::numeric))::int
+    from unnest(array['loja_titulo', 'loja_destaque', 'loja_silenciar', 'loja_jumpscare', 'loja_efeito', 'loja_fundo', 'loja_playlist']) k
+   where coalesce((reg -> k ->> 'on')::boolean, false) and (reg -> k ->> 'valor') is not null
+$$;
+alter table public.selo_compras drop constraint selo_compras_item_check;
+alter table public.selo_compras add constraint selo_compras_item_check check (item in ('titulo', 'destaque', 'silenciar', 'jumpscare', 'efeito', 'fundo', 'playlist'));
+
+create table public.playlists_usuario (
+  user_id uuid primary key references public.profiles(id) on delete cascade,
+  dados jsonb not null,
+  versao int not null default 1,
+  atualizado_em timestamptz not null default now()
+);
+alter table public.playlists_usuario enable row level security;
+revoke all on public.playlists_usuario from anon, authenticated;
+create policy "exige dois passos" on public.playlists_usuario as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+
+-- Bloco cifrado válido: { ciphertext, iv } em texto e com tamanho limitado
+create or replace function public.playlist_blob_ok(b jsonb, maxlen int) returns boolean
+language sql immutable set search_path = public as $$
+  select coalesce(jsonb_typeof(b) = 'object' and jsonb_typeof(b -> 'ciphertext') = 'string' and jsonb_typeof(b -> 'iv') = 'string' and length(b::text) <= maxlen, false)
+$$;
+revoke all on function public.playlist_blob_ok(jsonb, int) from public, anon, authenticated;
+
+-- Estado de quem está tocando: f = faixa (posição na lista), p = segundos no momento em que foi gravado, t = tocando, a = aleatório, l = repetir só esta música, o = ordem sorteada (opcional)
+create or replace function public.playlist_estado_ok(e jsonb) returns boolean
+language plpgsql immutable set search_path = public as $$
+begin
+  if e is null or jsonb_typeof(e) <> 'object' or length(e::text) > 2500 then return false; end if;
+  if jsonb_typeof(e -> 'f') <> 'number' or jsonb_typeof(e -> 'p') <> 'number' or jsonb_typeof(e -> 't') <> 'boolean' or jsonb_typeof(e -> 'a') <> 'boolean' or jsonb_typeof(e -> 'l') <> 'boolean' then return false; end if;
+  if (e ->> 'f')::numeric not between 0 and 199 or (e ->> 'f')::numeric <> trunc((e ->> 'f')::numeric) or (e ->> 'p')::numeric not between 0 and 86400 then return false; end if;
+  if e ? 'o' and (jsonb_typeof(e -> 'o') <> 'array' or jsonb_array_length(e -> 'o') > 200) then return false; end if;
+  return true;
+exception when others then return false;
+end $$;
+revoke all on function public.playlist_estado_ok(jsonb) from public, anon, authenticated;
+
+create or replace function public.playlists_ler() returns table (dados jsonb, versao int)
+language sql stable security definer set search_path = public as $$
+  select p.dados, p.versao from public.playlists_usuario p where p.user_id = (select auth.uid()) and (select public.mfa_ok())
+$$;
+revoke all on function public.playlists_ler() from public, anon, authenticated;
+grant execute on function public.playlists_ler() to authenticated;
+
+-- p_versao = a versão que o app leu (0 se ainda não havia nada). Devolve a versão nova; se outro aparelho gravou antes, erro 'conflito'.
+create or replace function public.playlists_gravar(p_dados jsonb, p_versao int) returns int
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); n int;
+begin
+  perform public.consome('playlists_gravar', 20, 200);
+  if not public.playlist_blob_ok(p_dados, 400000) or p_versao is null or p_versao < 0 then raise exception 'dados_invalidos' using errcode = '22023'; end if;
+  if p_versao = 0 then
+    insert into public.playlists_usuario (user_id, dados) values (u, p_dados) on conflict do nothing returning versao into n;
+  else
+    update public.playlists_usuario p set dados = p_dados, versao = p.versao + 1, atualizado_em = now() where p.user_id = u and p.versao = p_versao returning p.versao into n;
+  end if;
+  if n is null then raise exception 'conflito' using errcode = 'P0001'; end if;
+  return n;
+end $$;
+revoke all on function public.playlists_gravar(jsonb, int) from public, anon, authenticated;
+grant execute on function public.playlists_gravar(jsonb, int) to authenticated;
+
+create table public.playlist_sessoes (
+  id bigint generated always as identity primary key,
+  grupo_id uuid references public.grupos(id) on delete cascade,
+  par_a uuid references public.profiles(id) on delete cascade,
+  par_b uuid references public.profiles(id) on delete cascade,
+  dono uuid not null references public.profiles(id) on delete cascade,
+  compra_id bigint unique references public.selo_compras(id) on delete set null,
+  faixas jsonb not null,
+  estado jsonb not null,
+  em timestamptz not null default now(),
+  versao int not null default 1,
+  criada_em timestamptz not null default now(),
+  ate timestamptz,
+  encerrada boolean not null default false,
+  check ((grupo_id is not null and par_a is null and par_b is null) or (grupo_id is null and par_a is not null and par_b is not null and par_a < par_b)),
+  check (public.playlist_blob_ok(faixas, 150000)),
+  check (public.playlist_estado_ok(estado))
+);
+create unique index playlist_sessao_grupo on public.playlist_sessoes (grupo_id) where grupo_id is not null and not encerrada;
+create unique index playlist_sessao_par on public.playlist_sessoes (par_a, par_b) where grupo_id is null and not encerrada;
+create index playlist_sessao_dono on public.playlist_sessoes (dono) where not encerrada;
+alter table public.playlist_sessoes enable row level security;
+revoke all on public.playlist_sessoes from anon, authenticated;
+create policy "exige dois passos" on public.playlist_sessoes as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+
+-- Conversa a dois: começa a playlist (a que já estava tocando entre as duas pessoas é encerrada). Só com quem já trocou mensagens.
+create or replace function public.playlist_iniciar_dm(p_outro uuid, p_faixas jsonb, p_estado jsonb) returns bigint
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); novo bigint;
+begin
+  perform public.consome('playlist_iniciar', 15, 120);
+  if coalesce(public.aparelho_estado(), 'aprovado') = 'pendente' then raise exception 'aparelho_pendente' using errcode = '42501'; end if;
+  if p_outro is null or p_outro = u or not exists (select 1 from public.profiles x where x.id = p_outro) then raise exception 'detalhe_invalido' using errcode = '22023'; end if;
+  if not public.playlist_blob_ok(p_faixas, 150000) or not public.playlist_estado_ok(p_estado) then raise exception 'detalhe_invalido' using errcode = '22023'; end if;
+  if not exists (select 1 from public.messages m where m.grupo_id is null and ((m.sender_id = u and m.recipient_id = p_outro) or (m.sender_id = p_outro and m.recipient_id = u))) then raise exception 'sem_conversa' using errcode = 'P0001'; end if;
+  update public.playlist_sessoes s set encerrada = true where s.grupo_id is null and not s.encerrada and s.par_a = least(u, p_outro) and s.par_b = greatest(u, p_outro);
+  insert into public.playlist_sessoes (par_a, par_b, dono, faixas, estado) values (least(u, p_outro), greatest(u, p_outro), u, p_faixas, p_estado) returning id into novo;
+  return novo;
+end $$;
+revoke all on function public.playlist_iniciar_dm(uuid, jsonb, jsonb) from public, anon, authenticated;
+grant execute on function public.playlist_iniciar_dm(uuid, jsonb, jsonb) to authenticated;
+
+-- Grupo (item da loja): preço = primeiros 5 min (loja_playlist.valor) + (passos - 1) x cada 5 min a mais (loja_playlist.extra); uma playlist por vez no grupo
+create or replace function public.playlist_comprar(p_grupo uuid, p_passos int, p_faixas jsonb, p_estado jsonb) returns bigint
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); reg jsonb; preco int; saldo bigint; compra bigint; passo interval := public.efeito_passo();
+begin
+  perform public.consome('selo_comprar', 20, 200);
+  if not (select public.mfa_ok()) or not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = u) then raise exception 'nao_esta_no_grupo' using errcode = '42501'; end if;
+  if coalesce(public.aparelho_estado(), 'aprovado') = 'pendente' then raise exception 'aparelho_pendente' using errcode = '42501'; end if;
+  if p_passos is null or p_passos < 1 or p_passos > 12 or not public.playlist_blob_ok(p_faixas, 150000) or not public.playlist_estado_ok(p_estado) then raise exception 'detalhe_invalido' using errcode = '22023'; end if;
+  perform pg_advisory_xact_lock(hashtext('selo:' || p_grupo::text));
+  perform public.selo_apurar(p_grupo);
+  select s.regras -> 'loja_playlist' into reg from public.selo_regras s where s.grupo_id = p_grupo;
+  if reg is null or not coalesce((reg ->> 'on')::boolean, false) then raise exception 'item_desligado' using errcode = 'P0001'; end if;
+  update public.playlist_sessoes s set encerrada = true where s.grupo_id = p_grupo and not s.encerrada and s.ate <= now();
+  if exists (select 1 from public.playlist_sessoes s where s.grupo_id = p_grupo and not s.encerrada) then raise exception 'ja_com_playlist' using errcode = 'P0001'; end if;
+  preco := (reg ->> 'valor')::int + (p_passos - 1) * coalesce((reg ->> 'extra')::int, 10);
+  select coalesce(sum(e.quantidade), 0) into saldo from public.moedas_extrato e where e.grupo_id = p_grupo and e.user_id = u;
+  if saldo < preco then raise exception 'saldo_insuficiente' using errcode = 'P0001'; end if;
+  insert into public.selo_compras (grupo_id, user_id, item, preco, detalhe) values (p_grupo, u, 'playlist', preco, p_passos::text) returning id into compra;
+  insert into public.moedas_extrato (grupo_id, user_id, quantidade, motivo, ref) values (p_grupo, u, -preco, 'compra', compra::text);
+  insert into public.playlist_sessoes (grupo_id, dono, compra_id, faixas, estado, ate) values (p_grupo, u, compra, p_faixas, p_estado, now() + passo * p_passos);
+  return compra;
+end $$;
+revoke all on function public.playlist_comprar(uuid, int, jsonb, jsonb) from public, anon, authenticated;
+grant execute on function public.playlist_comprar(uuid, int, jsonb, jsonb) to authenticated;
+
+-- Só quem comprou/iniciou controla (e, no grupo, só enquanto durar). A hora do estado é a do servidor.
+create or replace function public.playlist_controlar(p_sessao bigint, p_estado jsonb) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid());
+begin
+  perform public.consome('playlist_controlar', 150, 1500);
+  if not public.playlist_estado_ok(p_estado) then raise exception 'detalhe_invalido' using errcode = '22023'; end if;
+  update public.playlist_sessoes s set estado = p_estado, em = now(), versao = s.versao + 1
+   where s.id = p_sessao and s.dono = u and not s.encerrada and (s.ate is null or s.ate > now()) and (select public.mfa_ok());
+  if not found then raise exception 'sem_controle' using errcode = 'P0001'; end if;
+end $$;
+revoke all on function public.playlist_controlar(bigint, jsonb) from public, anon, authenticated;
+grant execute on function public.playlist_controlar(bigint, jsonb) to authenticated;
+
+create or replace function public.playlist_parar(p_sessao bigint) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  perform public.consome('playlist_controlar', 150, 1500);
+  update public.playlist_sessoes s set encerrada = true where s.id = p_sessao and s.dono = (select auth.uid()) and not s.encerrada and (select public.mfa_ok());
+  if not found then raise exception 'sem_controle' using errcode = 'P0001'; end if;
+end $$;
+revoke all on function public.playlist_parar(bigint) from public, anon, authenticated;
+grant execute on function public.playlist_parar(bigint) to authenticated;
+
+-- O que está tocando agora (leve; os aparelhos perguntam de poucos em poucos segundos com a conversa aberta). Sem as músicas: elas vêm uma vez por sessão, em playlist_faixas.
+create or replace function public.playlist_ver_dm(p_outro uuid) returns table (id bigint, dono uuid, estado jsonb, em timestamptz, versao int, ate timestamptz, agora timestamptz)
+language sql stable security definer set search_path = public as $$
+  select s.id, s.dono, s.estado, s.em, s.versao, s.ate, now()
+    from public.playlist_sessoes s
+   where s.grupo_id is null and not s.encerrada and (select public.mfa_ok())
+     and s.par_a = least((select auth.uid()), p_outro) and s.par_b = greatest((select auth.uid()), p_outro)
+$$;
+revoke all on function public.playlist_ver_dm(uuid) from public, anon, authenticated;
+grant execute on function public.playlist_ver_dm(uuid) to authenticated;
+
+create or replace function public.playlist_ver_grupo(p_grupo uuid) returns table (id bigint, dono uuid, estado jsonb, em timestamptz, versao int, ate timestamptz, agora timestamptz)
+language sql stable security definer set search_path = public as $$
+  select s.id, s.dono, s.estado, s.em, s.versao, s.ate, now()
+    from public.playlist_sessoes s
+   where s.grupo_id = p_grupo and not s.encerrada and s.ate > now() and (select public.mfa_ok())
+     and exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = (select auth.uid()))
+$$;
+revoke all on function public.playlist_ver_grupo(uuid) from public, anon, authenticated;
+grant execute on function public.playlist_ver_grupo(uuid) to authenticated;
+
+-- As músicas (cifradas) de uma sessão ainda ativa: só quem participa dela
+create or replace function public.playlist_faixas(p_sessao bigint) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select s.faixas from public.playlist_sessoes s
+   where s.id = p_sessao and not s.encerrada and (s.ate is null or s.ate > now()) and (select public.mfa_ok())
+     and ((s.grupo_id is not null and exists (select 1 from public.grupo_membros gm where gm.grupo_id = s.grupo_id and gm.user_id = (select auth.uid())))
+          or (s.grupo_id is null and (select auth.uid()) in (s.par_a, s.par_b)))
+$$;
+revoke all on function public.playlist_faixas(bigint) from public, anon, authenticated;
+grant execute on function public.playlist_faixas(bigint) to authenticated;
+
+-- As minhas sessões ainda valendo (para o app saber quais playlists suas estão em uso e travar o "adicionar música" nelas)
+create or replace function public.playlist_minhas() returns table (id bigint, grupo_id uuid, outro uuid, ate timestamptz, faixas jsonb)
+language sql stable security definer set search_path = public as $$
+  select s.id, s.grupo_id, case when s.par_a = (select auth.uid()) then s.par_b when s.par_b = (select auth.uid()) then s.par_a end, s.ate, s.faixas
+    from public.playlist_sessoes s
+   where s.dono = (select auth.uid()) and not s.encerrada and (s.ate is null or s.ate > now()) and (select public.mfa_ok())
+$$;
+revoke all on function public.playlist_minhas() from public, anon, authenticated;
+grant execute on function public.playlist_minhas() to authenticated;
