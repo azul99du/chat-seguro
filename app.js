@@ -1,34 +1,34 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=e2ecf3280e";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=e2ecf3280e";
-import { montarFigurinhas } from "./figurinhas.js?v=e2ecf3280e";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=e2ecf3280e";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=e2ecf3280e";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=e2ecf3280e";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=e2ecf3280e";
-import { acharVideoLink } from "./videolink.js?v=e2ecf3280e";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=e2ecf3280e";
-import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=e2ecf3280e";
-import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=e2ecf3280e";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=e2ecf3280e";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=e2ecf3280e";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=e2ecf3280e";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=e2ecf3280e";
-import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, combinar, destaque, PAGINA_RESULTADOS, MAX_BUSCA, termosAmpliados, termoTrilha, albumOficial, barrasDeOnda, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=e2ecf3280e";
-import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=e2ecf3280e";
-import { MAX_SUGESTAO, MAX_POR_DIA, POR_PAGINA, limpaSugestao, restantesHoje, dataCarimbo, corDaNota, limpaSugestoes, erroSugestao } from "./sugestoes.js?v=e2ecf3280e";
-import { MODELOS, IDS_MODELOS, MODELO_PADRAO, MAX_TRANSCRICAO_S, limpaModelo, mbDoModelo, bytesDoModelo, estimativa, paraMono, limpaTranscricao } from "./transcricao.js?v=e2ecf3280e";
-import { modeloBaixado, apagarModelo } from "./transcricao-arquivos.js?v=e2ecf3280e";
-import * as PLM from "./playlist.js?v=e2ecf3280e";
-import { criarMotor, sondarYoutube } from "./playlist-motor.js?v=e2ecf3280e";
-import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=e2ecf3280e";
-import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, precoPlaylist, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=e2ecf3280e";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=e2ecf3280e";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=e2ecf3280e";
-import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=e2ecf3280e";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=e2ecf3280e";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=e2ecf3280e";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=e2ecf3280e";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=9a44aef181";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=9a44aef181";
+import { montarFigurinhas } from "./figurinhas.js?v=9a44aef181";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=9a44aef181";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=9a44aef181";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=9a44aef181";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=9a44aef181";
+import { acharVideoLink } from "./videolink.js?v=9a44aef181";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=9a44aef181";
+import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=9a44aef181";
+import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=9a44aef181";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=9a44aef181";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=9a44aef181";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=9a44aef181";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=9a44aef181";
+import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, combinar, destaque, PAGINA_RESULTADOS, MAX_BUSCA, termosAmpliados, termoTrilha, albumOficial, barrasDeOnda, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=9a44aef181";
+import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=9a44aef181";
+import { MAX_SUGESTAO, MAX_POR_DIA, POR_PAGINA, limpaSugestao, restantesHoje, dataCarimbo, corDaNota, limpaSugestoes, erroSugestao } from "./sugestoes.js?v=9a44aef181";
+import { MODELOS, IDS_MODELOS, MODELO_PADRAO, MAX_TRANSCRICAO_S, limpaModelo, mbDoModelo, bytesDoModelo, estimativa, paraMono, limpaTranscricao } from "./transcricao.js?v=9a44aef181";
+import { modeloBaixado, apagarModelo } from "./transcricao-arquivos.js?v=9a44aef181";
+import * as PLM from "./playlist.js?v=9a44aef181";
+import { criarMotor, sondarYoutube } from "./playlist-motor.js?v=9a44aef181";
+import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=9a44aef181";
+import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, precoPlaylist, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=9a44aef181";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=9a44aef181";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=9a44aef181";
+import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=9a44aef181";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=9a44aef181";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=9a44aef181";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=9a44aef181";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -3824,14 +3824,16 @@ function plEfetivo(ses) { // o estado de agora, já passando por faixas que acab
 function plReconciliar(forcar = false) {
   const S = PL.s, ses = S.sessao; if (!ses) return; const m = plMotor(), { e, pos } = plEfetivo(ses), f = ses.faixas[e.f]; if (!f) return;
   if (!S.ouvindo) { if (m.faixa) m.parar(); return; }
+  const pulo = ses.forcaPulo; ses.forcaPulo = false;
   if (!m.faixa || m.faixa.t !== f.t || m.faixa.id !== f.id || forcar) { if (e.t || forcar) m.tocar(f, pos, e.t).catch(() => {}); else m.tocar(f, e.p, false).catch(() => {}); return; }
-  if (e.t) { if (Math.abs(m.posicao() - pos) > (f.t === "y" ? 10 : 2.5)) m.ir(pos); // (no YouTube cada pessoa pode ver um anúncio de tamanho diferente antes da música: só corrige se a diferença for grande)
+  if (pulo) m.ir(e.t ? pos : e.p); // (o dono avançou ou voltou o tempo: todos vão junto, qualquer que seja a distância)
+  if (e.t) { if (!pulo && Math.abs(m.posicao() - pos) > (f.t === "y" ? 10 : 2.5)) m.ir(pos); // (no YouTube cada pessoa pode ver um anúncio de tamanho diferente antes da música: só corrige se a diferença for grande)
     if (!m.tocando() && (!S.bloqueado || S.retomouVer !== ses.versao)) { S.retomouVer = ses.versao; m.retomar(); } } else { if (m.tocando()) m.pausar(); }
 }
 function plAplicarLinha(row) {
   const S = PL.s; if (!row) { if (S.sessao) { S.sessao = null; plMotor().parar(); S.bloqueado = false; S.erros = 0; S.aberta = false; plDesenharBarra(); } return Promise.resolve(); }
   S.relogio.acerta(Date.parse(row.agora)); const ehNova = !S.sessao || S.sessao.id !== row.id; if (!ehNova && S.ocupado > 0) return Promise.resolve();
-  const aplicar = () => { const ses = S.sessao; if (!ses || Number(row.versao) === ses.versao) return; ses.versao = Number(row.versao); const e = PLM.limpaEstado(row.estado, ses.faixas.length); if (!e) return; ses.estado = e; ses.em = Date.parse(row.em); S.erros = 0; plReconciliar(); plDesenharBarra(); };
+  const aplicar = () => { const ses = S.sessao; if (!ses || Number(row.versao) === ses.versao) return; ses.versao = Number(row.versao); const e = PLM.limpaEstado(row.estado, ses.faixas.length); if (!e) return; if (ses.pulo !== undefined && (e.s || 0) !== ses.pulo) ses.forcaPulo = true; ses.pulo = e.s || 0; ses.estado = e; ses.em = Date.parse(row.em); S.erros = 0; plReconciliar(); plDesenharBarra(); };
   if (!ehNova) { S.sessao.dono = row.dono; S.sessao.ate = row.ate ? Date.parse(row.ate) : null; aplicar(); return Promise.resolve(); }
   const par = plPar(); if (!par || S.vendo === row.id) return Promise.resolve(); S.vendo = row.id;
   return sb.rpc("playlist_faixas", { p_sessao: row.id }).then(async ({ data, error }) => {
@@ -3846,8 +3848,8 @@ async function plPoll() {
 function plAoAbrir() { plAoSair(); if (!active) return; const S = PL.s; S.timer = setInterval(plPoll, 3000); S.tick = setInterval(plTique, 500); plPoll(); }
 function plAoSair() { const S = PL.s; clearInterval(S.timer); clearInterval(S.tick); S.timer = S.tick = null; S.sessao = null; S.vendo = 0; S.bloqueado = false; S.aberta = false; S.erros = 0; S.ocupado = 0; S.motor?.parar(); $("pl-barra").hidden = true; $("pl-gaveta").hidden = true; }
 // ----- Ações de quem controla -----
-async function plAcao(novo) {
-  const S = PL.s, ses = S.sessao; if (!ses || !plDono()) return; plLog("acao", JSON.stringify(novo)); ses.estado = novo; ses.em = S.relogio.agora(); plReconciliar(); plDesenharBarra();
+async function plAcao(novo, { pulo = false } = {}) {
+  const S = PL.s, ses = S.sessao; if (!ses || !plDono()) return; if (pulo) { ses.forcaPulo = true; ses.pulo = novo.s || 0; } plLog("acao", JSON.stringify(novo)); ses.estado = novo; ses.em = S.relogio.agora(); plReconciliar(); plDesenharBarra();
   S.ocupado = (S.ocupado || 0) + 1; // (enquanto a ação não chega ao servidor, o que o servidor diz é velho: não deixa passar por cima)
   try { const { error } = await sb.rpc("playlist_controlar", { p_sessao: ses.id, p_estado: PLM.estadoParaServidor(novo) }); if (error) plAviso(PLM.erroPlaylist(error)); } catch { plAviso("Não foi possível agora. Tente de novo."); }
   S.ocupado = Math.max(0, (S.ocupado || 1) - 1); if (!S.ocupado) plPoll();
@@ -3863,7 +3865,7 @@ function plTique() {
   const S = PL.s, ses = S.sessao; if (ses?.ate && S.relogio.agora() >= ses.ate) { plAplicarLinha(null); return; } if (!ses || $("pl-barra").hidden) return; const m = S.motor, f = ses.faixas[ses.estado.f]; if (!f) return;
   const { e, pos } = plEfetivo(ses), dur = PLM.duracaoDaFaixa(f) || m?.duracao() || 0, atual = S.ouvindo && m?.faixa ? m.posicao() : pos;
   if (e.t && dur && (plDono() || S.ouvindo) && S.fimGuarda !== ses.em && posicaoBruta(ses) >= dur + 1.5) { S.fimGuarda = ses.em; plLog("fim-por-tempo"); plFim(); return; } // (rede de segurança: se o player não avisou que a música acabou, passa pela hora)
-  const pct = dur ? `${Math.max(0, Math.min(100, (atual / dur) * 100))}%` : "0%"; $("pl-prog").style.width = pct; $("pl-fio").style.width = pct; $("pl-t1").textContent = mmss(atual); $("pl-t2").textContent = dur ? mmss(dur) : "";
+  const pct = dur ? `${Math.max(0, Math.min(100, (atual / dur) * 100))}%` : "0%"; $("pl-fio").style.width = pct; const sk = $("pl-seek"); sk.disabled = !plDono() || !dur; if (!S.arrastando) { sk.max = String(Math.max(1, Math.round(dur || 1))); sk.value = String(Math.round(atual)); } sk.style.setProperty("--p", pct); $("pl-t1").textContent = mmss(S.arrastando ? Number(sk.value) : atual); $("pl-t2").textContent = dur ? mmss(dur) : "";
   if (S.ouvindo && !S.bloqueado && e.t && m?.faixa && (m.faixa.id !== f.id || m.faixa.t !== f.t)) plReconciliar(); // (o estado avançou sozinho: acompanha)
 }
 function plDesenharBarra() {
@@ -3887,6 +3889,10 @@ function plDesenharBarra() {
   }
   $("pl-palco").hidden = !(f && f.t === "y" && S.ouvindo); const av = $("pl-aviso"); if (S.bloqueado && S.ouvindo) { av.hidden = false; av.textContent = "O navegador bloqueou o som. Toque em “Ativar o som” (ou em qualquer lugar da tela) para ouvir."; } else if (av.textContent.startsWith("O navegador bloqueou")) { av.hidden = true; av.textContent = ""; }
 }
+// Barra de tempo: quem controla arrasta ou toca para avançar/voltar a música, e os outros aparelhos vão junto
+$("pl-seek").oninput = () => { PL.s.arrastando = true; $("pl-t1").textContent = mmss(Number($("pl-seek").value)); };
+$("pl-seek").onchange = () => { const S = PL.s, ses = S.sessao; S.arrastando = false; if (!ses || !plDono()) return; plAcao(PLM.buscar(plBase(), Number($("pl-seek").value)), { pulo: true }); };
+$("pl-seek").onblur = () => { PL.s.arrastando = false; };
 $("pl-abrir").onclick = () => { PL.s.aberta = !PL.s.aberta; plDesenharBarra(); };
 $("pl-fechar-g").onclick = () => { PL.s.aberta = false; plDesenharBarra(); };
 addEventListener("keydown", (e) => { if (e.key === "Escape" && PL.s.aberta && !document.querySelector("dialog[open]")) { PL.s.aberta = false; plDesenharBarra(); } });

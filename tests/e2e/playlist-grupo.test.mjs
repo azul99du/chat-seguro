@@ -36,7 +36,9 @@ const q = new URLSearchParams(location.search); if (q.get("autoplay") === "1") {
 </script>`;
 async function simular(ctx) {
   await ctx.route("https://itunes.apple.com/**", (r) => { const u = new URL(r.request().url()); pedidos.push(u.hostname + u.pathname); const termo = (u.searchParams.get("term") || "").toLowerCase(); r.fulfill({ status: 200, headers: { ...CORS, "content-type": "text/javascript; charset=utf-8" }, body: JSON.stringify({ resultCount: CATALOGO.length, results: /banda|aurora|brisa|cometa|delta|sol/.test(termo) ? CATALOGO : [] }) }); });
-  await ctx.route("https://audio-ssl.itunes.apple.com/**", (r) => { pedidos.push("audio-ssl"); r.fulfill({ status: 200, headers: { ...CORS, "content-type": "audio/wav" }, body: onda(/previa104/.test(r.request().url()) ? 6 : 60) }); });
+  await ctx.route("https://audio-ssl.itunes.apple.com/**", (r) => { pedidos.push("audio-ssl"); const buf = onda(/previa104/.test(r.request().url()) ? 6 : 60), rg = /bytes=(\d+)-(\d*)/.exec(r.request().headers().range || ""); // (aceita pedir um pedaço, como a Apple: sem isso não dá para pular para o meio da música)
+    if (rg) { const ini = Number(rg[1]), fim = rg[2] ? Math.min(Number(rg[2]), buf.length - 1) : buf.length - 1; return r.fulfill({ status: 206, headers: { ...CORS, "content-type": "audio/wav", "accept-ranges": "bytes", "content-range": `bytes ${ini}-${fim}/${buf.length}`, "content-length": String(fim - ini + 1) }, body: buf.subarray(ini, fim + 1) }); }
+    r.fulfill({ status: 200, headers: { ...CORS, "content-type": "audio/wav", "accept-ranges": "bytes" }, body: buf }); });
   await ctx.route("https://is1-ssl.mzstatic.com/**", (r) => r.fulfill({ status: 200, headers: { ...CORS, "content-type": "image/png" }, body: png(40, 40) }));
   await ctx.route("https://i.ytimg.com/**", (r) => r.fulfill({ status: 200, headers: { ...CORS, "content-type": "image/png" }, body: png(40, 40, 0x90) }));
   await ctx.route("https://www.youtube-nocookie.com/**", (r) => { pedidos.push("youtube-nocookie"); r.fulfill({ status: 200, headers: { "content-type": "text/html; charset=utf-8" }, body: YT_HTML }); });

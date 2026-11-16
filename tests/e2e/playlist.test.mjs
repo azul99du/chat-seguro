@@ -36,7 +36,9 @@ const q = new URLSearchParams(location.search); if (q.get("autoplay") === "1") {
 </script>`;
 async function simular(ctx) {
   await ctx.route("https://itunes.apple.com/**", (r) => { const u = new URL(r.request().url()); pedidos.push(u.hostname + u.pathname); const termo = (u.searchParams.get("term") || "").toLowerCase(); r.fulfill({ status: 200, headers: { ...CORS, "content-type": "text/javascript; charset=utf-8" }, body: JSON.stringify({ resultCount: CATALOGO.length, results: /banda|aurora|brisa|cometa|delta|sol/.test(termo) ? CATALOGO : [] }) }); });
-  await ctx.route("https://audio-ssl.itunes.apple.com/**", (r) => { pedidos.push("audio-ssl"); r.fulfill({ status: 200, headers: { ...CORS, "content-type": "audio/wav" }, body: onda(/previa104/.test(r.request().url()) ? 6 : 60) }); });
+  await ctx.route("https://audio-ssl.itunes.apple.com/**", (r) => { pedidos.push("audio-ssl"); const buf = onda(/previa104/.test(r.request().url()) ? 6 : 60), rg = /bytes=(\d+)-(\d*)/.exec(r.request().headers().range || ""); // (aceita pedir um pedaço, como a Apple: sem isso não dá para pular para o meio da música)
+    if (rg) { const ini = Number(rg[1]), fim = rg[2] ? Math.min(Number(rg[2]), buf.length - 1) : buf.length - 1; return r.fulfill({ status: 206, headers: { ...CORS, "content-type": "audio/wav", "accept-ranges": "bytes", "content-range": `bytes ${ini}-${fim}/${buf.length}`, "content-length": String(fim - ini + 1) }, body: buf.subarray(ini, fim + 1) }); }
+    r.fulfill({ status: 200, headers: { ...CORS, "content-type": "audio/wav", "accept-ranges": "bytes" }, body: buf }); });
   await ctx.route("https://is1-ssl.mzstatic.com/**", (r) => r.fulfill({ status: 200, headers: { ...CORS, "content-type": "image/png" }, body: png(40, 40) }));
   await ctx.route("https://i.ytimg.com/**", (r) => r.fulfill({ status: 200, headers: { ...CORS, "content-type": "image/png" }, body: png(40, 40, 0x90) }));
   await ctx.route("https://www.youtube-nocookie.com/**", (r) => { pedidos.push("youtube-nocookie"); r.fulfill({ status: 200, headers: { "content-type": "text/html; charset=utf-8" }, body: YT_HTML }); });
@@ -52,6 +54,8 @@ const esperaEstado = async (p, nomeBotao, aria, ms = 15000) => { const ini = Dat
 const tocandoAgora = (p) => p.evaluate(() => new Set(window.__som.filter((x) => x.tocando).map((x) => x.el)).size);
 const srcAtual = (p) => p.evaluate(() => window.__som.length ? window.__som[window.__som.length - 1].src : "");
 const gaveta = async (p) => { if (!(await p.locator("#pl-gaveta").isVisible())) await p.click("#pl-abrir"); await p.waitForSelector("#pl-gaveta #pl-ctl button", { state: "visible" }); };
+const ponto = (p, v) => p.evaluate((n) => { const s = document.querySelector("#pl-seek"); s.value = String(n); s.dispatchEvent(new Event("input", { bubbles: true })); s.dispatchEvent(new Event("change", { bubbles: true })); }, v);
+const posYt = (p) => p.frames().find((f) => f.url().includes("youtube-nocookie")).evaluate(() => agora());
 const estadoYt = (p) => p.frames().find((f) => f.url().includes("youtube-nocookie")).evaluate(() => estado);
 const botao = (p, rotulo) => p.locator(`#pl-ctl button[aria-label="${rotulo}"]`);
 async function criarLista(p, nome, adds) { // abre Playlists, cria e põe as músicas: adds = ["a:Banda Sol:Aurora,Brisa", "y:abcdefghijk"]
@@ -102,6 +106,13 @@ t("tocar na conversa a dois: as duas pessoas ouvem; só quem iniciou vê os cont
 t("controle de quem iniciou: pausar/continuar, próxima, anterior, aleatório e loop ligam, escolher a música na lista; o outro acompanha; o servidor recusa controle de quem não iniciou", async () => {
   await botao(A, "Pausar").click(); await B.waitForFunction(() => !window.__som.some((x) => x.tocando), null, { timeout: 12000 }); assert.equal(await tocandoAgora(A), 0); await botao(A, "Tocar").click(); await B.waitForFunction(() => window.__som.some((x) => x.tocando), null, { timeout: 12000 });
   await botao(A, "Próxima música").click(); await esperaBarra(A, /Brisa/); await esperaBarra(B, /Brisa/); await B.waitForFunction(() => window.__som.some((x) => x.tocando && x.src.includes("previa102")), null, { timeout: 12000 });
+  // avançar e voltar o tempo: o dono arrasta a barra de tempo e o outro vai junto (também para um pulo pequeno)
+  const pos = (p) => p.evaluate(() => { const x = [...window.__som].reverse().find((y) => y.tocando); return x ? x.el.currentTime : -1; });
+  assert.equal(await B.locator("#pl-seek").isDisabled(), true, "quem só ouve não mexe no tempo"); assert.equal(await A.locator("#pl-seek").isEnabled(), true);
+  await ponto(A, 20); await B.waitForFunction(() => { const x = [...window.__som].reverse().find((y) => y.tocando); return x && x.el.currentTime >= 19 && x.el.currentTime < 40; }, null, { timeout: 15000 }); assert.ok((await pos(A)) >= 19, "o dono também foi para 20 s");
+  await ponto(A, 22); await B.waitForFunction(() => { const x = [...window.__som].reverse().find((y) => y.tocando); return x && x.el.currentTime >= 21.5 && x.el.currentTime < 40; }, null, { timeout: 15000 }); // (um pulo pequeno de 2 s também vale)
+  await ponto(A, 5); await B.waitForFunction(() => { const x = [...window.__som].reverse().find((y) => y.tocando); return x && x.el.currentTime >= 4.5 && x.el.currentTime < 15; }, null, { timeout: 15000 });
+  await botao(A, "Pausar").click(); await B.waitForFunction(() => !window.__som.some((x) => x.tocando), null, { timeout: 12000 }); await ponto(A, 15); await B.waitForFunction(() => [...window.__som].reverse().some((x) => Math.abs(x.el.currentTime - 15) < 1.2 && x.el.paused), null, { timeout: 15000 }); await botao(A, "Tocar").click(); await B.waitForFunction(() => { const x = [...window.__som].reverse().find((y) => y.tocando); return x && x.el.currentTime >= 14.5; }, null, { timeout: 12000 });
   await botao(A, "Música anterior").click(); await esperaBarra(B, /Aurora/);
   await botao(A, "Ordem aleatória").click(); await esperaEstado(A, "Ordem aleatória", "true"); await botao(A, "Repetir esta música").click(); await esperaEstado(A, "Repetir esta música", "true"); await botao(A, "Repetir esta música").click(); await esperaEstado(A, "Repetir esta música", "false"); await botao(A, "Ordem aleatória").click(); await esperaEstado(A, "Ordem aleatória", "false");
   assert.equal(await A.locator("#pl-faixas li").count(), 3); await A.locator("#pl-faixas li").nth(2).locator("button").click(); await esperaBarra(B, /Vídeo abcdefghijk/); await esperaBarra(A, /Vídeo abcdefghijk/);
@@ -112,6 +123,8 @@ t("música do YouTube toca no player da barra (as duas pontas); loop repete a me
   for (const p of [A, B]) assert.ok((await p.locator("#pl-palco iframe").boundingBox()).width <= 200, "o vídeo é pequeno (a música é o que importa)");
   await botao(A, "Pausar").click(); for (const p of [A, B]) { const ini = Date.now(); while ((await estadoYt(p)) !== 2) { if (Date.now() - ini > 12000) assert.fail("o vídeo não pausou"); await p.waitForTimeout(250); } }
   await botao(A, "Tocar").click(); for (const p of [A, B]) { const ini = Date.now(); while ((await estadoYt(p)) !== 1) { if (Date.now() - ini > 12000) assert.fail("o vídeo não voltou a tocar depois de pausar"); await p.waitForTimeout(250); } }
+  await ponto(A, 5); for (const p of [A, B]) { const ini = Date.now(); for (;;) { const v = await posYt(p); if (v >= 4.5 && v <= 6.8) break; if (Date.now() - ini > 12000) assert.fail(`o vídeo não foi para 5 s (está em ${v})`); await p.waitForTimeout(250); } } // (o YouTube também: um pulo de 5 s vale, mesmo com a tolerância dos anúncios)
+  await botao(A, "Pausar").click(); await botao(A, "Tocar").click();
   await botao(A, "Repetir esta música").click(); await esperaEstado(A, "Repetir esta música", "true"); await A.waitForTimeout(11000); await esperaBarra(A, /Vídeo abcdefghijk/); await esperaBarra(B, /Vídeo abcdefghijk/); assert.equal(await A.locator("#pl-palco iframe.pl-yt").count(), 1, "com loop a mesma música recomeça (o vídeo dura 7 s, passaram 11)");
   await botao(A, "Repetir esta música").click(); await esperaEstado(A, "Repetir esta música", "false"); await esperaBarra(A, /Aurora/, 25000); await esperaBarra(B, /Aurora/, 25000); await A.waitForFunction(() => window.__som.some((x) => x.tocando && x.src.includes("previa101")), null, { timeout: 10000 }); assert.equal(await A.locator("#pl-palco").isVisible(), false, "o player some quando a música é da Apple");
 });

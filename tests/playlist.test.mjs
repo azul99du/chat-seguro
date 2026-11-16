@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { MAX_FAIXAS, MAX_PLAYLISTS, idYoutube, capaYoutube, limpaFaixa, limpaPlaylist, limpaColecao, colecaoVazia, mesclar, duracaoDaFaixa, rotuloFaixa, limpaEstado, estadoInicial, embaralhar, posicaoAgora, fimNatural, pular, irPara, pausar, continuar, alternarAleatorio, alternarLoop, estadoParaServidor, limpaSessaoFaixas, relogio, erroPlaylist, chaveFaixa } from "../playlist.js";
+import { MAX_FAIXAS, MAX_PLAYLISTS, idYoutube, capaYoutube, limpaFaixa, limpaPlaylist, limpaColecao, colecaoVazia, mesclar, duracaoDaFaixa, rotuloFaixa, limpaEstado, estadoInicial, embaralhar, posicaoAgora, fimNatural, pular, irPara, pausar, continuar, alternarAleatorio, alternarLoop, buscar, estadoParaServidor, limpaSessaoFaixas, relogio, erroPlaylist, chaveFaixa } from "../playlist.js";
 
 const A = (id, ti = "Música " + id) => ({ t: "a", id, ti, ar: "Banda", pr: `https://audio-ssl.itunes.apple.com/x/${id}.m4a`, ca: `https://is1-ssl.mzstatic.com/x/${id}/100x100bb.jpg` });
 const Y = (id = "dQw4w9WgXcQ", du = 214) => ({ t: "y", id, ti: "Vídeo " + id, ar: "", du });
@@ -54,5 +54,9 @@ describe("playlists (funções puras)", () => {
   test("relógio do servidor e mensagens de erro", () => {
     const r = relogio(); assert.equal(r.agora(1000), 1000); r.acerta(5000, 1000); assert.equal(r.agora(2000), 6000); r.acerta(NaN, 0); assert.equal(r.dif(), 4000);
     assert.match(erroPlaylist({ message: "saldo_insuficiente" }), /Selos/); assert.match(erroPlaylist({ message: "ja_com_playlist" }), /já há uma playlist/i); assert.match(erroPlaylist({ message: "sem_controle" }), /Só quem iniciou/); assert.match(erroPlaylist({ code: "PT429" }), /Espere/); assert.match(erroPlaylist(null), /Tente de novo/);
+  });
+  test("avançar ou voltar o tempo: vai para o segundo pedido e marca um pulo novo (s) que sobrevive ao servidor", () => {
+    const e = { ...estadoInicial(), f: 1, p: 3 }, b = buscar(e, 20); assert.deepEqual([b.f, b.p, b.s], [1, 20, 1]); const c = buscar(b, 5); assert.equal(c.s, 2); assert.equal(buscar(e, -4).p, 0); assert.equal(buscar(e, "lixo").p, 0);
+    assert.deepEqual(estadoParaServidor(b), { f: 1, p: 20, t: true, a: false, l: false, s: 1 }); assert.equal(estadoParaServidor(e).s, undefined); assert.equal(limpaEstado({ ...b }, 3).s, 1); assert.equal(limpaEstado({ f: 0, p: 0, t: true, a: false, l: false, s: -3 }, 3).s, undefined); assert.equal(limpaEstado({ f: 0, p: 0, t: true, a: false, l: false, s: 1.5 }, 3).s, undefined);
   });
 });

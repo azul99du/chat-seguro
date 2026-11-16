@@ -46,7 +46,8 @@ export const estadoInicial = () => ({ f: 0, p: 0, t: true, a: false, l: false })
 export function limpaEstado(e, n = 200) {
   if (!e || typeof e !== "object") return null; const tot = Math.max(1, Math.min(200, n));
   const f = Number.isSafeInteger(e.f) && e.f >= 0 && e.f < tot ? e.f : 0, p = Number.isFinite(e.p) && e.p >= 0 && e.p < 86400 ? e.p : 0, a = e.a === true, o = a && Array.isArray(e.o) && e.o.length === tot && new Set(e.o).size === tot && e.o.every((x) => Number.isSafeInteger(x) && x >= 0 && x < tot) ? e.o : undefined;
-  return { f, p, t: e.t !== false, a: a && o !== undefined ? true : false, l: e.l === true, ...(a && o ? { o } : {}) };
+  const s = Number.isSafeInteger(e.s) && e.s > 0 && e.s < 1e9 ? e.s : 0;
+  return { f, p, t: e.t !== false, a: a && o !== undefined ? true : false, l: e.l === true, ...(a && o ? { o } : {}), ...(s ? { s } : {}) };
 }
 // Ordem aleatória com a faixa atual primeiro
 export function embaralhar(n, atual = 0, rnd = Math.random) {
@@ -67,8 +68,10 @@ export const pausar = (e, agoraMs, emMs) => ({ ...e, p: posicaoAgora(e, agoraMs,
 export const continuar = (e) => ({ ...e, t: true });
 export function alternarAleatorio(e, n, rnd = Math.random) { const { o, ...r } = e; return e.a ? { ...r, a: false } : { ...r, a: true, o: embaralhar(n, e.f, rnd) }; }
 export const alternarLoop = (e) => ({ ...e, l: !e.l });
+// Avançar ou voltar o tempo da música: vai para `seg` e marca um "pulo" novo (s), que faz os outros aparelhos irem junto mesmo que a diferença seja pequena
+export const buscar = (e, seg) => ({ ...e, p: Math.max(0, Math.min(86399, Number(seg) || 0)), s: (Number.isSafeInteger(e.s) ? e.s : 0) + 1 });
 // Para mandar ao servidor: só os campos do estado
-export const estadoParaServidor = (e) => ({ f: e.f, p: Math.round(e.p * 10) / 10, t: !!e.t, a: !!e.a, l: !!e.l, ...(e.a && e.o ? { o: e.o } : {}) });
+export const estadoParaServidor = (e) => ({ f: e.f, p: Math.round(e.p * 10) / 10, t: !!e.t, a: !!e.a, l: !!e.l, ...(e.a && e.o ? { o: e.o } : {}), ...(Number.isSafeInteger(e.s) && e.s > 0 ? { s: e.s } : {}) });
 // Conteúdo cifrado de uma sessão: a playlist congelada de quando começou
 export function limpaSessaoFaixas(c) {
   if (!c || typeof c !== "object") return null; const p = limpaPlaylist({ id: typeof c.pl === "string" && LISTA_ID.test(c.pl) ? c.pl : "sessao00", nome: c.nome || "Playlist", faixas: c.faixas, mod: 1 }); if (!p || !p.faixas.length) return null;

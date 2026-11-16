@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=e2ecf3280e">
+  <link rel="stylesheet" href="style.css?v=9a44aef181">
 </head>
 <body>
 
@@ -158,7 +158,7 @@
       <div id="pl-gaveta" class="pl-gaveta" role="group" aria-label="Controles da playlist" hidden>
         <button type="button" id="pl-fechar-g" class="pl-alca" aria-label="Fechar os controles"><i></i></button>
         <div class="pl-topo"><span id="pl-g-capa" class="pl-capa" aria-hidden="true"></span><div class="pl-info"><b id="pl-g-nome"></b><small id="pl-g-sub"></small></div></div>
-        <div class="pl-prog" aria-hidden="true"><i id="pl-prog"></i></div>
+        <input id="pl-seek" class="pl-seek" type="range" min="0" max="30" step="1" value="0" aria-label="Posição da música" disabled>
         <div class="pl-tempo"><span id="pl-t1">0:00</span><span id="pl-t2"></span></div>
         <div id="pl-ctl" class="pl-ctl"></div>
         <div id="pl-palco" class="pl-palco" hidden></div>
@@ -689,6 +689,6 @@
 
   <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
 
-  <script src="guarda.js?v=e2ecf3280e"></script>
+  <script src="guarda.js?v=9a44aef181"></script>
 </body>
 </html>
