@@ -2891,3 +2891,170 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke all on function public.playlist_minhas() from public, anon, authenticated;
 grant execute on function public.playlist_minhas() to authenticated;
+
+-- ===== Convites de grupo (migração convites) =====
+-- Um admin cria links de convite (com nome, validade, limite de pessoas). Quem tem conta abre o link e PEDE para entrar; um admin aceita (ou o link aceita sozinho
+-- enquanto um admin estiver com o app aberto). A chave do grupo continua indo cifrada, por pessoa, e só quem é admin consegue entregá-la: por isso entrar depende
+-- do aparelho de um admin. O servidor guarda só o HASH do segredo do link (nunca o link) e o apelido do link vai cifrado com a chave do grupo.
+create table public.grupo_convites (
+  id uuid primary key default gen_random_uuid(),
+  grupo_id uuid not null references public.grupos(id) on delete cascade,
+  codigo text not null unique check (codigo ~ '^[0-9a-f]{64}$'),                 -- sha256 do segredo que vai no link
+  nome jsonb not null check (length(nome::text) < 600),                          -- apelido do link, cifrado com a chave do grupo
+  criado_por uuid references public.profiles(id) on delete set null,
+  criado_em timestamptz not null default now(),
+  expira_em timestamptz,                                                         -- vazio = sem fim
+  max_usos int check (max_usos is null or max_usos between 1 and 19),            -- vazio = até o grupo encher
+  usos int not null default 0,
+  aprovar boolean not null default true,                                         -- false = um admin online aceita sozinho
+  ativo boolean not null default true
+);
+create index grupo_convites_por_grupo on public.grupo_convites (grupo_id);
+create table public.grupo_pedidos (
+  grupo_id uuid not null references public.grupos(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  convite_id uuid references public.grupo_convites(id) on delete set null,
+  criado_em timestamptz not null default now(),
+  primary key (grupo_id, user_id)
+);
+alter table public.grupo_convites enable row level security;
+alter table public.grupo_pedidos enable row level security;
+revoke all on public.grupo_convites from anon, authenticated;
+revoke all on public.grupo_pedidos from anon, authenticated;
+create policy "exige dois passos" on public.grupo_convites as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+create policy "exige dois passos" on public.grupo_pedidos as restrictive for all to authenticated using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+
+-- Esse link ainda vale? (ligado, dentro do prazo, com vaga no limite do link e no grupo)
+create or replace function public.convite_vale(p_id uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.grupo_convites c
+                  where c.id = p_id and c.ativo and (c.expira_em is null or c.expira_em > now()) and (c.max_usos is null or c.usos < c.max_usos)
+                    and (select count(*) from public.grupo_membros gm where gm.grupo_id = c.grupo_id) < 20)
+$$;
+revoke all on function public.convite_vale(uuid) from public, anon, authenticated;
+
+-- Criar um link (só admin; no máximo 10 ligados por grupo). p_horas vazio = sem fim; p_max vazio = sem limite além do tamanho do grupo.
+create or replace function public.convite_criar(p_grupo uuid, p_codigo text, p_nome jsonb, p_horas int, p_max int, p_aprovar boolean) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); novo uuid;
+begin
+  perform public.consome('convite_criar', 10, 60);
+  if coalesce(public.aparelho_estado(), 'aprovado') = 'pendente' then raise exception 'aparelho_pendente' using errcode = '42501'; end if;
+  if not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = u and gm.admin) then raise exception 'so_admin' using errcode = '42501'; end if;
+  if p_codigo is null or p_codigo !~ '^[0-9a-f]{64}$' or p_nome is null or (p_horas is not null and (p_horas < 1 or p_horas > 8760)) or (p_max is not null and (p_max < 1 or p_max > 19)) or p_aprovar is null then raise exception 'detalhe_invalido' using errcode = '22023'; end if;
+  if (select count(*) from public.grupo_convites c where c.grupo_id = p_grupo and c.ativo) >= 10 then raise exception 'convites_demais' using errcode = '22023'; end if;
+  insert into public.grupo_convites (grupo_id, codigo, nome, criado_por, expira_em, max_usos, aprovar)
+    values (p_grupo, p_codigo, p_nome, u, case when p_horas is null then null else now() + make_interval(hours => p_horas) end, p_max, p_aprovar) returning id into novo;
+  return novo;
+end $$;
+revoke all on function public.convite_criar(uuid, text, jsonb, int, int, boolean) from public, anon, authenticated;
+grant execute on function public.convite_criar(uuid, text, jsonb, int, int, boolean) to authenticated;
+
+-- Os links ligados de um grupo (só admin)
+create or replace function public.convite_listar(p_grupo uuid) returns table (id uuid, nome jsonb, criado_em timestamptz, expira_em timestamptz, max_usos int, usos int, aprovar boolean, vale boolean)
+language sql stable security definer set search_path = public as $$
+  select c.id, c.nome, c.criado_em, c.expira_em, c.max_usos, c.usos, c.aprovar, public.convite_vale(c.id)
+    from public.grupo_convites c
+   where c.grupo_id = p_grupo and c.ativo and (select public.mfa_ok())
+     and exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = (select auth.uid()) and gm.admin)
+   order by c.criado_em desc
+$$;
+revoke all on function public.convite_listar(uuid) from public, anon, authenticated;
+grant execute on function public.convite_listar(uuid) to authenticated;
+
+-- Desligar um link (só admin): o link para de valer e os pedidos que vieram só por ele somem
+create or replace function public.convite_revogar(p_id uuid) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); g uuid;
+begin
+  perform public.consome('convite_mudar', 30, 200);
+  select c.grupo_id into g from public.grupo_convites c where c.id = p_id;
+  if g is null or not exists (select 1 from public.grupo_membros gm where gm.grupo_id = g and gm.user_id = u and gm.admin) then raise exception 'so_admin' using errcode = '42501'; end if;
+  update public.grupo_convites c set ativo = false where c.id = p_id;
+  delete from public.grupo_pedidos p where p.convite_id = p_id;
+end $$;
+revoke all on function public.convite_revogar(uuid) from public, anon, authenticated;
+grant execute on function public.convite_revogar(uuid) to authenticated;
+
+-- Quem abriu o link vê o grupo (o nome vem cifrado: só abre com a chave que está dentro do link) e se já pode pedir. Link que não existe e link vencido respondem igual.
+create or replace function public.convite_ver(p_codigo text) returns table (grupo_id uuid, nome jsonb, membros int, ja_membro boolean, pedido boolean, vale boolean)
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); c public.grupo_convites;
+begin
+  perform public.consome('convite_ver', 20, 100);
+  if p_codigo is null or p_codigo !~ '^[0-9a-f]{64}$' then return; end if;
+  select * into c from public.grupo_convites x where x.codigo = p_codigo;
+  if c.id is null then return; end if;
+  return query select g.id, g.nome, (select count(*)::int from public.grupo_membros gm where gm.grupo_id = g.id),
+                      exists (select 1 from public.grupo_membros gm where gm.grupo_id = g.id and gm.user_id = u),
+                      exists (select 1 from public.grupo_pedidos p where p.grupo_id = g.id and p.user_id = u),
+                      public.convite_vale(c.id)
+                 from public.grupos g where g.id = c.grupo_id;
+end $$;
+revoke all on function public.convite_ver(text) from public, anon, authenticated;
+grant execute on function public.convite_ver(text) to authenticated;
+
+-- Pedir para entrar (vira um pedido; um admin aceita). Responde 'pendente' ou 'ja_membro'.
+create or replace function public.convite_pedir(p_codigo text) returns text
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); c public.grupo_convites;
+begin
+  perform public.consome('convite_pedir', 10, 30);
+  if coalesce(public.aparelho_estado(), 'aprovado') = 'pendente' then raise exception 'aparelho_pendente' using errcode = '42501'; end if;
+  if p_codigo is null or p_codigo !~ '^[0-9a-f]{64}$' then raise exception 'convite_invalido' using errcode = 'P0001'; end if;
+  select * into c from public.grupo_convites x where x.codigo = p_codigo;
+  if c.id is null or not public.convite_vale(c.id) then raise exception 'convite_invalido' using errcode = 'P0001'; end if;
+  if exists (select 1 from public.grupo_membros gm where gm.grupo_id = c.grupo_id and gm.user_id = u) then return 'ja_membro'; end if;
+  if (select count(*) from public.grupo_membros gm where gm.user_id = u) >= 50 then raise exception 'grupos_demais_dela' using errcode = '42501'; end if;
+  if (select count(*) from public.grupo_pedidos p where p.grupo_id = c.grupo_id) >= 50 and not exists (select 1 from public.grupo_pedidos p where p.grupo_id = c.grupo_id and p.user_id = u) then raise exception 'pedidos_demais' using errcode = '22023'; end if;
+  insert into public.grupo_pedidos (grupo_id, user_id, convite_id) values (c.grupo_id, u, c.id)
+    on conflict (grupo_id, user_id) do update set convite_id = excluded.convite_id, criado_em = now();
+  return 'pendente';
+end $$;
+revoke all on function public.convite_pedir(text) from public, anon, authenticated;
+grant execute on function public.convite_pedir(text) to authenticated;
+
+-- Os pedidos pendentes dos grupos em que sou admin (com o nome e a chave pública de quem pediu, para eu poder entregar a chave do grupo)
+create or replace function public.convite_pedidos() returns table (grupo_id uuid, user_id uuid, username text, public_key jsonb, avatar text, convite_id uuid, aprovar boolean, vale boolean, criado_em timestamptz)
+language sql stable security definer set search_path = public as $$
+  select p.grupo_id, p.user_id, q.username, q.public_key, q.avatar, p.convite_id, coalesce(c.aprovar, true), c.id is not null and public.convite_vale(c.id), p.criado_em
+    from public.grupo_pedidos p
+    join public.profiles q on q.id = p.user_id
+    left join public.grupo_convites c on c.id = p.convite_id
+   where (select public.mfa_ok())
+     and exists (select 1 from public.grupo_membros gm where gm.grupo_id = p.grupo_id and gm.user_id = (select auth.uid()) and gm.admin)
+   order by p.criado_em
+$$;
+revoke all on function public.convite_pedidos() from public, anon, authenticated;
+grant execute on function public.convite_pedidos() to authenticated;
+
+-- Aceitar um pedido (só admin): entrega a chave do grupo cifrada para a pessoa. Confere de novo se o link ainda vale e se há vaga.
+create or replace function public.convite_aceitar(p_grupo uuid, p_user uuid, p_chave jsonb) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid()); ped public.grupo_pedidos;
+begin
+  perform public.consome('convite_mudar', 30, 200);
+  if not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = u and gm.admin) then raise exception 'so_admin' using errcode = '42501'; end if;
+  select * into ped from public.grupo_pedidos p where p.grupo_id = p_grupo and p.user_id = p_user;
+  if ped.user_id is null then raise exception 'sem_pedido' using errcode = 'P0001'; end if;
+  if ped.convite_id is null or not public.convite_vale(ped.convite_id) then raise exception 'convite_invalido' using errcode = 'P0001'; end if;
+  if (select count(*) from public.grupo_membros gm where gm.grupo_id = p_grupo) >= 20 then raise exception 'grupo_cheio' using errcode = '22023'; end if;
+  if (select count(*) from public.grupo_membros gm where gm.user_id = p_user) >= 50 then raise exception 'grupos_demais_dela' using errcode = '42501', detail = p_user::text; end if;
+  insert into public.grupo_membros (grupo_id, user_id, chave, por) values (p_grupo, p_user, p_chave, u);
+  update public.grupo_convites c set usos = c.usos + 1 where c.id = ped.convite_id;
+  delete from public.grupo_pedidos p where p.grupo_id = p_grupo and p.user_id = p_user;
+end $$;
+revoke all on function public.convite_aceitar(uuid, uuid, jsonb) from public, anon, authenticated;
+grant execute on function public.convite_aceitar(uuid, uuid, jsonb) to authenticated;
+
+-- Recusar um pedido (só admin)
+create or replace function public.convite_recusar(p_grupo uuid, p_user uuid) returns void
+language plpgsql security definer set search_path = public as $$
+declare u uuid := (select auth.uid());
+begin
+  perform public.consome('convite_mudar', 30, 200);
+  if not exists (select 1 from public.grupo_membros gm where gm.grupo_id = p_grupo and gm.user_id = u and gm.admin) then raise exception 'so_admin' using errcode = '42501'; end if;
+  delete from public.grupo_pedidos p where p.grupo_id = p_grupo and p.user_id = p_user;
+end $$;
+revoke all on function public.convite_recusar(uuid, uuid) from public, anon, authenticated;
+grant execute on function public.convite_recusar(uuid, uuid) to authenticated;
