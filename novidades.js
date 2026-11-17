@@ -5,6 +5,10 @@ export const TEMAS = [["selos", "Selos"], ["mensagens", "Mensagens"], ["grupos",
 const NOME_TEMA = new Map(TEMAS);
 export const temaNome = (t) => NOME_TEMA.get(t) || null;
 export const NOVIDADES = [
+  { id: "2026-11-17-1", data: "2026-11-17", itens: [
+    { tema: "mensagens", icone: "📶", titulo: "Mensagem sem internet", texto: "Se você escrever sem conexão, a mensagem não se perde: ela fica esperando no seu aparelho (cifrada, como todo o resto), aparece com o aviso \"Aguardando conexão…\" e sai sozinha quando a internet voltar. Dá para cancelar antes disso. Vale para mensagens de texto; fotos, vídeos e áudios ainda precisam de conexão na hora de enviar." },
+    { tema: "mensagens", icone: "✍️", titulo: "Digitando…", texto: "Agora aparece \"digitando…\" quando a pessoa está escrevendo para você, no alto da conversa e na lista. Nos grupos aparece o nome de quem está escrevendo. O aviso é cifrado, não fica gravado em lugar nenhum, só quem está na conversa consegue ler e some sozinho quando a pessoa para ou envia." },
+  ] },
   { id: "2026-11-16-3", data: "2026-11-16", itens: [
     { tema: "mensagens", icone: "🎧", titulo: "Playlists", texto: "Crie suas playlists no menu da sua foto, com trechos de 30 segundos de músicas da Apple ou vídeos inteiros do YouTube (cole o link). Elas ficam cifradas e aparecem em todos os seus aparelhos. Em uma conversa a dois, toque em + e em Playlist para tocar a sua para as duas pessoas: quem inicia controla (pausar, pular, ordem aleatória, repetir uma música ou escolher qual toca)." },
     { tema: "selos", icone: "🎵", titulo: "Playlist na loja de Selos", texto: "Em grupo, a playlist é um item da loja: você escolhe uma playlist sua e por quanto tempo ela toca para todo o grupo (de 5 em 5 minutos; quanto mais tempo, mais Selos). Só quem comprou controla, e as músicas são as de quando comprou: enquanto estiver tocando, você não pode pôr músicas novas nela. O admin liga o item e define o preço nas regras dos Selos." },

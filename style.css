@@ -1041,3 +1041,12 @@ dialog.musica-folha{max-height:88dvh;overflow:auto}
 .pl-nota{margin:12px 0 0;color:var(--mut);font-size:.74rem;line-height:1.4}
 .pl-seek{width:100%;margin:0;height:28px;background:none;accent-color:var(--seal)}
 .pl-seek:disabled{opacity:1;cursor:default}
+
+/* ===== mensagem esperando conexão ===== */
+.msg.na-fila .bubble{opacity:.78;border-style:dashed}
+.msg.na-fila .fila-st{font-style:italic;opacity:.95}
+.fila-cancelar{background:none;border:0;color:var(--mut);font-size:.78rem;padding:2px 4px;min-height:0;text-decoration:underline;cursor:pointer}
+.fila-cancelar:focus-visible{outline:2px solid var(--seal);outline-offset:2px;border-radius:4px}
+
+/* ===== digitando… ===== */
+.status.digitando,.sub-grupo.digitando,small.digitando,.sub.digitando{font-style:italic;color:var(--seal-dk)}

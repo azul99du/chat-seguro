@@ -1,34 +1,36 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=9a44aef181";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=9a44aef181";
-import { montarFigurinhas } from "./figurinhas.js?v=9a44aef181";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=9a44aef181";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=9a44aef181";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=9a44aef181";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=9a44aef181";
-import { acharVideoLink } from "./videolink.js?v=9a44aef181";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=9a44aef181";
-import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=9a44aef181";
-import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=9a44aef181";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=9a44aef181";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=9a44aef181";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=9a44aef181";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=9a44aef181";
-import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, combinar, destaque, PAGINA_RESULTADOS, MAX_BUSCA, termosAmpliados, termoTrilha, albumOficial, barrasDeOnda, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=9a44aef181";
-import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=9a44aef181";
-import { MAX_SUGESTAO, MAX_POR_DIA, POR_PAGINA, limpaSugestao, restantesHoje, dataCarimbo, corDaNota, limpaSugestoes, erroSugestao } from "./sugestoes.js?v=9a44aef181";
-import { MODELOS, IDS_MODELOS, MODELO_PADRAO, MAX_TRANSCRICAO_S, limpaModelo, mbDoModelo, bytesDoModelo, estimativa, paraMono, limpaTranscricao } from "./transcricao.js?v=9a44aef181";
-import { modeloBaixado, apagarModelo } from "./transcricao-arquivos.js?v=9a44aef181";
-import * as PLM from "./playlist.js?v=9a44aef181";
-import { criarMotor, sondarYoutube } from "./playlist-motor.js?v=9a44aef181";
-import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=9a44aef181";
-import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, precoPlaylist, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=9a44aef181";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=9a44aef181";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=9a44aef181";
-import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=9a44aef181";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=9a44aef181";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=9a44aef181";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=9a44aef181";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=df19e08ada";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=df19e08ada";
+import { montarFigurinhas } from "./figurinhas.js?v=df19e08ada";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=df19e08ada";
+import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=df19e08ada";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=df19e08ada";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=df19e08ada";
+import { acharVideoLink } from "./videolink.js?v=df19e08ada";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=df19e08ada";
+import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=df19e08ada";
+import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=df19e08ada";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=df19e08ada";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=df19e08ada";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=df19e08ada";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=df19e08ada";
+import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, combinar, destaque, PAGINA_RESULTADOS, MAX_BUSCA, termosAmpliados, termoTrilha, albumOficial, barrasDeOnda, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=df19e08ada";
+import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=df19e08ada";
+import { MAX_SUGESTAO, MAX_POR_DIA, POR_PAGINA, limpaSugestao, restantesHoje, dataCarimbo, corDaNota, limpaSugestoes, erroSugestao } from "./sugestoes.js?v=df19e08ada";
+import { MODELOS, IDS_MODELOS, MODELO_PADRAO, MAX_TRANSCRICAO_S, limpaModelo, mbDoModelo, bytesDoModelo, estimativa, paraMono, limpaTranscricao } from "./transcricao.js?v=df19e08ada";
+import { modeloBaixado, apagarModelo } from "./transcricao-arquivos.js?v=df19e08ada";
+import * as PLM from "./playlist.js?v=df19e08ada";
+import * as FILA from "./fila.js?v=df19e08ada";
+import * as DIG from "./digitando.js?v=df19e08ada";
+import { criarMotor, sondarYoutube } from "./playlist-motor.js?v=df19e08ada";
+import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=df19e08ada";
+import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, precoPlaylist, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=df19e08ada";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=df19e08ada";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=df19e08ada";
+import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=df19e08ada";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=df19e08ada";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=df19e08ada";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=df19e08ada";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -69,6 +71,7 @@ function ultimaDoServidor(conv, quando) { const t = Date.parse(quando); if (!ult
 // o teclado só sobe quando a pessoa toca no campo (celular); no computador, com mouse, o foco continua indo direto para o campo
 const focoSeMouse = () => { try { if (matchMedia("(pointer: fine)").matches) $("text").focus({ preventScroll: true }); } catch {} };
 let online = new Set(); // ids de quem está online agora
+let presCanal = null, digitandoDe = new Map(), digTimer = null, digUltimo = 0, digConv = null, digVerTimer = null; // "digitando…": quem está digitando agora (convId|uid -> {conv, uid, ate}) e o meu próprio aviso
 const msgs = new Map(), reactions = new Map(); // mensagens/reações da conversa aberta
 
 // ---------- Diálogos ----------
@@ -258,7 +261,8 @@ async function start() {
   sincronizar();
 
   // quem está online: presença em tempo real (some sozinha ao fechar o site)
-  const pres = sb.channel("online", { config: { private: true, presence: { key: uid } } });
+  const pres = presCanal = sb.channel("online", { config: { private: true, presence: { key: uid } } });
+  pres.on("broadcast", { event: "dig" }, ({ payload }) => { digitandoRecebe(payload).catch(() => {}); }); // "fulano está digitando…" (cifrado; só vale se for para mim)
   pres.on("presence", { event: "sync" }, () => {
     online = new Set(Object.keys(pres.presenceState()));
     renderContacts(); updateStatus();
@@ -266,7 +270,8 @@ async function start() {
 
   document.addEventListener("visibilitychange", () => { markRead(); if (!document.hidden) { loadContacts().catch(() => {}).then(sincronizar); conferirAparelhos(true); conferirDispositivos(); } });
   addEventListener("focus", () => { markRead(); conferirDispositivos(); });
-  addEventListener("online", () => { loadContacts().catch(() => {}).then(sincronizar); }); // a internet voltou: busca o que chegou nesse meio-tempo
+  addEventListener("online", () => { loadContacts().catch(() => {}).then(sincronizar); filaEnviar(); }); // a internet voltou: busca o que chegou nesse meio-tempo e manda o que estava esperando
+  filaCarregar().then(() => filaEnviar()); setInterval(filaEnviar, 15000); // (de tempos em tempos tenta de novo: um sinal que volta sem o navegador avisar)
   $("chat").classList.remove("preparando"); document.body.dataset.pronto = "1";
   sincronizarNotificacoes(); conferirAparelhos(true, true); conferirDispositivos(true);
   setInterval(() => { if (!document.hidden) { conferirAparelhos(true); conferirDispositivos(); } }, 60000);
@@ -1042,12 +1047,12 @@ function renderContacts() {
     if (p.grupo) { // grupo: inicial do nome num quadrado + quantas pessoas
       av.className = "avatar"; pintarAvatarGrupo(av, p); nm.textContent = p.nome; b.dataset.grupo = p.id;
       const st = document.createElement("small"); st.className = "sub"; st.textContent = "grupo · " + contagem(p.membros.size);
-      const on = contaOnline([...p.membros.keys()], me.id, online); if (on) st.append(el("span", "on", ` · ${on} online`)); // quantos do grupo estão online agora
+      const on = contaOnline([...p.membros.keys()], me.id, online), dg = digitandoNomes(p); if (dg.length) { st.textContent = DIG.textoDigitando(dg); st.classList.add("digitando"); } else if (on) st.append(el("span", "on", ` · ${on} online`)); // quantos do grupo estão online agora (ou quem está digitando)
       nm.append(st);
     } else {
       av.className = "avatar" + (online.has(p.id) ? " on" : ""); pintarAvatar(av, p, true); b.dataset.id = p.id;
       nm.textContent = "@" + p.username;
-      if (online.has(p.id)) { const st = document.createElement("small"); st.textContent = "online"; nm.append(st); }
+      const dg = digitandoNomes(p); if (online.has(p.id) || dg.length) { const st = document.createElement("small"); st.textContent = dg.length ? "digitando…" : "online"; if (dg.length) st.className = "digitando"; nm.append(st); }
     }
     b.append(av, nm);
     const t = ultima.get(p.id), n = naoLidas.get(p.id)?.length || 0, lado = el("span", "lado"); // à direita: horário da última mensagem e quantas são novas
@@ -1077,8 +1082,10 @@ const hhmm = (d) => d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-
 
 function updateStatus() {
   const g = active?.grupo ? active : null;
-  $("conv-status").hidden = !!g || !(active && online.has(active.id));
-  $("conv-sub").hidden = !g; if (g) $("conv-sub").textContent = resumoMembros([...g.membros.values()], me.id); // grupo: quem participa
+  const dg = active ? digitandoNomes(active) : [];
+  $("conv-status").hidden = !!g || !(active && (online.has(active.id) || dg.length)); $("conv-status").lastChild.textContent = dg.length ? "digitando…" : "online"; $("conv-status").classList.toggle("digitando", !!dg.length);
+  $("conv-sub").hidden = !g; $("conv-sub").classList.toggle("digitando", !!dg.length);
+  if (g) $("conv-sub").textContent = dg.length ? DIG.textoDigitando(dg) : resumoMembros([...g.membros.values()], me.id); // grupo: quem participa (ou quem está digitando agora)
 }
 const nomeDe = (id) => (id === me.id ? me.username : (active?.grupo && active.membros.get(id)?.username) || perfis.get(id)?.username || contacts.get(id)?.username || "alguém");
 const idDaRef = (re) => (re?.mid ? midParaId.get(re.mid) : re?.id); // a que mensagem DESTA tela uma citação/reação aponta
@@ -2075,9 +2082,10 @@ function ajustarAutores(...wraps) {
 }
 let semPuxar = false; // ligado enquanto uma mensagem ANTIGA entra no meio da lista (a conferência do servidor): ela nunca empurra a rolagem, senão cada uma puxava a tela de volta para o fim
 const pertoDoFim = () => { const L = $("messages"); return L.scrollHeight - L.scrollTop - L.clientHeight < 140; };
-function revelarNoFim() { const L = $("messages"); L.scrollTop = L.scrollHeight; requestAnimationFrame(() => { L.scrollTop = L.scrollHeight; L.classList.remove("carregando"); }); }
+function revelarNoFim() { const L = $("messages"); L.scrollTop = L.scrollHeight; requestAnimationFrame(() => { L.scrollTop = L.scrollHeight; L.classList.remove("carregando"); filaPintar(true); }); }
 
 async function open(peer) {
+  digitandoParar();
   if (peer.grupo) return abrirGrupo(peer);
   bandeja(false); fecharMencoes();
   if (!(await checkPin(peer))) return;
@@ -3386,6 +3394,7 @@ const limparTexto = () => { $("text").replaceChildren(); atualizaBotao(); };
   if (t.contentEditable !== "plaintext-only") { // Firefox antigo: editável comum, colando só texto puro
     t.contentEditable = "true"; t.addEventListener("paste", (e) => { e.preventDefault(); document.execCommand("insertText", false, (e.clipboardData || window.clipboardData).getData("text/plain").replace(/\r?\n/g, " ")); });
   }
+  t.addEventListener("input", digitandoAviso);
   t.addEventListener("beforeinput", (e) => {
     if (e.inputType === "insertParagraph" || e.inputType === "insertLineBreak") { e.preventDefault(); $("send-form").requestSubmit(); return; } // Enter / "Ir" do teclado envia
     if (e.inputType.startsWith("insert") && e.data && t.textContent.length + e.data.length > MAX_TEXTO) e.preventDefault();
@@ -3650,9 +3659,10 @@ $("send-form").onsubmit = async (e) => {
   if (pending?.busy) return note("Aguarde um instante: ainda estou limpando os metadados do arquivo.");
   const btn = e.submitter ?? e.target.querySelector(".primary"); btn.disabled = true; const tinhaFoco = document.activeElement === $("text"); // (se o teclado estava fechado — áudio, figurinha — ele não sobe ao enviar)
   // o campo e a citação são liberados já no início: dá para digitar a próxima mensagem enquanto esta ainda está indo (se falhar, o texto volta)
-  const resp = replyTo; limparTexto(); cancelarResposta();
+  const resp = replyTo; limparTexto(); cancelarResposta(); digitandoParar();
+  let content = null;
   try {
-    let row, content;
+    let row;
     if (pending) {
       const p = pending; showPending($("pending-name").textContent, "Cifrando e enviando…");
       const path = `${me.id}/${peer.id}/${crypto.randomUUID()}`;
@@ -3667,12 +3677,96 @@ $("send-form").onsubmit = async (e) => {
     btn.classList.add("voou"); setTimeout(() => btn.classList.remove("voou"), 650);
   } catch (e) {
     console.warn("envio:", e?.code, e?.message || e);
+    if (!pending && FILA.podeEnfileirar(content) && FILA.ehFalhaDeRede(e, navigator.onLine) && FILA.cabeNaFila(fila)) { await filaEntrar(peer, content); return; } // sem internet: a mensagem espera na fila e sai sozinha quando a conexão voltar
     if (pending) showPending($("pending-name").textContent, "Falhou. Toque em Enviar para tentar de novo.");
     if (!lerTexto()) { $("text").textContent = text; atualizaBotao(); } // devolve o que a pessoa tinha digitado
     if (resp && !replyTo) { replyTo = resp; mostrarResposta(); }
     note(sendError(e, peer));
   } finally { btn.disabled = false; if (tinhaFoco && document.activeElement !== $("text")) $("text").focus(); }
 };
+
+// ---------- "Digitando…": mensagem avulsa e CIFRADA pelo canal em tempo real (nada é gravado) ----------
+// Quem digita manda um bloco que SÓ o destinatário abre (conversa a dois: chave dos dois; grupo: chave do grupo). Quem não deve ver, só enxerga bytes embaralhados.
+// Dentro do bloco vão a conversa, o remetente e a hora: um aviso copiado de outro lugar ou de ontem não vale.
+const digOff = () => { try { return localStorage.getItem("lacre:digitando") === "0"; } catch { return false; } };
+const unb = (t) => Uint8Array.from(atob(t), (c) => c.charCodeAt(0));
+async function digitandoBloco(conv, parou) {
+  const texto = JSON.stringify(DIG.conteudo(conv.id, me.id, Date.now(), parou));
+  if (conv.grupo) { if (!conv.gk) return null; const r = await cifrarFoto(conv.gk, conv.id, new TextEncoder().encode(texto)); return { c: plB64(r.data), i: r.iv }; }
+  if (!conv.public_key) return null; const r = await encrypt(myKeys.privateKey, conv.public_key, texto); return { c: r.ciphertext, i: r.iv };
+}
+function digitandoEnviar(conv, parou) {
+  if (!presCanal || presCanal.state !== "joined") return;
+  digitandoBloco(conv, parou).then((b) => { if (b) return presCanal.send({ type: "broadcast", event: "dig", payload: { u: me.id, ...b } }); }).catch(() => {});
+}
+function digitandoAviso() { // a cada tecla: avisa (no máximo a cada 3 s) e agenda a retirada do aviso se a pessoa parar
+  if (!active || digOff()) return;
+  if (!lerTexto().trim()) return digitandoParar();
+  clearTimeout(digTimer); digTimer = setTimeout(digitandoParar, DIG.PARA_MS);
+  const agora = Date.now(); if (digConv === active && agora - digUltimo < DIG.REENVIO_MS) return;
+  digConv = active; digUltimo = agora; digitandoEnviar(active, false);
+}
+function digitandoParar() {
+  clearTimeout(digTimer); if (!digConv) return; const conv = digConv; digConv = null; digUltimo = 0; digitandoEnviar(conv, true);
+}
+async function digitandoRecebe(payload) { // chegou um aviso: só conta se EU consigo abrir (é para mim) e se o conteúdo bate
+  const sinal = DIG.limpaSinal(payload); if (!sinal || !myKeys || sinal.u === me.id) return;
+  let achado = null; const dm = contacts.get(sinal.u);
+  if (dm?.public_key) { try { const c = DIG.limpaConteudo(JSON.parse(await decrypt(myKeys.privateKey, dm.public_key, { ciphertext: sinal.c, iv: sinal.i })), Date.now()); if (c && c.c === me.id && c.u === sinal.u) achado = { conv: sinal.u, c }; } catch {} }
+  if (!achado) for (const g of grupos.values()) { if (!g.gk || !g.membros.has(sinal.u)) continue; try { const c = DIG.limpaConteudo(JSON.parse(new TextDecoder().decode(await abrirFotoCifrada(g.gk, g.id, unb(sinal.c), sinal.i))), Date.now()); if (c && c.c === g.id && c.u === sinal.u) { achado = { conv: g.id, c }; break; } } catch {} }
+  if (!achado) return;
+  const k = `${achado.conv}|${sinal.u}`, tinha = digitandoDe.has(k);
+  if (achado.c.s) digitandoDe.delete(k); else digitandoDe.set(k, { conv: achado.conv, uid: sinal.u, ate: Date.now() + DIG.VALE_MS });
+  digitandoMuda(tinha !== digitandoDe.has(k));
+}
+function digitandoMuda(mudou) { // redesenha e agenda a conferência do prazo
+  clearTimeout(digVerTimer); const { vivos, proximo } = DIG.aindaDigitando(digitandoDe, Date.now());
+  if (vivos.length !== digitandoDe.size) { digitandoDe = new Map([...digitandoDe].filter(([, v]) => vivos.includes(v))); mudou = true; }
+  if (mudou) { updateStatus(); renderContacts(); }
+  if (vivos.length) digVerTimer = setTimeout(() => digitandoMuda(false), Math.max(50, proximo + 20));
+}
+function digitandoNomes(conv) { // nomes de quem está digitando nessa conversa agora
+  if (!conv || !digitandoDe.size) return [];
+  const uids = [...digitandoDe.values()].filter((x) => x.conv === conv.id && x.ate > Date.now()).map((x) => x.uid);
+  return uids.map((u) => (conv.grupo ? conv.membros.get(u)?.username : conv.username) || "alguém");
+}
+
+// ---------- Mensagens escritas sem internet: ficam na fila (cifrada neste aparelho) e saem sozinhas quando a conexão volta ----------
+let fila = [], filaOcupada = false;
+async function filaCarregar() { fila = FILA.limpaFila(await metaGet(me.id, "fila").catch(() => null)); }
+const filaSalvar = () => metaPut(me.id, "fila", fila).catch(() => {});
+async function filaEntrar(conv, content) { fila.push(FILA.novoItem(conv, content)); await filaSalvar(); if (active === conv) filaPintar(true); }
+function filaPintar(descer = false) { // desenha, no fim da conversa aberta, o que está esperando conexão
+  const L = $("messages"); L.querySelectorAll(".msg.na-fila").forEach((n) => n.remove()); if (!active) return;
+  const itens = FILA.daConversa(fila, active.id); if (!itens.length) return;
+  for (const it of itens) {
+    const wrap = el("div", "msg mine na-fila"), b = el("div", "bubble mine"), meta = el("div", "meta"), cancelar = el("button", "fila-cancelar", "Cancelar");
+    wrap.dataset.fila = it.id; wrap.dataset.de = me.id;
+    meta.append(el("span", "rcpt fila-st", "Aguardando conexão…")); b.append(el("span", "vis", it.content.text), meta);
+    cancelar.type = "button"; cancelar.setAttribute("aria-label", "Cancelar o envio desta mensagem");
+    cancelar.onclick = async () => { fila = FILA.semItem(fila, it.id); await filaSalvar(); filaPintar(); };
+    wrap.append(b, cancelar); L.append(wrap);
+  }
+  if (descer || pertoDoFim()) L.scrollTop = L.scrollHeight;
+}
+async function filaEnviar() {
+  if (filaOcupada || !me || !fila.length || !navigator.onLine) return; filaOcupada = true;
+  try {
+    while (fila.length) {
+      const it = fila[0], conv = it.grupo ? grupos.get(it.conv) : contacts.get(it.conv);
+      if (!conv) { fila = FILA.semItem(fila, it.id); await filaSalvar(); continue; } // a conversa não existe mais (saiu do grupo, por exemplo)
+      let row;
+      try { row = await enviar(conv, structuredClone(it.content)); }
+      catch (e) {
+        if (FILA.ehFalhaDeRede(e, navigator.onLine)) break; // ainda sem conexão: tenta de novo mais tarde
+        fila = FILA.semItem(fila, it.id); await filaSalvar(); filaPintar(); note(`Uma mensagem que esperava conexão não pôde ser enviada. ${sendError(e, conv)}`); continue;
+      }
+      fila = FILA.semItem(fila, it.id); await filaSalvar();
+      if (conv.grupo) tocarEfeitoDaMensagem(conv, me.id, row);
+      if (active === conv) { $("messages").querySelector(`.msg.na-fila[data-fila="${CSS.escape(it.id)}"]`)?.remove(); $("msgs-empty")?.remove(); addMessage(row, it.content, { descer: true }); if (row.quem) { const en = msgs.get(row.id); if (en) { en.quem = row.quem; setReceipt(en); } } filaPintar(); }
+    }
+  } finally { filaOcupada = false; }
+}
 
 // ---------- Playlists: minhas playlists (sincronizadas e cifradas) e playlist tocando na conversa ----------
 // Em conversa a dois é uma função livre (quem inicia controla). As músicas são trechos de 30 s da Apple ou vídeos inteiros do YouTube. O servidor guarda só o estado (faixa, posição, tocando, aleatório, loop) com a hora dele.
