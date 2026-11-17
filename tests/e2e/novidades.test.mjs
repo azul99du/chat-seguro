@@ -36,7 +36,7 @@ t("cartões por atualização, organizados por assunto: subtítulos em 'Tudo', f
 t("depois de ver, o ponto não volta; uma atualização mais nova que a última vista traz o ponto de novo e marca só o que é novo", async () => {
   await P.reload(); await pronto(P); assert.equal(await P.locator("#nov-ponto").isVisible(), false); await abrirMenu(P); assert.equal(await P.locator("#nov-aviso").isVisible(), false); await P.keyboard.press("Escape");
   await P.evaluate(() => localStorage.setItem("lacre:novidades", "2026-11-13-1")); await P.reload(); await pronto(P); assert.equal(await P.locator("#nov-ponto").isVisible(), true, "há atualizações depois da última vista");
-  await abrirMenu(P); await P.click("#nov-btn"); await P.waitForSelector("#novidades[open]"); assert.equal(await P.locator("#nov-lista .nov-novo").count(), 13, "as 13 mais novas são NOVO e todas aparecem, mesmo passando de 3"); assert.equal(await P.locator("#nov-lista .nov-cd").count(), 12); assert.equal(await P.locator("#nov-ponto").isVisible(), false);
+  await abrirMenu(P); await P.click("#nov-btn"); await P.waitForSelector("#novidades[open]"); assert.equal(await P.locator("#nov-lista .nov-novo").count(), 13, "as 13 mais novas são NOVO e todas aparecem, mesmo passando de 3"); assert.equal(await P.locator("#nov-lista .nov-cd").count(), 13); assert.equal(await P.locator("#nov-ponto").isVisible(), false);
   await P.evaluate(() => localStorage.setItem("lacre:novidades", "lixo<script>")); await P.reload(); await pronto(P); assert.equal(await P.locator("#nov-ponto").isVisible(), true, "valor estragado vale como nunca ter visto");
 });
 t("nenhum erro de página", () => assert.deepEqual(erros, []));
