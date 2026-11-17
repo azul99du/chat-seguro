@@ -5,6 +5,9 @@ export const TEMAS = [["selos", "Selos"], ["mensagens", "Mensagens"], ["grupos",
 const NOME_TEMA = new Map(TEMAS);
 export const temaNome = (t) => NOME_TEMA.get(t) || null;
 export const NOVIDADES = [
+  { id: "2026-11-17-3", data: "2026-11-17", itens: [
+    { tema: "mensagens", icone: "🔍", titulo: "Buscar dentro da conversa", texto: "Toque na lupa no alto de uma conversa (ou de um grupo) para procurar uma palavra. As mensagens que a têm ficam marcadas, o contador mostra \"3 de 7\" e as setas levam de uma para a outra, começando pela mais nova. Não faz diferença entre maiúscula e minúscula nem entre com e sem acento (\"acao\" acha \"ação\"), e também procura nas legendas das fotos e nos nomes das músicas. Mensagens bem antigas aparecem na hora, com as anteriores a elas. A busca acontece só no seu aparelho: o que você procura nunca sai dele." },
+  ] },
   { id: "2026-11-17-2", data: "2026-11-17", itens: [
     { tema: "mensagens", icone: "🔔", titulo: "Aviso no alto da tela", texto: "Quando um contato (ou alguém de um grupo) manda mensagem e você está em outra conversa, aparece um cartão no alto da tela com a foto, o nome e um pedaço da mensagem. Toque nele para abrir a conversa, ou deslize para cima para dispensar. Ele some sozinho em poucos segundos. A prévia é lida no seu aparelho e não aparece quando você já está olhando aquela conversa." },
   ] },

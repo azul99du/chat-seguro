@@ -93,6 +93,13 @@ export async function recentesDoHistorico(uid, peer, max = 200) {
   const out = await Promise.all(brutos.map(async ({ k, v }) => { try { return { id: Number(String(k).split("|")[2]), entry: await unseal(uid, v) }; } catch { return null; } }));
   return out.filter(Boolean).reverse();
 }
+// Todas as mensagens guardadas de uma conversa/grupo com o id de cada uma, da mais antiga para a mais nova (para a busca dentro da conversa; tudo fica neste aparelho).
+export async function historicoComId(uid, peer, max = 20000) {
+  const t = await tx(["history"], "readonly"), s = t.objectStore("history"), rng = range(`${uid}|${peer}|`);
+  const [keys, vals] = await Promise.all([req(s.getAllKeys(rng)), req(s.getAll(rng))]), out = [];
+  for (let i = Math.max(0, keys.length - max); i < keys.length; i++) { try { out.push({ id: Number(String(keys[i]).split("|")[2]), entry: await unseal(uid, vals[i]) }); } catch {} }
+  return out;
+}
 // Anotações pequenas deste aparelho (cifradas como o resto): o que ele já sabe de cada grupo, por exemplo.
 export async function metaGet(uid, nome) {
   const r = await req((await tx(["meta"], "readonly")).objectStore("meta").get(`x:${uid}|${nome}`));

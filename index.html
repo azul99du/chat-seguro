@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=bc235e22c0">
+  <link rel="stylesheet" href="style.css?v=bdb34db202">
 </head>
 <body>
 
@@ -134,6 +134,7 @@
           <div id="conv-status" class="status" hidden><i class="dot" aria-hidden="true"></i>online</div>
           <div id="conv-sub" class="sub-grupo" hidden></div>
         </div>
+        <button id="busca-btn" class="ghost icon" aria-label="Buscar nesta conversa" hidden><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button>
         <button id="grupo-btn" class="ghost icon" aria-label="Dados do grupo: participantes e opções" hidden>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1"/><circle cx="9.5" cy="7.5" r="3.5"/><path d="M21 19v-1a4 4 0 0 0-3-3.85M15.5 4.2a3.5 3.5 0 0 1 0 6.6"/></svg>
         </button>
@@ -145,6 +146,13 @@
         </button>
         <div class="badge" id="badge" title="Conversa lacrada de ponta a ponta" hidden><i class="seal" aria-hidden="true"></i>lacrada</div>
       </header>
+      <div id="busca-conv" class="bar busca-conv" role="search" hidden>
+        <button id="busca-fechar" class="ghost icon" type="button" aria-label="Fechar a busca">←</button>
+        <input id="busca-q" type="search" placeholder="Buscar nesta conversa" autocomplete="off" autocapitalize="none" spellcheck="false" aria-label="Buscar nesta conversa">
+        <span id="busca-ct" class="busca-ct" aria-live="polite"></span>
+        <button id="busca-cima" class="ghost icon" type="button" aria-label="Resultado mais antigo" disabled>↑</button>
+        <button id="busca-baixo" class="ghost icon" type="button" aria-label="Resultado mais novo" disabled>↓</button>
+      </div>
       <div id="pl-barra" class="pl-barra" hidden>
         <div class="pl-fina">
           <span id="pl-capa" class="pl-capa" aria-hidden="true"></span>
@@ -691,6 +699,6 @@
 
   <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
 
-  <script src="guarda.js?v=bc235e22c0"></script>
+  <script src="guarda.js?v=bdb34db202"></script>
 </body>
 </html>

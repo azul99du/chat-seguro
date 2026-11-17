@@ -1058,3 +1058,13 @@ dialog.musica-folha{max-height:88dvh;overflow:auto}
 .pop-cartao .avatar{flex:none}.pop-w{flex:1;min-width:0;display:flex;flex-direction:column}.pop-l1{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.pop-l1 b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pop-l1 time{font:500 .7rem var(--mono);color:var(--mut)}
 .pop-txt{font-size:.9rem;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(prefers-reduced-motion:reduce){#pop-msg{transition:none}}
+
+/* ===== buscar dentro da conversa ===== */
+#conv.buscando>header.bar{display:none}
+.busca-conv{gap:6px}.busca-conv[hidden]{display:none}
+#busca-q{flex:1;min-width:0;height:40px;border:0;border-radius:20px;background:rgba(255,255,255,.14);color:#fff;padding:0 14px;font:inherit}
+#busca-q::placeholder{color:rgba(255,255,255,.65)}#busca-q:focus-visible{outline:2px solid #fff;outline-offset:1px}
+.busca-ct{font:500 .78rem var(--mono);opacity:.9;white-space:nowrap;padding:0 2px}
+.busca-conv .icon:disabled{opacity:.35}
+.bubble mark{background:#FFE08A;color:#15174A;border-radius:3px;padding:0 1px}.bubble mark.at{background:#FF9DB4}
+.msg.busca-atual .bubble{box-shadow:0 0 0 3px #FF9DB4}

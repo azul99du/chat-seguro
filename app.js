@@ -1,37 +1,38 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=bc235e22c0";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=bc235e22c0";
-import { montarFigurinhas } from "./figurinhas.js?v=bc235e22c0";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=bc235e22c0";
-import { recentesDoHistorico, ultimosDoHistorico, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=bc235e22c0";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=bc235e22c0";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=bc235e22c0";
-import { acharVideoLink } from "./videolink.js?v=bc235e22c0";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=bc235e22c0";
-import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=bc235e22c0";
-import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=bc235e22c0";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=bc235e22c0";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=bc235e22c0";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=bc235e22c0";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=bc235e22c0";
-import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, combinar, destaque, PAGINA_RESULTADOS, MAX_BUSCA, termosAmpliados, termoTrilha, albumOficial, barrasDeOnda, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=bc235e22c0";
-import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=bc235e22c0";
-import { MAX_SUGESTAO, MAX_POR_DIA, POR_PAGINA, limpaSugestao, restantesHoje, dataCarimbo, corDaNota, limpaSugestoes, erroSugestao } from "./sugestoes.js?v=bc235e22c0";
-import { MODELOS, IDS_MODELOS, MODELO_PADRAO, MAX_TRANSCRICAO_S, limpaModelo, mbDoModelo, bytesDoModelo, estimativa, paraMono, limpaTranscricao } from "./transcricao.js?v=bc235e22c0";
-import { modeloBaixado, apagarModelo } from "./transcricao-arquivos.js?v=bc235e22c0";
-import * as PLM from "./playlist.js?v=bc235e22c0";
-import * as FILA from "./fila.js?v=bc235e22c0";
-import * as DIG from "./digitando.js?v=bc235e22c0";
-import * as POP from "./pop.js?v=bc235e22c0";
-import { criarMotor, sondarYoutube } from "./playlist-motor.js?v=bc235e22c0";
-import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=bc235e22c0";
-import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, precoPlaylist, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=bc235e22c0";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=bc235e22c0";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=bc235e22c0";
-import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=bc235e22c0";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=bc235e22c0";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=bc235e22c0";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=bc235e22c0";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=bdb34db202";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=bdb34db202";
+import { montarFigurinhas } from "./figurinhas.js?v=bdb34db202";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=bdb34db202";
+import { recentesDoHistorico, ultimosDoHistorico, historicoComId, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=bdb34db202";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=bdb34db202";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=bdb34db202";
+import { acharVideoLink } from "./videolink.js?v=bdb34db202";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=bdb34db202";
+import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=bdb34db202";
+import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=bdb34db202";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=bdb34db202";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=bdb34db202";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=bdb34db202";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=bdb34db202";
+import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, combinar, destaque, PAGINA_RESULTADOS, MAX_BUSCA, termosAmpliados, termoTrilha, albumOficial, barrasDeOnda, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=bdb34db202";
+import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=bdb34db202";
+import { MAX_SUGESTAO, MAX_POR_DIA, POR_PAGINA, limpaSugestao, restantesHoje, dataCarimbo, corDaNota, limpaSugestoes, erroSugestao } from "./sugestoes.js?v=bdb34db202";
+import { MODELOS, IDS_MODELOS, MODELO_PADRAO, MAX_TRANSCRICAO_S, limpaModelo, mbDoModelo, bytesDoModelo, estimativa, paraMono, limpaTranscricao } from "./transcricao.js?v=bdb34db202";
+import { modeloBaixado, apagarModelo } from "./transcricao-arquivos.js?v=bdb34db202";
+import * as PLM from "./playlist.js?v=bdb34db202";
+import * as FILA from "./fila.js?v=bdb34db202";
+import * as DIG from "./digitando.js?v=bdb34db202";
+import * as POP from "./pop.js?v=bdb34db202";
+import * as BUSCA from "./busca.js?v=bdb34db202";
+import { criarMotor, sondarYoutube } from "./playlist-motor.js?v=bdb34db202";
+import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=bdb34db202";
+import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, precoPlaylist, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=bdb34db202";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=bdb34db202";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=bdb34db202";
+import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=bdb34db202";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=bdb34db202";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=bdb34db202";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=bdb34db202";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -2086,7 +2087,7 @@ const pertoDoFim = () => { const L = $("messages"); return L.scrollHeight - L.sc
 function revelarNoFim() { const L = $("messages"); L.scrollTop = L.scrollHeight; requestAnimationFrame(() => { L.scrollTop = L.scrollHeight; L.classList.remove("carregando"); filaPintar(true); }); }
 
 async function open(peer) {
-  digitandoParar(); if (popConv === peer.id) popFechar();
+  digitandoParar(); if (popConv === peer.id) popFechar(); buscaFechar();
   if (peer.grupo) return abrirGrupo(peer);
   bandeja(false); fecharMencoes();
   if (!(await checkPin(peer))) return;
@@ -2095,7 +2096,7 @@ async function open(peer) {
   $("chat").classList.add("in-conv");
   $("conv-title").textContent = "@" + peer.username;
   $("badge").hidden = false; $("conv-empty").hidden = true; $("send-form").hidden = false;
-  $("bg-btn").hidden = false; $("safety-btn").hidden = false; $("grupo-btn").hidden = true; clearPending(); setBg(bgCache.get(peer.id) ?? null); applyBackground(peer);
+  $("bg-btn").hidden = false; $("safety-btn").hidden = false; $("grupo-btn").hidden = true; $("busca-btn").hidden = false; clearPending(); setBg(bgCache.get(peer.id) ?? null); applyBackground(peer);
   $("messages").replaceChildren(); msgs.clear(); reactions.clear(); midParaId.clear(); cancelarResposta();
   $("messages").classList.add("carregando"); // a lista só aparece pronta, já nas últimas mensagens (sem descer na frente da pessoa)
   carregandoConversa = peer; filaChegando = [];
@@ -2293,7 +2294,7 @@ function sairDaConversa(aviso) { // fecha a conversa aberta e volta para a tela 
   plAoSair(); $("chat").classList.remove("in-conv"); active = null; carregandoConversa = null; filaChegando = []; desarmarSustosDeFora();
   $("messages").replaceChildren(); msgs.clear(); reactions.clear(); midParaId.clear(); cancelarResposta(); clearPending(); setBg(null);
   $("conv-title").textContent = "Escolha um amigo"; $("conv-av").replaceChildren(); $("conv-av").disabled = true; $("conv-av").classList.remove("grupo");
-  $("send-form").hidden = true; $("send-form").classList.remove("silenciado"); $("conv-empty").hidden = false; for (const id of ["badge", "bg-btn", "safety-btn", "grupo-btn"]) $(id).hidden = true;
+  $("send-form").hidden = true; $("send-form").classList.remove("silenciado"); $("conv-empty").hidden = false; for (const id of ["badge", "bg-btn", "safety-btn", "grupo-btn", "busca-btn"]) $(id).hidden = true; buscaFechar();
   if ($("grupo-info").open) $("grupo-info").close();
   renderContacts(); updateStatus(); if (aviso) note(aviso);
 }
@@ -2395,7 +2396,7 @@ async function abrirGrupo(g) {
   $("chat").classList.add("in-conv");
   $("conv-title").textContent = g.nome;
   $("badge").hidden = false; $("conv-empty").hidden = true; $("send-form").hidden = false;
-  $("bg-btn").hidden = true; $("safety-btn").hidden = true; $("grupo-btn").hidden = false; clearPending(); setBg(null);
+  $("bg-btn").hidden = true; $("safety-btn").hidden = true; $("grupo-btn").hidden = false; $("busca-btn").hidden = false; clearPending(); setBg(null);
   $("messages").replaceChildren(); msgs.clear(); reactions.clear(); midParaId.clear(); cancelarResposta();
   $("messages").classList.add("carregando");
   carregandoConversa = g; filaChegando = [];
@@ -3685,6 +3686,70 @@ $("send-form").onsubmit = async (e) => {
     note(sendError(e, peer));
   } finally { btn.disabled = false; if (tinhaFoco && document.activeElement !== $("text")) $("text").focus(); }
 };
+
+// ---------- Buscar uma palavra dentro da conversa (no próprio aparelho, no histórico cifrado) ----------
+// A lupa do alto da conversa abre uma barra com contador e setas. As palavras achadas ficam marcadas e as setas levam de uma para outra; mensagens mais antigas que a tela
+// são trazidas (com 20 de contexto) na hora. Nada disso sai do aparelho: o servidor nunca vê o que se procura.
+const BC = { aberta: false, itens: [], ids: [], pos: -1, termo: "", timer: null, seq: 0, marcadas: new Set(), conv: null };
+function buscaTextoDe(e) { return BUSCA.textoBuscavel(e?.content); }
+function buscaLimparMarcas() {
+  for (const id of BC.marcadas) { const e = msgs.get(id); if (!e) continue; const v = e.wrap.querySelector(".vis"); if (v && v.querySelector("mark")) v.textContent = buscaTextoDe(e); e.wrap.classList.remove("busca-atual"); }
+  BC.marcadas.clear();
+}
+function buscaMarcar() { // pinta as palavras em todas as mensagens achadas que estão na tela; a atual leva destaque forte
+  buscaLimparMarcas(); const atual = BC.ids[BC.pos];
+  for (const id of BC.ids) {
+    const e = msgs.get(id); if (!e) continue; const v = e.wrap.querySelector(".vis"), texto = buscaTextoDe(e); if (!v || !texto) { if (id === atual) e.wrap.classList.add("busca-atual"); BC.marcadas.add(id); continue; }
+    v.replaceChildren(...BUSCA.partes(texto, BC.termo).map((x) => { if (!x.m) return document.createTextNode(x.t); const mk = el("mark", id === atual ? "at" : null, x.t); return mk; }));
+    if (id === atual) e.wrap.classList.add("busca-atual"); BC.marcadas.add(id);
+  }
+}
+async function buscaTrazer(id) { // mostra uma mensagem mais antiga que a tela (com 20 de contexto antes dela)
+  if (msgs.has(id) || !active) return;
+  const doc = new Map(BC.itens.map((i) => [i.id, i])), noAr = [...msgs.keys()].filter(Number.isFinite), primeiro = noAr.length ? Math.min(...noAr) : Infinity;
+  const anteriores = BC.itens.filter((i) => i.id < primeiro).map((i) => i.id), lista = BUSCA.antesDeMostrar(anteriores, id), ancora = $("messages").querySelector(".msg");
+  for (const i of lista) {
+    const e = doc.get(i)?.entry, c = e?.content; if (!c || !["text", "media", "deleted"].includes(c.type) || !Number.isFinite(Date.parse(e.at))) continue;
+    const minha = !!e.mine || e.from === me.id, quem = active.grupo ? (minha ? me.id : e.from) : (minha ? me.id : active.id); if (typeof quem !== "string") continue;
+    const m = { id: i, sender_id: quem, recipient_id: minha ? (active.grupo ? null : active.id) : me.id, grupo_id: active.grupo ? active.id : null, created_at: e.at, read_at: null, v: 2 };
+    const lugar = el("div"); $("messages").insertBefore(lugar, ancora); addMessage(m, c, { em: lugar });
+  }
+}
+async function buscaIr(id) {
+  if (!msgs.has(id)) await buscaTrazer(id).catch(() => {});
+  buscaMarcar(); const e = msgs.get(id); if (!e) return;
+  e.wrap.scrollIntoView({ block: "center", behavior: reduced ? "auto" : "smooth" });
+}
+function buscaDesenhar() {
+  const n = BC.ids.length, ok = BUSCA.termoValido(BC.termo);
+  $("busca-ct").textContent = ok ? BUSCA.contador(BC.pos, n) : ""; $("busca-cima").disabled = $("busca-baixo").disabled = n < 2;
+}
+async function buscaRodar() {
+  const seq = ++BC.seq; BC.termo = $("busca-q").value;
+  if (!BUSCA.termoValido(BC.termo)) { BC.ids = []; BC.pos = -1; buscaLimparMarcas(); return buscaDesenhar(); }
+  if (!BC.itens.length) BC.itens = await historicoComId(me.id, active.id).catch(() => []);
+  if (seq !== BC.seq) return;
+  BC.ids = BUSCA.achar(BC.itens, BC.termo); BC.pos = BC.ids.length - 1; buscaDesenhar(); // começa pelo mais novo
+  if (BC.ids.length) await buscaIr(BC.ids[BC.pos]); else buscaLimparMarcas();
+}
+async function buscaAbrir() {
+  if (!active || BC.aberta) return; BC.aberta = true; BC.conv = active.id; BC.itens = []; BC.ids = []; BC.pos = -1; BC.termo = "";
+  $("conv").classList.add("buscando"); $("busca-conv").hidden = false; $("busca-q").value = ""; buscaDesenhar(); $("busca-q").focus();
+  BC.itens = await historicoComId(me.id, active.id).catch(() => []);
+}
+function buscaFechar() {
+  if (!BC.aberta) return; BC.aberta = false; BC.seq++; clearTimeout(BC.timer); buscaLimparMarcas(); BC.ids = []; BC.itens = [];
+  $("conv").classList.remove("buscando"); $("busca-conv").hidden = true; $("busca-q").value = "";
+}
+async function buscaPasso(dir) {
+  const n = BC.ids.length; if (!n) return; BC.pos = BUSCA.passo(BC.pos, n, dir); buscaDesenhar(); await buscaIr(BC.ids[BC.pos]);
+}
+$("busca-btn").onclick = () => buscaAbrir();
+$("busca-fechar").onclick = () => buscaFechar();
+$("busca-cima").onclick = () => buscaPasso(-1);
+$("busca-baixo").onclick = () => buscaPasso(1);
+$("busca-q").oninput = () => { clearTimeout(BC.timer); BC.timer = setTimeout(() => buscaRodar().catch(() => {}), 220); };
+$("busca-q").onkeydown = (e) => { if (e.key === "Escape") { e.preventDefault(); buscaFechar(); } else if (e.key === "Enter") { e.preventDefault(); clearTimeout(BC.timer); (BC.ids.length ? buscaPasso(e.shiftKey ? 1 : -1) : buscaRodar()).catch(() => {}); } };
 
 // ---------- Pop-up de mensagem nova (no alto da tela) ----------
 // Só com o site à vista, em tempo real, fora da conversa onde a mensagem chegou e sem janela aberta por cima. A prévia é decifrada aqui mesmo e nunca sai do aparelho.

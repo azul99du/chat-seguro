@@ -1,5 +1,5 @@
 // Pop-up de mensagem nova (no alto da tela): o que mostrar e quando. Partes puras (testadas em Node); o app desenha e cuida do toque.
-import { resumo, MAX_PREVIEW } from "./reply.js?v=bc235e22c0";
+import { resumo, MAX_PREVIEW } from "./reply.js?v=bdb34db202";
 export const POP_MS = 4000; // fica na tela por 4 s (parado enquanto a pessoa segura ou passa o mouse)
 const ROTULO = { image: "Foto", video: "Vídeo", audio: "Áudio", sticker: "Figurinha", musica: "Música" };
 
