@@ -1050,3 +1050,11 @@ dialog.musica-folha{max-height:88dvh;overflow:auto}
 
 /* ===== digitando… ===== */
 .status.digitando,.sub-grupo.digitando,small.digitando,.sub.digitando{font-style:italic;color:var(--seal-dk)}
+
+/* ===== pop-up de mensagem nova ===== */
+#pop-msg{position:fixed;top:max(10px,env(safe-area-inset-top));left:10px;right:10px;z-index:9;max-width:460px;margin:0 auto;transform:translateY(-130%);opacity:0;transition:transform .28s ease,opacity .2s ease;touch-action:none}
+#pop-msg.entra{transform:none;opacity:1}
+.pop-cartao{display:flex;gap:12px;align-items:center;width:100%;text-align:left;background:var(--card);color:var(--texto);border:1.5px solid var(--line);border-left:5px solid var(--seal);border-radius:16px;padding:10px 12px;box-shadow:0 10px 30px rgba(21,23,74,.35);cursor:pointer;min-height:0}
+.pop-cartao .avatar{flex:none}.pop-w{flex:1;min-width:0;display:flex;flex-direction:column}.pop-l1{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.pop-l1 b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pop-l1 time{font:500 .7rem var(--mono);color:var(--mut)}
+.pop-txt{font-size:.9rem;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(prefers-reduced-motion:reduce){#pop-msg{transition:none}}

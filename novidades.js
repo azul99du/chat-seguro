@@ -5,6 +5,9 @@ export const TEMAS = [["selos", "Selos"], ["mensagens", "Mensagens"], ["grupos",
 const NOME_TEMA = new Map(TEMAS);
 export const temaNome = (t) => NOME_TEMA.get(t) || null;
 export const NOVIDADES = [
+  { id: "2026-11-17-2", data: "2026-11-17", itens: [
+    { tema: "mensagens", icone: "🔔", titulo: "Aviso no alto da tela", texto: "Quando um contato (ou alguém de um grupo) manda mensagem e você está em outra conversa, aparece um cartão no alto da tela com a foto, o nome e um pedaço da mensagem. Toque nele para abrir a conversa, ou deslize para cima para dispensar. Ele some sozinho em poucos segundos. A prévia é lida no seu aparelho e não aparece quando você já está olhando aquela conversa." },
+  ] },
   { id: "2026-11-17-1", data: "2026-11-17", itens: [
     { tema: "mensagens", icone: "📶", titulo: "Mensagem sem internet", texto: "Se você escrever sem conexão, a mensagem não se perde: ela fica esperando no seu aparelho (cifrada, como todo o resto), aparece com o aviso \"Aguardando conexão…\" e sai sozinha quando a internet voltar. Dá para cancelar antes disso. Vale para mensagens de texto; fotos, vídeos e áudios ainda precisam de conexão na hora de enviar." },
     { tema: "mensagens", icone: "✍️", titulo: "Digitando…", texto: "Agora aparece \"digitando…\" quando a pessoa está escrevendo para você, no alto da conversa e na lista. Nos grupos aparece o nome de quem está escrevendo. O aviso é cifrado, não fica gravado em lugar nenhum, só quem está na conversa consegue ler e some sozinho quando a pessoa para ou envia." },
