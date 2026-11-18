@@ -5,6 +5,9 @@ export const TEMAS = [["selos", "Selos"], ["mensagens", "Mensagens"], ["grupos",
 const NOME_TEMA = new Map(TEMAS);
 export const temaNome = (t) => NOME_TEMA.get(t) || null;
 export const NOVIDADES = [
+  { id: "2026-11-18-1", data: "2026-11-18", itens: [
+    { tema: "seguranca", icone: "✉️", titulo: "Trocar o e-mail da conta", texto: "Em Segurança, toque em Trocar e-mail da conta. Você digita a senha, escreve o novo e-mail duas vezes e o Lacre manda um link de confirmação para ele. O e-mail só muda depois que você abrir o link, e até lá você continua entrando com o antigo. A página Segurança também passa a mostrar com qual e-mail você entra. Suas mensagens e chaves não dependem do e-mail, então nada se perde." },
+  ] },
   { id: "2026-11-17-3", data: "2026-11-17", itens: [
     { tema: "mensagens", icone: "🔍", titulo: "Buscar dentro da conversa", texto: "Toque na lupa no alto de uma conversa (ou de um grupo) para procurar uma palavra. As mensagens que a têm ficam marcadas, o contador mostra \"3 de 7\" e as setas levam de uma para a outra, começando pela mais nova. Não faz diferença entre maiúscula e minúscula nem entre com e sem acento (\"acao\" acha \"ação\"), e também procura nas legendas das fotos e nos nomes das músicas. Mensagens bem antigas aparecem na hora, com as anteriores a elas. A busca acontece só no seu aparelho: o que você procura nunca sai dele." },
   ] },

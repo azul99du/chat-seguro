@@ -1,39 +1,41 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=bdb34db202";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=bdb34db202";
-import { montarFigurinhas } from "./figurinhas.js?v=bdb34db202";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=bdb34db202";
-import { recentesDoHistorico, ultimosDoHistorico, historicoComId, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=bdb34db202";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=bdb34db202";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=bdb34db202";
-import { acharVideoLink } from "./videolink.js?v=bdb34db202";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=bdb34db202";
-import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=bdb34db202";
-import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=bdb34db202";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=bdb34db202";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=bdb34db202";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=bdb34db202";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=bdb34db202";
-import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, combinar, destaque, PAGINA_RESULTADOS, MAX_BUSCA, termosAmpliados, termoTrilha, albumOficial, barrasDeOnda, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=bdb34db202";
-import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=bdb34db202";
-import { MAX_SUGESTAO, MAX_POR_DIA, POR_PAGINA, limpaSugestao, restantesHoje, dataCarimbo, corDaNota, limpaSugestoes, erroSugestao } from "./sugestoes.js?v=bdb34db202";
-import { MODELOS, IDS_MODELOS, MODELO_PADRAO, MAX_TRANSCRICAO_S, limpaModelo, mbDoModelo, bytesDoModelo, estimativa, paraMono, limpaTranscricao } from "./transcricao.js?v=bdb34db202";
-import { modeloBaixado, apagarModelo } from "./transcricao-arquivos.js?v=bdb34db202";
-import * as PLM from "./playlist.js?v=bdb34db202";
-import * as FILA from "./fila.js?v=bdb34db202";
-import * as DIG from "./digitando.js?v=bdb34db202";
-import * as POP from "./pop.js?v=bdb34db202";
-import * as BUSCA from "./busca.js?v=bdb34db202";
-import { criarMotor, sondarYoutube } from "./playlist-motor.js?v=bdb34db202";
-import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=bdb34db202";
-import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, precoPlaylist, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=bdb34db202";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=bdb34db202";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=bdb34db202";
-import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=bdb34db202";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=bdb34db202";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=bdb34db202";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=bdb34db202";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=b3634c9acb";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=b3634c9acb";
+import { montarFigurinhas } from "./figurinhas.js?v=b3634c9acb";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=b3634c9acb";
+import { recentesDoHistorico, ultimosDoHistorico, historicoComId, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=b3634c9acb";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=b3634c9acb";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=b3634c9acb";
+import { acharVideoLink } from "./videolink.js?v=b3634c9acb";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=b3634c9acb";
+import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=b3634c9acb";
+import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=b3634c9acb";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=b3634c9acb";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=b3634c9acb";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=b3634c9acb";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=b3634c9acb";
+import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, combinar, destaque, PAGINA_RESULTADOS, MAX_BUSCA, termosAmpliados, termoTrilha, albumOficial, barrasDeOnda, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=b3634c9acb";
+import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=b3634c9acb";
+import { MAX_SUGESTAO, MAX_POR_DIA, POR_PAGINA, limpaSugestao, restantesHoje, dataCarimbo, corDaNota, limpaSugestoes, erroSugestao } from "./sugestoes.js?v=b3634c9acb";
+import { MODELOS, IDS_MODELOS, MODELO_PADRAO, MAX_TRANSCRICAO_S, limpaModelo, mbDoModelo, bytesDoModelo, estimativa, paraMono, limpaTranscricao } from "./transcricao.js?v=b3634c9acb";
+import { modeloBaixado, apagarModelo } from "./transcricao-arquivos.js?v=b3634c9acb";
+import * as PLM from "./playlist.js?v=b3634c9acb";
+import * as FILA from "./fila.js?v=b3634c9acb";
+import * as DIG from "./digitando.js?v=b3634c9acb";
+import * as POP from "./pop.js?v=b3634c9acb";
+import * as BUSCA from "./busca.js?v=b3634c9acb";
+import * as EMAIL from "./email.js?v=b3634c9acb";
+import { criarMotor, sondarYoutube } from "./playlist-motor.js?v=b3634c9acb";
+import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=b3634c9acb";
+import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, precoPlaylist, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=b3634c9acb";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=b3634c9acb";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=b3634c9acb";
+import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=b3634c9acb";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=b3634c9acb";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=b3634c9acb";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=b3634c9acb";
 
+const avisoDoLinkEmail = (() => { try { return EMAIL.avisoDoLink(location.hash || location.search); } catch { return null; } })(); // (o link de confirmação do e-mail volta ao site com o resultado no endereço)
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
@@ -179,7 +181,7 @@ const mostrarLogin = () => { $("abrindo").hidden = true; $("chat").hidden = true
 const mostrarChat = () => { $("abrindo").hidden = true; $("auth").hidden = true; $("chat").hidden = false; $("chat").classList.add("preparando"); }; // "preparando": já aparece, mas só aceita toques quando as chaves e as conversas estiverem prontas
 async function start() {
   const { data: { session } } = await sb.auth.getSession();
-  if (!session) return mostrarLogin();
+  if (!session) { mostrarLogin(); if (avisoDoLinkEmail) { $("auth-msg").textContent = avisoDoLinkEmail; try { history.replaceState(null, "", location.pathname); } catch {} } return; }
   // com verificação em dois passos, nada abre antes do código (a tela de abertura fica por trás do pedido)
   if (await precisaDoisPassos() && !(await pedirCodigoLogin())) { await sb.auth.signOut({ scope: "local" }); return location.reload(); }
   // já estava logado: vai direto para a lista de contatos (sem piscar a tela de login)
@@ -275,6 +277,7 @@ async function start() {
   addEventListener("online", () => { loadContacts().catch(() => {}).then(sincronizar); filaEnviar(); }); // a internet voltou: busca o que chegou nesse meio-tempo e manda o que estava esperando
   filaCarregar().then(() => filaEnviar()); setInterval(filaEnviar, 15000); // (de tempos em tempos tenta de novo: um sinal que volta sem o navegador avisar)
   $("chat").classList.remove("preparando"); document.body.dataset.pronto = "1";
+  if (avisoDoLinkEmail) { note(avisoDoLinkEmail); try { history.replaceState(null, "", location.pathname); } catch {} } // (voltou do link de confirmação do e-mail)
   sincronizarNotificacoes(); conferirAparelhos(true, true); conferirDispositivos(true);
   setInterval(() => { if (!document.hidden) { conferirAparelhos(true); conferirDispositivos(); } }, 60000);
   // Rede de segurança: o tempo real do servidor não garante entregar todo aviso (uma conexão que oscila, um evento perdido). De tempos em tempos
@@ -320,6 +323,7 @@ async function desenharSeguranca() {
   $("mfa-go").textContent = pendente2fa ? "Confirmar código" : "Ativar verificação";
   const est = pendente2fa ? "pendente" : ativo ? "on" : "off";
   $("mfa-destaque").dataset.estado = est; $("mfa-chip").textContent = pendente2fa ? "Falta confirmar" : ativo ? "Ativada" : "Desativada";
+  sb.auth.getUser().then(({ data }) => { const u = data?.user; $("mfa-email-atual").textContent = u?.email ? (u.new_email ? `${u.email} · troca para ${u.new_email} esperando confirmação` : u.email) : "E-mail com que você entra"; }).catch(() => {});
   $("mfa-status").textContent = pendente2fa ? "Falta só confirmar: digite o código que o app mostra."
     : ativo ? "Ativada. Além da senha, o Lacre pede um código do seu app autenticador a cada novo login. Sem o código, ninguém abre a conta, mesmo sabendo a senha."
     : "Com ela, uma senha descoberta não basta para entrar na sua conta.";
@@ -379,6 +383,31 @@ async function trocarSenha() {
   msg.className = "ok"; msg.textContent = "Senha trocada. A antiga deixou de funcionar e os outros aparelhos foram desconectados.";
 }
 $("mfa-senha").onclick = trocarSenha;
+// E-mail da conta: pede a senha atual (conferida num cliente descartável, como na troca de senha), o novo e-mail duas vezes, e o servidor manda um link de confirmação.
+async function trocarEmail() {
+  const msg = $("mfa-msg"); msg.className = ""; msg.textContent = "";
+  const atual = await ask("Trocar o e-mail", "Digite a senha da sua conta para continuar."); if (atual === null) return;
+  const { data: u } = await sb.auth.getUser(), antigo = u?.user?.email;
+  const tmp = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
+  const chk = await tmp.auth.signInWithPassword({ email: antigo || "", password: atual });
+  await tmp.auth.signOut({ scope: "local" }).catch(() => {});
+  if (chk.error) { msg.textContent = limitado(chk.error) || /rate limit|too many/i.test(chk.error.message) ? "Muitas tentativas seguidas. Espere alguns minutos e tente de novo." : "A senha está errada. Nada foi alterado."; return; }
+  let hint = "Digite o NOVO e-mail da conta. Você vai precisar abrir o link que o Lacre mandar para ele.", novo;
+  for (;;) {
+    novo = await ask("Novo e-mail", hint, { texto: true, max: EMAIL.MAX_EMAIL }); if (novo === null) return;
+    if (!EMAIL.emailValido(novo)) hint = "Esse e-mail não parece válido (algo@exemplo.com). Confira e tente de novo.";
+    else if (EMAIL.limpaEmail(novo) === EMAIL.limpaEmail(antigo)) hint = "Esse já é o e-mail da conta. Digite outro.";
+    else break;
+  }
+  novo = EMAIL.limpaEmail(novo);
+  const conf = await ask("Confirme o novo e-mail", "Digite de novo, igualzinho.", { texto: true, max: EMAIL.MAX_EMAIL }); if (conf === null) return;
+  if (EMAIL.limpaEmail(conf) !== novo) { msg.textContent = "Os dois e-mails não são iguais. Nada foi alterado."; return; }
+  const { data, error } = await sb.auth.updateUser({ email: novo }, { emailRedirectTo: location.origin + location.pathname });
+  if (error) { msg.textContent = EMAIL.erroTroca(error); return; }
+  const res = EMAIL.resultadoTroca(data?.user, novo); msg.className = res === "desconhecido" ? "" : "ok"; msg.textContent = EMAIL.textoTroca(res, novo);
+  desenharSeguranca().then(() => { msg.className = res === "desconhecido" ? "" : "ok"; msg.textContent = EMAIL.textoTroca(res, novo); }).catch(() => {});
+}
+$("mfa-email").onclick = trocarEmail;
 // ---------- Histórico para outro aparelho ----------
 const msgMfa = (t, ok) => { const m = $("mfa-msg"); m.textContent = t; m.className = ok ? "ok" : ""; };
 async function exportarMeuHistorico() {
