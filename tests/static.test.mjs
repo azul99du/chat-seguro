@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const raiz = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const ler = (f) => readFileSync(join(raiz, f), "utf8");
-const APP = ["guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "recorte.js", "recorte-config.js", "sam2.js", "figurinhas.js", "avatar.js", "historico.js", "video.js", "aparelhos.js", "dispositivos.js", "grupo.js", "videolink.js", "lista.js", "usuario.js", "cores.js", "estatisticas.js", "selos.js", "snapshot.js", "visto.js", "loja.js", "novidades.js", "musica.js", "sugestoes.js", "fila.js", "digitando.js", "pop.js", "busca.js", "email.js", "transcricao.js", "transcricao-arquivos.js", "transcricao-worker.js", "playlist.js", "playlist-motor.js", "sw.js", "supabase/functions/notificar/vapid.js"];
+const APP = ["guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "recorte.js", "recorte-config.js", "sam2.js", "figurinhas.js", "avatar.js", "historico.js", "video.js", "aparelhos.js", "dispositivos.js", "grupo.js", "videolink.js", "lista.js", "usuario.js", "cores.js", "estatisticas.js", "selos.js", "snapshot.js", "visto.js", "loja.js", "novidades.js", "musica.js", "sugestoes.js", "fila.js", "digitando.js", "pop.js", "busca.js", "email.js", "convite.js", "transcricao.js", "transcricao-arquivos.js", "transcricao-worker.js", "playlist.js", "playlist-motor.js", "sw.js", "supabase/functions/notificar/vapid.js"];
 const rastreados = execFileSync("git", ["ls-files"], { cwd: raiz, encoding: "utf8" }).split("\n").filter(Boolean);
 
 describe("código", () => {
@@ -209,6 +209,20 @@ describe("grupos (supabase/schema.sql)", () => {
     for (const n of ["criar_grupo", "grupo_adicionar"]) assert.match(f(n), /not public\.ja_conversou\(/, n);
     assert.match(f("ja_conversou"), /m\.sender_id = \(select auth\.uid\(\)\) and m\.recipient_id = p_outro[\s\S]*m\.sender_id = p_outro and m\.recipient_id = \(select auth\.uid\(\)\)/, "os dois lados já escreveram");
     assert.match(f("meus_grupos"), /public\.mfa_ok\(\)/);
+  });
+  test("convites de grupo: só admin cria, desliga, aceita e recusa; o servidor só guarda o hash; entrar confere validade, vaga e limites", () => {
+    const f = (n) => [...sql.matchAll(new RegExp(`create or replace function public\\.${n}\\([\\s\\S]*?\\$\\$;`, "g"))].pop()[0];
+    for (const n of ["convite_criar", "convite_revogar", "convite_ver", "convite_pedir", "convite_aceitar", "convite_recusar"]) assert.match(f(n), /perform public\.consome\(/, n);
+    for (const n of ["convite_criar", "convite_aceitar", "convite_recusar"]) assert.match(f(n), /gm\.admin\) then raise exception 'so_admin'/, n);
+    assert.match(f("convite_revogar"), /gm\.admin\) then raise exception 'so_admin'/);
+    for (const n of ["convite_listar", "convite_pedidos"]) assert.match(f(n), /gm\.admin/, n + ": só admin"), assert.match(f(n), /public\.mfa_ok\(\)/, n);
+    assert.match(sql, /codigo text not null unique check \(codigo ~ '\^\[0-9a-f\]\{64\}\$'\)/, "só o hash do segredo");
+    assert.match(f("convite_criar"), /convites_demais/); assert.match(f("convite_criar"), /p_horas > 8760/);
+    const pedir = f("convite_pedir"); assert.match(pedir, /aparelho_estado/); assert.match(pedir, /public\.convite_vale\(c\.id\)/); assert.match(pedir, /grupos_demais_dela/); assert.match(pedir, /pedidos_demais/);
+    const ac = f("convite_aceitar"); assert.match(ac, /public\.convite_vale\(ped\.convite_id\)/); assert.match(ac, /grupo_cheio/); assert.match(ac, /grupos_demais_dela/); assert.match(ac, /usos = c\.usos \+ 1/);
+    assert.match(f("convite_vale"), /c\.ativo/); assert.match(f("convite_vale"), /expira_em/); assert.match(f("convite_vale"), /max_usos/); assert.match(f("convite_vale"), /< 20/);
+    for (const t of ["grupo_convites", "grupo_pedidos"]) { assert.match(sql, new RegExp(`alter table public\\.${t} enable row level security`)); assert.match(sql, new RegExp(`create policy "exige dois passos" on public\\.${t} as restrictive`)); assert.match(sql, new RegExp(`revoke all on public\\.${t} from anon, authenticated`)); }
+    assert.doesNotMatch(f("convite_ver"), /returning|insert into|update public/, "ver não muda nada");
   });
   test("arquivos de grupo: só quem está no grupo baixa", () => {
     const ultima = [...sql.matchAll(/create policy "le midia das suas conversas"[\s\S]*?;/g)].pop()[0];

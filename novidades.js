@@ -5,6 +5,9 @@ export const TEMAS = [["selos", "Selos"], ["mensagens", "Mensagens"], ["grupos",
 const NOME_TEMA = new Map(TEMAS);
 export const temaNome = (t) => NOME_TEMA.get(t) || null;
 export const NOVIDADES = [
+  { id: "2026-11-19-1", data: "2026-11-19", itens: [
+    { tema: "grupos", icone: "🔗", titulo: "Links de convite para grupos", texto: "Em Dados do grupo, quem administra pode criar links de convite: cada um com seu nome, sua validade (24 horas, 7 dias, 30 dias ou sem fim), seu limite de pessoas e um QR code para mostrar na hora. Quem tem conta e abre o link vê o nome do grupo e pede para entrar; um admin aceita pelo aviso no alto do grupo (ou o link aceita sozinho, se você escolher assim). Dá para desligar um link a qualquer momento. A pessoa só vê as mensagens de depois que entrou." },
+  ] },
   { id: "2026-11-18-1", data: "2026-11-18", itens: [
     { tema: "seguranca", icone: "✉️", titulo: "Trocar o e-mail da conta", texto: "Em Segurança, toque em Trocar e-mail da conta. Você digita a senha, escreve o novo e-mail duas vezes e o Lacre manda um link de confirmação para ele. O e-mail só muda depois que você abrir o link, e até lá você continua entrando com o antigo. A página Segurança também passa a mostrar com qual e-mail você entra. Suas mensagens e chaves não dependem do e-mail, então nada se perde." },
   ] },

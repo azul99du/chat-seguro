@@ -1,6 +1,6 @@
 // Acabamento do recorte de figurinha (porte do notebook recortador_figurinhas_sam2: rampa de borda, miolo opaco, contorno branco).
 // Funções puras sobre arrays: não dependem do navegador, por isso são testadas em Node.
-import * as C from "./recorte-config.js?v=b3634c9acb";
+import * as C from "./recorte-config.js?v=f3b417523c";
 
 export const sigmoide = (x) => 1 / (1 + Math.exp(-Math.max(-30, Math.min(30, x))));
 

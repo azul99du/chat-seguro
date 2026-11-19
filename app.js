@@ -1,41 +1,46 @@
 import { createClient } from "./vendor/supabase.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=b3634c9acb";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=b3634c9acb";
-import { montarFigurinhas } from "./figurinhas.js?v=b3634c9acb";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=b3634c9acb";
-import { recentesDoHistorico, ultimosDoHistorico, historicoComId, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=b3634c9acb";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=b3634c9acb";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=b3634c9acb";
-import { acharVideoLink } from "./videolink.js?v=b3634c9acb";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=b3634c9acb";
-import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=b3634c9acb";
-import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=b3634c9acb";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=b3634c9acb";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=b3634c9acb";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=b3634c9acb";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=b3634c9acb";
-import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, combinar, destaque, PAGINA_RESULTADOS, MAX_BUSCA, termosAmpliados, termoTrilha, albumOficial, barrasDeOnda, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=b3634c9acb";
-import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=b3634c9acb";
-import { MAX_SUGESTAO, MAX_POR_DIA, POR_PAGINA, limpaSugestao, restantesHoje, dataCarimbo, corDaNota, limpaSugestoes, erroSugestao } from "./sugestoes.js?v=b3634c9acb";
-import { MODELOS, IDS_MODELOS, MODELO_PADRAO, MAX_TRANSCRICAO_S, limpaModelo, mbDoModelo, bytesDoModelo, estimativa, paraMono, limpaTranscricao } from "./transcricao.js?v=b3634c9acb";
-import { modeloBaixado, apagarModelo } from "./transcricao-arquivos.js?v=b3634c9acb";
-import * as PLM from "./playlist.js?v=b3634c9acb";
-import * as FILA from "./fila.js?v=b3634c9acb";
-import * as DIG from "./digitando.js?v=b3634c9acb";
-import * as POP from "./pop.js?v=b3634c9acb";
-import * as BUSCA from "./busca.js?v=b3634c9acb";
-import * as EMAIL from "./email.js?v=b3634c9acb";
-import { criarMotor, sondarYoutube } from "./playlist-motor.js?v=b3634c9acb";
-import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=b3634c9acb";
-import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, precoPlaylist, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=b3634c9acb";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=b3634c9acb";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=b3634c9acb";
-import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=b3634c9acb";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=b3634c9acb";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=b3634c9acb";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=b3634c9acb";
+import qrcode from "./vendor/qrcode.js";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=f3b417523c";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=f3b417523c";
+import { montarFigurinhas } from "./figurinhas.js?v=f3b417523c";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=f3b417523c";
+import { recentesDoHistorico, ultimosDoHistorico, historicoComId, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=f3b417523c";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=f3b417523c";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=f3b417523c";
+import { acharVideoLink } from "./videolink.js?v=f3b417523c";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=f3b417523c";
+import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=f3b417523c";
+import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=f3b417523c";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=f3b417523c";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=f3b417523c";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=f3b417523c";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=f3b417523c";
+import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, combinar, destaque, PAGINA_RESULTADOS, MAX_BUSCA, termosAmpliados, termoTrilha, albumOficial, barrasDeOnda, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=f3b417523c";
+import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=f3b417523c";
+import { MAX_SUGESTAO, MAX_POR_DIA, POR_PAGINA, limpaSugestao, restantesHoje, dataCarimbo, corDaNota, limpaSugestoes, erroSugestao } from "./sugestoes.js?v=f3b417523c";
+import { MODELOS, IDS_MODELOS, MODELO_PADRAO, MAX_TRANSCRICAO_S, limpaModelo, mbDoModelo, bytesDoModelo, estimativa, paraMono, limpaTranscricao } from "./transcricao.js?v=f3b417523c";
+import { modeloBaixado, apagarModelo } from "./transcricao-arquivos.js?v=f3b417523c";
+import * as PLM from "./playlist.js?v=f3b417523c";
+import * as FILA from "./fila.js?v=f3b417523c";
+import * as DIG from "./digitando.js?v=f3b417523c";
+import * as POP from "./pop.js?v=f3b417523c";
+import * as BUSCA from "./busca.js?v=f3b417523c";
+import * as EMAIL from "./email.js?v=f3b417523c";
+import * as CONV from "./convite.js?v=f3b417523c";
+import { criarMotor, sondarYoutube } from "./playlist-motor.js?v=f3b417523c";
+import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=f3b417523c";
+import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, precoPlaylist, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=f3b417523c";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=f3b417523c";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=f3b417523c";
+import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=f3b417523c";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=f3b417523c";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=f3b417523c";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=f3b417523c";
 
 const avisoDoLinkEmail = (() => { try { return EMAIL.avisoDoLink(location.hash || location.search); } catch { return null; } })(); // (o link de confirmação do e-mail volta ao site com o resultado no endereço)
+let conviteLink = (() => { // link de convite de grupo (#convite=segredo.chave): guardado só nesta aba até a pessoa decidir
+  try { const l = CONV.lerLink(location.hash); if (l) { sessionStorage.setItem("lacre:convite", location.hash); history.replaceState(null, "", location.pathname + location.search); return l; } const g = sessionStorage.getItem("lacre:convite"); return g ? CONV.lerLink(g) : null; } catch { return null; }
+})();
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
 const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
@@ -181,7 +186,7 @@ const mostrarLogin = () => { $("abrindo").hidden = true; $("chat").hidden = true
 const mostrarChat = () => { $("abrindo").hidden = true; $("auth").hidden = true; $("chat").hidden = false; $("chat").classList.add("preparando"); }; // "preparando": já aparece, mas só aceita toques quando as chaves e as conversas estiverem prontas
 async function start() {
   const { data: { session } } = await sb.auth.getSession();
-  if (!session) { mostrarLogin(); if (avisoDoLinkEmail) { $("auth-msg").textContent = avisoDoLinkEmail; try { history.replaceState(null, "", location.pathname); } catch {} } return; }
+  if (!session) { mostrarLogin(); if (conviteLink) $("auth-msg").textContent = "Você recebeu um convite para um grupo. Entre ou crie a sua conta para abri-lo."; if (avisoDoLinkEmail) { $("auth-msg").textContent = avisoDoLinkEmail; try { history.replaceState(null, "", location.pathname); } catch {} } return; }
   // com verificação em dois passos, nada abre antes do código (a tela de abertura fica por trás do pedido)
   if (await precisaDoisPassos() && !(await pedirCodigoLogin())) { await sb.auth.signOut({ scope: "local" }); return location.reload(); }
   // já estava logado: vai direto para a lista de contatos (sem piscar a tela de login)
@@ -277,6 +282,7 @@ async function start() {
   addEventListener("online", () => { loadContacts().catch(() => {}).then(sincronizar); filaEnviar(); }); // a internet voltou: busca o que chegou nesse meio-tempo e manda o que estava esperando
   filaCarregar().then(() => filaEnviar()); setInterval(filaEnviar, 15000); // (de tempos em tempos tenta de novo: um sinal que volta sem o navegador avisar)
   $("chat").classList.remove("preparando"); document.body.dataset.pronto = "1";
+  if (conviteLink) conviteAbrir().catch(() => {}); cvIniciar();
   if (avisoDoLinkEmail) { note(avisoDoLinkEmail); try { history.replaceState(null, "", location.pathname); } catch {} } // (voltou do link de confirmação do e-mail)
   sincronizarNotificacoes(); conferirAparelhos(true, true); conferirDispositivos(true);
   setInterval(() => { if (!document.hidden) { conferirAparelhos(true); conferirDispositivos(); } }, 60000);
@@ -1079,6 +1085,7 @@ function renderContacts() {
       av.className = "avatar"; pintarAvatarGrupo(av, p); nm.textContent = p.nome; b.dataset.grupo = p.id;
       const st = document.createElement("small"); st.className = "sub"; st.textContent = "grupo · " + contagem(p.membros.size);
       const on = contaOnline([...p.membros.keys()], me.id, online), dg = digitandoNomes(p); if (dg.length) { st.textContent = DIG.textoDigitando(dg); st.classList.add("digitando"); } else if (on) st.append(el("span", "on", ` · ${on} online`)); // quantos do grupo estão online agora (ou quem está digitando)
+      { const np = p.admin ? CV.pedidos.get(p.id)?.length || 0 : 0; if (np) st.append(el("span", "ped", ` · ${np} ${np === 1 ? "pedido" : "pedidos"}`)); }
       nm.append(st);
     } else {
       av.className = "avatar" + (online.has(p.id) ? " on" : ""); pintarAvatar(av, p, true); b.dataset.id = p.id;
@@ -1117,6 +1124,7 @@ function updateStatus() {
   $("conv-status").hidden = !!g || !(active && (online.has(active.id) || dg.length)); $("conv-status").lastChild.textContent = dg.length ? "digitando…" : "online"; $("conv-status").classList.toggle("digitando", !!dg.length);
   $("conv-sub").hidden = !g; $("conv-sub").classList.toggle("digitando", !!dg.length);
   if (g) $("conv-sub").textContent = dg.length ? DIG.textoDigitando(dg) : resumoMembros([...g.membros.values()], me.id); // grupo: quem participa (ou quem está digitando agora)
+  cvPintarBarra();
 }
 const nomeDe = (id) => (id === me.id ? me.username : (active?.grupo && active.membros.get(id)?.username) || perfis.get(id)?.username || contacts.get(id)?.username || "alguém");
 const idDaRef = (re) => (re?.mid ? midParaId.get(re.mid) : re?.id); // a que mensagem DESTA tela uma citação/reação aponta
@@ -2538,6 +2546,7 @@ function desenharInfoGrupo() {
   $("gi-foto-btn").hidden = !g.admin || !g.gk; $("gi-foto-rm").hidden = !g.admin || !g.foto;
   { const f = fundosPor.get(g.id); $("gi-fundo").hidden = !g.admin || !g.gk; $("gi-fundo-rm").hidden = !g.admin || !f?.admin; $("gi-fundo-sub").textContent = f?.loja?.ate > Date.now() ? `Uma foto de fundo da loja vale até ${horaFim(f.loja.ate)}; depois volta a sua.` : f?.admin ? "Aparece atrás das mensagens, para todos" : "Nenhuma ainda: aparece atrás das mensagens, para todos"; }
   { const c = g.membros.get(me.id)?.cor, st = estilosDaCor(c); $("gi-cor-nome").textContent = nomeDaCor(c); $("gi-cor-sw").style.setProperty("--c", st?.claro.forte || "transparent"); }
+  $("gi-convite").hidden = !g.admin || !g.gk; cvPintarDados(g);
   $("gi-renomear").hidden = !g.admin || !g.gk; $("gi-add").hidden = !g.admin || !g.gk || g.membros.size >= MAX_MEMBROS;
   $("gi-cont").textContent = `Participantes · ${g.membros.size} de ${MAX_MEMBROS}`;
   const ordem = [...g.membros.values()].sort((a, b) => (b.id === me.id) - (a.id === me.id) || b.admin - a.admin || b.sub - a.sub || a.username.localeCompare(b.username));
@@ -3715,6 +3724,137 @@ $("send-form").onsubmit = async (e) => {
     note(sendError(e, peer));
   } finally { btn.disabled = false; if (tinhaFoco && document.activeElement !== $("text")) $("text").focus(); }
 };
+
+// ---------- Convites de grupo (links, QR code e pedidos de entrada) ----------
+// O admin cria links (nome, validade, limite). O segredo do link e o apelido vão cifrados com a chave do grupo (qualquer admin, em qualquer aparelho, reabre o link); o servidor só guarda o
+// HASH do segredo. Quem abre o link PEDE para entrar; um admin aceita (ou o link aceita sozinho com um admin online) e entrega a chave do grupo cifrada para a pessoa.
+const CV = { pedidos: new Map(), ocupado: false, timer: null, espera: new Map(), esperaTimer: null, g: null, links: [], novo: { validade: CONV.VALIDADE_PADRAO, limite: CONV.LIMITE_PADRAO }, atual: null };
+const cvPollMs = () => { try { const v = Number(localStorage.getItem("lacre:cv-poll")); if (Number.isFinite(v) && v >= 500) return v; } catch {} return 20000; };
+const cvMsg = (id, t, ok = false) => { const m = $(id); m.textContent = t; m.className = "pg-msg" + (ok ? " ok" : ""); };
+async function cvCifrar(g, apelido, segredo) { const r = await cifrarFoto(g.gk, g.id, new TextEncoder().encode(JSON.stringify({ n: apelido, s: segredo }))); return { c: plB64(r.data), i: r.iv }; }
+async function cvAbrirBloco(g, b) { try { const o = JSON.parse(new TextDecoder().decode(await abrirFotoCifrada(g.gk, g.id, unb(b.c), b.i))); return typeof o?.s === "string" && o.s.length === CONV.TAM_SEGREDO ? { apelido: CONV.limpaApelido(o.n), segredo: o.s } : null; } catch { return null; } }
+function cvDesenharQr(alvo, texto) { // QR feito aqui mesmo (biblioteca em vendor/qrcode.js), em SVG: nada é enviado a ninguém
+  const q = qrcode(0, "M"); q.addData(texto); q.make(); const n = q.getModuleCount(), ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg"), fundo = document.createElementNS(ns, "rect"), cam = document.createElementNS(ns, "path");
+  svg.setAttribute("viewBox", `0 0 ${n + 8} ${n + 8}`); svg.setAttribute("shape-rendering", "crispEdges"); svg.setAttribute("aria-hidden", "true");
+  fundo.setAttribute("width", n + 8); fundo.setAttribute("height", n + 8); fundo.setAttribute("fill", "#fff");
+  let d = ""; for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) d += `M${c + 4} ${r + 4}h1v1h-1z`;
+  cam.setAttribute("d", d); cam.setAttribute("fill", "#000"); svg.append(fundo, cam); alvo.replaceChildren(svg);
+}
+// ---- admin: lista de links ----
+async function cvAbrirLista() {
+  const g = giGrupo && grupos.get(giGrupo.id); if (!g?.admin || !g.gk) return; CV.g = g; cvMsg("cv-msg", ""); $("cv-lista").replaceChildren(); $("convites").showModal(); await cvDesenharLista();
+}
+async function cvDesenharLista() {
+  const g = CV.g; if (!g) return; const { data, error } = await sb.rpc("convite_listar", { p_grupo: g.id }); if (error) return cvMsg("cv-msg", CONV.erroConvite(error));
+  const links = CONV.limpaLinks(data), prontos = [];
+  for (const l of links) { const b = await cvAbrirBloco(g, l.nome); if (b) prontos.push({ ...l, apelido: b.apelido, segredo: b.segredo }); }
+  CV.links = prontos; $("cv-novo").hidden = prontos.length >= CONV.MAX_LINKS;
+  $("cv-lista").replaceChildren(...prontos.map((l) => {
+    const b = el("button", "linha"), ic = el("span", "ic"), tx = el("span", "tx"); b.type = "button"; b.dataset.id = l.id; ic.textContent = "🔗"; tx.append(el("b", null, l.apelido), el("small", null, CONV.rotuloLink(l)));
+    b.append(ic, tx, el("span", "cv-seta", "›")); b.onclick = () => cvMostrarLink(l); return b;
+  }));
+  if (!prontos.length) $("cv-lista").append(el("p", "pg-nota", "Ainda não há links. Crie o primeiro abaixo."));
+}
+$("gi-convite").onclick = () => cvAbrirLista();
+$("cv-novo").onclick = () => { cvMsg("cvn-msg", ""); $("cvn-nome").value = ""; $("cvn-aprovar").checked = true; CV.novo = { validade: CONV.VALIDADE_PADRAO, limite: CONV.LIMITE_PADRAO }; cvDesenharOpcoes(); $("convite-novo").showModal(); };
+function cvDesenharOpcoes() {
+  const mk = (lista, chave) => lista.map((o) => { const b = el("button", null, o.rotulo); b.type = "button"; b.dataset.id = o.id; b.setAttribute("aria-pressed", String(CV.novo[chave] === o.id)); b.onclick = () => { CV.novo[chave] = o.id; cvDesenharOpcoes(); }; return b; });
+  $("cvn-validade").replaceChildren(...mk(CONV.VALIDADES, "validade")); $("cvn-limite").replaceChildren(...mk(CONV.LIMITES, "limite"));
+}
+$("cvn-criar").onclick = async () => {
+  const g = CV.g; if (!g?.admin || !g.gk) return; const btn = $("cvn-criar"); btn.disabled = true; cvMsg("cvn-msg", "");
+  try {
+    const segredo = CONV.segredoNovo(), apelido = CONV.limpaApelido($("cvn-nome").value), v = CONV.validadeDe(CV.novo.validade), l = CONV.limiteDe(CV.novo.limite);
+    const { error } = await sb.rpc("convite_criar", { p_grupo: g.id, p_codigo: await CONV.hashSegredo(segredo), p_nome: await cvCifrar(g, apelido, segredo), p_horas: v.horas, p_max: l.max, p_aprovar: $("cvn-aprovar").checked });
+    if (error) return cvMsg("cvn-msg", CONV.erroConvite(error));
+    $("convite-novo").close(); await cvDesenharLista(); const novo = CV.links.find((x) => x.segredo === segredo); if (novo) cvMostrarLink(novo);
+  } catch (e) { cvMsg("cvn-msg", CONV.erroConvite(e)); } finally { btn.disabled = false; }
+};
+function cvMostrarLink(l) {
+  const g = CV.g; if (!g) return; CV.atual = l; const url = CONV.montarLink(location.origin + location.pathname, l.segredo, g.gk);
+  $("cvl-titulo").textContent = l.apelido; $("cvl-url").textContent = url; cvDesenharQr($("cvl-qr"), url); cvMsg("cvl-msg", "");
+  $("cvl-info").textContent = `${CONV.rotuloLink(l)} · ${l.aprovar ? "um admin aprova cada pedido" : "aceita sozinho enquanto um admin estiver online"}`;
+  $("cvl-compartilhar").hidden = typeof navigator.share !== "function"; if (!$("convite-link").open) $("convite-link").showModal();
+}
+$("cvl-copiar").onclick = async () => { try { await navigator.clipboard.writeText($("cvl-url").textContent); cvMsg("cvl-msg", "Link copiado.", true); } catch { cvMsg("cvl-msg", "Não deu para copiar. Toque no link para selecioná-lo."); } };
+$("cvl-compartilhar").onclick = () => { navigator.share({ title: `Convite para o grupo ${CV.g?.nome || ""}`.trim(), url: $("cvl-url").textContent }).catch(() => {}); };
+$("cvl-desligar").onclick = async () => {
+  const l = CV.atual; if (!l) return; const r = await choose("Desligar este link?", `“${l.apelido}” para de valer agora e os pedidos que vieram só por ele somem. Quem já entrou continua no grupo.`, [{ value: "sim", label: "Desligar", cls: "primary" }, { value: "nao", label: "Cancelar", cls: "ghost" }]);
+  if (r !== "sim") return; const { error } = await sb.rpc("convite_revogar", { p_id: l.id }); if (error) return cvMsg("cvl-msg", CONV.erroConvite(error));
+  $("convite-link").close(); await cvDesenharLista(); cvConferirPedidos().catch(() => {});
+};
+// ---- admin: pedidos de entrada ----
+async function cvAceitar(p) {
+  const g = grupos.get(p.grupo); if (!g?.admin || !g.gk) return; const antes = [...g.membros.values()];
+  const { error } = await sb.rpc("convite_aceitar", { p_grupo: g.id, p_user: p.user, p_chave: await embrulharPara(g.gk, g.id, { id: p.user, public_key: p.public_key }) });
+  if (error) throw error; await atualizarGrupos(true); avisarMudanca(antes); // (os que já estavam no grupo atualizam a lista; quem entrou vê o grupo sozinho)
+}
+async function cvRecusar(p) { const { error } = await sb.rpc("convite_recusar", { p_grupo: p.grupo, p_user: p.user }); if (error) throw error; }
+async function cvConferirPedidos() {
+  if (!me || CV.ocupado) return; CV.ocupado = true;
+  try {
+    await atualizarGrupos().catch(() => {}); if (![...grupos.values()].some((g) => g.admin)) { CV.pedidos = new Map(); return cvAtualizarTela(); }
+    const { data, error } = await sb.rpc("convite_pedidos"); if (error) return; const ps = CONV.limpaPedidos(data);
+    for (const p of CONV.autoAceitar(ps)) { try { await cvAceitar(p); } catch (e) { console.warn("convite:", e?.message || e); } }
+    const r2 = (await sb.rpc("convite_pedidos")).data; CV.pedidos = CONV.pedidosPorGrupo(CONV.limpaPedidos(r2 ?? data)); cvAtualizarTela();
+  } finally { CV.ocupado = false; }
+}
+function cvAtualizarTela() { renderContacts(); cvPintarBarra(); if ($("convites").open) cvDesenharLista().catch(() => {}); if ($("grupo-info").open && giGrupo) { const g = grupos.get(giGrupo.id); if (g) cvPintarDados(g); } }
+function cvPintarBarra() { // no alto do grupo aberto: o primeiro pedido, com Aceitar e Recusar
+  const b = $("ped-barra"), g = active?.grupo ? active : null, lista = g?.admin ? CV.pedidos.get(g.id) || [] : [];
+  if (!lista.length) { b.hidden = true; b.dataset.user = ""; return; }
+  const p = lista[0]; b.hidden = false; b.dataset.user = p.user; $("ped-texto").textContent = CONV.textoPedido(p.username) + (lista.length > 1 ? ` (+${lista.length - 1})` : "");
+  $("ped-ok").onclick = () => cvResolver(p, true); $("ped-no").onclick = () => cvResolver(p, false);
+}
+function cvPintarDados(g) {
+  const lista = g.admin ? CV.pedidos.get(g.id) || [] : []; $("gi-pedidos").hidden = !lista.length;
+  $("gi-ped-lista").replaceChildren(...lista.map((p) => {
+    const row = el("div", "ped-linha"), av = el("span", "avatar"), tx = el("span", "tx"), ok = el("button", "ped-ok", "Aceitar"), no = el("button", "ped-no", "Recusar");
+    pintarAvatar(av, { username: p.username, avatar: p.avatar }); tx.append(el("b", null, "@" + p.username), el("small", null, "Entrou pelo link")); ok.type = no.type = "button"; ok.dataset.user = p.user; no.dataset.user = p.user;
+    ok.onclick = () => cvResolver(p, true); no.onclick = () => cvResolver(p, false); row.append(av, tx, ok, no); return row;
+  }));
+}
+async function cvResolver(p, aceitar) {
+  try { await (aceitar ? cvAceitar(p) : cvRecusar(p)); } catch (e) { note(CONV.erroConvite(e)); }
+  await cvConferirPedidos().catch(() => {});
+}
+function cvIniciar() { // admins: confere os pedidos de tempos em tempos; quem pediu: acompanha até entrar
+  try { const e = JSON.parse(localStorage.getItem("lacre:cv-espera:" + me.id) || "[]"); for (const x of Array.isArray(e) ? e : []) if (typeof x?.g === "string" && Date.now() - x.em < 3 * 86400000) CV.espera.set(x.g, { nome: String(x.n || "o grupo").slice(0, 60), em: x.em }); } catch {}
+  clearInterval(CV.timer); CV.timer = setInterval(() => { if (!document.hidden) cvConferirPedidos().catch(() => {}); }, cvPollMs()); setTimeout(() => cvConferirPedidos().catch(() => {}), 2500); cvEsperaIniciar();
+}
+// ---- quem abriu o link ----
+function cvGuardarEspera() { try { localStorage.setItem("lacre:cv-espera:" + me.id, JSON.stringify([...CV.espera].map(([g, v]) => ({ g, n: v.nome, em: v.em })))); } catch {} }
+function cvEsperaIniciar() {
+  clearInterval(CV.esperaTimer); if (!CV.espera.size) return;
+  CV.esperaTimer = setInterval(async () => {
+    if (document.hidden) return; await atualizarGrupos(true).catch(() => {});
+    for (const [id, v] of [...CV.espera]) { const g = grupos.get(id); if (!g) { if (Date.now() - v.em > 3 * 86400000) CV.espera.delete(id); continue; } CV.espera.delete(id); cvGuardarEspera(); if (!CV.espera.size) clearInterval(CV.esperaTimer); await note(`Seu pedido foi aceito: você entrou em “${g.nome}”.`); open(g); }
+  }, Math.min(8000, cvPollMs()));
+}
+async function conviteAbrir() {
+  const l = conviteLink; if (!l || !me) return; const d = $("convite-ver"), fim = () => { conviteLink = null; try { sessionStorage.removeItem("lacre:convite"); } catch {} };
+  const so = (t) => { $("cvv-nome").textContent = ""; $("cvv-info").textContent = t; $("cvv-pedir").hidden = true; $("cvv-abrir").hidden = true; };
+  $("cvv-av").replaceChildren(); $("cvv-titulo").textContent = "Convite para um grupo"; cvMsg("cvv-msg", ""); so("Abrindo o convite…"); if (!d.open) d.showModal();
+  const { data, error } = await sb.rpc("convite_ver", { p_codigo: await CONV.hashSegredo(l.segredo) }), r = Array.isArray(data) ? data[0] : null;
+  if (error) return so(CONV.erroConvite(error));
+  if (!r) { fim(); return so("Esse link não vale mais ou não existe. Peça um novo a quem convidou."); }
+  const nome = await abrirNome(l.gk, r.grupo_id, r.nome).catch(() => null); if (!nome) { fim(); return so("Esse link está com problema (incompleto). Peça um novo a quem convidou."); }
+  $("cvv-av").textContent = nome[0]?.toUpperCase() || "G"; $("cvv-titulo").textContent = "Entrar no grupo?"; $("cvv-nome").textContent = nome; const info = `${r.membros} ${r.membros === 1 ? "pessoa" : "pessoas"}`;
+  const abrirBtn = $("cvv-abrir"), pedirBtn = $("cvv-pedir");
+  if (r.ja_membro) { fim(); $("cvv-info").textContent = `${info} · você já está neste grupo.`; abrirBtn.hidden = false; pedirBtn.hidden = true; abrirBtn.onclick = async () => { await atualizarGrupos(true).catch(() => {}); const g = grupos.get(r.grupo_id); d.close(); if (g) open(g); }; return; }
+  if (r.pedido) { fim(); CV.espera.set(r.grupo_id, { nome, em: Date.now() }); cvGuardarEspera(); cvEsperaIniciar(); $("cvv-info").textContent = `${info} · Pedido enviado. Um admin precisa aceitar; você avisa quando entrar.`; return; }
+  if (!r.vale) { fim(); return so(`Esse link não está valendo agora (foi desligado, venceu ou lotou, ou o grupo está cheio).`); }
+  $("cvv-info").textContent = `${info} · Um admin precisa aceitar o seu pedido. Você só vê as mensagens de depois que entrar.`; pedirBtn.hidden = false; abrirBtn.hidden = true;
+  pedirBtn.onclick = async () => {
+    pedirBtn.disabled = true; cvMsg("cvv-msg", "");
+    try {
+      const { data: res, error: err } = await sb.rpc("convite_pedir", { p_codigo: await CONV.hashSegredo(l.segredo) }); if (err) return cvMsg("cvv-msg", CONV.erroConvite(err));
+      pedirBtn.hidden = true; fim();
+      if (res === "ja_membro") { $("cvv-info").textContent = "Você já está neste grupo."; return; }
+      CV.espera.set(r.grupo_id, { nome, em: Date.now() }); cvGuardarEspera(); cvEsperaIniciar(); $("cvv-info").textContent = `Pedido enviado! Um admin precisa aceitar. Quando aceitarem, o grupo aparece aqui e você é avisado.`;
+    } catch (e) { cvMsg("cvv-msg", CONV.erroConvite(e)); } finally { pedirBtn.disabled = false; }
+  };
+}
 
 // ---------- Buscar uma palavra dentro da conversa (no próprio aparelho, no histórico cifrado) ----------
 // A lupa do alto da conversa abre uma barra com contador e setas. As palavras achadas ficam marcadas e as setas levam de uma para outra; mensagens mais antigas que a tela

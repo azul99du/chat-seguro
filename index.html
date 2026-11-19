@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=b3634c9acb">
+  <link rel="stylesheet" href="style.css?v=f3b417523c">
 </head>
 <body>
 
@@ -153,6 +153,7 @@
         <button id="busca-cima" class="ghost icon" type="button" aria-label="Resultado mais antigo" disabled>↑</button>
         <button id="busca-baixo" class="ghost icon" type="button" aria-label="Resultado mais novo" disabled>↓</button>
       </div>
+      <div id="ped-barra" class="ped-barra" role="status" hidden><span id="ped-texto"></span><button type="button" id="ped-ok" class="ped-ok">Aceitar</button><button type="button" id="ped-no" class="ped-no">Recusar</button></div>
       <div id="pl-barra" class="pl-barra" hidden>
         <div class="pl-fina">
           <span id="pl-capa" class="pl-capa" aria-hidden="true"></span>
@@ -392,6 +393,8 @@
         <button type="button" id="gi-est" class="linha"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span><span class="tx"><b>Estatísticas do grupo</b><small>Quem fala mais, tempo na tela, sequência</small></span></button>
         <h3 class="pg-grupo" id="gi-cont">Participantes</h3>
         <button type="button" id="gi-add" class="linha" hidden><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="8" r="4"/><path d="M3 21c0-4 3.5-6 7-6 1.3 0 2.6.3 3.7.8M18 14v6M15 17h6"/></svg></span><span class="tx"><b>Adicionar pessoas</b></span></button>
+        <button type="button" id="gi-convite" class="linha" hidden><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></span><span class="tx"><b>Links de convite</b><small>Quem tem conta pede para entrar e um admin aceita</small></span></button>
+        <div id="gi-pedidos" hidden><h3 class="pg-grupo">Pedidos de entrada</h3><div id="gi-ped-lista"></div></div>
         <div id="gi-lista"></div>
         <p id="gi-msg" class="pg-msg" role="status"></p>
         <button type="button" id="gi-sair" class="linha perigo"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></span><span class="tx"><b>Sair do grupo</b></span></button>
@@ -698,8 +701,63 @@
 
   <div id="pop-msg" role="status" aria-live="polite" hidden></div>
 
+  <dialog id="convites" class="pagina">
+    <form method="dialog">
+      <header class="pg-bar"><button value="cancel" class="pg-volta" aria-label="Voltar" formnovalidate><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><h2>Links de convite</h2></header>
+      <div class="pg-corpo">
+        <p class="pg-nota">Cada link tem seu nome, sua validade e seu limite de pessoas. Quem tem conta e abre o link <b>pede para entrar</b>; um admin aceita (ou o link aceita sozinho, se você escolher assim). A pessoa só vê as mensagens de depois que entrar.</p>
+        <div id="cv-lista"></div>
+        <button type="button" id="cv-novo" class="linha"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span><span class="tx"><b>Criar novo link</b></span></button>
+        <p id="cv-msg" class="pg-msg" role="status"></p>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="convite-novo" class="pagina">
+    <form method="dialog">
+      <header class="pg-bar"><button value="cancel" class="pg-volta" aria-label="Voltar" formnovalidate><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><h2>Novo link</h2></header>
+      <div class="pg-corpo">
+        <h3 class="pg-grupo">Nome (só quem administra vê)</h3>
+        <div class="cv-campo"><input id="cvn-nome" type="text" maxlength="40" placeholder="Ex.: Amigos da escola" autocomplete="off" aria-label="Nome do link"></div>
+        <h3 class="pg-grupo">Vale por</h3>
+        <div id="cvn-validade" class="nov-chips" role="group" aria-label="Validade do link"></div>
+        <h3 class="pg-grupo">Quantas pessoas</h3>
+        <div id="cvn-limite" class="nov-chips" role="group" aria-label="Limite de pessoas"></div>
+        <label class="cv-aprovar"><input type="checkbox" id="cvn-aprovar" checked><span><b>Um admin aprova cada pedido</b><small>Desligado, o pedido é aceito sozinho enquanto um admin estiver com o Lacre aberto.</small></span></label>
+        <button type="button" id="cvn-criar" class="primary cv-criar">Criar link</button>
+        <p id="cvn-msg" class="pg-msg" role="status"></p>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="convite-link" class="pagina">
+    <form method="dialog">
+      <header class="pg-bar"><button value="cancel" class="pg-volta" aria-label="Voltar" formnovalidate><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button><h2 id="cvl-titulo">Link de convite</h2></header>
+      <div class="pg-corpo">
+        <div class="cv-qrw"><div id="cvl-qr" class="cv-qr" role="img" aria-label="QR code do link de convite"></div><small>Aponte a câmera de outro celular</small></div>
+        <div id="cvl-url" class="cv-url" tabindex="0"></div>
+        <div class="cv-acoes"><button type="button" id="cvl-copiar" class="ghost">Copiar</button><button type="button" id="cvl-compartilhar" class="ghost" hidden>Compartilhar</button></div>
+        <p id="cvl-info" class="pg-nota"></p>
+        <button type="button" id="cvl-desligar" class="linha perigo"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg></span><span class="tx"><b>Desligar este link</b><small>Ele para de valer e os pedidos dele somem</small></span></button>
+        <p id="cvl-msg" class="pg-msg" role="status"></p>
+        <p class="pg-nota">O link leva, depois do “#”, uma chave que abre só o <b>nome</b> do grupo (nunca as mensagens). Quem recebe o link e a chave consegue ver o nome do grupo, mas só entra se um admin aceitar.</p>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="convite-ver">
+    <form method="dialog" class="cv-ver">
+      <span id="cvv-av" class="avatar grupo grande" aria-hidden="true"></span>
+      <h2 id="cvv-titulo">Convite para um grupo</h2>
+      <p id="cvv-nome" class="cv-nome"></p>
+      <p id="cvv-info" class="cv-info"></p>
+      <p id="cvv-msg" class="pg-msg" role="status"></p>
+      <div class="dialog-actions col"><button type="button" id="cvv-pedir" class="primary" hidden>Pedir para entrar</button><button type="button" id="cvv-abrir" class="primary" hidden>Abrir o grupo</button><button value="cancel" id="cvv-fechar" class="ghost" formnovalidate>Fechar</button></div>
+    </form>
+  </dialog>
+
   <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
 
-  <script src="guarda.js?v=b3634c9acb"></script>
+  <script src="guarda.js?v=f3b417523c"></script>
 </body>
 </html>
