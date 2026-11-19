@@ -5,6 +5,9 @@ export const TEMAS = [["selos", "Selos"], ["mensagens", "Mensagens"], ["grupos",
 const NOME_TEMA = new Map(TEMAS);
 export const temaNome = (t) => NOME_TEMA.get(t) || null;
 export const NOVIDADES = [
+  { id: "2026-11-20-1", data: "2026-11-20", itens: [
+    { tema: "mensagens", icone: "🧠", titulo: "Resumo de áudio com IA", texto: "Depois de transcrever um áudio longo, aparece o botão Resumir: uma inteligência artificial pequena, que roda só no seu aparelho, escreve os pontos principais. Na primeira vez você escolhe baixar o modelo (885 MB, uma vez só, use Wi-Fi). Ele vem do Hugging Face, que vê o seu endereço de internet (e só isso), e cada arquivo é conferido por uma assinatura de segurança antes de ser usado. O áudio e o texto nunca saem do aparelho. O resumo demora vários minutos (uns 5 num computador comum) e pode errar: sempre aparece marcado como automático, então confira datas, valores e nomes. Dá para apagar o modelo do aparelho quando quiser." },
+  ] },
   { id: "2026-11-19-1", data: "2026-11-19", itens: [
     { tema: "grupos", icone: "🔗", titulo: "Links de convite para grupos", texto: "Em Dados do grupo, quem administra pode criar links de convite: cada um com seu nome, sua validade (24 horas, 7 dias, 30 dias ou sem fim), seu limite de pessoas e um QR code para mostrar na hora. Quem tem conta e abre o link vê o nome do grupo e pede para entrar; um admin aceita pelo aviso no alto do grupo (ou o link aceita sozinho, se você escolher assim). Dá para desligar um link a qualquer momento. A pessoa só vê as mensagens de depois que entrou." },
   ] },

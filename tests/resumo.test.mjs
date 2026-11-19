@@ -30,6 +30,6 @@ test("memória: Chrome informa; Safari não informa (tenta com aviso); pouca mem
   assert.equal(memoriaOk(undefined).ok, true); assert.match(memoriaOk(undefined).aviso, /não informa/); assert.equal(memoriaOk(NaN).ok, true);
 });
 test("estimativa, peso e quando oferecer", () => {
-  assert.match(estimativaResumo(300), /^uns \d+ s$/); assert.match(estimativaResumo(4500), /min$/); assert.equal(estimativaResumo(undefined), "uns 40 s");
+  assert.match(estimativaResumo(300), /^uns \d+ min/); assert.equal(estimativaResumo(1300), "uns 5 min, ou mais em celular mais fraco"); assert.match(estimativaResumo(4500), /^uns [4-9] min/); assert.match(estimativaResumo(undefined), /^uns 4 min/);
   assert.equal(ofereceResumo("a".repeat(MIN_CHARS_RESUMO)), true); assert.equal(ofereceResumo("a".repeat(MIN_CHARS_RESUMO - 1)), false); assert.equal(ofereceResumo("   "), false); assert.equal(ofereceResumo("curto", 3), true);
 });

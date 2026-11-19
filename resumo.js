@@ -21,7 +21,7 @@ export const arquivoConhecido = (a) => Object.hasOwn(MODELO.arquivos, a);
 
 export const MIN_CHARS_RESUMO = 400; // só oferece o resumo quando a transcrição já é longa (um recado curto não precisa)
 export const MAX_CHARS_ENTRADA = 4500; // o que entra no modelo (uns 5 minutos de fala); o resto é cortado, com aviso
-export const MAX_TOKENS = 240;
+export const MAX_TOKENS = 200;
 export const MAX_RESUMO = 1400;
 export const MEMORIA_MIN_GB = 4; // aparelhos que informam menos que isso (Chrome diz 0.25 a 8) não tentam
 
@@ -54,8 +54,8 @@ export function memoriaOk(deviceMemory) { // navigator.deviceMemory (só Chrome/
   if (deviceMemory < MEMORIA_MIN_GB) return { ok: false, aviso: "Este aparelho tem pouca memória para o resumo com IA (o modelo precisa de uns 2 GB livres)." };
   return { ok: true, aviso: "" };
 }
-export function estimativaResumo(chars) { // segundos de espera "em média" num celular, só para avisar antes
-  const s = Math.max(30, Math.round(40 + (Number(chars) || 0) / 12)); return s < 90 ? `uns ${s} s` : `uns ${Math.round(s / 60)} min`;
+export function estimativaResumo(chars) { // segundos de espera num aparelho comum (medido: ~5,5 min num PC de teste, sem placa de vídeo; o tempo é quase todo gasto escrevendo o resumo, então quase não depende do tamanho do texto)
+  const s = Math.round(240 + (Number(chars) || 0) / 20); return `uns ${Math.max(3, Math.round(s / 60))} min, ou mais em celular mais fraco`;
 }
 export const pesoLegivel = (bytes) => (bytes >= 1048576 ? `${Math.round(bytes / 1048576)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`);
 export const ofereceResumo = (texto, min = MIN_CHARS_RESUMO) => String(texto ?? "").trim().length >= min;

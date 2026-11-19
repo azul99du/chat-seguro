@@ -1089,3 +1089,4 @@ small.ped,.sub .ped{color:var(--seal);font-weight:700}
 .transc-resumo{margin-top:8px;padding:10px 12px;border-radius:12px;background:rgba(232,51,95,.08);border:1.5px dashed var(--seal);font-size:.9rem}
 .transc-resumo-tit{margin:0 0 6px;font:500 .72rem var(--mono);letter-spacing:.03em;text-transform:uppercase;color:var(--seal-dk)}
 .transc-topicos{margin:0;padding:0 0 0 18px;display:grid;gap:4px}.transc-resumo-nota{margin:6px 0 0;font-size:.78rem;color:var(--mut)}
+.transc-cancelar{color:var(--seal-dk)}
