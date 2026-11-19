@@ -1,41 +1,43 @@
 import { createClient } from "./vendor/supabase.js";
 import qrcode from "./vendor/qrcode.js";
-import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=f3b417523c";
-import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=f3b417523c";
-import { montarFigurinhas } from "./figurinhas.js?v=f3b417523c";
-import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=f3b417523c";
-import { recentesDoHistorico, ultimosDoHistorico, historicoComId, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=f3b417523c";
-import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=f3b417523c";
-import { comprimirVideo, suportaCompressao } from "./video.js?v=f3b417523c";
-import { acharVideoLink } from "./videolink.js?v=f3b417523c";
-import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=f3b417523c";
-import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=f3b417523c";
-import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=f3b417523c";
-import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=f3b417523c";
-import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=f3b417523c";
-import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=f3b417523c";
-import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=f3b417523c";
-import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, combinar, destaque, PAGINA_RESULTADOS, MAX_BUSCA, termosAmpliados, termoTrilha, albumOficial, barrasDeOnda, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=f3b417523c";
-import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=f3b417523c";
-import { MAX_SUGESTAO, MAX_POR_DIA, POR_PAGINA, limpaSugestao, restantesHoje, dataCarimbo, corDaNota, limpaSugestoes, erroSugestao } from "./sugestoes.js?v=f3b417523c";
-import { MODELOS, IDS_MODELOS, MODELO_PADRAO, MAX_TRANSCRICAO_S, limpaModelo, mbDoModelo, bytesDoModelo, estimativa, paraMono, limpaTranscricao } from "./transcricao.js?v=f3b417523c";
-import { modeloBaixado, apagarModelo } from "./transcricao-arquivos.js?v=f3b417523c";
-import * as PLM from "./playlist.js?v=f3b417523c";
-import * as FILA from "./fila.js?v=f3b417523c";
-import * as DIG from "./digitando.js?v=f3b417523c";
-import * as POP from "./pop.js?v=f3b417523c";
-import * as BUSCA from "./busca.js?v=f3b417523c";
-import * as EMAIL from "./email.js?v=f3b417523c";
-import * as CONV from "./convite.js?v=f3b417523c";
-import { criarMotor, sondarYoutube } from "./playlist-motor.js?v=f3b417523c";
-import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=f3b417523c";
-import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, precoPlaylist, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=f3b417523c";
-import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=f3b417523c";
-import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=f3b417523c";
-import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=f3b417523c";
-import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=f3b417523c";
-import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=f3b417523c";
-import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=f3b417523c";
+import { SUPABASE_URL, SUPABASE_KEY } from "./config.js?v=270f640f35";
+import { initiate, accept, canSend, encrypt as ratchetEncrypt, decrypt as ratchetDecrypt, validHeader, genDH, randomHex, bytes as toBytes, text as toText } from "./ratchet.js?v=270f640f35";
+import { montarFigurinhas } from "./figurinhas.js?v=270f640f35";
+import { getBlob, hasBlob, putBlob, delBlob } from "./store.js?v=270f640f35";
+import { recentesDoHistorico, ultimosDoHistorico, historicoComId, todoHistorico, acharNoHistorico, metaGet, metaPut, usoLocal, limparBlobs, BLOB_MAX, blobsUsados, exportarHistorico, importarHistorico, commit, getSession, getActive, listSessions, getHistory, getSpks, addSpk, removeSpk, pruneSpks, wipeLocal, withLock } from "./store.js?v=270f640f35";
+import { citacao, citacaoGrupo, limpaCitacao, exibir, rotulo } from "./reply.js?v=270f640f35";
+import { comprimirVideo, suportaCompressao } from "./video.js?v=270f640f35";
+import { acharVideoLink } from "./videolink.js?v=270f640f35";
+import { rotuloHora, dataCompleta, rotuloNovas, textoNovas, contaOnline } from "./lista.js?v=270f640f35";
+import { resumoVistos, arcosDoAnel, textoVistos, textoLongoVistos, somarLinha, juntarLeituras, reciboDm, juntarRecibo, Escuta } from "./visto.js?v=270f640f35";
+import { lerSnapshot, textoDoSnapshot, SNAP_MAX } from "./snapshot.js?v=270f640f35";
+import { DIAS_TROCA, limpaUsuario, dataLiberada } from "./usuario.js?v=270f640f35";
+import { PALETA, estilosDaCor, primeiraLivre, corMaisDiferente, nomeDaCor } from "./cores.js?v=270f640f35";
+import { cargoDe, podeRemover, podeDarCargo, diferencaCargos, limpaFoto, cifrarFoto, abrirFoto as abrirFotoCifrada, partirTexto, mencionados, tokenMencao, sugerirMembros, MAX_MEMBROS, MAX_NOME, ehMid, limpaNome, novaChave, cifrarNome, abrirNome, embrulho, abrirEmbrulho, conteudoBate, lotes, montarGrupos, diferencaMembros, textoAviso, resumoMembros, contagem, corDoAutor } from "./grupo.js?v=270f640f35";
+import { porDia, publicavel, mesclar, resumir, sequencia, textoSequencia, tempoTexto, somarTela, noGrupoHa, ranking, totalDe, primeiroDia, diaLocal } from "./estatisticas.js?v=270f640f35";
+import { urlBusca, limpaBusca, janelaDoTrecho, limpaMusica, textoMusica, mmssCurto, combinar, destaque, PAGINA_RESULTADOS, MAX_BUSCA, termosAmpliados, termoTrilha, albumOficial, barrasDeOnda, PADRAO_TRECHO_S, MAX_TRECHO_S, MIN_TRECHO_S } from "./musica.js?v=270f640f35";
+import { NOVIDADES, limpaVisto, maisNovaId, novosDesde, dataCurta, temasPresentes, filtrar, agruparPorTema } from "./novidades.js?v=270f640f35";
+import { MAX_SUGESTAO, MAX_POR_DIA, POR_PAGINA, limpaSugestao, restantesHoje, dataCarimbo, corDaNota, limpaSugestoes, erroSugestao } from "./sugestoes.js?v=270f640f35";
+import { MODELOS, IDS_MODELOS, MODELO_PADRAO, MAX_TRANSCRICAO_S, limpaModelo, mbDoModelo, bytesDoModelo, estimativa, paraMono, limpaTranscricao } from "./transcricao.js?v=270f640f35";
+import { modeloBaixado, apagarModelo } from "./transcricao-arquivos.js?v=270f640f35";
+import * as PLM from "./playlist.js?v=270f640f35";
+import * as FILA from "./fila.js?v=270f640f35";
+import * as DIG from "./digitando.js?v=270f640f35";
+import * as POP from "./pop.js?v=270f640f35";
+import * as BUSCA from "./busca.js?v=270f640f35";
+import * as EMAIL from "./email.js?v=270f640f35";
+import * as CONV from "./convite.js?v=270f640f35";
+import * as RS from "./resumo.js?v=270f640f35";
+import { modeloResumoBaixado, baixarModeloResumo, apagarModeloResumo } from "./resumo-arquivos.js?v=270f640f35";
+import { criarMotor, sondarYoutube } from "./playlist-motor.js?v=270f640f35";
+import { ITENS, INFO, TITULOS_LOJA, tituloTexto, estadoDaLoja, silenciadoAte, emDestaque, avisosNovos, erroLoja, eSilenciado, horaFim, atrasoSusto, limpaPendentes, limpaArquivoSusto, MAX_JUMPSCARES, limpaEfeitos, efeitoAtivoDe, mensagemRecente, limpaFundos, fundoEfetivo } from "./loja.js?v=270f640f35";
+import { ACOES, LOJA, TITULOS, mediaDaLoja, coletaLigada, precoDaLoja, precoEfeito, precoFundo, precoPlaylist, PASSOS_MAX, minutosDoEfeito, regrasVazias, limpaRegras, igualRegras, marcoNovo, ajustaCampo, faixa, frase, fraseTexto, frasesLigadas, previa, textoSelos, saldoLimpo, erroRegras } from "./selos.js?v=270f640f35";
+import { riscoDeLocal as riscoDe } from "./aparelhos.js?v=270f640f35";
+import { novoId, idValido, resumo as resumoDisp, textoPendentes, nomeDoAparelho, AVISO_PENDENTE, erroAmigavel as erroDisp, ehRef, chaveSessao, limpaPrekeys, alvosDeEnvio, copiaPropriaValida, lotesDm, faltaMs, textoFalta, AVISO_RECUPERACAO, copiaGrupoValida, lotesGrupo, loteDeOutroAparelho, trabalhosDeEnvio, emLevas } from "./dispositivos.js?v=270f640f35";
+import { cleanImage, cleanVideo, cleanAudio, somDoVideo, decodificarAudio, trechoPcm, pcm16ParaWav, sealBytes, openBytes } from "./media.js?v=270f640f35";
+import { gerarSenha, empacotar, abrir as abrirHistorico, MIN_SENHA_ARQUIVO } from "./historico.js?v=270f640f35";
+import { LADO, CAMINHO_OK, TIPOS_ENTRADA, desenhar, codificar, caminhoNovo } from "./avatar.js?v=270f640f35";
+import { createKeys, getLocalKeys, encrypt, decrypt, makeBackup, restoreBackup, safetyCode, mesmaChavePublica, fingerprint, deleteLocalKeys } from "./crypto.js?v=270f640f35";
 
 const avisoDoLinkEmail = (() => { try { return EMAIL.avisoDoLink(location.hash || location.search); } catch { return null; } })(); // (o link de confirmação do e-mail volta ao site com o resultado no endereço)
 let conviteLink = (() => { // link de convite de grupo (#convite=segredo.chave): guardado só nesta aba até a pessoa decidir
@@ -4275,9 +4277,10 @@ function trExecuta(modelo, audio, hooks) { // uma transcrição por vez
   });
 }
 function blocoTranscricao(c) {
-  const raiz = el("div", "transc"), btn = el("button", "transc-btn", "Transcrever"), msg = el("p", "transc-msg"), saida = el("div", "transc-saida"), rod = el("div", "transc-rod");
+  const raiz = el("div", "transc"), btn = el("button", "transc-btn", "Transcrever"), msg = el("p", "transc-msg"), saida = el("div", "transc-saida"), rod = el("div", "transc-rod"), res = el("div", "transc-resumo");
+  res.hidden = true;
   btn.type = "button"; btn.setAttribute("aria-label", "Transcrever este áudio em texto"); msg.setAttribute("role", "status"); saida.hidden = true; rod.hidden = true; msg.hidden = true;
-  const ui = { c, btn, msg, saida, rod };
+  const ui = { c, btn, msg, saida, rod, res, texto: "" };
   const mostra = (t) => { msg.hidden = !t; msg.textContent = t || ""; };
   ui.mostra = mostra;
   const textoPronto = (t, modelo) => {
@@ -4286,15 +4289,82 @@ function blocoTranscricao(c) {
     for (const b of [trocar, copiar, ocultar]) b.type = "button";
     trocar.onclick = () => trAbrirFolha(ui); copiar.onclick = async () => { try { await navigator.clipboard.writeText(t); copiar.textContent = "Copiado ✓"; setTimeout(() => { copiar.textContent = "Copiar"; }, 1800); } catch { copiar.textContent = "Não foi possível copiar"; } };
     ocultar.onclick = () => { saida.hidden = true; rod.hidden = true; btn.hidden = false; btn.textContent = "Mostrar transcrição"; };
-    rod.replaceChildren(trocar, copiar, ocultar); btn.hidden = true;
+    ui.texto = t || ""; const botoes = [trocar, copiar, ocultar];
+    if (RS.ofereceResumo(t, rsMin())) { const resumir = el("button", "transc-resumir", rs.textos.has(c.path) ? "Ver o resumo" : "Resumir"); resumir.type = "button"; resumir.setAttribute("aria-label", "Resumir esta transcrição com inteligência artificial, no aparelho"); resumir.onclick = () => rsPedir(ui); botoes.unshift(resumir); }
+    rod.replaceChildren(...botoes); btn.hidden = true; if (rs.textos.has(c.path)) rsMostrar(ui, rs.textos.get(c.path));
   };
   ui.pronto = textoPronto;
   btn.onclick = async () => {
     const guardado = tr.textos.get(c.path); if (guardado && btn.textContent === "Mostrar transcrição") { textoPronto(guardado.texto, guardado.modelo); return; }
     if (await modeloBaixado(tr.modelo)) trComecar(ui, tr.modelo); else trAbrirFolha(ui);
   };
-  raiz.append(btn, msg, saida, rod); return raiz;
+  raiz.append(btn, msg, saida, rod, res); return raiz;
 }
+// ---------- Resumo com IA (modelo baixado do Hugging Face, versão fixa e conferida; roda no aparelho) ----------
+const rs = { w: null, ocioso: null, atual: null, alvo: null, baixando: null, textos: new Map() };
+const rsMin = () => { try { const v = Number(localStorage.getItem("lacre:resumo-min")); if (Number.isFinite(v) && v >= 10) return v; } catch {} return RS.MIN_CHARS_RESUMO; }; // (os testes baixam o limite)
+function rsWorker() {
+  clearTimeout(rs.ocioso);
+  if (!rs.w) {
+    const u = new URL("./resumo-worker.js", import.meta.url); u.search = new URL(import.meta.url).search;
+    const w = rs.w = new Worker(u, { type: "module" });
+    w.onmessage = (e) => { const d = e.data || {}, h = rs.atual; if (!h) return; if (d.tipo === "estado") h.estado?.(d.fase); else if (d.tipo === "pronto") h.ok(d); else if (d.tipo === "erro") h.erro(new Error(d.mensagem || "Não foi possível resumir agora.")); };
+    w.onerror = () => { const h = rs.atual; rsMataWorker(); h?.erro(new Error("Não foi possível iniciar o resumo neste aparelho (pouca memória?).")); };
+  }
+  return rs.w;
+}
+function rsMataWorker() { clearTimeout(rs.ocioso); try { rs.w?.terminate(); } catch {} rs.w = null; }
+const rsDescansa = () => { clearTimeout(rs.ocioso); rs.ocioso = setTimeout(() => { if (!rs.atual) rsMataWorker(); }, 60000); }; // (solta a memória do modelo logo que fica parado: ele é grande)
+function rsExecuta(texto, hooks) { // um resumo por vez
+  return new Promise((ok, erro) => {
+    rs.atual = { ...hooks, ok: (d) => { rs.atual = null; rsDescansa(); ok(d); }, erro: (e) => { rs.atual = null; rsMataWorker(); erro(e); } };
+    try { rsWorker().postMessage({ tipo: "resumir", id: 1, texto }); } catch (e) { rs.atual = null; erro(e); }
+  });
+}
+async function rsPedir(ui) {
+  if (rs.textos.has(ui.c.path)) { rsMostrar(ui, rs.textos.get(ui.c.path)); return; }
+  const mem = RS.memoriaOk(navigator.deviceMemory); if (!mem.ok) { ui.mostra(mem.aviso); return; }
+  if (await modeloResumoBaixado()) return rsComecar(ui);
+  rs.alvo = ui; await rsDesenharFolha(); $("rs-folha").showModal();
+}
+async function rsComecar(ui) {
+  if (rs.atual) { ui.mostra("Já há um resumo em andamento. Espere ele terminar."); return; }
+  const botao = ui.rod.querySelector(".transc-resumir"); if (botao) botao.disabled = true; ui.mostra("Carregando o modelo…");
+  try {
+    const r = await rsExecuta(ui.texto, { estado: (f) => ui.mostra(f === "resumindo" ? `Resumindo (${RS.estimativaResumo(ui.texto.length)} neste aparelho)…` : "Carregando o modelo… (na primeira vez demora um pouco mais)") });
+    rs.textos.set(ui.c.path, { resumo: r.resumo, cortou: !!r.cortou }); ui.mostra(""); if (botao) botao.textContent = "Ver o resumo"; rsMostrar(ui, rs.textos.get(ui.c.path));
+  } catch (e) { ui.mostra(String(e?.message || "Não foi possível resumir agora.")); }
+  if (botao) botao.disabled = false;
+}
+function rsMostrar(ui, r) { // o resumo aparece embaixo da transcrição, sempre com o aviso de que é automático
+  const topicos = RS.topicos(r.resumo), lista = el("ul", "transc-topicos"); for (const t of topicos) lista.append(el("li", null, t));
+  const copiar = el("button", null, "Copiar"), ocultar = el("button", null, "Ocultar"), modelo = el("button", null, "Modelo de IA…"); for (const b of [copiar, ocultar, modelo]) b.type = "button";
+  copiar.onclick = async () => { try { await navigator.clipboard.writeText(topicos.map((t) => "- " + t).join("\n")); copiar.textContent = "Copiado ✓"; setTimeout(() => { copiar.textContent = "Copiar"; }, 1800); } catch { copiar.textContent = "Não deu"; } };
+  ocultar.onclick = () => { ui.res.hidden = true; };
+  modelo.onclick = async () => { rs.alvo = ui; await rsDesenharFolha(); $("rs-folha").showModal(); };
+  ui.res.replaceChildren(el("p", "transc-resumo-tit", "Resumo automático — pode errar: confira datas, valores e nomes"), lista, ...(r.cortou ? [el("p", "transc-resumo-nota", "A transcrição era muito longa: só o começo foi resumido.")] : []), el("div", "transc-rod", ""));
+  ui.res.lastChild.append(copiar, ocultar, modelo); ui.res.hidden = false;
+}
+async function rsDesenharFolha() {
+  const baixado = await modeloResumoBaixado(), mem = RS.memoriaOk(navigator.deviceMemory), ui = rs.alvo;
+  $("rs-mb").textContent = `${RS.mbTotais()} MB`; $("rs-lista").hidden = baixado; $("rs-prog").hidden = !rs.baixando; $("rs-apagar").hidden = !baixado || !!rs.baixando;
+  $("rs-intro").textContent = baixado ? "O modelo de IA já está neste aparelho. O resumo é feito aqui mesmo: o áudio e o texto nunca saem dele." : "Um modelo de inteligência artificial pequeno resume a transcrição aqui mesmo, no seu aparelho. O áudio e o texto nunca saem dele.";
+  $("rs-ir").hidden = false; $("rs-ir").disabled = !mem.ok || !!rs.baixando; $("rs-ir").textContent = rs.baixando ? "Baixando…" : baixado ? "Resumir" : `Baixar (${RS.mbTotais()} MB) e resumir`;
+  $("rs-fechar").textContent = rs.baixando ? "Cancelar o download" : "Agora não";
+  if (!rs.baixando) $("rs-aviso").textContent = mem.aviso || (baixado && ui?.texto ? `Neste texto, deve levar ${RS.estimativaResumo(ui.texto.length)} (em celular mais fraco, mais).` : "");
+}
+$("rs-ir").onclick = async () => {
+  const ui = rs.alvo; if (rs.baixando) return; const baixado = await modeloResumoBaixado();
+  if (baixado) { $("rs-folha").close(); if (ui) rsComecar(ui); return; }
+  const ctl = new AbortController(); rs.baixando = ctl; let feito = 0; const total = RS.bytesTotais(); $("rs-prog").value = 0; await rsDesenharFolha(); $("rs-aviso").textContent = "Baixando o modelo… não feche esta tela.";
+  try {
+    await baixarModeloResumo({ sinal: ctl.signal, progresso: (n) => { feito += n; const p = Math.min(100, Math.round((feito / total) * 100)); $("rs-prog").value = p; $("rs-aviso").textContent = `Baixando e conferindo o modelo… ${p}% (${RS.pesoLegivel(feito)} de ${RS.pesoLegivel(total)})`; } });
+    rs.baixando = null; $("rs-folha").close(); if (ui) rsComecar(ui);
+  } catch (e) { rs.baixando = null; $("rs-aviso").textContent = e?.name === "AbortError" ? "Download cancelado. O que já foi conferido fica guardado." : String(e?.message || "Não foi possível baixar o modelo agora. Tente de novo com uma boa conexão."); await rsDesenharFolha(); }
+};
+$("rs-apagar").onclick = async () => { await apagarModeloResumo(); rsMataWorker(); rs.textos.clear(); await rsDesenharFolha(); $("rs-aviso").textContent = "Modelo apagado do aparelho."; };
+$("rs-fechar").onclick = () => { if (rs.baixando) { rs.baixando.abort(); return; } $("rs-folha").close(); };
+$("rs-folha").addEventListener("cancel", (e) => { if (rs.baixando) { e.preventDefault(); rs.baixando.abort(); } });
 async function trComecar(ui, modelo) {
   if (tr.atual) { ui.mostra("Já há uma transcrição em andamento. Espere ela terminar."); return; }
   ui.btn.disabled = true; ui.mostra("Preparando o áudio…");

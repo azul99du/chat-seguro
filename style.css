@@ -1081,3 +1081,11 @@ dialog.musica-folha{max-height:88dvh;overflow:auto}
 .ped-ok,.ped-no{min-height:34px;padding:4px 12px;border-radius:99px;font-weight:700;font-size:.8rem}.ped-ok{background:var(--seal);color:#fff;border:0}.ped-no{background:none;border:1.5px solid #C9B25A;color:#4a3a1a}
 .ped-linha{display:flex;align-items:center;gap:10px;padding:10px 16px}.ped-linha .tx{flex:1;min-width:0;display:flex;flex-direction:column}.ped-linha small{color:var(--mut)}
 small.ped,.sub .ped{color:var(--seal);font-weight:700}
+
+/* ===== resumo com IA ===== */
+.rs-lista{margin:0 0 8px;padding:0 20px 0 36px;display:grid;gap:8px;font-size:.9rem;color:var(--texto)}
+#rs-prog{display:block;width:calc(100% - 32px);margin:4px 16px 8px;height:10px;accent-color:var(--seal)}#rs-prog[hidden]{display:none}
+.transc-resumir{font-weight:700}
+.transc-resumo{margin-top:8px;padding:10px 12px;border-radius:12px;background:rgba(232,51,95,.08);border:1.5px dashed var(--seal);font-size:.9rem}
+.transc-resumo-tit{margin:0 0 6px;font:500 .72rem var(--mono);letter-spacing:.03em;text-transform:uppercase;color:var(--seal-dk)}
+.transc-topicos{margin:0;padding:0 0 0 18px;display:grid;gap:4px}.transc-resumo-nota{margin:6px 0 0;font-size:.78rem;color:var(--mut)}

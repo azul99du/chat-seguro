@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#15174A">
   <meta name="referrer" content="no-referrer">
   <!-- Só roda código deste próprio site; só conversa com o seu Supabase. -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; manifest-src 'self'; worker-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob: data: https://i.ytimg.com https://is1-ssl.mzstatic.com https://is2-ssl.mzstatic.com https://is3-ssl.mzstatic.com https://is4-ssl.mzstatic.com https://is5-ssl.mzstatic.com; media-src blob: https://audio-ssl.itunes.apple.com; frame-src https://www.youtube-nocookie.com https://www.instagram.com https://www.tiktok.com; connect-src 'self' https://okiurdcgbjaylihbycxn.supabase.co wss://okiurdcgbjaylihbycxn.supabase.co https://itunes.apple.com https://audio-ssl.itunes.apple.com; base-uri 'none'; form-action 'self'; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; manifest-src 'self'; worker-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' blob: data: https://i.ytimg.com https://is1-ssl.mzstatic.com https://is2-ssl.mzstatic.com https://is3-ssl.mzstatic.com https://is4-ssl.mzstatic.com https://is5-ssl.mzstatic.com; media-src blob: https://audio-ssl.itunes.apple.com; frame-src https://www.youtube-nocookie.com https://www.instagram.com https://www.tiktok.com; connect-src 'self' https://okiurdcgbjaylihbycxn.supabase.co wss://okiurdcgbjaylihbycxn.supabase.co https://itunes.apple.com https://audio-ssl.itunes.apple.com https://huggingface.co https://*.hf.co; base-uri 'none'; form-action 'self'; object-src 'none'">
   <title>Lacre — conversa só entre vocês</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="icon" href="favicon.ico" sizes="48x48">
@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=f3b417523c">
+  <link rel="stylesheet" href="style.css?v=270f640f35">
 </head>
 <body>
 
@@ -450,6 +450,25 @@
     <div class="btns"><button type="button" id="sn-ok" class="btn-rosa">Pronto</button></div>
   </dialog>
 
+  <dialog id="rs-folha" class="folha-seg" aria-labelledby="rs-titulo">
+    <div class="grab"></div>
+    <h2 id="rs-titulo">Resumir com IA</h2>
+    <p id="rs-intro">Um modelo de inteligência artificial pequeno resume a transcrição aqui mesmo, no seu aparelho. <b>O áudio e o texto nunca saem dele.</b></p>
+    <ul id="rs-lista" class="rs-lista">
+      <li>Primeiro é preciso baixar o modelo: <b id="rs-mb"></b>, uma vez só. Use Wi-Fi.</li>
+      <li>Ele vem direto do <b>Hugging Face</b>, que vê o seu endereço de internet (e só isso), como a Apple vê na busca de música.</li>
+      <li>Cada arquivo é conferido por uma assinatura de segurança antes de ser usado; se não bater, é descartado.</li>
+      <li>O resumo é automático e <b>pode errar</b>: confira datas, valores e nomes no texto.</li>
+    </ul>
+    <p id="rs-aviso" class="tr-aviso" role="status"></p>
+    <progress id="rs-prog" max="100" value="0" hidden aria-label="Andamento do download"></progress>
+    <div class="btns">
+      <button type="button" id="rs-ir" class="primary">Baixar e resumir</button>
+      <button type="button" id="rs-apagar" class="ghost" hidden>Apagar o modelo do aparelho</button>
+      <button type="button" id="rs-fechar" class="ghost">Agora não</button>
+    </div>
+  </dialog>
+
   <dialog id="tr-folha" class="folha-seg" aria-labelledby="tr-titulo">
     <div class="grab"></div>
     <h2 id="tr-titulo">Transcrever áudio</h2>
@@ -758,6 +777,6 @@
 
   <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
 
-  <script src="guarda.js?v=f3b417523c"></script>
+  <script src="guarda.js?v=270f640f35"></script>
 </body>
 </html>

@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const raiz = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const ler = (f) => readFileSync(join(raiz, f), "utf8");
-const APP = ["guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "recorte.js", "recorte-config.js", "sam2.js", "figurinhas.js", "avatar.js", "historico.js", "video.js", "aparelhos.js", "dispositivos.js", "grupo.js", "videolink.js", "lista.js", "usuario.js", "cores.js", "estatisticas.js", "selos.js", "snapshot.js", "visto.js", "loja.js", "novidades.js", "musica.js", "sugestoes.js", "fila.js", "digitando.js", "pop.js", "busca.js", "email.js", "convite.js", "transcricao.js", "transcricao-arquivos.js", "transcricao-worker.js", "playlist.js", "playlist-motor.js", "sw.js", "supabase/functions/notificar/vapid.js"];
+const APP = ["guarda.js", "app.js", "media.js", "crypto.js", "store.js", "ratchet.js", "verify.js", "reply.js", "sticker.js", "recorte.js", "recorte-config.js", "sam2.js", "figurinhas.js", "avatar.js", "historico.js", "video.js", "aparelhos.js", "dispositivos.js", "grupo.js", "videolink.js", "lista.js", "usuario.js", "cores.js", "estatisticas.js", "selos.js", "snapshot.js", "visto.js", "loja.js", "novidades.js", "musica.js", "sugestoes.js", "fila.js", "digitando.js", "pop.js", "busca.js", "email.js", "convite.js", "transcricao.js", "transcricao-arquivos.js", "transcricao-worker.js", "sha256.js", "resumo.js", "resumo-arquivos.js", "resumo-worker.js", "playlist.js", "playlist-motor.js", "sw.js", "supabase/functions/notificar/vapid.js"];
 const rastreados = execFileSync("git", ["ls-files"], { cwd: raiz, encoding: "utf8" }).split("\n").filter(Boolean);
 
 describe("código", () => {
@@ -65,14 +65,16 @@ describe("política de segurança do navegador (CSP)", () => {
   test("existe e só roda script do próprio site", () => {
     assert.ok(csp, "meta CSP ausente");
     assert.equal(dir("script-src"), "script-src 'self' 'wasm-unsafe-eval'", "wasm-unsafe-eval só deixa compilar WebAssembly (recorte inteligente); não libera eval de texto");
-    assert.doesNotMatch(csp, /unsafe-inline|(?<!wasm-)unsafe-eval|\*/);
+    assert.doesNotMatch(csp, /unsafe-inline|(?<!wasm-)unsafe-eval/);
+    assert.deepEqual(csp.match(/[^\s;]*\*[^\s;]*/g), ["https://*.hf.co"], "o ÚNICO curinga permitido é o dos servidores de arquivos do Hugging Face (só para baixar o modelo do resumo com IA, depois que a pessoa aceita)");
     assert.match(csp, /default-src 'none'/);
     assert.match(csp, /object-src 'none'/);
   });
   test("só conversa com o Supabase configurado em config.js", () => {
     const host = new URL(ler("config.js").match(/SUPABASE_URL\s*=\s*"([^"]+)"/)[1]).host;
-    // (além do Supabase, só a busca e os trechos de música da Apple, para a função "Música" das conversas: dois endereços exatos, sem curinga)
-    assert.equal(dir("connect-src"), `connect-src 'self' https://${host} wss://${host} https://itunes.apple.com https://audio-ssl.itunes.apple.com`);
+    // (além do Supabase: a busca e os trechos de música da Apple, para a função "Música" (dois endereços exatos), e o Hugging Face, só para baixar o modelo do resumo com IA
+    // depois que a pessoa aceita: huggingface.co e os servidores de arquivos dele, que são todos *.hf.co (o endereço exato muda com a região; é o único curinga e só vale dentro de hf.co))
+    assert.equal(dir("connect-src"), `connect-src 'self' https://${host} wss://${host} https://itunes.apple.com https://audio-ssl.itunes.apple.com https://huggingface.co https://*.hf.co`);
   });
   test("imagens só do próprio site, das capas de música da Apple (cinco endereços exatos) e das miniaturas do YouTube (sem curinga)", () => {
     assert.equal(dir("img-src"), "img-src 'self' blob: data: https://i.ytimg.com " + [1, 2, 3, 4, 5].map((i) => `https://is${i}-ssl.mzstatic.com`).join(" "));
