@@ -1,7 +1,7 @@
 // Arquivos do modelo de resumo: baixados do Hugging Face (versão fixa), CONFERIDOS pela assinatura SHA-256 e guardados no aparelho (Cache API).
 // Nada é usado antes de conferir: se o tamanho ou a assinatura não baterem, o arquivo é descartado e a pessoa é avisada. Usado pela tela e pelo worker.
-import { MODELO, CACHE_RESUMO, urlDoArquivo, arquivoConhecido } from "./resumo.js?v=381ebc61e3";
-import { Sha256 } from "./sha256.js?v=381ebc61e3";
+import { MODELO, CACHE_RESUMO, urlDoArquivo, arquivoConhecido } from "./resumo.js?v=57186633d8";
+import { Sha256 } from "./sha256.js?v=57186633d8";
 const chave = (arquivo) => new URL(`/__lacre_resumo__/${MODELO.id}/${arquivo}`, self.location.href).href; // (endereço só nosso: o arquivo guardado não tem relação com o endereço de onde veio)
 const tipoDe = (arquivo) => (arquivo.endsWith(".json") ? "application/json" : "application/octet-stream");
 const tamanhoGuardado = (r) => Number(r.headers.get("content-length"));

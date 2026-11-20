@@ -1,6 +1,6 @@
 // Arquivos dos modelos de transcrição: baixados do próprio site (vendor/whisper/), juntados se estiverem em partes e guardados no aparelho (Cache API),
 // para a segunda vez não baixar de novo. Usado pela tela (para saber se o modelo já está no aparelho) e pelo worker (para carregá-lo).
-import { MODELOS, limpaModelo, enderecosDoArquivo, CACHE_MODELOS } from "./transcricao.js?v=381ebc61e3";
+import { MODELOS, limpaModelo, enderecosDoArquivo, CACHE_MODELOS } from "./transcricao.js?v=57186633d8";
 export const baseVendor = () => new URL("./vendor/whisper/", import.meta.url);
 const chave = (id, arquivo) => new URL(`${id}/${arquivo}`, baseVendor()).href;
 const tipoDe = (arquivo) => (arquivo.endsWith(".json") ? "application/json" : "application/octet-stream");

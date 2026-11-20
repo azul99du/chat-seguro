@@ -5,6 +5,9 @@ export const TEMAS = [["selos", "Selos"], ["mensagens", "Mensagens"], ["grupos",
 const NOME_TEMA = new Map(TEMAS);
 export const temaNome = (t) => NOME_TEMA.get(t) || null;
 export const NOVIDADES = [
+  { id: "2026-11-20-2", data: "2026-11-20", itens: [
+    { tema: "geral", icone: "🗑️", titulo: "Apagar os modelos de IA", texto: "Em Armazenamento, a nova parte \"Modelos de IA baixados\" mostra se o modelo de resumo e os de transcrição estão no aparelho e deixa apagar cada um, liberando o espaço. Nenhuma mensagem é apagada, e dá para baixar de novo quando quiser." },
+  ] },
   { id: "2026-11-20-1", data: "2026-11-20", itens: [
     { tema: "mensagens", icone: "🧠", titulo: "Resumo de áudio com IA", texto: "Depois de transcrever um áudio longo, aparece o botão Resumir: uma inteligência artificial pequena, que roda só no seu aparelho, escreve os pontos principais. Na primeira vez você escolhe baixar o modelo (885 MB, uma vez só, use Wi-Fi). Ele vem do Hugging Face, que vê o seu endereço de internet (e só isso), e cada arquivo é conferido por uma assinatura de segurança antes de ser usado. O áudio e o texto nunca saem do aparelho. O resumo demora vários minutos (uns 5 num computador comum) e pode errar: sempre aparece marcado como automático, então confira datas, valores e nomes. Dá para apagar o modelo do aparelho quando quiser." },
   ] },

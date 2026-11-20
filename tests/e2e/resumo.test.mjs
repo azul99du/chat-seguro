@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { chromium } from "playwright";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, chamar } from "./env.mjs";
+import { configurado, motivoSemConfig, prepararSite, servir, cadastroFunciona, novoEmail, novoUsuario, SENHA, FRASE, chamar, menuConta } from "./env.mjs";
 
 const FALA = join(dirname(fileURLToPath(import.meta.url)), "..", "fixtures", "fala-pt.mp3");
 let skip = configurado ? false : motivoSemConfig, browser, srv, A, nomeB; const erros = [], pedidosHf = [];
@@ -52,5 +52,15 @@ t("aparelho com pouca memória não tenta: avisa e nem abre o download", async (
 });
 t("o site só fala com o Hugging Face depois do consentimento e o CSP continua sem script de fora", async () => {
   const csp = await A.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute("content"); assert.match(csp, /connect-src[^;]*https:\/\/huggingface\.co https:\/\/\*\.hf\.co/); assert.match(csp, /script-src 'self' 'wasm-unsafe-eval'/); assert.doesNotMatch(csp, /script-src[^;]*hf\.co/);
+});
+t("desinstalar: Armazenamento mostra o modelo instalado e o botão apaga (pede confirmação); sem modelo, o botão some", async () => {
+  await A.evaluate(async () => { const c = await caches.open("lacre-resumo-v1"), tam = { "config.json": 912, "generation_config.json": 219, "tokenizer.json": 9117040, "tokenizer_config.json": 10369, "onnx/model_q4.onnx": 919096585 };
+    for (const [a, n] of Object.entries(tam)) await c.put(new URL(`/__lacre_resumo__/qwen3-0.6b-q4/${a}`, location.href).href, new Response("x", { headers: { "content-length": String(n) } })); }); // (arquivos de mentira só com o tamanho certo no cabeçalho)
+  await A.keyboard.press("Escape"); await A.click("#back"); await menuConta(A, "#arm-btn"); await A.waitForSelector("#armaz[open]");
+  await A.waitForFunction(() => /Instalado: 885 MB/.test(document.querySelector("#arm-ia-resumo-txt").textContent), null, { timeout: 10000 }); assert.equal(await A.locator("#arm-ia-resumo-apagar").isVisible(), true);
+  await A.click("#arm-ia-resumo-apagar"); await A.waitForSelector("#choice[open]"); assert.match(await A.locator("#choice").innerText(), /Nenhuma mensagem será apagada/); await A.click('#choice button[value=""]'); assert.equal(await guardados(), 5, "cancelar não apaga");
+  await A.click("#arm-ia-resumo-apagar"); await A.waitForSelector("#choice[open]"); await A.click("#choice button[value=sim]");
+  await A.waitForFunction(() => /Não está instalado/.test(document.querySelector("#arm-ia-resumo-txt").textContent), null, { timeout: 10000 }); assert.equal(await A.locator("#arm-ia-resumo-apagar").isHidden(), true); assert.equal(await guardados(), 0, "apagou do aparelho");
+  assert.match(await A.locator("#arm-ia-tr-txt").innerText(), /Instalado: Base/, "o modelo de transcrição usado no teste aparece"); assert.equal(await A.locator("#arm-ia-tr-apagar").isVisible(), true);
 });
 t("sem erros de página", () => assert.deepEqual(erros, []));

@@ -1,7 +1,7 @@
 // Worker do resumo: carrega o modelo de linguagem (Transformers.js + ONNX Runtime Web, WebAssembly, 1 thread) a partir dos arquivos JÁ conferidos e guardados no aparelho
 // e gera o resumo da transcrição. Recebe { tipo: "resumir", id, texto }. Manda: estado, pronto, erro. Nada sai do aparelho.
-import { MODELO, MAX_TOKENS, mensagensDoPedido, recorteDaEntrada, limpaResumo } from "./resumo.js?v=381ebc61e3";
-import { respostaDoArquivo, modeloResumoBaixado } from "./resumo-arquivos.js?v=381ebc61e3";
+import { MODELO, MAX_TOKENS, mensagensDoPedido, recorteDaEntrada, limpaResumo } from "./resumo.js?v=57186633d8";
+import { respostaDoArquivo, modeloResumoBaixado } from "./resumo-arquivos.js?v=57186633d8";
 const vendor = new URL("./vendor/whisper/", import.meta.url), RAIZ = "/__lacre_resumo__/";
 let T = null, gen = null, fila = Promise.resolve(); const manda = (m) => postMessage(m);
 async function lib() {

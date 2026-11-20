@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=381ebc61e3">
+  <link rel="stylesheet" href="style.css?v=57186633d8">
 </head>
 <body>
 
@@ -649,6 +649,12 @@
         <div class="linha info"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h12l4 4v12H4z"/><circle cx="9" cy="10" r="1"/><circle cx="14" cy="10" r="1"/><path d="M9 15c1.5 1.5 4.5 1.5 6 0"/></svg></span><span class="tx"><b>Figurinhas salvas</b><small id="arm-stk-txt"></small></span><span class="tam" id="arm-stk-tam"></span></div>
         <button type="button" id="arm-limpar" class="btn-limpa">Liberar espaço (arquivos baixados)</button>
         <p class="pg-dica sem-recuo">Nenhuma mensagem será apagada. As fotos, os áudios e os vídeos baixam de novo quando você abrir.</p>
+        <h3 class="pg-grupo">Modelos de IA baixados</h3>
+        <div class="linha info"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></svg></span><span class="tx"><b>Resumo com IA</b><small id="arm-ia-resumo-txt">Calculando…</small></span></div>
+        <button type="button" id="arm-ia-resumo-apagar" class="btn-limpa" hidden>Apagar o modelo de resumo</button>
+        <div class="linha info"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></svg></span><span class="tx"><b>Transcrição de áudios</b><small id="arm-ia-tr-txt">Calculando…</small></span></div>
+        <button type="button" id="arm-ia-tr-apagar" class="btn-limpa" hidden>Apagar os modelos de transcrição</button>
+        <p class="pg-dica sem-recuo">Só são baixados quando você pede. Apagar não mexe em nenhuma mensagem: se quiser usar de novo, baixa outra vez.</p>
         <h3 class="pg-grupo">No servidor</h3>
         <div class="linha info sem-linha"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a4 4 0 0 1-.5-7.97A5.5 5.5 0 0 1 17 8.5a4.5 4.5 0 0 1 .5 9.5z"/></svg></span><span class="tx"><b>Arquivos que você enviou</b><small id="arm-srv-txt"></small><span class="uso" aria-hidden="true"><i id="arm-srv-bar"></i></span></span></div>
         <p class="pg-dica sem-recuo">Apagar uma mensagem para todos remove o arquivo dela do servidor.</p>
@@ -778,6 +784,6 @@
 
   <dialog id="note"><form method="dialog"><p id="note-text"></p><div class="dialog-actions"><button class="primary" value="ok">Entendi</button></div></form></dialog>
 
-  <script src="guarda.js?v=381ebc61e3"></script>
+  <script src="guarda.js?v=57186633d8"></script>
 </body>
 </html>
