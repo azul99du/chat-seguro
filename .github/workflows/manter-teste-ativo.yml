@@ -1,0 +1,28 @@
+name: Manter o projeto de teste ativo
+
+# O plano gratuito do Supabase PAUSA projetos que ficam uns 7 dias sem atividade (e o CI usa o projeto de teste hospedado para os 2 arquivos das Edge Functions).
+# De 3 em 3 dias este fluxo faz duas chamadas simples ao projeto de TESTE (nunca ao projeto real): a configuração pública do login e uma leitura que o banco recusa
+# (sem login não lê nada, e isso já é uma ida ao banco). Se o projeto estiver pausado, a chamada falha e o GitHub avisa por e-mail: é o sinal para reativar no painel.
+on:
+  schedule:
+    - cron: "23 11 */3 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    name: Chamar o projeto de teste
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_URL: https://ggcohoewsqsdasovsuxl.supabase.co # (o mesmo endereço e a mesma chave PÚBLICA que o CI já usa; não é segredo)
+      SUPABASE_KEY: sb_publishable_WyNuVIqK39YZ_EXjqdqdbw_J8_FH3hF
+    steps:
+      - name: Chamadas ao projeto de teste
+        run: |
+          auth=$(curl -sS -m 30 -o /dev/null -w "%{http_code}" "$SUPABASE_URL/auth/v1/settings" -H "apikey: $SUPABASE_KEY" || echo falhou)
+          rest=$(curl -sS -m 30 -o /dev/null -w "%{http_code}" "$SUPABASE_URL/rest/v1/profiles?select=id&limit=1" -H "apikey: $SUPABASE_KEY" -H "Authorization: Bearer $SUPABASE_KEY" || echo falhou)
+          echo "login=$auth banco=$rest"
+          if [ "$auth" != "200" ]; then echo "::error::O projeto de teste não respondeu (pausado?). Reative em https://supabase.com/dashboard/project/ggcohoewsqsdasovsuxl"; exit 1; fi

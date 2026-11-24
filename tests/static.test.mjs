@@ -59,6 +59,13 @@ describe("visual", () => {
   test("sem o destaque azul do toque no celular (tap highlight)", () => assert.match(ler("style.css"), /-webkit-tap-highlight-color:\s*transparent/));
 });
 
+describe("projeto de teste do Supabase", () => {
+  test("há um fluxo agendado que o mantém ativo, só chama o projeto de TESTE e não usa segredos", () => {
+    const f = ler(".github/workflows/manter-teste-ativo.yml"), real = ler("config.js").match(/SUPABASE_URL\s*=\s*"https:\/\/([^.]+)\./)[1];
+    assert.match(f, /schedule:[\s\S]*cron: "[^"]+\*\/[1-5] \*/, "roda de poucos em poucos dias (menos de 7)"); assert.match(f, /ggcohoewsqsdasovsuxl\.supabase\.co/); assert.ok(!f.includes(real), "nunca chama o projeto real");
+    assert.doesNotMatch(f, /secrets\./); assert.match(f, /permissions:\s*\n\s*contents: read/); assert.match(f, /sb_publishable_/, "só a chave pública");
+  });
+});
 describe("política de segurança do navegador (CSP)", () => {
   const html = ler("index.html"), csp = html.match(/Content-Security-Policy"\s+content="([^"]+)"/)?.[1] ?? "";
   const dir = (n) => csp.split(";").map((s) => s.trim()).find((s) => s.startsWith(n + " ")) ?? "";
